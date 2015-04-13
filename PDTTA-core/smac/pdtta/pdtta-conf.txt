@@ -1,0 +1,10 @@
+paramfile = pdtta/params.pcs
+runObj = QUALITY
+cutoffTime = 3600
+wallclock-limit = 172800
+deterministic = 0
+instance_file = pdtta/instances/train
+test_instance_file = pdtta/instances/test
+instance-suffix = txt
+seed = 1234
+algo = java -jar pdtta/smac_pipeline.jar

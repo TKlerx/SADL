@@ -10,3 +10,27 @@
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+
+.settings
+target
+.classpath
+.project
+bin
+/PDTTA-core/lib
+/PDTTA-core/logs
+/PDTTA-core/build.xml
+/PDTTA-core/data.csv
+/PDTTA-core/GenericSmacPipeline (shared) (1).launch
+/PDTTA-core/GenericSmacPipeline (shared).launch
+/PDTTA-core/iris_oneclass.arff
+/PDTTA-core/pta.gv
+/PDTTA-core/rti_input.txt
+/PDTTA-core/rti_small.txt
+/PDTTA-core/smac_runs.txt
+/PDTTA-core/testset.csv
+/PDTTA-core/TestTauPTA (shared).launch
+/PDTTA-core/trainset.csv
+/PDTTA-core/bin
+/PDTTA-core/instances
+/PDTTA-core/build
+/PDTTA-core/swig
