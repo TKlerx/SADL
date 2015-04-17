@@ -11,7 +11,6 @@
 package de.upb.timok.interfaces;
 
 import gnu.trove.list.TDoubleList;
-import gnu.trove.list.TIntList;
 
 import java.util.List;
 

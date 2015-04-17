@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -303,7 +302,8 @@ public class TauPTA extends PDTTA {
 	
 
 	private Object labelWithAnomaly(UntimedSequence s,
-			AnomalyInsertionType anomalyType2) {
+			AnomalyInsertionType anomalyType) {
+		//TODO traverse the TauPTA and label every transition with the anomalyType
 		// TODO Auto-generated method stub
 		return null;
 	}

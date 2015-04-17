@@ -36,6 +36,7 @@ public class UntimedSequenceTest {
 		clone.setLabel(ClassLabel.ANOMALY);
 		clone.events.set(1, 5);
 		assertNotEquals("Changes in the clone should not affect the original.",original.getEvent(1), clone.getEvent(1));
+		assertNotEquals("Changes in the clone should not affect the original.",original.getLabel(), clone.getLabel());
 	}
 
 }
