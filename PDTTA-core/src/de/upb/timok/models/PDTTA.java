@@ -56,8 +56,6 @@ import de.upb.timok.utils.MasterSeed;
  */
 public class PDTTA implements AutomatonModel, Serializable {
 
-	private static final double ANOMALY_3_CHANGE_RATE = 0.5;
-	private static final double ANOMALY_4_CHANGE_RATE = 0.1;
 
 
 	protected static final int START_STATE = 0;
@@ -140,6 +138,7 @@ public class PDTTA implements AutomatonModel, Serializable {
 		final double newSum = outgoingTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
 		logger.info("Corrected sum of transition probabilities is {}", newSum);
 		if (!Precision.equals(newSum, 1.0)) {
+			//TODO instead try first with apache commons math fraction/bigfraction and if they still do not sum up to one, throw an exception
 			throw new IllegalStateException();
 		}
 		return true;
@@ -283,7 +282,48 @@ public class PDTTA implements AutomatonModel, Serializable {
 		}
 	}
 
-	private static final int MAX_SEQUENCE_LENGTH = 1000;
+	protected static final int MAX_SEQUENCE_LENGTH = 1000;
+
+	public TimedSequence sampleSequence() {
+		int currentState = START_STATE;
+
+		final TIntList eventList = new TIntArrayList();
+		final TDoubleList timeList = new TDoubleArrayList();
+		boolean choseFinalState = false;
+		while (!choseFinalState) {
+			final List<Transition> possibleTransitions = getTransitions(currentState, true);
+			Collections.sort(possibleTransitions, (t1, t2) -> -Double.compare(t2.getProbability(), t1.getProbability()));
+			final double random = r.nextDouble();
+			double summedProbs = 0;
+			int index = -1;
+			for (int i = 0; i < possibleTransitions.size(); i++) {
+				summedProbs += possibleTransitions.get(i).getProbability();
+				if (random < summedProbs) {
+					index = i;
+					break;
+				}
+			}
+
+			final Transition chosenTransition = possibleTransitions.get(index);
+			if (chosenTransition.isStopTraversingTransition() ){
+				choseFinalState = true;
+			}else if (eventList.size() > MAX_SEQUENCE_LENGTH) {
+				throw new IllegalStateException("A sequence longer than "+MAX_SEQUENCE_LENGTH+" events should have been generated");
+			} else {
+				currentState = chosenTransition.getToState();
+				final Distribution d = transitionDistributions.get(chosenTransition.toZeroProbTransition());
+				if (d == null) {
+					// XXX maybe this happens because the automaton is more general than the data. So not every possible path in the automaton is represented in
+					// the training data.
+					throw new IllegalStateException("This should never happen for transition " + chosenTransition);
+				}
+				double timeValue = d.sample(1, r)[0];
+				eventList.add(chosenTransition.getSymbol());
+				timeList.add(timeValue);
+			}
+		}
+		return new TimedSequence(eventList, timeList, ClassLabel.NORMAL);
+	}
 
 
 	@Deprecated
@@ -369,74 +409,8 @@ public class PDTTA implements AutomatonModel, Serializable {
 
 	Random r = new Random(MasterSeed.nextLong());
 
-	public TimedSequence sampleSequence() {
-		int currentState = START_STATE;
-
-		final TIntList eventList = new TIntArrayList();
-		final TDoubleList timeList = new TDoubleArrayList();
-		boolean choseFinalState = false;
-		AnomalyInsertionType anomalyType = AnomalyInsertionType.NONE;
-		while (!choseFinalState) {
-			final List<Transition> possibleTransitions = getTransitions(currentState, true);
-			Collections.sort(possibleTransitions, (t1, t2) -> -Double.compare(t2.getProbability(), t1.getProbability()));
-			final double random = r.nextDouble();
-			double summedProbs = 0;
-			int index = -1;
-			for (int i = 0; i < possibleTransitions.size(); i++) {
-				summedProbs += possibleTransitions.get(i).getProbability();
-				if (random < summedProbs) {
-					index = i;
-					break;
-				}
-			}
-
-			final Transition chosenTransition = possibleTransitions.get(index);
-			// XXX What happens for sequence based anomalies if we first choose an abnormal transition and then a normal one? Should we enforce choosing the
-			// abnormal transitions labeled with type 2 and 4 when the first of those anomalies was chosen? The problem are sequence based anomalies!
-			if (chosenTransition.isAbnormal()) {
-				if (anomalyType != AnomalyInsertionType.NONE && anomalyType != chosenTransition.getAnomalyInsertionType()) {
-					// This is a conflict because the anomalyType was already set to anomaly
-					throw new IllegalStateException("Two anomalies are mixed in this special case");
-				}
-				anomalyType = chosenTransition.getAnomalyInsertionType();
-				// XXX what happens if one transition was normal and then the other one was abnormal or from another type? 0,1,2,0,0,5? What about the label for
-				// the sequence? Is the label for the sequence really needed?
-			}
-			if (chosenTransition.isStopTraversingTransition() || eventList.size() > MAX_SEQUENCE_LENGTH) {
-				choseFinalState = true;
-				// TODO what happens if an abnormal stopping transiton (type 5) was chosen?
-			} else {
-				currentState = chosenTransition.getToState();
-				final Distribution d = transitionDistributions.get(chosenTransition.toZeroProbTransition());
-				if (d == null) {
-					// XXX maybe this happens because the automaton is more general than the data. So not every possible path in the automaton is represented in
-					// the training data.
-					throw new IllegalStateException("This should never happen for transition " + chosenTransition);
-				}
-				double timeValue = d.sample(1, r)[0];
-				if (anomalyType == AnomalyInsertionType.TYPE_THREE) {
-					timeValue = changeTimeValue(timeValue, ANOMALY_3_CHANGE_RATE);
-				} else if (anomalyType == AnomalyInsertionType.TYPE_FOUR) {
-					timeValue = changeTimeValue(timeValue, ANOMALY_4_CHANGE_RATE);
-				}
-				eventList.add(chosenTransition.getSymbol());
-				timeList.add(timeValue);
-			}
-		}
-		if (anomalyType != AnomalyInsertionType.NONE) {
-			return new TimedSequence(eventList, timeList, ClassLabel.ANOMALY);
-		} else {
-			return new TimedSequence(eventList, timeList, ClassLabel.NORMAL);
-		}
-	}
-
-	private double changeTimeValue(double value, double factor) {
-		if (r.nextBoolean()) {
-			return value * -factor;
-		} else {
-			return value * factor;
-		}
-	}
+	
+	
 	public Random getRandom() {
 		return r;
 	}

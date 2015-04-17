@@ -75,25 +75,18 @@ public class DataGenerator implements Serializable {
 		// logger.info("{}", pta.getStates(2));
 		// logger.info("{}", pta.getStates(3));
 		// logger.info("{}", pta.getStates(4));
-		final TauPTA anomaly1 = SerializationUtils.clone(pta);
-		anomaly1.setAnomalyType(AnomalyInsertionType.TYPE_ONE);
-		for (int i = 0; i < 1000; i++) {
-			anomaly1.sampleSequence();
+		
+		for(AnomalyInsertionType type : AnomalyInsertionType.values()){
+			if(type != AnomalyInsertionType.NONE && type != AnomalyInsertionType.ALL){
+				TauPTA anomaly1 = SerializationUtils.clone(pta);
+				anomaly1.makeAbnormal(type);
+				for (int i = 0; i < 1000; i++) {
+					anomaly1.sampleSequence();
+				}
+			}
 		}
-		final TauPTA anomaly2 = SerializationUtils.clone(pta);
-		anomaly2.setAnomalyType(AnomalyInsertionType.TYPE_TWO);
-
-		final TauPTA anomaly3 = SerializationUtils.clone(pta);
-		anomaly3.setAnomalyType(AnomalyInsertionType.TYPE_THREE);
-
-		final TauPTA anomaly4 = SerializationUtils.clone(pta);
-		anomaly4.setAnomalyType(AnomalyInsertionType.TYPE_FOUR);
-
+		
 		// TODO for smac change the input format s.t. it contains unlabeled train and labeled test set
-
-		// also create type 5: sequence stops
-		// insert final state probabilities in states that do not have final state probabilities
-
 
 	}
 

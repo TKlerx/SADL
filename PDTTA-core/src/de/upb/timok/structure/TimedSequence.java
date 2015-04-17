@@ -26,16 +26,19 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.upb.timok.constants.AnomalyInsertionType;
 import de.upb.timok.constants.ClassLabel;
 
 
 public class TimedSequence {
+	//TODO include the anomalyType in input (reading from line) and output (to line)
+	// this may be needed for a mixed test set to know which anomalies are well detected 
 	private static Logger logger = LoggerFactory.getLogger(TimedSequence.class);
 
 	private TIntList events = new TIntArrayList();
 	private TDoubleList timeValues = new TDoubleArrayList();
 	private ClassLabel label = ClassLabel.NORMAL;
-
+	private AnomalyInsertionType anomalyType = AnomalyInsertionType.NONE;
 
 	public void setTimeValues(TDoubleList timeValues) {
 		this.timeValues = timeValues;
@@ -50,10 +53,15 @@ public class TimedSequence {
 	}
 
 	public TimedSequence(TIntList events, TDoubleList timeValues, ClassLabel label) {
+		this(events, timeValues,label, label == ClassLabel.ANOMALY? AnomalyInsertionType.ALL:AnomalyInsertionType.NONE);
+	}
+	
+	public TimedSequence(TIntList events, TDoubleList timeValues, ClassLabel label, AnomalyInsertionType anomalyType) {
 		super();
 		this.events = events;
 		this.timeValues = timeValues;
 		this.label = label;
+		this.anomalyType = anomalyType;
 		checkConsistency();
 	}
 
