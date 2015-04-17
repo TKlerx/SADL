@@ -46,7 +46,7 @@ public class trebaJNI {
 		return libraryLoaded;
 	}
 
-	private static Path findLibrary() throws IOException {
+	protected static Path findLibrary() throws IOException {
 		Path rootDir = Paths.get(".");
 		Optional<Path> opt = Files.find(rootDir, 10, (p, attr)->p.getFileName().toString().startsWith("treba")&&p.getFileName().toString().endsWith(".so")).findFirst();
 		if(opt.isPresent()){
@@ -63,8 +63,8 @@ public class trebaJNI {
 			System.out.println("Loaded treba library.");
 			libraryLoaded = true;
 		} catch (final UnsatisfiedLinkError e) {
-			System.err.println("Native code library failed to load frpm path "+p+". \n" + e);
-			System.exit(1);
+			System.err.println("Native code library failed to load from path "+p+". \n" + e);
+			throw e;
 		}
 	}
 
