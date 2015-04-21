@@ -84,16 +84,16 @@ public class PDTTA implements AutomatonModel, Serializable {
 
 	public void setTransitionDistributions(Map<ZeroProbTransition, Distribution> transitionDistributions) {
 		this.transitionDistributions = transitionDistributions;
-		if (!isConsistent()) {
-			restoreConsistency();
-		}
+		restoreConsistency();
 	}
 
 	protected void restoreConsistency() {
-		logger.warn("Model is not consistent; restoring consistency...");
-		if (DELETE_NO_TIME_INFORMATION_TRANSITIONS) {
-			deleteIrrelevantTransitions();
-			fixProbabilities();
+		if (!isConsistent()) {
+			logger.warn("Model is not consistent; restoring consistency...");
+			if (DELETE_NO_TIME_INFORMATION_TRANSITIONS) {
+				deleteIrrelevantTransitions();
+				fixProbabilities();
+			}
 		}
 	}
 
@@ -108,7 +108,9 @@ public class PDTTA implements AutomatonModel, Serializable {
 	private boolean checkProbability(int state) {
 		final List<Transition> outgoingTransitions = getTransitions(state, true);
 		final double sum = outgoingTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
-		return Precision.equals(sum, 1);
+		final boolean compareResult = Precision.equals(sum, 1);
+		logger.trace("Probability sum for state {}: {} (== 1? {})", state, sum, compareResult);
+		return compareResult;
 	}
 
 	private void deleteIrrelevantTransitions() {
@@ -132,14 +134,16 @@ public class PDTTA implements AutomatonModel, Serializable {
 		// TODO use Fraction or BigFraction here!
 		final List<Transition> outgoingTransitions = getTransitions(state, true);
 		final double sum = outgoingTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
-		logger.info("Sum of transition probabilities is {}", sum);
+		logger.info("Sum of transition probabilities for state {} is {}", state, sum);
 		// divide every probability by the sum of probabilities s.t. they sum up to 1
-		outgoingTransitions.forEach(t -> t.setProbability(t.getProbability() / sum));
-		final double newSum = outgoingTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
-		logger.info("Corrected sum of transition probabilities is {}", newSum);
-		if (!Precision.equals(newSum, 1.0)) {
-			//TODO instead try first with apache commons math fraction/bigfraction and if they still do not sum up to one, throw an exception
-			throw new IllegalStateException();
+		if (!Precision.equals(sum, 1)) {
+			outgoingTransitions.forEach(t -> t.setProbability(t.getProbability() / sum));
+			final double newSum = outgoingTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
+			logger.info("Corrected sum of transition probabilities is {}", newSum);
+			if (!Precision.equals(newSum, 1.0)) {
+				//TODO instead try first with apache commons math fraction/bigfraction and if they still do not sum up to one, throw an exception
+				throw new IllegalStateException("Probabilities do not sum up to one, but instead to " + newSum);
+			}
 		}
 		return true;
 	}
@@ -188,6 +192,10 @@ public class PDTTA implements AutomatonModel, Serializable {
 		final Transition t = new AbnormalTransition(fromState, toState, symbol, probability, anomalyType);
 		transitions.add(t);
 		return t;
+	}
+
+	public Transition addAbnormalTransition(Transition t, AnomalyInsertionType anomalyType) {
+		return addAbnormalTransition(t.getFromState(), t.getToState(), t.getSymbol(), t.getProbability(), anomalyType);
 	}
 
 	protected void addState(int state) {
@@ -275,11 +283,21 @@ public class PDTTA implements AutomatonModel, Serializable {
 		return result;
 	}
 
-	protected void removeTransition(Transition t) {
+	protected void bindTransitionDistribution(Transition newTransition, Distribution d) {
+		transitionDistributions.put(newTransition.toZeroProbTransition(), d);
+	}
+
+	/**
+	 * CARE: The distribution to this transition is also removed.
+	 * 
+	 * @param t
+	 */
+	protected Distribution removeTransition(Transition t) {
 		final boolean wasRemoved = transitions.remove(t);
 		if (!wasRemoved) {
 			logger.warn("Tried to remove a non existing transition={}", t);
 		}
+		return transitionDistributions.remove(t.toZeroProbTransition());
 	}
 
 	protected static final int MAX_SEQUENCE_LENGTH = 1000;
@@ -317,7 +335,7 @@ public class PDTTA implements AutomatonModel, Serializable {
 					// the training data.
 					throw new IllegalStateException("This should never happen for transition " + chosenTransition);
 				}
-				double timeValue = d.sample(1, r)[0];
+				final double timeValue = d.sample(1, r)[0];
 				eventList.add(chosenTransition.getSymbol());
 				timeList.add(timeValue);
 			}
@@ -409,8 +427,8 @@ public class PDTTA implements AutomatonModel, Serializable {
 
 	Random r = new Random(MasterSeed.nextLong());
 
-	
-	
+
+
 	public Random getRandom() {
 		return r;
 	}

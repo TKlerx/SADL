@@ -238,4 +238,8 @@ public abstract class PdttaDetector implements AnomalyDetector {
 		}
 		return result;
 	}
+
+	public static double aggregate(TDoubleList probabilities) {
+		return aggregate(probabilities, ProbabilityAggregationMethod.NORMALIZED_MULTIPLY);
+	}
 }

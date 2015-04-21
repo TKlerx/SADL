@@ -21,7 +21,7 @@ public class UntimedSequence implements Cloneable {
 	@SuppressWarnings("unused")
 	private static Logger logger = LoggerFactory.getLogger(UntimedSequence.class);
 
-	 TIntList events = new TIntArrayList();
+	TIntList events = new TIntArrayList();
 	private ClassLabel label = ClassLabel.NORMAL;
 
 
@@ -32,6 +32,40 @@ public class UntimedSequence implements Cloneable {
 
 	public ClassLabel getLabel() {
 		return label;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((events == null) ? 0 : events.hashCode());
+		result = prime * result + ((label == null) ? 0 : label.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final UntimedSequence other = (UntimedSequence) obj;
+		if (events == null) {
+			if (other.events != null) {
+				return false;
+			}
+		} else if (!events.equals(other.events)) {
+			return false;
+		}
+		if (label != other.label) {
+			return false;
+		}
+		return true;
 	}
 
 	public UntimedSequence(TIntList events, ClassLabel label) {
@@ -138,7 +172,7 @@ public class UntimedSequence implements Cloneable {
 		}
 		return result;
 	}
-	
+
 	@Override
 	public UntimedSequence clone() throws CloneNotSupportedException {
 		return new UntimedSequence(new TIntArrayList(events.toArray()),label);

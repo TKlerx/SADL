@@ -28,19 +28,25 @@ public class ZeroProbTransition extends Transition implements Serializable {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (obj == null)
+		}
+		if (obj == null) {
 			return false;
-		if (getClass() != obj.getClass())
+		}
+		if (getClass() != obj.getClass()) {
 			return false;
-		Transition other = (Transition) obj;
-		if (fromState != other.fromState)
+		}
+		final Transition other = (Transition) obj;
+		if (fromState != other.fromState) {
 			return false;
-		if (symbol != other.symbol)
+		}
+		if (symbol != other.symbol) {
 			return false;
-		if (toState != other.toState)
+		}
+		if (toState != other.toState) {
 			return false;
+		}
 		return true;
 	}
 
@@ -59,4 +65,8 @@ public class ZeroProbTransition extends Transition implements Serializable {
 		throw new UnsupportedOperationException("This method is not supported for this class");
 	}
 
+	@Override
+	public ZeroProbTransition toZeroProbTransition() {
+		return this;
+	}
 }

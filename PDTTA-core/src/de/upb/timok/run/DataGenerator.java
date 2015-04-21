@@ -75,17 +75,19 @@ public class DataGenerator implements Serializable {
 		// logger.info("{}", pta.getStates(2));
 		// logger.info("{}", pta.getStates(3));
 		// logger.info("{}", pta.getStates(4));
-		
-		for(AnomalyInsertionType type : AnomalyInsertionType.values()){
+
+		// for(final AnomalyInsertionType type : AnomalyInsertionType.values()){
+		for (final AnomalyInsertionType type : Arrays.asList(AnomalyInsertionType.TYPE_TWO)) {
 			if(type != AnomalyInsertionType.NONE && type != AnomalyInsertionType.ALL){
-				TauPTA anomaly1 = SerializationUtils.clone(pta);
+				final TauPTA anomaly1 = SerializationUtils.clone(pta);
+				logger.info("inserting Anomaly Type {}", type);
 				anomaly1.makeAbnormal(type);
 				for (int i = 0; i < 1000; i++) {
 					anomaly1.sampleSequence();
 				}
 			}
 		}
-		
+
 		// TODO for smac change the input format s.t. it contains unlabeled train and labeled test set
 
 	}

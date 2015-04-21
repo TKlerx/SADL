@@ -20,6 +20,7 @@ public class AbnormalTransition extends Transition {
 	private static final long serialVersionUID = 837909038123359196L;
 	private final AnomalyInsertionType anomalyType;
 
+	@Override
 	public AnomalyInsertionType getAnomalyInsertionType() {
 		return anomalyType;
 	}
@@ -31,6 +32,38 @@ public class AbnormalTransition extends Transition {
 
 	@Override
 	public boolean isAbnormal() {
+		return true;
+	}
+
+	@Override
+	public String toString() {
+		return "AbnormalTransition [anomalyType=" + anomalyType + ", fromState=" + fromState + ", toState=" + toState + ", symbol=" + symbol + ", probability="
+				+ probability + "]";
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((anomalyType == null) ? 0 : anomalyType.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (!super.equals(obj)) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final AbnormalTransition other = (AbnormalTransition) obj;
+		if (anomalyType != other.anomalyType) {
+			return false;
+		}
 		return true;
 	}
 
