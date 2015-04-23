@@ -16,7 +16,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import libsvm.svm;
@@ -42,10 +41,10 @@ public class TestOneClassSvm {
 	public static void main(final String[] args) {
 		// feature should be at index 0
 		final TestOneClassSvm tester = new TestOneClassSvm();
-		final WekaSvmClassifier wekaSvm = new WekaSvmClassifier(0, 0.2, 0.01, 1, 2, 0.001, 3, ScalingMethod.NORMALIZE);
+		// final WekaSvmClassifier wekaSvm = new WekaSvmClassifier(0, 0.2, 0.01, 1, 2, 0.001, 3, ScalingMethod.NORMALIZE);
 		final LibSvmClassifier libSvm = new LibSvmClassifier(0, 0.2, 0.01, 1, 2, 0.001, 3, ScalingMethod.NORMALIZE);
 		tester.createData();
-		wekaSvm.train(train);
+		// wekaSvm.train(train);
 		libSvm.train(train);
 		final Normalizer norm = new Normalizer(train.get(0).length);
 		final List<double[]> normalizedTrain = norm.train(train);
@@ -55,15 +54,15 @@ public class TestOneClassSvm {
 		System.out.println("testset");
 		int libSvmRightAnswer = 0;
 		int libSvmWrongAnswer = 0;
-		int wekaRightAnswer = 0;
-		int wekaWrongAnswer = 0;
+		// int wekaRightAnswer = 0;
+		// int wekaWrongAnswer = 0;
 		int wrongAnswer = 0;
 		int rightAnswer = 0;
-		final boolean[] wekaTrainResult = wekaSvm.areAnomalies(train);
-		final boolean[] wekaTestResult = wekaSvm.areAnomalies(test);
+		// final boolean[] wekaTrainResult = wekaSvm.areAnomalies(train);
+		// final boolean[] wekaTestResult = wekaSvm.areAnomalies(test);
 		final boolean[] libSvmTrainResult = libSvm.areAnomalies(train);
 		countAnomalies(libSvmTrainResult);
-		final boolean[] libSvmTestResult = libSvm.areAnomalies(test);
+		// final boolean[] libSvmTestResult = libSvm.areAnomalies(test);
 
 		final List<double[]> normalizedTest = norm.normalize(test);
 		// List<double[]> normalizedTest = test;
@@ -108,12 +107,12 @@ public class TestOneClassSvm {
 				// libsvm says normal
 				wrongAnswer++;
 			}
-			if (wekaSvm.isOutlier(test.get(i))) {
-				// weka says outlier
-				wekaRightAnswer++;
-			} else {
-				wekaWrongAnswer++;
-			}
+			// if (wekaSvm.isOutlier(test.get(i))) {
+			// weka says outlier
+			// wekaRightAnswer++;
+			// } else {
+			// wekaWrongAnswer++;
+			// }
 			if (isAnomaly) {
 				// libsvm says outlier
 				libSvmRightAnswer++;
@@ -125,9 +124,9 @@ public class TestOneClassSvm {
 		System.out.println("Expected Result: 10/0");
 		System.out.println("SvmResult: RightAnswers=" + rightAnswer + "; WrongAnswers=" + wrongAnswer);
 		System.out.println("LibSvmResult: RightAnswers=" + libSvmRightAnswer + "; WrongAnswers=" + libSvmWrongAnswer);
-		System.out.println("WekaResult: RightAnswers=" + wekaRightAnswer + "; WrongAnswers=" + wekaWrongAnswer);
+		// System.out.println("WekaResult: RightAnswers=" + wekaRightAnswer + "; WrongAnswers=" + wekaWrongAnswer);
 
-		libSvmRightAnswer = libSvmWrongAnswer = wekaRightAnswer = wekaWrongAnswer = rightAnswer = wrongAnswer = 0;
+		libSvmRightAnswer = libSvmWrongAnswer = rightAnswer = wrongAnswer = 0;
 		System.out.println("\ntrainset again");
 		for (int i = 0; i < train.size(); i++) {
 			// all the data should be normal!
@@ -141,12 +140,12 @@ public class TestOneClassSvm {
 				// libsvm says outlier
 				wrongAnswer++;
 			}
-			if (wekaSvm.isOutlier(train.get(i))) {
-				// System.err.println("weka says something different");
-				wekaWrongAnswer++;
-			} else {
-				wekaRightAnswer++;
-			}
+			// if (wekaSvm.isOutlier(train.get(i))) {
+			// // System.err.println("weka says something different");
+			// wekaWrongAnswer++;
+			// } else {
+			// wekaRightAnswer++;
+			// }
 			if (!isAnomaly) {
 				// libsvm says normal
 				libSvmRightAnswer++;
@@ -158,13 +157,13 @@ public class TestOneClassSvm {
 		System.out.println("Expected Result with this parameter setting: 600/400");
 		System.out.println("SvmResult: RightAnswers=" + rightAnswer + "; WrongAnswers=" + wrongAnswer);
 		System.out.println("LibSvmResult: RightAnswers=" + libSvmRightAnswer + "; WrongAnswers=" + libSvmWrongAnswer);
-		System.out.println("WekaResult: RightAnswers=" + wekaRightAnswer + "; WrongAnswers=" + wekaWrongAnswer);
+		// System.out.println("WekaResult: RightAnswers=" + wekaRightAnswer + "; WrongAnswers=" + wekaWrongAnswer);
 
 		// will return 800/200 with this parameter setting
 
-		if (!Arrays.equals(libSvmTrainResult, wekaTrainResult) || !Arrays.equals(libSvmTestResult, wekaTestResult)) {
-			System.err.println("Weka and libsvm do not result in same output");
-		}
+		// if (!Arrays.equals(libSvmTrainResult, wekaTrainResult) || !Arrays.equals(libSvmTestResult, wekaTestResult)) {
+		// System.err.println("Weka and libsvm do not result in same output");
+		// }
 	}
 
 	private static void countAnomalies(boolean[] libSvmTrainResult) {

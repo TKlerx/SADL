@@ -329,9 +329,11 @@ public class TauPTA extends PDTTA {
 				logger.warn("Transition for state {} and event {} is null while processing sequence {}", currentState, event, s);
 				// FIXME why do I lose some transitions?
 				logger.warn("Transitions.size={}", transitions.size());
+				throw new NullPointerException();
+			} else {
+				changeAnomalyType(t, anomalyType);
+				currentState = t.getToState();
 			}
-			changeAnomalyType(t, anomalyType);
-			currentState = t.getToState();
 		}
 		return s;
 	}
