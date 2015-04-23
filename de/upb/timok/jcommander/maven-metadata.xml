@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>de.upb.timok</groupId>
+  <artifactId>jcommander</artifactId>
+  <versioning>
+    <versions>
+      <version>1.49-SNAPSHOT</version>
+      <version>1.50-SNAPSHOT</version>
+    </versions>
+    <lastUpdated>20150423110425</lastUpdated>
+  </versioning>
+</metadata>
