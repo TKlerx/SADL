@@ -221,7 +221,7 @@ public class PDTTA implements AutomatonModel, Serializable {
 			writer.write("circle, label=\"");
 			writer.write(Integer.toString(state));
 			if (finalProb > 0 || (compressed && finalProb > 0.01)) {
-				writer.write(" - P= ");
+				writer.write(" - p= ");
 				writer.write(Double.toString(Precision.round(finalProb, 2)));
 			}
 			writer.write("\"];\n");
@@ -236,13 +236,23 @@ public class PDTTA implements AutomatonModel, Serializable {
 			writer.write(Integer.toString(t.getFromState()));
 			writer.write(" -> ");
 			writer.write(Integer.toString(t.getToState()));
-			writer.write(" [label=\"");
+			writer.write(" [label=<");
 			writer.write(Integer.toString(t.getSymbol()));
 			if (t.getProbability() > 0) {
 				writer.write(" p=");
 				writer.write(Double.toString(Precision.round(t.getProbability(), 2)));
 			}
-			writer.write("\"];\n");
+			if (t.isAbnormal()) {
+				writer.write("<BR/>");
+				writer.write("<FONT COLOR=\"red\">");
+				writer.write(Integer.toString(t.getAnomalyInsertionType().getTypeIndex()));
+				writer.write("</FONT>");
+			}
+			writer.write(">");
+			if (t.isAbnormal()) {
+				writer.write(" color=\"red\"");
+			}
+			writer.write(";];\n");
 
 		}
 		writer.write("}");
