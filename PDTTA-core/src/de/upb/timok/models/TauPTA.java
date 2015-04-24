@@ -107,7 +107,7 @@ public class TauPTA extends PDTTA {
 			final List<Transition> stateTransitions = initialPta.getTransitions(state, false);
 			for (final Transition t : stateTransitions) {
 				if (initialPta.transitionCount.get(t) < threshold) {
-					initialPta.removeTransition(t);
+					initialPta.removeTransition(t, false);
 				}
 			}
 			if (initialPta.finalStateCount.get(state) < threshold) {
@@ -571,6 +571,9 @@ public class TauPTA extends PDTTA {
 					index = i;
 					break;
 				}
+			}
+			if (index == -1) {
+				logger.error("Found no possible transition from {}", possibleTransitions);
 			}
 			final Transition chosenTransition = possibleTransitions.get(index);
 			if (chosenTransition.isAbnormal()) {

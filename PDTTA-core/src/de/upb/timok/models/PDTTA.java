@@ -304,11 +304,19 @@ public class PDTTA implements AutomatonModel, Serializable {
 	 * @param t
 	 */
 	protected Distribution removeTransition(Transition t) {
+		return removeTransition(t, true);
+	}
+
+	protected Distribution removeTransition(Transition t, boolean removeTimeDistribution) {
 		final boolean wasRemoved = transitions.remove(t);
 		if (!wasRemoved) {
 			logger.warn("Tried to remove a non existing transition={}", t);
 		}
-		return transitionDistributions.remove(t.toZeroProbTransition());
+		if (removeTimeDistribution) {
+			return transitionDistributions.remove(t.toZeroProbTransition());
+		} else {
+			return null;
+		}
 	}
 
 	protected static final int MAX_SEQUENCE_LENGTH = 1000;
