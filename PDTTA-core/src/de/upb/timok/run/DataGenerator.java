@@ -77,7 +77,7 @@ public class DataGenerator implements Serializable {
 		// logger.info("{}", pta.getStates(4));
 
 		// for(final AnomalyInsertionType type : AnomalyInsertionType.values()){
-		for (final AnomalyInsertionType type : Arrays.asList(AnomalyInsertionType.TYPE_THREE)) {
+		for (final AnomalyInsertionType type : AnomalyInsertionType.values()) {
 			if(type != AnomalyInsertionType.NONE && type != AnomalyInsertionType.ALL){
 				final TauPTA anomaly1 = SerializationUtils.clone(pta);
 				logger.info("inserting Anomaly Type {}", type);
