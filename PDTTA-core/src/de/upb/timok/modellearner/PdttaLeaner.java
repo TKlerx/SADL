@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import jsat.distributions.Distribution;
-import jsat.distributions.DistributionSearch;
+import jsat.distributions.MyDistributionSearch;
 import jsat.distributions.SingleValueDistribution;
 import jsat.distributions.empirical.KernelDensityEstimator;
 import jsat.distributions.empirical.kernelfunc.KernelFunction;
@@ -146,7 +146,7 @@ public class PdttaLeaner implements ModelLearner {
 	@SuppressWarnings("boxing")
 	private Distribution fitDistribution(TDoubleList transitionTimes) {
 		final Vec v = new DenseVector(transitionTimes.toArray());
-		final jsat.utils.Pair<Boolean, Double> sameValues = DistributionSearch.checkForDifferentValues(v);
+		final jsat.utils.Pair<Boolean, Double> sameValues = MyDistributionSearch.checkForDifferentValues(v);
 		if (sameValues.getFirstItem()) {
 			final Distribution d = new SingleValueDistribution(sameValues.getSecondItem());
 			return d;

@@ -123,9 +123,9 @@ public abstract class NumericClassifier implements OneClassClassifier {
 		return isOutlierScaled(toEvaluate);
 	}
 
-	public abstract boolean isOutlierScaled(double[] scaledTestSample);
+	protected abstract boolean isOutlierScaled(double[] scaledTestSample);
 
-	public abstract void trainModelScaled(List<double[]> scaledTrainSamples);
+	protected abstract void trainModelScaled(List<double[]> scaledTrainSamples);
 
 	@Override
 	public final void train(List<double[]> trainingSamples) {

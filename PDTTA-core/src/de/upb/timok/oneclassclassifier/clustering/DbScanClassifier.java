@@ -83,7 +83,7 @@ public class DbScanClassifier extends NumericClassifier {
 
 
 	@Override
-	public boolean isOutlierScaled(double[] testSample) {
+	protected boolean isOutlierScaled(double[] testSample) {
 		final List<? extends VecPaired<VecPaired<Vec, Integer>, Double>> neighbours = dbscan.getLastVectorCollection().search(new DenseVector(testSample), eps);
 		// check whether one of the points is a core point!
 		for (final VecPaired<VecPaired<Vec, Integer>, Double> vecPaired : neighbours) {
@@ -114,7 +114,7 @@ public class DbScanClassifier extends NumericClassifier {
 	}
 
 	@Override
-	public void trainModelScaled(List<double[]> scaledTrainSamples) {
+	protected void trainModelScaled(List<double[]> scaledTrainSamples) {
 		cluster(scaledTrainSamples);
 
 	}

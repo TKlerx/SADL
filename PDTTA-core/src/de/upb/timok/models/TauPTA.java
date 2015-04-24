@@ -38,7 +38,7 @@ import java.util.function.IntUnaryOperator;
 import java.util.stream.Collectors;
 
 import jsat.distributions.Distribution;
-import jsat.distributions.DistributionSearch;
+import jsat.distributions.MyDistributionSearch;
 import jsat.distributions.SingleValueDistribution;
 import jsat.distributions.empirical.KernelDensityEstimator;
 import jsat.linear.DenseVector;
@@ -219,7 +219,7 @@ public class TauPTA extends PDTTA {
 	@SuppressWarnings("boxing")
 	private Distribution fitDistribution(TDoubleList transitionTimes) {
 		final Vec v = new DenseVector(transitionTimes.toArray());
-		final jsat.utils.Pair<Boolean, Double> sameValues = DistributionSearch.checkForDifferentValues(v);
+		final jsat.utils.Pair<Boolean, Double> sameValues = MyDistributionSearch.checkForDifferentValues(v);
 		if (sameValues.getFirstItem()) {
 			final Distribution d = new SingleValueDistribution(sameValues.getSecondItem());
 			return d;
