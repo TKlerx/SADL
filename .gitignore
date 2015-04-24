@@ -35,3 +35,4 @@ bin
 /.project
 /.settings
 org.eclipse.m2e.core.prefs
+com.wdev91.eclipse.copyright.xml
