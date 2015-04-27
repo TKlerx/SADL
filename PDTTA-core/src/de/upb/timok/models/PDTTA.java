@@ -131,7 +131,6 @@ public class PDTTA implements AutomatonModel, Serializable {
 	}
 
 	boolean fixProbability(int state) {
-		// TODO use Fraction or BigFraction here!
 		final List<Transition> outgoingTransitions = getTransitions(state, true);
 		final double sum = outgoingTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
 		logger.info("Sum of transition probabilities for state {} is {}", state, sum);
@@ -350,7 +349,7 @@ public class PDTTA implements AutomatonModel, Serializable {
 				currentState = chosenTransition.getToState();
 				final Distribution d = transitionDistributions.get(chosenTransition.toZeroProbTransition());
 				if (d == null) {
-					// XXX maybe this happens because the automaton is more general than the data. So not every possible path in the automaton is represented in
+					// maybe this happens because the automaton is more general than the data. So not every possible path in the automaton is represented in
 					// the training data.
 					throw new IllegalStateException("This should never happen for transition " + chosenTransition);
 				}

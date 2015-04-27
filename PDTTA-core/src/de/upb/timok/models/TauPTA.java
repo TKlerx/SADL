@@ -23,6 +23,7 @@ import gnu.trove.map.hash.TObjectDoubleHashMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -295,9 +296,12 @@ public class TauPTA extends PDTTA {
 		}
 		this.restoreConsistency();
 		try {
-			final String fileName = "pta_abnormal" + newAnomalyType + ".dot";
-			logger.info("Writing abnormal pta to dot file {}", fileName);
-			toGraphvizFile(Paths.get("pta_abnormal" + newAnomalyType + ".dot"), false);
+			final Path p = Paths.get("pta_abnormal" + newAnomalyType + ".dot");
+			logger.info("Writing abnormal pta to dot file {}", p);
+			toGraphvizFile(p, false);
+			if (System.getProperty("os.name").toLowerCase().contains("linux")) {
+				Runtime.getRuntime().exec("dot -Tpdf -O " + p.toString());
+			}
 		} catch (final IOException e) {
 			logger.error("unexpected exception while printing graphviz file", e);
 		}
@@ -604,7 +608,7 @@ public class TauPTA extends PDTTA {
 				currentState = chosenTransition.getToState();
 				final Distribution d = transitionDistributions.get(chosenTransition.toZeroProbTransition());
 				if (d == null) {
-					// XXX maybe this happens because the automaton is more general than the data. So not every possible path in the automaton is represented in
+					// maybe this happens because the automaton is more general than the data. So not every possible path in the automaton is represented in
 					// the training data.
 					throw new IllegalStateException("This should never happen for transition " + chosenTransition);
 				}

@@ -89,7 +89,6 @@ public class DataGenerator implements Serializable {
 		}
 
 
-		// TODO for smac change the input format s.t. it contains unlabeled train and labeled test set
 
 	}
 

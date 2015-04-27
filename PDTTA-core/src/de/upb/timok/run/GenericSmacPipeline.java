@@ -282,6 +282,8 @@ public class GenericSmacPipeline implements Serializable {
 		}
 		// TODO change this s.t. the train and test set are in one file!
 		// then the test set is not generated on the fly anymore
+		// TODO for smac change the input format s.t. it contains unlabeled train and labeled test set
+
 		//
 		// compute likelihood on test set for automaton and for time PDFs
 		final List<TimedSequence> testTimedSequences = TimedSequence.parseTimedSequences(timedInputTestFile, false, true);

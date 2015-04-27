@@ -34,7 +34,7 @@ public class PdttaAggregatedThresholdDetector extends PdttaDetector {
 	protected boolean decide(TDoubleList eventLikelihoods, TDoubleList timeLikelihoods) {
 		final double normalizedEventThreshold = aggregatedEventThreshold;
 		final double normalizedTimeThreshold = aggregatedTimeThreshold;
-		// TODO: Was passiert, wenn aggregate NAN zurück gibt?!
+		// Was passiert, wenn aggregate NAN zurück gibt?!
 		// Sollte eigentlich nur -infty zurückgeben
 		final double aggregatedEventScore = aggregate(eventLikelihoods, aggType);
 		final double aggregatedTimeScore = aggregate(timeLikelihoods, aggType);
