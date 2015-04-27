@@ -43,6 +43,7 @@ import jsat.distributions.empirical.KernelDensityEstimator;
 import jsat.linear.DenseVector;
 import jsat.linear.Vec;
 
+import org.apache.commons.math3.util.Precision;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -294,8 +295,9 @@ public class TauPTA extends PDTTA {
 		}
 		this.restoreConsistency();
 		try {
-			logger.info("Writing abnormal pta to dot file");
-			toGraphvizFile(Paths.get("pta_abnormal.dot"), false);
+			final String fileName = "pta_abnormal" + newAnomalyType + ".dot";
+			logger.info("Writing abnormal pta to dot file {}", fileName);
+			toGraphvizFile(Paths.get("pta_abnormal" + newAnomalyType + ".dot"), false);
 		} catch (final IOException e) {
 			logger.error("unexpected exception while printing graphviz file", e);
 		}
@@ -419,6 +421,7 @@ public class TauPTA extends PDTTA {
 				final int result = consumer.applyAsInt(chosenState);
 				if (result < 0) {
 					// did not succeed to insert anomaly -> try again
+					logger.info("Was not possible to insert an anomalie on height {} for state {}. Trying again.", height, chosenState);
 					height--;
 				}
 			} else {
@@ -436,7 +439,7 @@ public class TauPTA extends PDTTA {
 		if (possibleTransitions.size() == 0) {
 			possibleTransitions = getTransitions(chosenState, true);
 			if (possibleTransitions.size() == 1) {
-				logger.warn("Chose state {} which is a leaf state. Continuing with next height in the tree", chosenState);
+				logger.warn("Chose state {} which is a leaf state for inserting a time anomaly.", chosenState);
 				return -1;
 			} else {
 				throw new IllegalStateException("Found state " + chosenState + " that has no transitions (not even stopping ones).");
@@ -549,20 +552,28 @@ public class TauPTA extends PDTTA {
 		AnomalyInsertionType anomalyType = getAnomalyType();
 		while (!choseFinalState) {
 			List<Transition> possibleTransitions = getTransitions(currentState, true);
+			double random = r.nextDouble();
+			double newProbSum = -1;
 			if (getAnomalyType() == AnomalyInsertionType.TYPE_TWO || getAnomalyType() == AnomalyInsertionType.TYPE_FOUR) {
 				// Filter out all transitions that do not belong to the sequential anomaly type and are no stopping transitions
 				// The TauPTA should have a field containing its anomaly type. So if the TauPTA is of anomaly type 2, then only transitions with anomaly type 2
 				// are allowed to be chosen.
 				possibleTransitions = possibleTransitions.stream()
 						.filter(t -> (t.getAnomalyInsertionType() == getAnomalyType() || t.isStopTraversingTransition())).collect(Collectors.toList());
+				// after that normalize s.t. the remaining transition probs sum up to one (or make the random value smaller)
+				newProbSum = possibleTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
+				if (!Precision.equals(newProbSum, 1)) {
+					logger.debug("New ProbSum={}, so decreasing random value from {} to {}", newProbSum, random, random * newProbSum);
+					random *= newProbSum;
+				}
 			}
 			// the most probable transition (with the highest probability) should be at index 0
 			// should be right in this way
 			Collections.sort(possibleTransitions, (t1, t2) -> -Double.compare(t1.getProbability(), t2.getProbability()));
 			if (possibleTransitions.size() <= 0) {
-				logger.error("There are no transitions for state {}. This is not possible.", currentState);
+				logger.error("There are no transitions for state {} with newProbSum={} and randomValue={}. This is not possible.", currentState, newProbSum,
+						random);
 			}
-			final double random = r.nextDouble();
 			double summedProbs = 0;
 			int index = -1;
 			for (int i = 0; i < possibleTransitions.size(); i++) {

@@ -14,7 +14,7 @@ import java.util.List;
 
 import jsat.DataSet;
 import jsat.classifiers.DataPoint;
-import jsat.clustering.DBSCAN;
+import jsat.clustering.MyDBSCAN;
 import jsat.linear.DenseVector;
 import jsat.linear.Vec;
 import jsat.linear.VecPaired;
@@ -33,7 +33,7 @@ import de.upb.timok.utils.DatasetTransformationUtils;
 public class DbScanClassifier extends NumericClassifier {
 	private static Logger logger = LoggerFactory.getLogger(DbScanClassifier.class);
 	DistanceMetric dm;
-	DBSCAN dbscan;
+	MyDBSCAN dbscan;
 	double eps;
 	int n;
 
@@ -49,7 +49,7 @@ public class DbScanClassifier extends NumericClassifier {
 		} else if (distanceMethod == DistanceMethod.MANHATTAN) {
 			dm = new ManhattanDistance();
 		}
-		dbscan = new DBSCAN(dm);
+		dbscan = new MyDBSCAN(dm);
 	}
 
 	private void cluster(List<double[]> data) {
@@ -64,7 +64,7 @@ public class DbScanClassifier extends NumericClassifier {
 
 		pointCats = new int[data.size()];
 		final DataSet dataSet = DatasetTransformationUtils.doublesToDataSet(data);
-		clusterResult = DBSCAN.createClusterListFromAssignmentArray(dbscan.cluster(dataSet, eps, n, pointCats), dataSet);
+		clusterResult = MyDBSCAN.createClusterListFromAssignmentArray(dbscan.cluster(dataSet, eps, n, pointCats), dataSet);
 		final int clusterCount = clusterResult.size();
 		logger.info("There are {} many clusters.", clusterCount);
 		int count = 0;
@@ -89,7 +89,7 @@ public class DbScanClassifier extends NumericClassifier {
 		for (final VecPaired<VecPaired<Vec, Integer>, Double> vecPaired : neighbours) {
 			final int dataSetIndex = vecPaired.getVector().getPair();
 			final Vec v = vecPaired.getVector().getVector();
-			if (pointCats[dataSetIndex] != DBSCAN.NOISE) {
+			if (pointCats[dataSetIndex] != MyDBSCAN.NOISE) {
 				if (isCorePoint(v)) {
 					return false;
 				}
@@ -106,7 +106,7 @@ public class DbScanClassifier extends NumericClassifier {
 		}
 		for (final VecPaired<VecPaired<Vec, Integer>, Double> vecPaired : neighbours) {
 			final int dataSetIndex = vecPaired.getVector().getPair();
-			if (pointCats[dataSetIndex] != DBSCAN.NOISE) {
+			if (pointCats[dataSetIndex] != MyDBSCAN.NOISE) {
 				nonNoisePoints++;
 			}
 		}
