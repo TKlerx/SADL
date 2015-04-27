@@ -10,8 +10,12 @@
  ******************************************************************************/
 package de.upb.timok.run;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -62,31 +66,28 @@ public class DataGenerator implements Serializable {
 		final List<TimedSequence> trainingTimedSequences = TimedSequence.parseTimedSequences(dataString, true, false);
 
 		final TauPTA pta = new TauPTA(trainingTimedSequences);
-		@SuppressWarnings("unused")
-		final TimedSequence s1 = pta.sampleSequence();
-		@SuppressWarnings("unused")
-		final TimedSequence s2 = pta.sampleSequence();
-		// logger.info("{}", s1);
-		// logger.info("{}", s2);
-		// pta.toGraphvizFile(Paths.get("pta.gv"), false);
-		// IoUtils.xmlSerialize(pta, Paths.get("pta.xml"));
-		// logger.info("{}", pta.getStates(0));
-		// logger.info("{}", pta.getStates(1));
-		// logger.info("{}", pta.getStates(2));
-		// logger.info("{}", pta.getStates(3));
-		// logger.info("{}", pta.getStates(4));
-
+		try(BufferedWriter br = Files.newBufferedWriter(Paths.get("normal_sequences"),StandardCharsets.UTF_8)){
+			logger.info("sampling normal sequences");
+			for (int i = 0; i < 10000000; i++) {
+				br.write(pta.sampleSequence().toLabeledString());
+				br.write('\n');
+			}
+		}
 		// for(final AnomalyInsertionType type : AnomalyInsertionType.values()){
 		for (final AnomalyInsertionType type : AnomalyInsertionType.values()) {
 			if(type != AnomalyInsertionType.NONE && type != AnomalyInsertionType.ALL){
 				final TauPTA anomaly1 = SerializationUtils.clone(pta);
-				logger.info("inserting Anomaly Type {}", type);
-				anomaly1.makeAbnormal(type);
-				for (int i = 0; i < 1000; i++) {
-					anomaly1.sampleSequence();
+				try(BufferedWriter br = Files.newBufferedWriter(Paths.get("abnormal_sequences_type_"+type.getTypeIndex()),StandardCharsets.UTF_8)){
+					logger.info("inserting Anomaly Type {}", type);
+					anomaly1.makeAbnormal(type);
+					for (int i = 0; i < 1000000; i++) {
+						br.write(anomaly1.sampleSequence().toLabeledString());
+						br.write('\n');
+					}
 				}
 			}
 		}
+
 
 		// TODO for smac change the input format s.t. it contains unlabeled train and labeled test set
 
