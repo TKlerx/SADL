@@ -1,7 +1,42 @@
+<!-- This file is part of PDTTA, a library for learning Probabilistic deterministic 
+	timed-transition Automata. Copyright (C) 2013-2015 Timo Klerx PDTTA is free 
+	software: you can redistribute it and/or modify it under the terms of the 
+	GNU General Public License as published by the Free Software Foundation, 
+	either version 3 of the License, or (at your option) any later version. PDTTA 
+	is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+	without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+	PURPOSE. See the GNU General Public License for more details. You should 
+	have received a copy of the GNU General Public License along with PDTTA. 
+	If not, see <http://www.gnu.org/licenses/>. -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>PDTTA-core</artifactId>
+	<licenses>
+		<license>
+			<name>gpl_v3</name>
+			<url>http://www.gnu.org/licenses</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+	<scm>
+		<url>https://github.com/TKlerx/SADL</url>
+		<connection>scm:git:git://github.com/TKlerx/SADL.git</connection>
+		<developerConnection>scm:git:git@github.TKlerx/SADL.git</developerConnection>
+	</scm>
+	<repositories>
+		<repository>
+			<id>SADL-mvn-repo</id>
+			<url>https://raw.github.com/TKlerx/SADL/mvn-repo/</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
 		<testSourceDirectory>test</testSourceDirectory>
@@ -15,6 +50,33 @@
 		</resources>
 		<plugins>
 			<plugin>
+				<groupId>com.mycila.maven-license-plugin</groupId>
+				<artifactId>maven-license-plugin</artifactId>
+				<version>1.7.0</version>
+				<configuration>
+					<quiet>false</quiet>
+					<header>conf/license-header.txt</header>
+					<includes>
+						<include>src/**</include>
+						<include>pom.xml</include>
+					</includes>
+					<excludes>
+						<exclude>**/.git/**</exclude>
+						<!-- ignore files produced during a build -->
+						<exclude>**/target/**</exclude>
+					</excludes>
+					<useDefaultExcludes>false</useDefaultExcludes>
+				</configuration>
+				<executions>
+					<execution>
+						<phase>process-sources</phase>
+						<goals>
+							<goal>format</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.1</version>
 				<configuration>
@@ -22,10 +84,11 @@
 					<target>1.8</target>
 					<excludes>
 						<exclude>**/SmacPipeline.java</exclude>
+						<exclude>**/WekaSvmClassifier.java</exclude>
 					</excludes>
 				</configuration>
-
 			</plugin>
+
 			<plugin>
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>2.4</version>
@@ -73,7 +136,66 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+				<artifactId>maven-deploy-plugin</artifactId>
+				<version>2.8.2</version>
+				<configuration>
+					<altDeploymentRepository>internal.repo::default::file://${project.build.directory}/mvn-repo</altDeploymentRepository>
+					<deployAtEnd>true</deployAtEnd>
+
+				</configuration>
+				<executions>
+					<execution>
+						<id>default-deploy</id>
+						<phase>deploy</phase>
+						<goals>
+							<goal>deploy</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
+		<pluginManagement>
+			<plugins>
+				<!--This plugin's configuration is used to store Eclipse m2e settings 
+					only. It has no influence on the Maven build itself. -->
+				<plugin>
+					<groupId>org.eclipse.m2e</groupId>
+					<artifactId>lifecycle-mapping</artifactId>
+					<version>1.0.0</version>
+					<configuration>
+						<lifecycleMappingMetadata>
+							<pluginExecutions>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>
+											com.mycila.maven-license-plugin
+										</groupId>
+										<artifactId>
+											maven-license-plugin
+										</artifactId>
+										<versionRange>
+											[1.7.0,)
+										</versionRange>
+										<goals>
+											<goal>format</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+							</pluginExecutions>
+						</lifecycleMappingMetadata>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-release-plugin</artifactId>
+					<version>2.5.1</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 	</build>
 	<dependencies>
 		<dependency>
@@ -124,7 +246,7 @@
 		<dependency>
 			<groupId>de.upb.timok</groupId>
 			<artifactId>JSAT</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<version>0.0.2-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>de.upb.timok</groupId>
@@ -135,13 +257,13 @@
 	<name>PDTTA</name>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<license.inceptionYear>2013</license.inceptionYear>
 	</properties>
-	<!-- 
-	<parent>
-		<groupId>de.upb.timok</groupId>
-		<artifactId>PDTTA</artifactId>
-		<version>0.1</version>
-	</parent> -->
+	<!-- <parent> <groupId>de.upb.timok</groupId> <artifactId>PDTTA</artifactId> 
+		<version>0.1</version> </parent> -->
 	<groupId>de.upb.timok</groupId>
 	<version>0.0.1-SNAPSHOT</version>
+	<organization>
+		<name>Timo Klerx</name>
+	</organization>
 </project>
