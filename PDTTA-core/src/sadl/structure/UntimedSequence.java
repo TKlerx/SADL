@@ -164,7 +164,6 @@ public class UntimedSequence implements Cloneable {
 	 * @param isRti
 	 *            set to true to skip first line
 	 * @param containsClassLabels
-	 * @return
 	 * @throws IOException
 	 */
 	public static List<TimedSequence> parseTimedSequences(String timedInputTrainFile, boolean isRti, boolean containsClassLabels) throws IOException {

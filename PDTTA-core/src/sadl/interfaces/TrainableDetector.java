@@ -10,10 +10,8 @@
  ******************************************************************************/
 package sadl.interfaces;
 
-import java.util.List;
-
-import sadl.structure.TimedSequence;
+import sadl.input.TimedInput;
 
 public interface TrainableDetector {
-	public void train(List<TimedSequence> trainingSequences);
+	public void train(TimedInput trainingInput);
 }

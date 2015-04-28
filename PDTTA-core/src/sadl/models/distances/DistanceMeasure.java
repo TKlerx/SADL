@@ -10,8 +10,8 @@
  ******************************************************************************/
 package sadl.models.distances;
 
-import sadl.structure.TimedSequence;
+import sadl.input.TimedWord;
 
 public interface DistanceMeasure {
-	double distanceBetween(TimedSequence s1, TimedSequence s2);
+	double distanceBetween(TimedWord s1, TimedWord s2);
 }

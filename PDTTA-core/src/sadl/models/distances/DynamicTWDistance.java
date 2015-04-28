@@ -10,13 +10,15 @@
  ******************************************************************************/
 package sadl.models.distances;
 
-import sadl.structure.TimedSequence;
+import sadl.input.TimedWord;
 
 public class DynamicTWDistance implements DistanceMeasure {
 
 	@Override
-	public double distanceBetween(TimedSequence s1, TimedSequence s2) {
+	public double distanceBetween(TimedWord s1, TimedWord s2) {
+		// TODO Auto-generated method stub
 		return 0;
 	}
+
 
 }

@@ -10,10 +10,8 @@
  ******************************************************************************/
 package sadl.interfaces;
 
-import java.util.List;
-
-import sadl.structure.TimedSequence;
+import sadl.input.TimedInput;
 
 public interface ModelLearner {
-	public Model train(List<TimedSequence> trainingSequences);
+	public Model train(TimedInput trainingSequences);
 }

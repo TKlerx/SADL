@@ -10,12 +10,11 @@
  ******************************************************************************/
 package sadl.interfaces;
 
-import java.util.List;
-
-import sadl.structure.TimedSequence;
+import sadl.input.TimedInput;
+import sadl.input.TimedWord;
 
 public interface AnomalyDetector {
-	boolean isAnomaly(Model model, TimedSequence s);
+	boolean isAnomaly(Model model, TimedWord s);
 
 	/**
 	 * 0 indicates normal sequence, 1 indicates abnormal sequence
@@ -23,9 +22,9 @@ public interface AnomalyDetector {
 	 * @param testSequences
 	 * @return
 	 */
-	boolean[] areAnomalies(Model model, List<TimedSequence> testSequences);
+	boolean[] areAnomalies(Model model, TimedInput testSequences);
 
-	boolean isAnomaly(TimedSequence s);
+	boolean isAnomaly(TimedWord s);
 
 	/**
 	 * 0 indicates normal sequence, 1 indicates abnormal sequence
@@ -33,7 +32,7 @@ public interface AnomalyDetector {
 	 * @param testSequences
 	 * @return
 	 */
-	boolean[] areAnomalies(List<TimedSequence> testSequences);
+	boolean[] areAnomalies(TimedInput testSequences);
 
 	void setModel(Model model);
 }

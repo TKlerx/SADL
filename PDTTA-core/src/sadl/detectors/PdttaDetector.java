@@ -28,11 +28,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sadl.constants.ProbabilityAggregationMethod;
+import sadl.input.TimedInput;
+import sadl.input.TimedWord;
 import sadl.interfaces.AnomalyDetector;
 import sadl.interfaces.Model;
 import sadl.models.PDTTA;
 import sadl.run.GenericSmacPipeline;
-import sadl.structure.TimedSequence;
 import sadl.structure.Transition;
 public abstract class PdttaDetector implements AnomalyDetector {
 	protected ProbabilityAggregationMethod aggType;
@@ -40,13 +41,13 @@ public abstract class PdttaDetector implements AnomalyDetector {
 
 	PDTTA model;
 	@Override
-	public boolean isAnomaly(Model newModel, TimedSequence s) {
+	public boolean isAnomaly(Model newModel, TimedWord s) {
 		setModel(newModel);
 		return isAnomaly(s);
 	}
 
 	@Override
-	public boolean[] areAnomalies(Model newModel, List<TimedSequence> testSequences) {
+	public boolean[] areAnomalies(Model newModel, TimedInput testSequences) {
 		setModel(newModel);
 		return areAnomalies(testSequences);
 
@@ -67,12 +68,10 @@ public abstract class PdttaDetector implements AnomalyDetector {
 	 * returns two double values for every timed sequence. The first value is the event likelihood, the second the time likelihood
 	 * 
 	 * @param testTimedSequences
-	 * @param transitionDistributions
-	 * @return
 	 */
-	public List<double[]> computeAggregatedLikelihoods(List<TimedSequence> testTimedSequences) {
+	public List<double[]> computeAggregatedLikelihoods(TimedInput testTimedSequences) {
 		final List<double[]> result = new ArrayList<>();
-		for (final TimedSequence ts : testTimedSequences) {
+		for (final TimedWord ts : testTimedSequences) {
 			final double eventProb = computeAggregatedEventLikelihood(ts);
 			final double timeProb = computeAggregatedTimeLikelihood(ts);
 			result.add(new double[] { eventProb, timeProb });
@@ -83,21 +82,18 @@ public abstract class PdttaDetector implements AnomalyDetector {
 	/**
 	 * returns two double values for every timed sequence. The first value is the event likelihood, the second the time likelihood
 	 * 
-	 * @param testTimedSequences
-	 * @param transitionDistributions
-	 * @return
 	 */
-	public double[] computeAggregatedLikelihood(TimedSequence testTimedSequence) {
+	public double[] computeAggregatedLikelihood(TimedWord testTimedSequence) {
 		final double eventProb = computeAggregatedEventLikelihood(testTimedSequence);
 		final double timeProb = computeAggregatedTimeLikelihood(testTimedSequence);
 		return new double[] { eventProb, timeProb };
 	}
 
-	protected TDoubleList computeTimeLikelihoods(TimedSequence ts) {
+	protected TDoubleList computeTimeLikelihoods(TimedWord ts) {
 		final TDoubleList list = new TDoubleArrayList();
 		int currentState = 0;
-		for (int i = 0; i < ts.getEvents().size(); i++) {
-			final Transition t = model.getTransition(currentState, ts.getEvents().get(i));
+		for (int i = 0; i < ts.length(); i++) {
+			final Transition t = model.getTransition(currentState, ts.getIntSymbol(i));
 			// DONE this is crap, isnt it? why not return an empty list or null iff there is no transition for the given sequence? or at least put a '0' in the
 			// last slot.
 			if (t == null) {
@@ -110,20 +106,20 @@ public abstract class PdttaDetector implements AnomalyDetector {
 				// + t);
 				list.add(0);
 			} else {
-				list.add(d.pdf(ts.getTimeValues().get(i)));
+				list.add(d.pdf(ts.getTimeValue(i)));
 			}
 			currentState = t.getToState();
 		}
 		return list;
 	}
 
-	public double computeAggregatedTimeLikelihood(TimedSequence ts) {
+	public double computeAggregatedTimeLikelihood(TimedWord ts) {
 		final TDoubleList list = computeTimeLikelihoods(ts);
 		return aggregate(list, aggType);
 	}
 
 	@Override
-	public boolean isAnomaly(TimedSequence s) {
+	public boolean isAnomaly(TimedWord s) {
 		final TDoubleList eventLikelihoods = computeEventLikelihoods(s);
 		final TDoubleList timeLikelihoods = computeTimeLikelihoods(s);
 		return decide(eventLikelihoods, timeLikelihoods);
@@ -139,7 +135,7 @@ public abstract class PdttaDetector implements AnomalyDetector {
 	protected abstract boolean decide(TDoubleList eventLikelihoods, TDoubleList timeLikelihoods);
 
 	@Override
-	public boolean[] areAnomalies(List<TimedSequence> testSequences) {
+	public boolean[] areAnomalies(TimedInput testSequences) {
 		if (GenericSmacPipeline.isDebug()) {
 			final Path testLabelFile = Paths.get("testLabels.csv");
 			try {
@@ -149,7 +145,7 @@ public abstract class PdttaDetector implements AnomalyDetector {
 				logger.error("Unexpected exception occured", e1);
 			}
 			try (BufferedWriter bw = Files.newBufferedWriter(testLabelFile, StandardCharsets.UTF_8)) {
-				for (final TimedSequence s : testSequences) {
+				for (final TimedWord s : testSequences) {
 					bw.append(s.getLabel().toString());
 					bw.append('\n');
 				}
@@ -159,7 +155,7 @@ public abstract class PdttaDetector implements AnomalyDetector {
 		}
 		final boolean[] result = new boolean[testSequences.size()];
 		for (int i = 0; i < testSequences.size(); i++) {
-			final TimedSequence s = testSequences.get(i);
+			final TimedWord s = testSequences.get(i);
 			result[i] = isAnomaly(s);
 		}
 		return result;
@@ -176,7 +172,7 @@ public abstract class PdttaDetector implements AnomalyDetector {
 	}
 
 
-	private double computeAggregatedEventLikelihood(TimedSequence s) {
+	private double computeAggregatedEventLikelihood(TimedWord s) {
 		final TDoubleList list = computeEventLikelihoods(s);
 		return aggregate(list, aggType);
 	}
@@ -187,12 +183,12 @@ public abstract class PdttaDetector implements AnomalyDetector {
 	 * @param aggType
 	 * @return the list up to the last probability that exists. list may be shorter than the events list, iff there is an event which has no transition
 	 */
-	protected TDoubleList computeEventLikelihoods(TimedSequence s) {
+	protected TDoubleList computeEventLikelihoods(TimedWord s) {
 
 		final TDoubleList list = new TDoubleArrayList();
 		int currentState = 0;
-		for (int i = 0; i < s.getEvents().size(); i++) {
-			final Transition t = model.getTransition(currentState, s.getEvents().get(i));
+		for (int i = 0; i < s.getLength(); i++) {
+			final Transition t = model.getTransition(currentState, s.getIntSymbol(i));
 			// DONE this is crap, isnt it? why not return an empty list or null iff there is no transition for the given sequence? or at least put a '0' in the
 			// last slot.
 			if (t == null) {

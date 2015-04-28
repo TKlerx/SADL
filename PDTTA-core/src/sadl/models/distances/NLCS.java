@@ -10,12 +10,12 @@
  ******************************************************************************/
 package sadl.models.distances;
 
-import sadl.structure.TimedSequence;
+import sadl.input.TimedWord;
 
 public class NLCS implements DistanceMeasure {
 
 	@Override
-	public double distanceBetween(TimedSequence s1, TimedSequence s2) {
+	public double distanceBetween(TimedWord s1, TimedWord s2) {
 		if ((s1 == null) || (s2 == null) || (s1.length() == 0)
 				|| ((s2.length() == 0))) {
 			return 0;
@@ -26,13 +26,13 @@ public class NLCS implements DistanceMeasure {
 		}
 
 		int maxLen = 0;
-		int fl = s1.length();
-		int sl = s2.length();
-		int[][] table = new int[fl + 1][sl + 1];
+		final int fl = s1.length();
+		final int sl = s2.length();
+		final int[][] table = new int[fl + 1][sl + 1];
 
 		for (int i = 1; i <= fl; i++) {
 			for (int j = 1; j <= sl; j++) {
-				if (s1.getEvent(i - 1) == s2.getEvent(j - 1)) {
+				if (s1.getSymbol(i - 1) == s2.getSymbol(j - 1)) {
 					if ((i == 1) || (j == 1)) {
 						table[i][j] = 1;
 					} else {
@@ -44,7 +44,7 @@ public class NLCS implements DistanceMeasure {
 				}
 			}
 		}
-		double result = maxLen / (double) s1.length();
+		final double result = maxLen / (double) s1.length();
 		return result;
 	}
 

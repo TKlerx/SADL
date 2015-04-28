@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.ClassLabel;
 
-
+@Deprecated
 public class TimedSequence {
 	//TODO include the anomalyType in input (reading from line) and output (to line)
 	// this may be needed for a mixed test set to know which anomalies are well detected

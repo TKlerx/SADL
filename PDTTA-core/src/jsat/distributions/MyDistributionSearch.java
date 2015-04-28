@@ -152,7 +152,6 @@ public class MyDistributionSearch extends DistributionSearch
 	/**
 	 * True iff there are only identical values in the vector
 	 * @param v
-	 * @return
 	 */
 	public static Pair<Boolean, Double> checkForDifferentValues(Vec v) {
 		final double value = v.get(0);
@@ -168,7 +167,6 @@ public class MyDistributionSearch extends DistributionSearch
 	 * search for all possible distributions and maybe also for a KDE. Does not compare bestProb to cutoff
 	 * @param v
 	 * @param includeKDE
-	 * @return
 	 */
 	public static Distribution getBestDistribution(Vec v, boolean includeKDE) {
 		if(!includeKDE){

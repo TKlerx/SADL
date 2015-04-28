@@ -17,9 +17,10 @@ import java.util.List;
 
 import sadl.constants.ProbabilityAggregationMethod;
 import sadl.detectors.featureCreators.FeatureCreator;
+import sadl.input.TimedInput;
+import sadl.input.TimedWord;
 import sadl.interfaces.TrainableDetector;
 import sadl.oneclassclassifier.OneClassClassifier;
-import sadl.structure.TimedSequence;
 
 public class PdttaVectorDetector extends PdttaDetector implements TrainableDetector {
 
@@ -39,9 +40,9 @@ public class PdttaVectorDetector extends PdttaDetector implements TrainableDetec
 	}
 
 	@Override
-	public void train(List<TimedSequence> trainingSequences) {
-		final List<double[]> trainingSet = new ArrayList<>(trainingSequences.size());
-		for (final TimedSequence s : trainingSequences) {
+	public void train(TimedInput trainingInput) {
+		final List<double[]> trainingSet = new ArrayList<>(trainingInput.size());
+		for (final TimedWord s : trainingInput) {
 			final TDoubleList eventLikelihoods = computeEventLikelihoods(s);
 			final TDoubleList timeLikelihoods = computeTimeLikelihoods(s);
 			trainingSet.add(fc.createFeatures(eventLikelihoods, timeLikelihoods, aggType));

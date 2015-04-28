@@ -22,9 +22,6 @@ import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TObjectDoubleHashMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -51,7 +48,9 @@ import org.slf4j.LoggerFactory;
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.ClassLabel;
 import sadl.detectors.PdttaDetector;
-import sadl.structure.TimedSequence;
+import sadl.input.TimedInput;
+import sadl.input.TimedIntWord;
+import sadl.input.TimedWord;
 import sadl.structure.Transition;
 import sadl.structure.UntimedSequence;
 import sadl.structure.ZeroProbTransition;
@@ -94,12 +93,13 @@ public class TauPTA extends PDTTA {
 
 	}
 
-	public TauPTA(List<TimedSequence> trainingSequences) {
+	public TauPTA(TimedInput trainingSequences) {
 		super();
+		trainingSequences.toTimedIntWords();
 		final TauPTA initialPta = new TauPTA();
 		initialPta.addState(START_STATE);
 
-		for (final TimedSequence s : trainingSequences) {
+		for (final TimedWord s : trainingSequences) {
 			initialPta.addEventSequence(s);
 		}
 
@@ -134,7 +134,7 @@ public class TauPTA extends PDTTA {
 		// do not remove any sequences because they should occur more often than the specified threshold
 		addState(START_STATE);
 
-		for (final TimedSequence s : trainingSequences) {
+		for (final TimedWord s : trainingSequences) {
 			if (initialPta.isInAutomaton(s)) {
 				addEventSequence(s);
 			}
@@ -156,11 +156,11 @@ public class TauPTA extends PDTTA {
 
 		// compute time probabilities
 		final Map<ZeroProbTransition, TDoubleList> timeValueBuckets = new HashMap<>();
-		for (final TimedSequence s : trainingSequences) {
+		for (final TimedWord s : trainingSequences) {
 			if (isInAutomaton(s)) {
 				int currentState = START_STATE;
 				for (int i = 0; i < s.length(); i++) {
-					final int nextEvent = s.getEvent(i);
+					final int nextEvent = s.getIntSymbol(i);
 					final Transition t = getTransition(currentState, nextEvent);
 					if (t == null) {
 						// this should never happen!
@@ -188,11 +188,6 @@ public class TauPTA extends PDTTA {
 			throw new IllegalStateException("It is not possible to more/less distributions than transitions (" + distributions.size() + "/"
 					+ transitions.size() + ").");
 			// compute what is missing in the distribution set
-		}
-		try {
-			toGraphvizFile(Paths.get("pta.dot"), false);
-		} catch (final IOException e) {
-			logger.error("unexpected exception while printing graphviz file", e);
 		}
 	}
 
@@ -230,11 +225,11 @@ public class TauPTA extends PDTTA {
 		}
 	}
 
-	private void addEventSequence(TimedSequence s) {
+	private void addEventSequence(TimedWord s) {
 		int currentState = START_STATE;
 
 		for (int i = 0; i < s.length(); i++) {
-			final int nextEvent = s.getEvent(i);
+			final int nextEvent = s.getIntSymbol(i);
 			Transition t = getTransition(currentState, nextEvent);
 			if (t == null) {
 				t = addTransition(currentState, getStateCount(), nextEvent, NO_TRANSITION_PROBABILITY);
@@ -295,16 +290,6 @@ public class TauPTA extends PDTTA {
 			throw new IllegalArgumentException("the AnomalyInsertionType " + newAnomalyType + " is not supported.");
 		}
 		this.restoreConsistency();
-		try {
-			final Path p = Paths.get("pta_abnormal" + newAnomalyType + ".dot");
-			logger.info("Writing abnormal pta to dot file {}", p);
-			toGraphvizFile(p, false);
-			if (System.getProperty("os.name").toLowerCase().contains("linux")) {
-				Runtime.getRuntime().exec("dot -Tpdf -O " + p.toString());
-			}
-		} catch (final IOException e) {
-			logger.error("unexpected exception while printing graphviz file", e);
-		}
 	}
 
 	private void insertSequentialAnomaly(IntUnaryOperator f) {
@@ -417,7 +402,7 @@ public class TauPTA extends PDTTA {
 	}
 
 	private void insertPerLevelAnomaly(IntUnaryOperator consumer) {
-		for (int height = 0; height < getTreeHeight(); height++) {
+		for (int height = 1; height < getTreeHeight(); height++) {
 			final TIntList states = getStates(height);
 			if (states.size() > 0) {
 				final int chosenState = states.get(r.nextInt(states.size()));
@@ -454,8 +439,7 @@ public class TauPTA extends PDTTA {
 		final Distribution d = removeTransition(chosenTransition);
 
 		final Transition newTransition = addAbnormalTransition(chosenTransition.getFromState(), chosenTransition.getToState(), chosenTransition.getSymbol(),
-				chosenTransition.getProbability(),
-				AnomalyInsertionType.TYPE_THREE);
+				chosenTransition.getProbability(), AnomalyInsertionType.TYPE_THREE);
 		bindTransitionDistribution(newTransition.toZeroProbTransition(), d);
 		return 0;
 	}
@@ -470,8 +454,9 @@ public class TauPTA extends PDTTA {
 			addFinalState(chosenState, probability);
 			// now fix probs that they sum up to one
 			fixProbability(chosenState);
+			return 0;
 		}
-		return 0;
+		return -1;
 	}
 
 	private int changeTransitionEvent(int chosenState) {
@@ -499,7 +484,6 @@ public class TauPTA extends PDTTA {
 	/**
 	 * returns the maximum tree height
 	 * 
-	 * @return
 	 */
 	public int getTreeHeight() {
 		return getTreeHeight(0, 0);
@@ -522,7 +506,6 @@ public class TauPTA extends PDTTA {
 	 * returns all the states on the given tree height / tree level
 	 * 
 	 * @param treeHeight
-	 * @return
 	 */
 	public TIntList getStates(int treeHeight) {
 		return getStates(treeHeight, 0, 0);
@@ -542,7 +525,7 @@ public class TauPTA extends PDTTA {
 	}
 
 	@Override
-	public TimedSequence sampleSequence() {
+	public TimedWord sampleSequence() {
 		if (getAnomalyType() == AnomalyInsertionType.NONE) {
 			return super.sampleSequence();
 		}
@@ -550,10 +533,10 @@ public class TauPTA extends PDTTA {
 		int currentState = START_STATE;
 
 		final TIntList eventList = new TIntArrayList();
-		final TDoubleList timeList = new TDoubleArrayList();
+		final TIntList timeList = new TIntArrayList();
 		boolean choseFinalState = false;
 		@SuppressWarnings("hiding")
-		AnomalyInsertionType anomalyType = getAnomalyType();
+		AnomalyInsertionType anomalyType = AnomalyInsertionType.NONE;
 		while (!choseFinalState) {
 			List<Transition> possibleTransitions = getTransitions(currentState, true);
 			double random = r.nextDouble();
@@ -592,7 +575,7 @@ public class TauPTA extends PDTTA {
 			}
 			final Transition chosenTransition = possibleTransitions.get(index);
 			if (chosenTransition.isAbnormal()) {
-				if (anomalyType != chosenTransition.getAnomalyInsertionType()) {
+				if (getAnomalyType() != chosenTransition.getAnomalyInsertionType()) {
 					// This is a conflict because the anomalyType was already set to anomaly. This should never happen!
 					throw new IllegalStateException("Two anomalies are mixed in this special case. This should never happen.");
 				}
@@ -612,7 +595,7 @@ public class TauPTA extends PDTTA {
 					// the training data.
 					throw new IllegalStateException("This should never happen for transition " + chosenTransition);
 				}
-				double timeValue = d.sample(1, r)[0];
+				int timeValue = (int) d.sample(1, r)[0];
 				if (anomalyType == AnomalyInsertionType.TYPE_THREE) {
 					timeValue = changeTimeValue(timeValue, ANOMALY_3_CHANGE_RATE);
 				} else if (anomalyType == AnomalyInsertionType.TYPE_FOUR) {
@@ -623,17 +606,17 @@ public class TauPTA extends PDTTA {
 			}
 		}
 		if (anomalyType != AnomalyInsertionType.NONE) {
-			return new TimedSequence(eventList, timeList, ClassLabel.ANOMALY, anomalyType);
+			return new TimedIntWord(eventList, timeList, ClassLabel.ANOMALY);
 		} else {
-			return new TimedSequence(eventList, timeList, ClassLabel.NORMAL);
+			return new TimedIntWord(eventList, timeList, ClassLabel.NORMAL);
 		}
 	}
 
-	private double changeTimeValue(double value, double factor) {
+	private int changeTimeValue(int value, double factor) {
 		if (r.nextBoolean()) {
-			return value * -factor;
+			return (int) (value * -factor);
 		} else {
-			return value * factor;
+			return (int) (value * factor);
 		}
 	}
 

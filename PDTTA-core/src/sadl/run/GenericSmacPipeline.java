@@ -57,6 +57,8 @@ import sadl.detectors.featureCreators.SmallFeatureCreator;
 import sadl.detectors.threshold.PdttaAggregatedThresholdDetector;
 import sadl.detectors.threshold.PdttaFullThresholdDetector;
 import sadl.experiments.PdttaExperimentResult;
+import sadl.input.TimedInput;
+import sadl.input.TimedWord;
 import sadl.interfaces.Model;
 import sadl.interfaces.ModelLearner;
 import sadl.interfaces.TrainableDetector;
@@ -265,11 +267,11 @@ public class GenericSmacPipeline implements Serializable {
 		splitTrainTestFile(dataString, timedInputTrainFile, timedInputTestFile, TRAIN_PERCENTAGE, TEST_PERCENTAGE, ANOMALY_PERCENTAGE,
 				false);
 		// parse timed sequences
-		final List<TimedSequence> trainingTimedSequences = TimedSequence.parseTimedSequences(timedInputTrainFile, false, false);
-
+		// final List<TimedSequence> trainingTimedSequences = TimedSequence.parseTimedSequences(timedInputTrainFile, false, false);
+		final TimedInput trainingInput = TimedInput.parseAlt(Paths.get(timedInputTrainFile), 0);
 		final ModelLearner learner = new PdttaLeaner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0);
 
-		final Model model = learner.train(trainingTimedSequences);
+		final Model model = learner.train(trainingInput);
 		PDTTA automaton;
 		if (model instanceof PDTTA) {
 			automaton = (PDTTA) model;
@@ -278,7 +280,7 @@ public class GenericSmacPipeline implements Serializable {
 		}
 		if (pdttaDetector instanceof TrainableDetector) {
 			pdttaDetector.setModel(automaton);
-			((TrainableDetector) pdttaDetector).train(trainingTimedSequences);
+			((TrainableDetector) pdttaDetector).train(trainingInput);
 		}
 		// TODO change this s.t. the train and test set are in one file!
 		// then the test set is not generated on the fly anymore
@@ -286,8 +288,8 @@ public class GenericSmacPipeline implements Serializable {
 
 		//
 		// compute likelihood on test set for automaton and for time PDFs
-		final List<TimedSequence> testTimedSequences = TimedSequence.parseTimedSequences(timedInputTestFile, false, true);
-
+		// final List<TimedSequence> testTimedSequences = TimedSequence.parseTimedSequences(timedInputTestFile, false, true);
+		final TimedInput testInput = TimedInput.parseAlt(Paths.get(timedInputTestFile), 0);
 		// XXX here was the anomaly creation before it was deleted
 		// if (anomalyInsertionType == AnomalyInsertionType.TYPE_TWO || anomalyInsertionType == AnomalyInsertionType.ALL) {
 		// for (int i = 0; i < testTimedSequences.size(); i++) {
@@ -310,7 +312,7 @@ public class GenericSmacPipeline implements Serializable {
 		// }
 		// }
 
-		final PdttaExperimentResult result = testPdtta(testTimedSequences, automaton);
+		final PdttaExperimentResult result = testPdtta(testInput, automaton);
 		logger.info("F-Measure={}", result.getfMeasure());
 		System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - result.getfMeasure()) + ", 0");
 		// IoUtils.xmlSerialize(automaton, Paths.get("pdtta.xml"));
@@ -456,7 +458,7 @@ public class GenericSmacPipeline implements Serializable {
 		writer.append('\n');
 	}
 
-	private PdttaExperimentResult testPdtta(List<TimedSequence> testTimedSequences, PDTTA automaton) throws IOException {
+	private PdttaExperimentResult testPdtta(TimedInput testTimedSequences, PDTTA automaton) throws IOException {
 		// TODO put this in an evaluation class
 		logger.info("Testing with {} sequences", testTimedSequences.size());
 		pdttaDetector.setModel(automaton);
@@ -472,7 +474,7 @@ public class GenericSmacPipeline implements Serializable {
 		// The recall is the ratio between detected anomalies and all anomalies
 
 		for (int i = 0; i < testTimedSequences.size(); i++) {
-			final TimedSequence s = testTimedSequences.get(i);
+			final TimedWord s = testTimedSequences.get(i);
 			if (s.getLabel() == ClassLabel.NORMAL) {
 				if (detectorResult[i]) {
 					// detector said anomaly
