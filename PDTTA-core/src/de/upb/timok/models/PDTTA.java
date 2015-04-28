@@ -205,7 +205,7 @@ public class PDTTA implements AutomatonModel, Serializable {
 	}
 
 	public void toGraphvizFile(Path graphvizResult, boolean compressed) throws IOException {
-		// TODO make type 5 states red
+		// TODO make type 5 states red and insert 5 into the state
 		final BufferedWriter writer = Files.newBufferedWriter(graphvizResult, StandardCharsets.UTF_8);
 		writer.write("digraph G {\n");
 		// start states
