@@ -32,7 +32,7 @@ import sadl.constants.ClassLabel;
 
 public class TimedSequence {
 	//TODO include the anomalyType in input (reading from line) and output (to line)
-	// this may be needed for a mixed test set to know which anomalies are well detected 
+	// this may be needed for a mixed test set to know which anomalies are well detected
 	private static Logger logger = LoggerFactory.getLogger(TimedSequence.class);
 
 	private TIntList events = new TIntArrayList();
@@ -55,7 +55,7 @@ public class TimedSequence {
 	public TimedSequence(TIntList events, TDoubleList timeValues, ClassLabel label) {
 		this(events, timeValues,label, label == ClassLabel.ANOMALY? AnomalyInsertionType.ALL:AnomalyInsertionType.NONE);
 	}
-	
+
 	public TimedSequence(TIntList events, TDoubleList timeValues, ClassLabel label, AnomalyInsertionType anomalyType) {
 		super();
 		this.events = events;
@@ -162,7 +162,7 @@ public class TimedSequence {
 	}
 
 	public String toLabeledString() {
-		return toTrebaString() + ";" + label.getClassLabel();
+		return toTrebaString() + ":" + label.getClassLabel();
 	}
 
 	@Override

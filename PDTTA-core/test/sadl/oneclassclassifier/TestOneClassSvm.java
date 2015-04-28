@@ -18,14 +18,13 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import sadl.constants.ScalingMethod;
-import sadl.oneclassclassifier.LibSvmClassifier;
-import sadl.utils.Normalizer;
 import libsvm.svm;
 import libsvm.svm_model;
 import libsvm.svm_node;
 import libsvm.svm_parameter;
 import libsvm.svm_problem;
+import sadl.constants.ScalingMethod;
+import sadl.utils.Normalizer;
 
 public class TestOneClassSvm {
 	public static final int TRAIN_SIZE = 1000;
@@ -38,7 +37,6 @@ public class TestOneClassSvm {
 	 * 
 	 * @param args
 	 */
-	@SuppressWarnings("deprecation")
 	public static void main(final String[] args) {
 		// feature should be at index 0
 		final TestOneClassSvm tester = new TestOneClassSvm();
