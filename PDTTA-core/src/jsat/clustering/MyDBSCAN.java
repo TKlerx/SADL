@@ -1,12 +1,12 @@
 /**
- * This file is part of PDTTA, a library for learning Probabilistic deterministic timed-transition Automata.
- * Copyright (C) 2013-2015  Timo Klerx
+ * This file is part of SADL, a library for learning Probabilistic deterministic timed-transition Automata.
+ * Copyright (C) 2013-2015  the original author or authors.
  *
- * PDTTA is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
- * PDTTA is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ * SADL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with PDTTA.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package jsat.clustering;
@@ -46,6 +46,7 @@ import jsat.utils.SystemInfo;
  * A density-based algorithm for discovering clusters in large spatial databases with noise (1996) by Martin Ester , Hans-peter Kriegel , Jörg S , Xiaowei Xu
  * 
  * @author Edward Raff
+ * @author Timo Klerx
  */
 public class MyDBSCAN extends ClustererBase {
 
