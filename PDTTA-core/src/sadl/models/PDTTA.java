@@ -33,6 +33,7 @@ import java.util.Set;
 
 import jsat.distributions.Distribution;
 
+import org.apache.commons.math3.fraction.Fraction;
 import org.apache.commons.math3.util.Precision;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -137,8 +138,22 @@ public class PDTTA implements AutomatonModel, Serializable {
 			final double newSum = outgoingTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
 			logger.info("Corrected sum of transition probabilities is {}", newSum);
 			if (!Precision.equals(newSum, 1.0)) {
-				//TODO instead try first with apache commons math fraction/bigfraction and if they still do not sum up to one, throw an exception
-				throw new IllegalStateException("Probabilities do not sum up to one, but instead to " + newSum);
+				logger.info("Probabilities do not sum up to one, so doing it again with the Fraction class");
+				final List<Fraction> probabilities = new ArrayList<>(outgoingTransitions.size());
+				for (int i = 0; i < outgoingTransitions.size(); i++) {
+					probabilities.add(i, new Fraction(outgoingTransitions.get(i).getProbability()));
+				}
+				Fraction fracSum = Fraction.ZERO;
+				for (final Fraction f : probabilities) {
+					fracSum = fracSum.add(f);
+				}
+				for (int i = 0; i < outgoingTransitions.size(); i++) {
+					outgoingTransitions.get(i).setProbability(probabilities.get(i).divide(fracSum).doubleValue());
+				}
+				final double tempSum = outgoingTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
+				if (!Precision.equals(tempSum, 1.0)) {
+					throw new IllegalStateException("Probabilities do not sum up to one, but instead to " + tempSum);
+				}
 			}
 		}
 		return true;

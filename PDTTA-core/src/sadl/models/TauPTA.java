@@ -21,6 +21,8 @@ import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TObjectDoubleHashMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,7 +33,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
+import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
 import jsat.distributions.Distribution;
@@ -276,16 +280,16 @@ public class TauPTA extends PDTTA {
 		setAnomalyType(newAnomalyType);
 		if (anomalyType == AnomalyInsertionType.TYPE_ONE) {
 			logger.debug("TransitionCount before inserting {} anomalies={}", anomalyType, transitions.size());
-			insertPerLevelAnomaly(this::changeTransitionEvent);
+			insertPerLevelAnomaly(this::computeTransitionCandicatesType13, this::changeTransitionEvent);
 			logger.debug("TransitionCount after inserting {} anomalies={}", anomalyType, transitions.size());
 		} else if (anomalyType == AnomalyInsertionType.TYPE_TWO) {
 			insertSequentialAnomaly(this::insertAnomaly2);
 		} else if (anomalyType == AnomalyInsertionType.TYPE_THREE) {
-			insertPerLevelAnomaly(this::changeTimeProbability);
+			insertPerLevelAnomaly(this::computeTransitionCandicatesType13, this::changeTimeProbability);
 		} else if (anomalyType == AnomalyInsertionType.TYPE_FOUR) {
 			insertSequentialAnomaly(this::insertAnomaly4);
 		} else if (anomalyType == AnomalyInsertionType.TYPE_FIVE) {
-			insertPerLevelAnomaly(this::addFinalStateProbability);
+			insertPerLevelAnomaly(this::computeTransitionCandicatesType5, this::addFinalStateProbability);
 		} else {
 			throw new IllegalArgumentException("the AnomalyInsertionType " + newAnomalyType + " is not supported.");
 		}
@@ -334,7 +338,6 @@ public class TauPTA extends PDTTA {
 			bindTransitionDistribution(newTransition, d);
 		}
 	}
-
 
 	private TObjectDoubleMap<UntimedSequence> computeEventProbabilities(Set<UntimedSequence> allSequences) {
 		final TObjectDoubleMap<UntimedSequence> result = new TObjectDoubleHashMap<>();
@@ -401,14 +404,125 @@ public class TauPTA extends PDTTA {
 		return -i;
 	}
 
+	private void insertPerLevelAnomaly(IntFunction<List<Transition>> possibleTransitionFunction, ToIntFunction<List<Transition>> insertAnomaly) {
+		for (int height = 0; height < getTreeHeight(); height++) {
+			final TIntList states = getStates(height);
+			final List<Transition> allLevelTransitions = new ArrayList<>();
+			for (int i = 0; i < states.size(); i++) {
+				allLevelTransitions.addAll(getTransitions(states.get(i), true));
+			}
+			int result = 0;
+			final List<Transition> possibleTransitions = possibleTransitionFunction.apply(height);
+			if (possibleTransitions.size() > 0) {
+				result = insertAnomaly.applyAsInt(possibleTransitions);
+			}
+			if (possibleTransitions.size() == 0 || result != 1) {
+				logger.warn("It is not possible to insert anomalies on height {}", height);
+			}
+		}
+	}
+
+	private int changeTimeProbability(List<Transition> possibleTransitions) {
+		if (possibleTransitions.size() == 0) {
+			logger.warn("Chose states on which are leaf states. Inserting a anomalies is not possible.");
+			return -1;
+		}
+		final Transition chosenTransition = chooseRandomObject(possibleTransitions, r);
+		final Distribution d = removeTransition(chosenTransition);
+		final Transition newTransition = addAbnormalTransition(chosenTransition.getFromState(), chosenTransition.getToState(), chosenTransition.getSymbol(),
+				chosenTransition.getProbability(), AnomalyInsertionType.TYPE_THREE);
+		bindTransitionDistribution(newTransition.toZeroProbTransition(), d);
+		return 1;
+	}
+
+	private int addFinalStateProbability(List<Transition> possibleTransitions) {
+		if (possibleTransitions.size() == 0) {
+			logger.warn("Chose states which do not have . Inserting a time anomaly is not possible.Transitions:{}", possibleTransitions);
+			return -1;
+		}
+		// only add if there was no final state transition before
+		// restore probability sum afterwards
+		final Transition t = chooseRandomObject(possibleTransitions, r);
+		// only do so if there is no stopping transition in the possibleTransitions
+		final double probability = r.nextDouble() * MAX_TYPE_FIVE_PROBABILITY;
+		addFinalState(t.getFromState(), probability);
+		// now fix probs that they sum up to one
+		fixProbability(t.getFromState());
+		return 1;
+	}
+
+	private List<Transition> computeTransitionCandicatesType5(int height) {
+		final List<Transition> result = new ArrayList<>();
+		final TIntList states = getStates(height);
+		for (int i = 0; i < states.size(); i++) {
+			final int state = states.get(i);
+			final List<Transition> possibleTransitions = getTransitions(state, true);
+			if (!possibleTransitions.stream().anyMatch(t -> t.isStopTraversingTransition() && t.getProbability() > 0)) {
+				// just add one transition which contains the state
+				result.add(possibleTransitions.get(0));
+			}
+		}
+		if (result.size() == 0) {
+			logger.warn("Chose states on height {} which all have final states. Inserting a stopping anomaly is not possible.", height);
+		}
+		return result;
+	}
+
+	private List<Transition> computeTransitionCandicatesType13(int height) {
+		final List<Transition> result = new ArrayList<>();
+		final TIntList states = getStates(height);
+		for (int i = 0; i < states.size(); i++) {
+			final int state = states.get(i);
+			final List<Transition> possibleTransitions = getTransitions(state, false);
+			result.addAll(possibleTransitions);
+		}
+		if (result.size() == 0) {
+			logger.warn("Chose states on height {} which are leaf states. Inserting a anomalies is not possible.", height);
+		}
+		if (result.size() == 1) {
+			return Collections.EMPTY_LIST;
+		}
+		return result;
+	}
+
+	private int isStoppingAnomalyPossible(List<Transition> allLevelTransitions) {
+		return !allLevelTransitions.stream().anyMatch(t -> t.isStopTraversingTransition() && t.getProbability() > 0) ? 1 : 0;
+	}
+
+	private int changeTransitionEvent(List<Transition> possibleTransitions) {
+		final TIntSet currentStates = new TIntHashSet(possibleTransitions.stream().mapToInt(t -> t.getFromState()).distinct().toArray());
+		while (currentStates.size() > 0) {
+			final Transition chosenTransition = chooseRandomObject(possibleTransitions, r);
+			final int chosenState = chosenTransition.getFromState();
+			final List<Transition> stateTransitions = possibleTransitions.stream().filter(t -> t.getFromState() == chosenState).collect(Collectors.toList());
+			final TIntList notOccuringEvents = new TIntArrayList(alphabet);
+			for (final Transition t : stateTransitions) {
+				notOccuringEvents.remove(t.getSymbol());
+			}
+			if (notOccuringEvents.size() == 0 || stateTransitions.size() == 0) {
+				logger.warn("Not possible to change an event in state {}", chosenState);
+				currentStates.remove(chosenState);
+				continue;
+			} else {
+				final int chosenEvent = notOccuringEvents.get(r.nextInt(notOccuringEvents.size()));
+				final Distribution d = removeTransition(chosenTransition);
+				final Transition newTransition = addAbnormalTransition(chosenTransition.getFromState(), chosenTransition.getToState(), chosenEvent,
+						chosenTransition.getProbability(), AnomalyInsertionType.TYPE_ONE);
+				bindTransitionDistribution(newTransition.toZeroProbTransition(), d);
+				return 1;
+			}
+		}
+		return 0;
+	}
+
 	private void insertPerLevelAnomaly(IntUnaryOperator consumer) {
-		for (int height = 1; height < getTreeHeight(); height++) {
+		for (int height = 0; height < getTreeHeight(); height++) {
 			final TIntList states = getStates(height);
 			if (states.size() > 0) {
 				final int chosenState = states.get(r.nextInt(states.size()));
 				logger.debug("Inserting per level anomaly of type {} on height {} for state {}", anomalyType.getTypeIndex(), height, chosenState);
 				final int result = consumer.applyAsInt(chosenState);
-				if (result < 0) {
+				if (result != 1) {
 					// did not succeed to insert anomaly -> try again
 					logger.info("Was not possible to insert an anomalie on height {} for state {}. Trying again.", height, chosenState);
 					height--;
@@ -417,6 +531,17 @@ public class TauPTA extends PDTTA {
 				logger.warn("There are 0 states on level={}", height);
 			}
 		}
+	}
+
+	private boolean newFinalStatePossible(TIntList states) {
+		for (int i = 0; i < states.size(); i++) {
+			final int state = states.get(i);
+			final List<Transition> possibleTransitions = getTransitions(state, true);
+			if (!possibleTransitions.stream().anyMatch(t -> t.isStopTraversingTransition() && t.getProbability() > 0)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public static <T> T chooseRandomObject(List<T> list, Random rnd) {
@@ -441,7 +566,7 @@ public class TauPTA extends PDTTA {
 		final Transition newTransition = addAbnormalTransition(chosenTransition.getFromState(), chosenTransition.getToState(), chosenTransition.getSymbol(),
 				chosenTransition.getProbability(), AnomalyInsertionType.TYPE_THREE);
 		bindTransitionDistribution(newTransition.toZeroProbTransition(), d);
-		return 0;
+		return 1;
 	}
 
 	private int addFinalStateProbability(int chosenState) {
@@ -449,16 +574,18 @@ public class TauPTA extends PDTTA {
 		// restore probability sum afterwards
 		final List<Transition> possibleTransitions = getTransitions(chosenState, true);
 		// only do so if there is no stopping transition in the possibleTransitions
-		if (!possibleTransitions.stream().anyMatch(t -> t.isStopTraversingTransition())) {
+		if (!possibleTransitions.stream().anyMatch(t -> t.isStopTraversingTransition() && t.getProbability() > 0)) {
 			final double probability = r.nextDouble() * MAX_TYPE_FIVE_PROBABILITY;
 			addFinalState(chosenState, probability);
 			// now fix probs that they sum up to one
 			fixProbability(chosenState);
-			return 0;
+			return 1;
 		}
 		return -1;
 	}
 
+	// TODO change inserting of event anomalies for type 1, 3, 5 to only do so if there are states on this height level that are normal! Therefore the methods
+	// need the states on the level and the height as input
 	private int changeTransitionEvent(int chosenState) {
 		final List<Transition> possibleTransitions = getTransitions(chosenState, false);
 		final TIntList notOccuringEvents = new TIntArrayList(alphabet);
@@ -475,10 +602,9 @@ public class TauPTA extends PDTTA {
 		final int chosenEvent = notOccuringEvents.get(r.nextInt(notOccuringEvents.size()));
 		final Distribution d = removeTransition(chosenTransition);
 		final Transition newTransition = addAbnormalTransition(chosenTransition.getFromState(), chosenTransition.getToState(), chosenEvent,
-				chosenTransition.getProbability(),
-				AnomalyInsertionType.TYPE_ONE);
+				chosenTransition.getProbability(), AnomalyInsertionType.TYPE_ONE);
 		bindTransitionDistribution(newTransition.toZeroProbTransition(), d);
-		return 0;
+		return 1;
 	}
 
 	/**
