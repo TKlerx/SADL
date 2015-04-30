@@ -148,6 +148,7 @@ public class TimedInput implements Iterable<TimedWord> {
 	private TimedInput(Path input, int lineOffset, String seqPrefix, String seqPostfix, String pairSep, String valueSep, String classSep)
 			throws IOException {
 		if (Files.notExists(input)) {
+			logger.warn("File {} was not found.", input);
 			throw new FileNotFoundException("input file on path " + input.toAbsolutePath() + " was not found");
 		}
 		try (BufferedReader br = Files.newBufferedReader(input)) {
