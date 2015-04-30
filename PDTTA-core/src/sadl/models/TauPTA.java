@@ -81,6 +81,34 @@ public class TauPTA extends PDTTA {
 	private static final double ANOMALY_4_CHANGE_RATE = 0.1;
 
 	int ommitedSequenceCount = 0;
+
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((anomalyType == null) ? 0 : anomalyType.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (!super.equals(obj)) {
+			return false;
+		}
+		if (!(obj instanceof TauPTA)) {
+			return false;
+		}
+		final TauPTA other = (TauPTA) obj;
+		if (anomalyType != other.anomalyType) {
+			return false;
+		}
+		return true;
+	}
+
 	// private static final int SEQUENCE_OMMIT_THRESHOLD = 10;
 	private static final double SEQUENCE_OMMIT_THRESHOLD = 0.0001;
 
@@ -467,7 +495,7 @@ public class TauPTA extends PDTTA {
 				// just add one transition which contains the state
 				result.add(possibleTransitions.get(0));
 			} else {
-				logger.info("Filtered the state {} that already has a final state", state);
+				logger.debug("Filtered the state {} that already has a final state", state);
 			}
 		}
 		if (result.size() == 0) {
@@ -665,5 +693,6 @@ public class TauPTA extends PDTTA {
 			return (int) (value * factor);
 		}
 	}
+
 
 }

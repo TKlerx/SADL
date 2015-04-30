@@ -68,6 +68,7 @@ public class PDTTA implements AutomatonModel, Serializable {
 	// TODO implement PDTTA as an extension of a PDFA
 	transient private static Logger logger = LoggerFactory.getLogger(PDTTA.class);
 	// TODO maybe change Set<Transition> transitions to Map<State,Set<Transition>>
+	transient Random r = new Random(MasterSeed.nextLong());
 
 	protected static final double NO_TRANSITION_PROBABILITY = 0;
 
@@ -89,10 +90,8 @@ public class PDTTA implements AutomatonModel, Serializable {
 
 	protected void restoreConsistency() {
 		if (!isConsistent()) {
-			logger.warn("Model is not consistent; restoring consistency...");
 			if (DELETE_NO_TIME_INFORMATION_TRANSITIONS) {
 				deleteIrrelevantTransitions();
-				fixProbabilities();
 			}
 		}
 	}
@@ -102,7 +101,11 @@ public class PDTTA implements AutomatonModel, Serializable {
 			logger.warn("transitions and transitionDistributions must be of same size! {}!={}", transitions.size(), transitionDistributions.size());
 			return false;
 		}
-		return finalStateProbabilities.keySet().forEach(state -> checkProbability(state));
+		final boolean probabilities = finalStateProbabilities.keySet().forEach(state -> checkProbability(state));
+		if (!probabilities) {
+			logger.info("Probabilities do not match, but will be corrected");
+		}
+		return probabilities;
 	}
 
 	private boolean checkProbability(int state) {
@@ -114,20 +117,25 @@ public class PDTTA implements AutomatonModel, Serializable {
 	}
 
 	private void deleteIrrelevantTransitions() {
-		logger.info("There are {} many transitions before removing irrelevant ones", transitions.size());
+		logger.debug("There are {} many transitions before removing irrelevant ones", transitions.size());
 		// there may be more transitions than transitionDistributions
-		transitions.removeIf(t -> !transitionDistributions.containsKey(t.toZeroProbTransition()));
+		final boolean removedTransitions = transitions.removeIf(t -> !transitionDistributions.containsKey(t.toZeroProbTransition()));
+		if (removedTransitions) {
+			logger.info("Removed some unnecessary transitions");
+		}
 		fixProbabilities();
 		if (transitions.size() != transitionDistributions.size()) {
 			logger.error("This should never happen because trainsitions.size() and transitionDistributions.size() should be equal now, but are not! {}!={}",
 					transitions.size(), transitionDistributions.size());
 		}
-		logger.info("There are {} many transitions after removing irrelevant ones", transitions.size());
+		logger.debug("There are {} many transitions after removing irrelevant ones", transitions.size());
 	}
 
 	void fixProbabilities() {
-		finalStateProbabilities.keySet().forEach(state -> fixProbability(state));
-
+		final boolean fixedProbs = finalStateProbabilities.keySet().forEach(state -> fixProbability(state));
+		if (fixedProbs) {
+			logger.info("Probabilities were corrected.");
+		}
 	}
 
 	boolean fixProbability(int state) {
@@ -421,7 +429,6 @@ public class PDTTA implements AutomatonModel, Serializable {
 		return result;
 	}
 
-	Random r = new Random(MasterSeed.nextLong());
 
 	public Random getRandom() {
 		return r;
@@ -448,10 +455,6 @@ public class PDTTA implements AutomatonModel, Serializable {
 		}
 	}
 
-	@Override
-	public String toString() {
-		return "PDTTA [alphabet=" + alphabet + "]";
-	}
 
 	public int getStartState() {
 		return START_STATE;
@@ -464,5 +467,69 @@ public class PDTTA implements AutomatonModel, Serializable {
 	protected void removeState(int i) {
 		finalStateProbabilities.remove(i);
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((abnormalFinalStates == null) ? 0 : abnormalFinalStates.hashCode());
+		result = prime * result + ((alphabet == null) ? 0 : alphabet.hashCode());
+		result = prime * result + ((finalStateProbabilities == null) ? 0 : finalStateProbabilities.hashCode());
+		result = prime * result + ((transitionDistributions == null) ? 0 : transitionDistributions.hashCode());
+		result = prime * result + ((transitions == null) ? 0 : transitions.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof PDTTA)) {
+			return false;
+		}
+		final PDTTA other = (PDTTA) obj;
+		if (abnormalFinalStates == null) {
+			if (other.abnormalFinalStates != null) {
+				return false;
+			}
+		} else if (!abnormalFinalStates.equals(other.abnormalFinalStates)) {
+			return false;
+		}
+		if (alphabet == null) {
+			if (other.alphabet != null) {
+				return false;
+			}
+		} else if (!alphabet.equals(other.alphabet)) {
+			return false;
+		}
+		if (finalStateProbabilities == null) {
+			if (other.finalStateProbabilities != null) {
+				return false;
+			}
+		} else if (!finalStateProbabilities.equals(other.finalStateProbabilities)) {
+			return false;
+		}
+		if (transitionDistributions == null) {
+			if (other.transitionDistributions != null) {
+				return false;
+			}
+		} else if (!transitionDistributions.equals(other.transitionDistributions)) {
+			// TODO why are the transitionDistributions unequal??? continue here
+			return false;
+		}
+		if (transitions == null) {
+			if (other.transitions != null) {
+				return false;
+			}
+		} else if (!transitions.equals(other.transitions)) {
+			return false;
+		}
+		return true;
+	}
+
 
 }

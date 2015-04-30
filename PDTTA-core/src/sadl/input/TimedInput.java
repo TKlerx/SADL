@@ -16,6 +16,7 @@ import gnu.trove.map.hash.TObjectIntHashMap;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -56,8 +57,9 @@ public class TimedInput implements Iterable<TimedWord> {
 	 * @param in
 	 *            A {@link Path} that contains timed sequences in the appropriate format
 	 * @return A {@link TimedInput} that represents the timed sequences parsed
+	 * @throws IOException
 	 */
-	public static TimedInput parse(Path in) {
+	public static TimedInput parse(Path in) throws IOException {
 		return new TimedInput(in, 0, "^\\(", "\\)$", "\\)\\s+\\(", "\\s*,\\s*", "\\s*:\\s*");
 	}
 
@@ -79,8 +81,9 @@ public class TimedInput implements Iterable<TimedWord> {
 	 * @param in
 	 *            A {@link Path} that contains timed sequences in the appropriate alternative format
 	 * @return A {@link TimedInput} that represents the timed sequences parsed
+	 * @throws IOException
 	 */
-	public static TimedInput parseAlt(Path in) {
+	public static TimedInput parseAlt(Path in) throws IOException {
 		return parseAlt(in, 1);
 	}
 
@@ -104,8 +107,9 @@ public class TimedInput implements Iterable<TimedWord> {
 	 * @param lineOffset
 	 *            The number of lines that will be skipped at the beginning of the file because they contain a header with meta data
 	 * @return A {@link TimedInput} that represents the timed sequences parsed
+	 * @throws IOException
 	 */
-	public static TimedInput parseAlt(Path in, int lineOffset) {
+	public static TimedInput parseAlt(Path in, int lineOffset) throws IOException {
 		return new TimedInput(in, lineOffset, "^\\d+ ", "$", "\\s{2}", "\\s", "\\s*:\\s*");
 	}
 
@@ -130,8 +134,10 @@ public class TimedInput implements Iterable<TimedWord> {
 	 *            A regular expression that matches the separator between the sequence and the optional class label of a sequence; must not be a substring of
 	 *            {@code pairSep}
 	 * @return A {@link TimedInput} that represents the timed sequences parsed
+	 * @throws IOException
 	 */
-	public static TimedInput parseCustom(Path in, int lineOffset, String seqPrefix, String seqPostfix, String pairSep, String valueSep, String classSep) {
+	public static TimedInput parseCustom(Path in, int lineOffset, String seqPrefix, String seqPostfix, String pairSep, String valueSep, String classSep)
+			throws IOException {
 
 		final String pre = !seqPrefix.startsWith("^") ? "^" + seqPrefix : seqPrefix;
 		final String post = !seqPostfix.endsWith("$") ? seqPostfix + "$" : seqPostfix;
@@ -139,12 +145,13 @@ public class TimedInput implements Iterable<TimedWord> {
 		return new TimedInput(in, lineOffset, pre, post, pairSep, valueSep, classSep);
 	}
 
-	private TimedInput(Path input, int lineOffset, String seqPrefix, String seqPostfix, String pairSep, String valueSep, String classSep) {
-
+	private TimedInput(Path input, int lineOffset, String seqPrefix, String seqPostfix, String pairSep, String valueSep, String classSep)
+			throws IOException {
+		if (Files.notExists(input)) {
+			throw new FileNotFoundException("input file on path " + input.toAbsolutePath() + " was not found");
+		}
 		try (BufferedReader br = Files.newBufferedReader(input)) {
 			loadData(br, lineOffset, seqPrefix, seqPostfix, pairSep, valueSep, classSep);
-		} catch (final IOException e) {
-			logger.error("Unexpected exception occured.");
 		}
 	}
 

@@ -23,11 +23,12 @@ import org.slf4j.LoggerFactory;
  */
 public class MasterSeed {
 	private static Logger logger = LoggerFactory.getLogger(MasterSeed.class);
-
-	private static Random r = new Random(7222525536004714236L);
+	private static long seed = 7222525536004714236L;
+	private static Random r = new Random();
 	private static boolean wasSet = false;
 
 	public static void setSeed(long seed) {
+		MasterSeed.seed = seed;
 		if (wasSet) {
 			logger.warn("Replacing Random object with new seed {}", seed);
 		}
@@ -41,5 +42,9 @@ public class MasterSeed {
 
 	public static Random nextRandom() {
 		return new Random(r.nextLong());
+	}
+
+	public static void reset(){
+		r = new Random(seed);
 	}
 }

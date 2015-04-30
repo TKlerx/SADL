@@ -11,10 +11,8 @@
 
 package sadl.run;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,7 +29,6 @@ import sadl.constants.AnomalyInsertionType;
 import sadl.input.TimedInput;
 import sadl.models.TauPTA;
 import sadl.utils.IoUtils;
-import sadl.utils.MasterSeed;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -66,7 +63,6 @@ public class DataGenerator implements Serializable {
 		new JCommander(sp, args);
 		sp.dataString = args[0];
 		logger.info("Running DataGenerator with args" + Arrays.toString(args));
-		MasterSeed.setSeed(1234);
 		sp.run();
 	}
 
@@ -76,33 +72,32 @@ public class DataGenerator implements Serializable {
 
 		final TauPTA pta = new TauPTA(trainingTimedSequences);
 		IoUtils.xmlSerialize(pta, Paths.get("pta_normal.xml"));
-		try(BufferedWriter br = Files.newBufferedWriter(Paths.get("normal_sequences"),StandardCharsets.UTF_8)){
-			logger.info("sampling normal sequences");
-			final Path p = Paths.get("pta_normal.dot");
-			pta.toGraphvizFile(p, false);
-			for (int i = 0; i < 1000000; i++) {
-				br.write(pta.sampleSequence().toString(true));
-				br.write('\n');
-			}
-		}
+		pta.toGraphvizFile(Paths.get("pta_normal.dot"), false);
+		// try(BufferedWriter br = Files.newBufferedWriter(Paths.get("normal_sequences"),StandardCharsets.UTF_8)){
+		// logger.info("sampling normal sequences");
+		// for (int i = 0; i < 1000000; i++) {
+		// br.write(pta.sampleSequence().toString(true));
+		// br.write('\n');
+		// }
+		// }
 		// for(final AnomalyInsertionType type : AnomalyInsertionType.values()){
 		for (final AnomalyInsertionType type : AnomalyInsertionType.values()) {
 			if(type != AnomalyInsertionType.NONE && type != AnomalyInsertionType.ALL){
 				final TauPTA anomaly1 = SerializationUtils.clone(pta);
-				try(BufferedWriter br = Files.newBufferedWriter(Paths.get("abnormal_sequences_type_"+type.getTypeIndex()),StandardCharsets.UTF_8)){
-					logger.info("inserting Anomaly Type {}", type);
-					anomaly1.makeAbnormal(type);
-					try {
-						anomaly1.toGraphvizFile(Paths.get("pta_abnormal_" + type.getTypeIndex() + ".dot"), false);
-						IoUtils.xmlSerialize(anomaly1, Paths.get("pta_abnormal_" + type.getTypeIndex() + ".xml"));
-					} catch (final IOException e) {
-						logger.error("unexpected exception while printing graphviz file", e);
-					}
-					for (int i = 0; i < 100000; i++) {
-						br.write(anomaly1.sampleSequence().toString(true));
-						br.write('\n');
-					}
+				logger.info("inserting Anomaly Type {}", type);
+				anomaly1.makeAbnormal(type);
+				try {
+					anomaly1.toGraphvizFile(Paths.get("pta_abnormal_" + type.getTypeIndex() + ".dot"), false);
+					IoUtils.xmlSerialize(anomaly1, Paths.get("pta_abnormal_" + type.getTypeIndex() + ".xml"));
+				} catch (final IOException e) {
+					logger.error("unexpected exception while printing graphviz file", e);
 				}
+				// try(BufferedWriter br = Files.newBufferedWriter(Paths.get("abnormal_sequences_type_"+type.getTypeIndex()),StandardCharsets.UTF_8)){
+				// for (int i = 0; i < 100000; i++) {
+				// br.write(anomaly1.sampleSequence().toString(true));
+				// br.write('\n');
+				// }
+				// }
 			}
 		}
 		logger.info("Starting to dot PTAs");
