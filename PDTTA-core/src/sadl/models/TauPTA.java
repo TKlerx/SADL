@@ -451,7 +451,7 @@ public class TauPTA extends PDTTA {
 		final Transition t = chooseRandomObject(possibleTransitions, r);
 		// only do so if there is no stopping transition in the possibleTransitions
 		final double probability = r.nextDouble() * MAX_TYPE_FIVE_PROBABILITY;
-		addFinalState(t.getFromState(), probability);
+		addAbnormalFinalState(t.getFromState(), probability);
 		// now fix probs that they sum up to one
 		fixProbability(t.getFromState());
 		return 1;
@@ -466,6 +466,8 @@ public class TauPTA extends PDTTA {
 			if (!possibleTransitions.stream().anyMatch(t -> t.isStopTraversingTransition() && t.getProbability() > 0)) {
 				// just add one transition which contains the state
 				result.add(possibleTransitions.get(0));
+			} else {
+				logger.info("Filtered the state {} that already has a final state", state);
 			}
 		}
 		if (result.size() == 0) {
@@ -582,7 +584,7 @@ public class TauPTA extends PDTTA {
 		// only do so if there is no stopping transition in the possibleTransitions
 		if (!possibleTransitions.stream().anyMatch(t -> t.isStopTraversingTransition() && t.getProbability() > 0)) {
 			final double probability = r.nextDouble() * MAX_TYPE_FIVE_PROBABILITY;
-			addFinalState(chosenState, probability);
+			addAbnormalFinalState(chosenState, probability);
 			// now fix probs that they sum up to one
 			fixProbability(chosenState);
 			return 1;
@@ -590,8 +592,7 @@ public class TauPTA extends PDTTA {
 		return -1;
 	}
 
-	// TODO change inserting of event anomalies for type 1, 3, 5 to only do so if there are states on this height level that are normal! Therefore the methods
-	// need the states on the level and the height as input
+
 	private int changeTransitionEvent(int chosenState) {
 		final List<Transition> possibleTransitions = getTransitions(chosenState, false);
 		final TIntList notOccuringEvents = new TIntArrayList(alphabet);

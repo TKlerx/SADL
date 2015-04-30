@@ -37,8 +37,6 @@ import sadl.constants.ClassLabel;
  */
 @Deprecated
 public class TimedSequence {
-	//TODO include the anomalyType in input (reading from line) and output (to line)
-	// this may be needed for a mixed test set to know which anomalies are well detected
 	private static Logger logger = LoggerFactory.getLogger(TimedSequence.class);
 
 	private TIntList events = new TIntArrayList();

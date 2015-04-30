@@ -32,6 +32,7 @@ import sadl.constants.ClassLabel;
  * @author Timo Klerx
  *
  */
+@Deprecated
 public class UntimedSequence implements Cloneable {
 
 	@SuppressWarnings("unused")

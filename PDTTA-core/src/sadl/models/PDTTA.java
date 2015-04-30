@@ -15,6 +15,7 @@ import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
+import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 
 import java.io.BufferedReader;
@@ -57,8 +58,6 @@ import sadl.utils.MasterSeed;
  */
 public class PDTTA implements AutomatonModel, Serializable {
 
-
-
 	protected static final int START_STATE = 0;
 
 	/**
@@ -68,6 +67,7 @@ public class PDTTA implements AutomatonModel, Serializable {
 
 	// TODO implement PDTTA as an extension of a PDFA
 	transient private static Logger logger = LoggerFactory.getLogger(PDTTA.class);
+	// TODO maybe change Set<Transition> transitions to Map<State,Set<Transition>>
 
 	protected static final double NO_TRANSITION_PROBABILITY = 0;
 
@@ -76,6 +76,7 @@ public class PDTTA implements AutomatonModel, Serializable {
 	Set<Transition> transitions = new HashSet<>();
 	TIntDoubleMap finalStateProbabilities = new TIntDoubleHashMap();
 	Map<ZeroProbTransition, Distribution> transitionDistributions = null;
+	TIntSet abnormalFinalStates = new TIntHashSet();
 
 	public Map<ZeroProbTransition, Distribution> getTransitionDistributions() {
 		return transitionDistributions;
@@ -132,14 +133,14 @@ public class PDTTA implements AutomatonModel, Serializable {
 	boolean fixProbability(int state) {
 		final List<Transition> outgoingTransitions = getTransitions(state, true);
 		final double sum = outgoingTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
-		logger.info("Sum of transition probabilities for state {} is {}", state, sum);
 		// divide every probability by the sum of probabilities s.t. they sum up to 1
 		if (!Precision.equals(sum, 1)) {
+			logger.trace("Sum of transition probabilities for state {} is {}", state, sum);
 			outgoingTransitions.forEach(t -> t.setProbability(t.getProbability() / sum));
 			final double newSum = outgoingTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
-			logger.info("Corrected sum of transition probabilities is {}", newSum);
+			logger.debug("Corrected sum of transition probabilities is {}", newSum);
 			if (!Precision.equals(newSum, 1.0)) {
-				logger.info("Probabilities do not sum up to one, so doing it again with the Fraction class");
+				logger.debug("Probabilities do not sum up to one, so doing it again with the Fraction class");
 				final List<Fraction> probabilities = new ArrayList<>(outgoingTransitions.size());
 				for (int i = 0; i < outgoingTransitions.size(); i++) {
 					probabilities.add(i, new Fraction(outgoingTransitions.get(i).getProbability()));
@@ -217,8 +218,15 @@ public class PDTTA implements AutomatonModel, Serializable {
 		}
 	}
 
+	protected Transition getFinalTransition(int state) {
+		if (abnormalFinalStates.contains(state)) {
+			return new AbnormalTransition(state, state, Transition.STOP_TRAVERSING_SYMBOL, finalStateProbabilities.get(state), AnomalyInsertionType.TYPE_FIVE);
+		} else {
+			return new Transition(state, state, Transition.STOP_TRAVERSING_SYMBOL, finalStateProbabilities.get(state));
+		}
+	}
+
 	public void toGraphvizFile(Path graphvizResult, boolean compressed) throws IOException {
-		// TODO make type 5 states red and insert 5 into the state
 		final BufferedWriter writer = Files.newBufferedWriter(graphvizResult, StandardCharsets.UTF_8);
 		writer.write("digraph G {\n");
 		// start states
@@ -227,17 +235,23 @@ public class PDTTA implements AutomatonModel, Serializable {
 		for (final int state : finalStateProbabilities.keys()) {
 			writer.write(Integer.toString(state));
 			writer.write(" [shape=");
-			final double finalProb = finalStateProbabilities.get(state);
+			final boolean abnormal = getFinalTransition(state).isAbnormal();
+			final double finalProb = getFinalStateProbability(state);
 			if (finalProb > 0 || (compressed && finalProb > 0.01)) {
 				writer.write("double");
 			}
-			writer.write("circle, label=\"");
-			writer.write(Integer.toString(state));
-			if (finalProb > 0 || (compressed && finalProb > 0.01)) {
-				writer.write(" - p= ");
-				writer.write(Double.toString(Precision.round(finalProb, 2)));
+			writer.write("circle");
+			if (abnormal) {
+				writer.write(", color=red");
 			}
-			writer.write("\"];\n");
+			if (finalProb > 0 || (compressed && finalProb > 0.01)) {
+				writer.write(", label=\"");
+				writer.write(Integer.toString(state));
+				writer.write("&#92;np= ");
+				writer.write(Double.toString(Precision.round(finalProb, 2)));
+				writer.write("\"");
+			}
+			writer.write("];\n");
 		}
 		writer.write("qi -> 0;");
 		// write transitions
@@ -277,6 +291,11 @@ public class PDTTA implements AutomatonModel, Serializable {
 		finalStateProbabilities.put(state, probability);
 	}
 
+	protected void addAbnormalFinalState(int state, double probability) {
+		addFinalState(state, probability);
+		abnormalFinalStates.add(state);
+	}
+
 	public double getFinalStateProbability(int state) {
 		return finalStateProbabilities.get(state);
 	}
@@ -292,19 +311,21 @@ public class PDTTA implements AutomatonModel, Serializable {
 
 	public Transition getTransition(int currentState, int event) {
 		Transition result = null;
-		for (final Transition t : transitions) {
-			if (t.getFromState() == currentState && t.getSymbol() == event) {
-				if (result != null) {
-					logger.error("Found more than one transition for state " + currentState + " and event " + event);
+		if (event == Transition.STOP_TRAVERSING_SYMBOL) {
+			result = getFinalTransition(currentState);
+		} else {
+			for (final Transition t : transitions) {
+				if (t.getFromState() == currentState && t.getSymbol() == event) {
+					if (result != null) {
+						logger.error("Found more than one transition for state " + currentState + " and event " + event);
+					}
+					result = t;
 				}
-				result = t;
 			}
 		}
-		// if (result == null) {
-		// System.err.println("Found no transition for state " + currentState + " and event " + event);
-		// }
 		return result;
 	}
+
 
 	protected void bindTransitionDistribution(Transition newTransition, Distribution d) {
 		transitionDistributions.put(newTransition.toZeroProbTransition(), d);
@@ -354,10 +375,10 @@ public class PDTTA implements AutomatonModel, Serializable {
 			}
 
 			final Transition chosenTransition = possibleTransitions.get(index);
-			if (chosenTransition.isStopTraversingTransition() ){
+			if (chosenTransition.isStopTraversingTransition()) {
 				choseFinalState = true;
-			}else if (eventList.size() > MAX_SEQUENCE_LENGTH) {
-				throw new IllegalStateException("A sequence longer than "+MAX_SEQUENCE_LENGTH+" events should have been generated");
+			} else if (eventList.size() > MAX_SEQUENCE_LENGTH) {
+				throw new IllegalStateException("A sequence longer than " + MAX_SEQUENCE_LENGTH + " events should have been generated");
 			} else {
 				currentState = chosenTransition.getToState();
 				final Distribution d = transitionDistributions.get(chosenTransition.toZeroProbTransition());
@@ -373,7 +394,6 @@ public class PDTTA implements AutomatonModel, Serializable {
 		}
 		return new TimedIntWord(eventList, timeList, ClassLabel.NORMAL);
 	}
-
 
 	/**
 	 * Returns all outgoing probabilities from the given state
@@ -394,7 +414,7 @@ public class PDTTA implements AutomatonModel, Serializable {
 		if (includeStoppingTransition) {
 			for (final int state : finalStateProbabilities.keys()) {
 				if (state == currentState) {
-					result.add(new Transition(currentState, currentState, Transition.STOP_TRAVERSING_SYMBOL, finalStateProbabilities.get(state)));
+					result.add(getFinalTransition(state));
 				}
 			}
 		}
@@ -402,8 +422,6 @@ public class PDTTA implements AutomatonModel, Serializable {
 	}
 
 	Random r = new Random(MasterSeed.nextLong());
-
-
 
 	public Random getRandom() {
 		return r;
