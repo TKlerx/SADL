@@ -196,6 +196,7 @@ public class MyDBSCAN extends ClustererBase {
 			}
 		}
 
+		@SuppressWarnings("null")
 		final double eps = stats.getMean() + stats.getStandardDeviation() * stndDevs;
 
 		return cluster(dataSet, eps, minPts, vc, threadpool, designations);

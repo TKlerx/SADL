@@ -42,6 +42,7 @@ public class TimedSequence {
 	private TIntList events = new TIntArrayList();
 	private TDoubleList timeValues = new TDoubleArrayList();
 	private ClassLabel label = ClassLabel.NORMAL;
+	@SuppressWarnings("unused")
 	private AnomalyInsertionType anomalyType = AnomalyInsertionType.NONE;
 
 	public void setTimeValues(TDoubleList timeValues) {
@@ -196,7 +197,6 @@ public class TimedSequence {
 	 * @param isRti
 	 *            set to true to skip first line
 	 * @param containsClassLabels
-	 * @return
 	 * @throws IOException
 	 */
 	public static List<TimedSequence> parseTimedSequences(String timedInputTrainFile, boolean isRti, boolean containsClassLabels) throws IOException {

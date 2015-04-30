@@ -15,7 +15,7 @@ import gnu.trove.list.TDoubleList;
 
 import java.util.List;
 
-import sadl.structure.TimedSequence;
+import sadl.input.TimedWord;
 
 /**
  * This does not work as intended, because e.g. PDTTA with thresholds computes more than one score (min. 2, may be extended to 4).
@@ -24,6 +24,7 @@ import sadl.structure.TimedSequence;
  *
  */
 public interface AnomalyScoreCalculator {
-	double computeScore(TimedSequence s);
-	TDoubleList computeScores(List<TimedSequence> sequences);
+	double computeScore(TimedWord s);
+
+	TDoubleList computeScores(List<TimedWord> sequences);
 }

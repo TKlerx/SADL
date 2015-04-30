@@ -42,6 +42,7 @@ public class TimedInput implements Iterable<TimedWord> {
 	private List<String> alphabetRev;
 	private List<TimedWord> words;
 
+	// TODO maybe add parsing for anomaly type?!
 	/**
 	 * Parses timed sequences from a file. Each line contains exactly one of those sequences that have the following format:
 	 * 

@@ -26,7 +26,6 @@ public interface AnomalyDetector {
 	 * 0 indicates normal sequence, 1 indicates abnormal sequence
 	 * 
 	 * @param testSequences
-	 * @return
 	 */
 	boolean[] areAnomalies(Model model, TimedInput testSequences);
 
@@ -36,7 +35,6 @@ public interface AnomalyDetector {
 	 * 0 indicates normal sequence, 1 indicates abnormal sequence
 	 * 
 	 * @param testSequences
-	 * @return
 	 */
 	boolean[] areAnomalies(TimedInput testSequences);
 

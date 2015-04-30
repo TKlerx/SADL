@@ -79,9 +79,12 @@ import com.beust.jcommander.Parameter;
  * @author Timo Klerx
  *
  */
+@SuppressWarnings("deprecation")
 public class GenericSmacPipeline implements Serializable {
 	private static Logger logger = LoggerFactory.getLogger(GenericSmacPipeline.class);
 	// TODO move this to experiment project
+
+	// FIXME stop using TimedSequence but instead TimedWord
 	/**
 	 * 
 	 */
