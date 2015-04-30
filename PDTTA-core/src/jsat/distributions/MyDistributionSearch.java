@@ -1,12 +1,12 @@
 /**
- * This file is part of PDTTA, a library for learning Probabilistic deterministic timed-transition Automata.
- * Copyright (C) 2013-2015  Timo Klerx
+ * This file is part of SADL, a library for learning Probabilistic deterministic timed-transition Automata.
+ * Copyright (C) 2013-2015  the original author or authors.
  *
- * PDTTA is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
- * PDTTA is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ * SADL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with PDTTA.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
@@ -23,7 +23,9 @@ import org.apache.commons.math3.util.Precision;
 
 /**
  * Provides methods for selecting the distribution that best fits a given data set.
+ * 
  * @author Edward Raff
+ * @author Timo Klerx
  */
 public class MyDistributionSearch extends DistributionSearch
 {
@@ -152,7 +154,6 @@ public class MyDistributionSearch extends DistributionSearch
 	/**
 	 * True iff there are only identical values in the vector
 	 * @param v
-	 * @return
 	 */
 	public static Pair<Boolean, Double> checkForDifferentValues(Vec v) {
 		final double value = v.get(0);
@@ -168,7 +169,6 @@ public class MyDistributionSearch extends DistributionSearch
 	 * search for all possible distributions and maybe also for a KDE. Does not compare bestProb to cutoff
 	 * @param v
 	 * @param includeKDE
-	 * @return
 	 */
 	public static Distribution getBestDistribution(Vec v, boolean includeKDE) {
 		if(!includeKDE){

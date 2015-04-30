@@ -1,13 +1,14 @@
-/*******************************************************************************
- * This file is part of PDTTA, a library for learning Probabilistic deterministic timed-transition Automata.
- * Copyright (C) 2013-2015  Timo Klerx
- * 
- * PDTTA is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
- * 
- * PDTTA is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with PDTTA.  If not, see <http://www.gnu.org/licenses/>.
- ******************************************************************************/
+/**
+ * This file is part of SADL, a library for learning Probabilistic deterministic timed-transition Automata.
+ * Copyright (C) 2013-2015  the original author or authors.
+ *
+ * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * SADL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package sadl.modellearner;
 
 import gnu.trove.list.TDoubleList;
@@ -24,7 +25,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import jsat.distributions.Distribution;
@@ -39,10 +39,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sadl.constants.MergeTest;
+import sadl.input.TimedInput;
+import sadl.input.TimedWord;
 import sadl.interfaces.Model;
 import sadl.interfaces.ModelLearner;
 import sadl.models.PDTTA;
-import sadl.structure.TimedSequence;
 import sadl.structure.ZeroProbTransition;
 import sadl.utils.IoUtils;
 import treba.observations;
@@ -50,6 +51,11 @@ import treba.treba;
 import treba.trebaConstants;
 import treba.wfsa;
 
+/**
+ * 
+ * @author Timo Klerx
+ *
+ */
 public class PdttaLeaner implements ModelLearner {
 	double mergeAlpha;
 	MergeTest mergeTest = MergeTest.ALERGIA;
@@ -98,7 +104,7 @@ public class PdttaLeaner implements ModelLearner {
 
 
 	@Override
-	public Model train(List<TimedSequence> trainingSequences) {
+	public Model train(TimedInput trainingSequences) {
 		final PDTTA pdtta;
 		treba.log1plus_init_wrapper();
 		final Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"));
@@ -164,7 +170,7 @@ public class PdttaLeaner implements ModelLearner {
 		}
 	}
 
-	private Map<ZeroProbTransition, TDoubleList> parseAutomatonPaths(String trebaResultPathFile, List<TimedSequence> timedSequences) throws IOException {
+	private Map<ZeroProbTransition, TDoubleList> parseAutomatonPaths(String trebaResultPathFile, TimedInput timedSequences) throws IOException {
 		// TODO when this is done in java, do this in memory instead of with files
 		final Map<ZeroProbTransition, TDoubleList> result = new HashMap<>();
 		final BufferedReader br = Files.newBufferedReader(Paths.get(trebaResultPathFile), StandardCharsets.UTF_8);
@@ -174,8 +180,8 @@ public class PdttaLeaner implements ModelLearner {
 		int followingState = -1;
 		while ((line = br.readLine()) != null) {
 			final String[] split = line.split("\\s+");
-			final TDoubleList timeValues = timedSequences.get(rowIndex).getTimeValues();
-			final TIntList eventValues = timedSequences.get(rowIndex).getEvents();
+			final TIntList timeValues = timedSequences.get(rowIndex).getTimeValues();
+			final TIntList eventValues = timedSequences.get(rowIndex).getIntSymbols();
 			if (split.length - 2 != timeValues.size()) {
 				logger.error("There should be one more state than there are time values (time values fill the gaps between the states\n{}\n{}",
 						Arrays.toString(split), timeValues);
@@ -244,10 +250,10 @@ public class PdttaLeaner implements ModelLearner {
 		}
 	}
 
-	private void createTrebaFile(List<TimedSequence> timedSequences, String trebaTrainFileString) throws IOException {
+	private void createTrebaFile(TimedInput timedSequences, String trebaTrainFileString) throws IOException {
 		try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(trebaTrainFileString), StandardCharsets.UTF_8)) {
-			for (final TimedSequence ts : timedSequences) {
-				bw.write(ts.getEventString());
+			for (final TimedWord ts : timedSequences) {
+				bw.write(ts.getSymbolString());
 				bw.append('\n');
 			}
 			bw.close();

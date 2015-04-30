@@ -1,18 +1,17 @@
-/*******************************************************************************
- * This file is part of PDTTA, a library for learning Probabilistic deterministic timed-transition Automata.
- * Copyright (C) 2013-2015  Timo Klerx
- * 
- * PDTTA is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
- * 
- * PDTTA is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License along with PDTTA.  If not, see <http://www.gnu.org/licenses/>.
- ******************************************************************************/
+/**
+ * This file is part of SADL, a library for learning Probabilistic deterministic timed-transition Automata.
+ * Copyright (C) 2013-2015  the original author or authors.
+ *
+ * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * SADL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package sadl.models;
 
-import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
@@ -35,15 +34,17 @@ import java.util.Set;
 
 import jsat.distributions.Distribution;
 
+import org.apache.commons.math3.fraction.Fraction;
 import org.apache.commons.math3.util.Precision;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.ClassLabel;
+import sadl.input.TimedIntWord;
+import sadl.input.TimedWord;
 import sadl.interfaces.AutomatonModel;
 import sadl.structure.AbnormalTransition;
-import sadl.structure.TimedSequence;
 import sadl.structure.Transition;
 import sadl.structure.ZeroProbTransition;
 import sadl.utils.MasterSeed;
@@ -51,7 +52,7 @@ import sadl.utils.MasterSeed;
 /**
  * A PDTTA with two thresholds for anomaly detection (aggregated event and aggregated time probability).
  * 
- * @author timok
+ * @author Timo Klerx
  *
  */
 public class PDTTA implements AutomatonModel, Serializable {
@@ -67,8 +68,6 @@ public class PDTTA implements AutomatonModel, Serializable {
 
 	// TODO implement PDTTA as an extension of a PDFA
 	transient private static Logger logger = LoggerFactory.getLogger(PDTTA.class);
-	transient private static final double ANOMALY_TYPE_TWO_P_1 = 0.7;
-	transient private static final double ANOMALY_TYPE_TWO_P_2 = 0.9;
 
 	protected static final double NO_TRANSITION_PROBABILITY = 0;
 
@@ -140,8 +139,22 @@ public class PDTTA implements AutomatonModel, Serializable {
 			final double newSum = outgoingTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
 			logger.info("Corrected sum of transition probabilities is {}", newSum);
 			if (!Precision.equals(newSum, 1.0)) {
-				//TODO instead try first with apache commons math fraction/bigfraction and if they still do not sum up to one, throw an exception
-				throw new IllegalStateException("Probabilities do not sum up to one, but instead to " + newSum);
+				logger.info("Probabilities do not sum up to one, so doing it again with the Fraction class");
+				final List<Fraction> probabilities = new ArrayList<>(outgoingTransitions.size());
+				for (int i = 0; i < outgoingTransitions.size(); i++) {
+					probabilities.add(i, new Fraction(outgoingTransitions.get(i).getProbability()));
+				}
+				Fraction fracSum = Fraction.ZERO;
+				for (final Fraction f : probabilities) {
+					fracSum = fracSum.add(f);
+				}
+				for (int i = 0; i < outgoingTransitions.size(); i++) {
+					outgoingTransitions.get(i).setProbability(probabilities.get(i).divide(fracSum).doubleValue());
+				}
+				final double tempSum = outgoingTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
+				if (!Precision.equals(tempSum, 1.0)) {
+					throw new IllegalStateException("Probabilities do not sum up to one, but instead to " + tempSum);
+				}
 			}
 		}
 		return true;
@@ -320,11 +333,11 @@ public class PDTTA implements AutomatonModel, Serializable {
 
 	protected static final int MAX_SEQUENCE_LENGTH = 1000;
 
-	public TimedSequence sampleSequence() {
+	public TimedWord sampleSequence() {
 		int currentState = START_STATE;
 
 		final TIntList eventList = new TIntArrayList();
-		final TDoubleList timeList = new TDoubleArrayList();
+		final TIntList timeList = new TIntArrayList();
 		boolean choseFinalState = false;
 		while (!choseFinalState) {
 			final List<Transition> possibleTransitions = getTransitions(currentState, true);
@@ -353,69 +366,14 @@ public class PDTTA implements AutomatonModel, Serializable {
 					// the training data.
 					throw new IllegalStateException("This should never happen for transition " + chosenTransition);
 				}
-				final double timeValue = d.sample(1, r)[0];
+				final int timeValue = (int) d.sample(1, r)[0];
 				eventList.add(chosenTransition.getSymbol());
 				timeList.add(timeValue);
 			}
 		}
-		return new TimedSequence(eventList, timeList, ClassLabel.NORMAL);
+		return new TimedIntWord(eventList, timeList, ClassLabel.NORMAL);
 	}
 
-
-	@Deprecated
-	public TimedSequence createAbnormalEventSequence(Random mutation) {
-		// choose very unlikely sequences
-		final TIntList eventList = new TIntArrayList();
-		final TDoubleList timeList = new TDoubleArrayList();
-		boolean choseFinalState = false;
-		int currentState = 0;
-		while (!choseFinalState) {
-			final List<Transition> possibleTransitions = getTransitions(currentState, true);
-			possibleTransitions.sort((o1, o2) -> Double.compare(o1.getProbability(), o2.getProbability()));
-			int listIndex = 3;
-			if (possibleTransitions.size() <= listIndex) {
-				listIndex = possibleTransitions.size() - 1;
-
-			}
-			int tempListIndex = Math.min(3, possibleTransitions.size() - 1);
-			if (tempListIndex != listIndex) {
-				throw new IllegalStateException();
-			}
-			final List<Transition> topThree = possibleTransitions.subList(0, listIndex);
-			final double randomValue = mutation.nextDouble();
-			int chosenTransitionIndex = -1;
-			if (randomValue <= ANOMALY_TYPE_TWO_P_1) {
-				chosenTransitionIndex = 0;
-			} else if (randomValue > ANOMALY_TYPE_TWO_P_1 && randomValue < ANOMALY_TYPE_TWO_P_2) {
-				chosenTransitionIndex = 1;
-			} else {
-				chosenTransitionIndex = 2;
-			}
-			int indexToTake = chosenTransitionIndex;
-			if (indexToTake >= topThree.size()) {
-				indexToTake = topThree.size() - 1;
-			}
-			tempListIndex = Math.min(chosenTransitionIndex, topThree.size() - 1);
-			if (tempListIndex != indexToTake) {
-				throw new IllegalStateException();
-			}
-			final Transition chosenTransition = topThree.get(indexToTake);
-			if (chosenTransition.isStopTraversingTransition() || eventList.size() > MAX_SEQUENCE_LENGTH) {
-				choseFinalState = true;
-			} else {
-				currentState = chosenTransition.getToState();
-				final Distribution d = transitionDistributions.get(chosenTransition.toZeroProbTransition());
-				if (d == null) {
-					// just do it again with other random sampling
-					return createAbnormalEventSequence(mutation);
-				}
-				final double timeValue = d.sample(1, mutation)[0];
-				eventList.add(chosenTransition.getSymbol());
-				timeList.add(timeValue);
-			}
-		}
-		return new TimedSequence(eventList, timeList, ClassLabel.ANOMALY);
-	}
 
 	/**
 	 * Returns all outgoing probabilities from the given state
@@ -455,10 +413,10 @@ public class PDTTA implements AutomatonModel, Serializable {
 		this.r = r;
 	}
 
-	protected boolean isInAutomaton(TimedSequence s) {
+	protected boolean isInAutomaton(TimedWord s) {
 		int currentState = START_STATE;
 		for (int i = 0; i < s.length(); i++) {
-			final int nextEvent = s.getEvent(i);
+			final int nextEvent = s.getIntSymbol(i);
 			final Transition t = getTransition(currentState, nextEvent);
 			if (t == null) {
 				return false;

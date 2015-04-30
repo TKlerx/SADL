@@ -1,3 +1,14 @@
+/**
+ * This file is part of SADL, a library for learning Probabilistic deterministic timed-transition Automata.
+ * Copyright (C) 2013-2015  the original author or authors.
+ *
+ * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * SADL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package sadl.input;
 
 import gnu.trove.map.TObjectIntMap;
@@ -9,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -23,7 +35,7 @@ import sadl.constants.ClassLabel;
  * @author Timo Klerx
  *
  */
-public class TimedInput {
+public class TimedInput implements Iterable<TimedWord> {
 	private static Logger logger = LoggerFactory.getLogger(TimedInput.class);
 
 	private TObjectIntMap<String> alphabet;
@@ -34,7 +46,7 @@ public class TimedInput {
 	 * Parses timed sequences from a file. Each line contains exactly one of those sequences that have the following format:
 	 * 
 	 * <pre>
-	 * {@code (s_1,t_1) (s_2,t_2) ... (s_n,t_n) : label},
+	 * {@code (s_1,t_1) (s_2,t_2) ... (s_n,t_n) : label}
 	 * </pre>
 	 * 
 	 * where {@code s_i} is an (event) symbol of type {@link String} and {@code t_i} is the corresponding time delay of type {@code int}. The label at the end
@@ -68,7 +80,32 @@ public class TimedInput {
 	 * @return A {@link TimedInput} that represents the timed sequences parsed
 	 */
 	public static TimedInput parseAlt(Path in) {
-		return new TimedInput(in, 1, "^\\d+ ", "$", "\\s{2}", "\\s", "\\s*:\\s*");
+		return parseAlt(in, 1);
+	}
+
+	/**
+	 * Parses timed sequences from a file that has the following alternative format:
+	 * 
+	 * <pre>
+	 * {@code x y}
+	 * {@code n s_1 t_1  s_2 t_2 ... s_n t_n : label}
+	 * :
+	 * :
+	 * </pre>
+	 * 
+	 * where @{@code x} is the number of sequences contained in that file and @ {@code y} the number of different symbols contained. Each of the following lines
+	 * contains exactly one sequence, where {@code s_i} is an (event) symbol of type {@link String} and {@code t_i} is the corresponding time delay of type
+	 * {@link Integer}. The {@code n} at the beginning of the line is the number of symbols in that sequence. Note that between {@code t_i} and {@code s_(i+1)}
+	 * is a double space.The label at the end is of type {@link ClassLabel} and is optional.
+	 * 
+	 * @param in
+	 *            A {@link Path} that contains timed sequences in the appropriate alternative format
+	 * @param lineOffset
+	 *            The number of lines that will be skipped at the beginning of the file because they contain a header with meta data
+	 * @return A {@link TimedInput} that represents the timed sequences parsed
+	 */
+	public static TimedInput parseAlt(Path in, int lineOffset) {
+		return new TimedInput(in, lineOffset, "^\\d+ ", "$", "\\s{2}", "\\s", "\\s*:\\s*");
 	}
 
 	/**
@@ -130,7 +167,11 @@ public class TimedInput {
 		String line;
 		String[] splitWord;
 		String[] splitPair;
+		int lineCount = 0;
 		while ((line = in.readLine()) != null) {
+			if (line.isEmpty()) {
+				continue;
+			}
 			word = new TimedWord();
 
 			// Split and parse class label (if it exists)
@@ -163,15 +204,17 @@ public class TimedInput {
 			for (int i = 0; i < splitWord.length; i++) {
 				splitPair = splitWord[i].split(valueSep, 2);
 				if (splitPair.length < 2) {
-					throw new IllegalArgumentException("Pair \"" + splitWord[i] + "\" is in the wrong format. Separator \"" + valueSep + "\" not found!");
+					throw new IllegalArgumentException("Pair \"" + splitWord[i] + "\" in line " + lineCount + " is in the wrong format. Separator \""
+							+ valueSep + "\" not found!");
 				}
 				symbol = splitPair[0];
 				if (symbol.matches("\\W")) {
 					// Only characters, digits and underscores are allowed for
 					// event names ([a-zA-Z_0-9])
-					throw new IllegalArgumentException("Event name \"" + symbol + "\" contains forbidden characters. " + "Only [a-zA-Z_0-9] are allowed.");
+					throw new IllegalArgumentException("Event name \"" + symbol + "\" in line " + lineCount + " contains forbidden characters. "
+							+ "Only [a-zA-Z_0-9] are allowed.");
 				}
-				timeDelay = Integer.parseInt(splitPair[1]);
+				timeDelay = Integer.parseInt(splitPair[1].trim());
 				if (!alphabet.containsKey(symbol)) {
 					alphabet.put(symbol, alphabet.size());
 					alphabetRev.add(symbol);
@@ -181,6 +224,7 @@ public class TimedInput {
 				word.appendPair(alphabetRev.get(alphabet.get(symbol)), timeDelay);
 			}
 			words.add(word);
+			lineCount++;
 		}
 	}
 
@@ -216,11 +260,26 @@ public class TimedInput {
 	}
 
 	/**
+	 * Returns the {@link TimedWord} at the given index.
+	 * 
+	 * @param i
+	 *            The index to get the {@link TimedWord} for
+	 * @return The {@link TimedWord} at the given index or {@code null} if the index does not exist
+	 */
+	public TimedWord get(int i) {
+
+		if (i >= 0 && i < words.size()) {
+			return words.get(i);
+		}
+		return null;
+	}
+
+	/**
 	 * Returns the number of timed sequences contained in the {@link TimedInput} .
 	 * 
 	 * @return The number of timed sequences
 	 */
-	public int getNumWords() {
+	public int size() {
 		return words.size();
 	}
 
@@ -323,6 +382,30 @@ public class TimedInput {
 			if (i < (words.size() - 1)) {
 				bw.append('\n');
 			}
+		}
+	}
+
+	@Override
+	public Iterator<TimedWord> iterator() {
+		return new Iterator<TimedWord>() {
+			int i = 0;
+
+			@Override
+			public boolean hasNext() {
+				return i < size();
+			}
+
+			@Override
+			public TimedWord next() {
+				i++;
+				return getWord(i - 1);
+			}
+		};
+	}
+
+	public void toTimedIntWords() {
+		for (int i = 0; i < size(); i++) {
+			words.set(i, words.get(i).toIntWord());
 		}
 	}
 
