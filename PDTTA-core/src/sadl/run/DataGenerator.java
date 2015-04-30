@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import sadl.constants.AnomalyInsertionType;
 import sadl.input.TimedInput;
 import sadl.models.TauPTA;
+import sadl.utils.IoUtils;
 import sadl.utils.MasterSeed;
 
 import com.beust.jcommander.JCommander;
@@ -74,6 +75,7 @@ public class DataGenerator implements Serializable {
 		final TimedInput trainingTimedSequences = TimedInput.parseAlt(Paths.get(dataString), 1);
 
 		final TauPTA pta = new TauPTA(trainingTimedSequences);
+		IoUtils.xmlSerialize(pta, Paths.get("pta_normal.xml"));
 		try(BufferedWriter br = Files.newBufferedWriter(Paths.get("normal_sequences"),StandardCharsets.UTF_8)){
 			logger.info("sampling normal sequences");
 			final Path p = Paths.get("pta_normal.dot");
@@ -92,6 +94,7 @@ public class DataGenerator implements Serializable {
 					anomaly1.makeAbnormal(type);
 					try {
 						anomaly1.toGraphvizFile(Paths.get("pta_abnormal_" + type.getTypeIndex() + ".dot"), false);
+						IoUtils.xmlSerialize(anomaly1, Paths.get("pta_abnormal_" + type.getTypeIndex() + ".xml"));
 					} catch (final IOException e) {
 						logger.error("unexpected exception while printing graphviz file", e);
 					}
