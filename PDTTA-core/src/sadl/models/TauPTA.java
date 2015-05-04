@@ -164,7 +164,7 @@ public class TauPTA extends PDTTA {
 			}
 			occurenceCount += initialPta.finalStateCount.get(state);
 			for (final Transition t : stateTransitions) {
-				t.setProbability(initialPta.transitionCount.get(t) / (double) occurenceCount);
+				initialPta.changeTransitionProbability(t, initialPta.transitionCount.get(t) / (double) occurenceCount, false);
 			}
 			initialPta.addFinalState(state, initialPta.finalStateCount.get(state) / (double) occurenceCount);
 		}
@@ -187,7 +187,7 @@ public class TauPTA extends PDTTA {
 			}
 			occurenceCount += finalStateCount.get(state);
 			for (final Transition t : stateTransitions) {
-				t.setProbability(transitionCount.get(t) / (double) occurenceCount);
+				changeTransitionProbability(t, transitionCount.get(t) / (double) occurenceCount, false);
 			}
 			addFinalState(state, finalStateCount.get(state) / (double) occurenceCount);
 		}

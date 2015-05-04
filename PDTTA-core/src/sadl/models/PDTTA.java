@@ -145,7 +145,7 @@ public class PDTTA implements AutomatonModel, Serializable {
 		// divide every probability by the sum of probabilities s.t. they sum up to 1
 		if (!Precision.equals(sum, 1)) {
 			logger.trace("Sum of transition probabilities for state {} is {}", state, sum);
-			outgoingTransitions.forEach(t -> t.setProbability(t.getProbability() / sum));
+			outgoingTransitions.forEach(t -> changeTransitionProbability(t, t.getProbability() / sum));
 			final double newSum = outgoingTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
 			logger.debug("Corrected sum of transition probabilities is {}", newSum);
 			if (!Precision.equals(newSum, 1.0)) {
@@ -159,7 +159,8 @@ public class PDTTA implements AutomatonModel, Serializable {
 					fracSum = fracSum.add(f);
 				}
 				for (int i = 0; i < outgoingTransitions.size(); i++) {
-					outgoingTransitions.get(i).setProbability(probabilities.get(i).divide(fracSum).doubleValue());
+					changeTransitionProbability(outgoingTransitions.get(i), probabilities.get(i).divide(fracSum).doubleValue());
+					// outgoingTransitions.get(i).setProbability(probabilities.get(i).divide(fracSum).doubleValue());
 				}
 				final double tempSum = outgoingTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
 				if (!Precision.equals(tempSum, 1.0)) {
@@ -168,6 +169,23 @@ public class PDTTA implements AutomatonModel, Serializable {
 			}
 		}
 		return true;
+	}
+
+	protected void changeTransitionProbability(Transition transition, double newProbability) {
+		changeTransitionProbability(transition, newProbability, true);
+	}
+
+	protected void changeTransitionProbability(Transition transition, double newProbability, boolean bindTimeInformation) {
+		Distribution d = null;
+		d = removeTransition(transition, bindTimeInformation);
+		final Transition t = new Transition(transition.getFromState(), transition.getToState(), transition.getSymbol(), newProbability);
+		transitions.add(t);
+		if (bindTimeInformation) {
+			bindTransitionDistribution(t, d);
+		}
+		if (d == null && bindTimeInformation) {
+			logger.warn("Should incorporate time but there was no time distribution associated with transition {}", t);
+		}
 	}
 
 	protected PDTTA() {
@@ -335,9 +353,12 @@ public class PDTTA implements AutomatonModel, Serializable {
 		return result;
 	}
 
-
 	protected void bindTransitionDistribution(Transition newTransition, Distribution d) {
-		transitionDistributions.put(newTransition.toZeroProbTransition(), d);
+		if (transitionDistributions != null) {
+			transitionDistributions.put(newTransition.toZeroProbTransition(), d);
+		} else {
+			logger.warn("Trying to add Distribution {} to non existing time transition distributions", d);
+		}
 	}
 
 	/**
@@ -355,7 +376,12 @@ public class PDTTA implements AutomatonModel, Serializable {
 			logger.warn("Tried to remove a non existing transition={}", t);
 		}
 		if (removeTimeDistribution) {
-			return transitionDistributions.remove(t.toZeroProbTransition());
+			if (transitionDistributions != null) {
+				return transitionDistributions.remove(t.toZeroProbTransition());
+			} else {
+				logger.warn("Trying to remove from non existing transition distributions and transition {}", t);
+				return null;
+			}
 		} else {
 			return null;
 		}
@@ -430,7 +456,6 @@ public class PDTTA implements AutomatonModel, Serializable {
 		return result;
 	}
 
-
 	public Random getRandom() {
 		return r;
 	}
@@ -455,7 +480,6 @@ public class PDTTA implements AutomatonModel, Serializable {
 			return false;
 		}
 	}
-
 
 	public int getStartState() {
 		return START_STATE;

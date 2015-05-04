@@ -118,8 +118,5 @@ public class Transition implements Serializable {
 		return symbol == STOP_TRAVERSING_SYMBOL;
 	}
 
-	public void setProbability(double probability) {
-		this.probability = probability;
-	}
 
 }
