@@ -18,6 +18,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -36,7 +37,9 @@ import sadl.constants.ClassLabel;
  * @author Timo Klerx
  *
  */
-public class TimedInput implements Iterable<TimedWord> {
+public class TimedInput implements Iterable<TimedWord>, Serializable {
+	private static final long serialVersionUID = -2175576201528760567L;
+
 	private static Logger logger = LoggerFactory.getLogger(TimedInput.class);
 
 	private TObjectIntMap<String> alphabet;

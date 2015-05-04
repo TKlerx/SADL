@@ -14,6 +14,7 @@ package sadl.input;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,7 +30,9 @@ import sadl.constants.ClassLabel;
  * @author Timo Klerx
  *
  */
-public class TimedWord {
+public class TimedWord implements Serializable{
+	private static final long serialVersionUID = 111992823193054086L;
+
 	private static Logger logger = LoggerFactory.getLogger(TimedWord.class);
 
 	protected TIntList timeValues;

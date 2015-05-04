@@ -29,6 +29,7 @@ import sadl.constants.AnomalyInsertionType;
 import sadl.input.TimedInput;
 import sadl.models.TauPTA;
 import sadl.utils.IoUtils;
+import sadl.utils.MasterSeed;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -81,14 +82,21 @@ public class DataGenerator implements Serializable {
 		// }
 		// }
 		// for(final AnomalyInsertionType type : AnomalyInsertionType.values()){
+
 		for (final AnomalyInsertionType type : AnomalyInsertionType.values()) {
 			if(type != AnomalyInsertionType.NONE && type != AnomalyInsertionType.ALL){
+				MasterSeed.reset();
 				final TauPTA anomaly1 = SerializationUtils.clone(pta);
+				anomaly1.setRandom(MasterSeed.nextRandom());
 				logger.info("inserting Anomaly Type {}", type);
 				anomaly1.makeAbnormal(type);
 				try {
 					anomaly1.toGraphvizFile(Paths.get("pta_abnormal_" + type.getTypeIndex() + ".dot"), false);
 					IoUtils.xmlSerialize(anomaly1, Paths.get("pta_abnormal_" + type.getTypeIndex() + ".xml"));
+					final TauPTA des = (TauPTA) IoUtils.xmlDeserialize(Paths.get("pta_abnormal_" + type.getTypeIndex() + ".xml"));
+					if (!anomaly1.equals(des)) {
+						throw new IllegalStateException();
+					}
 				} catch (final IOException e) {
 					logger.error("unexpected exception while printing graphviz file", e);
 				}

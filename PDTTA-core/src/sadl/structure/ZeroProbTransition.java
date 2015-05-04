@@ -78,6 +78,6 @@ public class ZeroProbTransition extends Transition implements Serializable {
 
 	@Override
 	public String toString() {
-		return "ZeroProbTransition [toString()=" + super.toString() + "]";
+		return "ZeroProbTransition [" + super.toString() + "]";
 	}
 }

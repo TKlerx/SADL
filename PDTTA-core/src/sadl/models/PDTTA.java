@@ -69,7 +69,7 @@ public class PDTTA implements AutomatonModel, Serializable {
 	// TODO implement PDTTA as an extension of a PDFA
 	transient private static Logger logger = LoggerFactory.getLogger(PDTTA.class);
 	// TODO maybe change Set<Transition> transitions to Map<State,Set<Transition>>
-	protected Random r = MasterSeed.nextRandom();
+	transient protected Random r = MasterSeed.nextRandom();
 
 	protected static final double NO_TRANSITION_PROBABILITY = 0;
 
@@ -140,12 +140,14 @@ public class PDTTA implements AutomatonModel, Serializable {
 	}
 
 	boolean fixProbability(int state) {
-		final List<Transition> outgoingTransitions = getTransitions(state, true);
+		List<Transition> outgoingTransitions = getTransitions(state, true);
 		final double sum = outgoingTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
 		// divide every probability by the sum of probabilities s.t. they sum up to 1
 		if (!Precision.equals(sum, 1)) {
-			logger.trace("Sum of transition probabilities for state {} is {}", state, sum);
+			logger.debug("Sum of transition probabilities for state {} is {}", state, sum);
+			outgoingTransitions = getTransitions(state, true);
 			outgoingTransitions.forEach(t -> changeTransitionProbability(t, t.getProbability() / sum));
+			outgoingTransitions = getTransitions(state, true);
 			final double newSum = outgoingTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
 			logger.debug("Corrected sum of transition probabilities is {}", newSum);
 			if (!Precision.equals(newSum, 1.0)) {
@@ -162,7 +164,7 @@ public class PDTTA implements AutomatonModel, Serializable {
 					changeTransitionProbability(outgoingTransitions.get(i), probabilities.get(i).divide(fracSum).doubleValue());
 					// outgoingTransitions.get(i).setProbability(probabilities.get(i).divide(fracSum).doubleValue());
 				}
-				final double tempSum = outgoingTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
+				final double tempSum = getTransitions(state, true).stream().mapToDouble(t -> t.getProbability()).sum();
 				if (!Precision.equals(tempSum, 1.0)) {
 					throw new IllegalStateException("Probabilities do not sum up to one, but instead to " + tempSum);
 				}
@@ -176,15 +178,22 @@ public class PDTTA implements AutomatonModel, Serializable {
 	}
 
 	protected void changeTransitionProbability(Transition transition, double newProbability, boolean bindTimeInformation) {
-		Distribution d = null;
-		d = removeTransition(transition, bindTimeInformation);
-		final Transition t = new Transition(transition.getFromState(), transition.getToState(), transition.getSymbol(), newProbability);
-		transitions.add(t);
-		if (bindTimeInformation) {
-			bindTransitionDistribution(t, d);
-		}
-		if (d == null && bindTimeInformation) {
-			logger.warn("Should incorporate time but there was no time distribution associated with transition {}", t);
+		if (!transition.isStopTraversingTransition()) {
+			Distribution d = null;
+			d = removeTransition(transition, bindTimeInformation);
+			final Transition t = new Transition(transition.getFromState(), transition.getToState(), transition.getSymbol(), newProbability);
+			transitions.add(t);
+			if (bindTimeInformation) {
+				bindTransitionDistribution(t, d);
+			}
+			if (d == null && bindTimeInformation) {
+				logger.warn("Should incorporate time but there was no time distribution associated with transition {}", t);
+			}
+		} else {
+			final double adjusted = finalStateProbabilities.put(transition.getFromState(), newProbability);
+			if (Double.doubleToLongBits(adjusted) == Double.doubleToLongBits(finalStateProbabilities.getNoEntryValue())) {
+				logger.warn("Was not possible to adjust final state prob for transition {}",transition);
+			}
 		}
 	}
 
@@ -551,6 +560,19 @@ public class PDTTA implements AutomatonModel, Serializable {
 				if (!e2.contains(e)) {
 					logger.error("Entry {} not contained in e2", e);
 					final Distribution result = other.transitionDistributions.get(e.getKey());
+					if (result != null) {
+						final boolean compare = e.getValue().equals(result);
+						logger.info("Both maps contain a distribution for key {}; distributions are equal: {}", e.getKey(), compare);
+						logger.info("d1: {}, d2: {}", e.getValue(), result);
+					}
+					count++;
+				}
+			}
+			logger.error("");
+			for (final Entry<ZeroProbTransition, Distribution> e : e2) {
+				if (!e1.contains(e)) {
+					logger.error("Entry {} not contained in e1", e);
+					final Distribution result = transitionDistributions.get(e.getKey());
 					if (result != null) {
 						final boolean compare = e.getValue().equals(result);
 						logger.info("Both maps contain a distribution for key {}; distributions are equal: {}", e.getKey(), compare);

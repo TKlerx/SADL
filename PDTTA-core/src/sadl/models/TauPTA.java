@@ -46,6 +46,7 @@ import jsat.distributions.empirical.KernelDensityEstimator;
 import jsat.linear.DenseVector;
 import jsat.linear.Vec;
 
+import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.math3.util.Precision;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,9 +67,6 @@ import sadl.structure.ZeroProbTransition;
  *
  */
 public class TauPTA extends PDTTA {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -7222525536004714236L;
 	transient private static Logger logger = LoggerFactory.getLogger(TauPTA.class);
 	TObjectIntMap<Transition> transitionCount = new TObjectIntHashMap<>();
@@ -131,8 +129,14 @@ public class TauPTA extends PDTTA {
 
 	}
 
+	/**
+	 * WARNING: The input is changed!
+	 * 
+	 * @param trainingSequences
+	 */
 	public TauPTA(TimedInput trainingSequences) {
 		super();
+		trainingSequences = SerializationUtils.clone(trainingSequences);
 		trainingSequences.toTimedIntWords();
 		final TauPTA initialPta = new TauPTA();
 		initialPta.addState(START_STATE);
