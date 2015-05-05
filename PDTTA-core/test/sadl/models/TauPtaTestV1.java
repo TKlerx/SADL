@@ -16,12 +16,14 @@ import sadl.input.TimedInput;
 import sadl.utils.IoUtils;
 import sadl.utils.MasterSeed;
 
-public class TauPtaTest {
-	TimedInput trainingTimedSequences;
+public class TauPtaTestV1 {
+	// XXX if this test fails and V2 passes then this may be an issue with the reset method in this class. As long as V2 passes, everything should be OK
+
+	static TimedInput trainingTimedSequences;
 
 	@BeforeClass
-	public void setup() throws URISyntaxException, IOException {
-		final Path p = Paths.get(this.getClass().getResource("/medium/rti_medium.txt").toURI());
+	public static void setup() throws URISyntaxException, IOException {
+		final Path p = Paths.get(TauPtaTestV1.class.getResource("/medium/rti_medium.txt").toURI());
 		trainingTimedSequences = TimedInput.parseAlt(p, 1);
 	}
 
@@ -38,7 +40,7 @@ public class TauPtaTest {
 	}
 	@Test
 	public void testTauPTATimedInputAbnormal1() throws IOException, URISyntaxException {
-		final Path p = Paths.get(this.getClass().getResource("/medium//pta_abnormal_1.xml").toURI());
+		final Path p = Paths.get(this.getClass().getResource("/medium/pta_abnormal_1.xml").toURI());
 		final TauPTA pta = new TauPTA(trainingTimedSequences);
 		pta.makeAbnormal(AnomalyInsertionType.TYPE_ONE);
 		final TauPTA saved = (TauPTA) IoUtils.xmlDeserialize(p);

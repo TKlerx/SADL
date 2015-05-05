@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 public class MasterSeed {
 	private static Logger logger = LoggerFactory.getLogger(MasterSeed.class);
 	private static long seed = 7222525536004714236L;
-	private static Random r = new Random();
+	private static Random r = new Random(seed);
 	private static boolean wasSet = false;
 
 	public static void setSeed(long seed) {

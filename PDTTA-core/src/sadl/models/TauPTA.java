@@ -80,7 +80,6 @@ public class TauPTA extends PDTTA {
 
 	int ommitedSequenceCount = 0;
 
-
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -342,7 +341,14 @@ public class TauPTA extends PDTTA {
 		// elements.collect(as List)
 		logger.debug("AllSequences.size()={}", allSequences.size());
 		logger.debug("Transitions.size()={}", transitions.size());
-		final Comparator<UntimedSequence> c = (s1, s2) -> f.applyAsInt(Double.compare(sequenceProbabilities.get(s1), sequenceProbabilities.get(s2)));
+		final Comparator<UntimedSequence> c = (s1, s2) -> {
+			final int probCompare = Double.compare(sequenceProbabilities.get(s1), sequenceProbabilities.get(s2));
+			if (probCompare != 0) {
+				return f.applyAsInt(probCompare);
+			} else {
+				return f.applyAsInt(s1.toString().compareTo(s2.toString()));
+			}
+		};
 		allSequences.stream().sorted(c).limit(SEQUENTIAL_ANOMALY_K).map(s -> labelWithAnomaly(s, getAnomalyType())).collect(Collectors.toList());
 		logger.debug("Transitions.size()={}", transitions.size());
 		// allSequences.sort((t1, t2) -> Double.compare(sequenceProbabilities.get(t1), sequenceProbabilities.get(t2)));
@@ -351,6 +357,8 @@ public class TauPTA extends PDTTA {
 	}
 
 	private UntimedSequence labelWithAnomaly(UntimedSequence s, AnomalyInsertionType anomalyinsertionType) {
+		logger.debug("Labeling sequence {} with anomaly of type {}", s, anomalyinsertionType.getTypeIndex());
+		logger.debug("Prob of sequence is {}", computeProbability(s));
 		// traverse the TauPTA and label every transition with the anomalyType
 		int currentState = START_STATE;
 		final TIntList events = s.getEvents();
@@ -452,6 +460,8 @@ public class TauPTA extends PDTTA {
 			int result = 0;
 			final List<Transition> possibleTransitions = possibleTransitionFunction.apply(height);
 			if (possibleTransitions.size() > 0) {
+				// sort for determinism
+				Collections.sort(possibleTransitions);
 				result = insertAnomaly.applyAsInt(possibleTransitions);
 			}
 			if (possibleTransitions.size() == 0 || result != 1) {
@@ -466,6 +476,7 @@ public class TauPTA extends PDTTA {
 			return -1;
 		}
 		final Transition chosenTransition = chooseRandomObject(possibleTransitions, r);
+		logger.debug("Chose transition {} for inserting an anomaly of type 3", chosenTransition);
 		final Distribution d = removeTransition(chosenTransition);
 		final Transition newTransition = addAbnormalTransition(chosenTransition.getFromState(), chosenTransition.getToState(), chosenTransition.getSymbol(),
 				chosenTransition.getProbability(), AnomalyInsertionType.TYPE_THREE);
@@ -525,11 +536,11 @@ public class TauPTA extends PDTTA {
 		return result;
 	}
 
-
 	private int changeTransitionEvent(List<Transition> possibleTransitions) {
 		final TIntSet currentStates = new TIntHashSet(possibleTransitions.stream().mapToInt(t -> t.getFromState()).distinct().toArray());
 		while (currentStates.size() > 0) {
 			final Transition chosenTransition = chooseRandomObject(possibleTransitions, r);
+			logger.debug("Chose transition {} for inserting an anomaly of type 1", chosenTransition);
 			final int chosenState = chosenTransition.getFromState();
 			final List<Transition> stateTransitions = possibleTransitions.stream().filter(t -> t.getFromState() == chosenState).collect(Collectors.toList());
 			final TIntList notOccuringEvents = new TIntArrayList(alphabet);
@@ -551,9 +562,6 @@ public class TauPTA extends PDTTA {
 		}
 		return 0;
 	}
-
-
-
 
 	public static <T> T chooseRandomObject(List<T> list, Random rnd) {
 		return list.get(rnd.nextInt(list.size()));
@@ -697,6 +705,5 @@ public class TauPTA extends PDTTA {
 			return (int) (value * factor);
 		}
 	}
-
 
 }

@@ -20,7 +20,7 @@ import sadl.constants.AnomalyInsertionType;
  * @author Timo Klerx
  *
  */
-public class Transition implements Serializable {
+public class Transition implements Serializable, Comparable<Transition> {
 	/**
 	 * 
 	 */
@@ -118,5 +118,22 @@ public class Transition implements Serializable {
 		return symbol == STOP_TRAVERSING_SYMBOL;
 	}
 
+
+	@Override
+	public int compareTo(Transition o) {
+		if (getFromState() != o.getFromState()) {
+			return Integer.compare(getFromState(), o.getFromState());
+		}
+		if (getToState() != o.getToState()) {
+			return Integer.compare(getToState(), o.getToState());
+		}
+		if (getSymbol() != o.getSymbol()) {
+			return Integer.compare(getSymbol(), o.getSymbol());
+		}
+		if (Double.doubleToLongBits(getProbability()) != Double.doubleToLongBits(o.getProbability())) {
+			return Long.compare(Double.doubleToLongBits(getProbability()), Double.doubleToLongBits(o.getProbability()));
+		}
+		return 0;
+	}
 
 }
