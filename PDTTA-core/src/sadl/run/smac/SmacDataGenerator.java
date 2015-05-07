@@ -109,18 +109,25 @@ public class SmacDataGenerator implements Serializable {
 					// but I don't know how the distribution is so to be fair, i sample all anomalies the same
 					for (int i = 0; i < TEST_SIZE; i++) {
 						if (r.nextDouble() < ANOMALY_PERCENTAGE) {
-							testSequences.add(anomaly.sampleSequence());
+							boolean wasAnormal = false;
+							TimedWord seq = null;
+							while (!wasAnormal) {
+								seq = anomaly.sampleSequence();
+								wasAnormal = seq.isAnomaly();
+							}
+							testSequences.add(seq);
 						} else {
 							testSequences.add(pta.sampleSequence());
 						}
 					}
 					final TimedInput trainset = new TimedInput(trainSequences);
-					final TimedInput testset = new TimedInput(trainSequences);
-					final Path outputFile = outputDir.resolve(Paths.get(df.format(k) + "_smac_mix_type" + type.getTypeIndex()));
+					final TimedInput testset = new TimedInput(testSequences);
+					final Path outputFile = outputDir.resolve(Paths.get(df.format(k) + "_smac_mix_type" + type.getTypeIndex() + ".txt"));
 					final BufferedWriter bw = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8);
 					trainset.toFile(bw, true);
 					bw.write('\n');
 					bw.write("?????????????????????????");
+					bw.write('\n');
 					testset.toFile(bw, true);
 					bw.close();
 					logger.info("Wrote file #{} ({})", k, outputFile);

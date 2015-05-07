@@ -263,6 +263,7 @@ public class NewSmacPipeline implements Serializable {
 			return null;
 		});
 		final TimedInput trainingInput = trainTest.getKey();
+		trainingInput.toTimedIntWords();
 		final ModelLearner learner = new PdttaLeaner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0);
 
 		final Model model = learner.train(trainingInput);
@@ -279,6 +280,7 @@ public class NewSmacPipeline implements Serializable {
 
 		// compute likelihood on test set for automaton and for time PDFs
 		final TimedInput testInput = trainTest.getValue();
+		testInput.toTimedIntWords();
 
 		final PdttaExperimentResult result = testPdtta(testInput, automaton);
 		logger.info("F-Measure={}", result.getfMeasure());

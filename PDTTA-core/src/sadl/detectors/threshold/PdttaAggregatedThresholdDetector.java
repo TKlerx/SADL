@@ -44,7 +44,7 @@ public class PdttaAggregatedThresholdDetector extends PdttaDetector {
 		// Sollte eigentlich nur -infty zurückgeben
 		final double aggregatedEventScore = aggregate(eventLikelihoods, aggType);
 		final double aggregatedTimeScore = aggregate(timeLikelihoods, aggType);
-		logger.info("aggEventScore={}\taggTimeScore={}", aggregatedEventScore, aggregatedTimeScore);
+		logger.debug("aggEventScore={}\taggTimeScore={}", aggregatedEventScore, aggregatedTimeScore);
 
 		if (aggregatedEventScore <= normalizedEventThreshold || aggregatedTimeScore <= normalizedTimeThreshold) {
 			// one of the scores is so low, that this indicates an anomaly

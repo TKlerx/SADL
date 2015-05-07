@@ -152,16 +152,17 @@ public class TimedWord implements Serializable{
 	public String toString(boolean withClassLabel) {
 		final StringBuilder bw = new StringBuilder();
 		bw.append('(');
-		for (int j = 0; j < this.getLength(); j++) {
+		for (int j = 0; j < this.length(); j++) {
 			bw.append(this.getSymbol(j));
 			bw.append(',');
 			bw.append(Integer.toString(this.getTimeValue(j)));
 			bw.append(')');
-			if (j < (this.getLength() - 1)) {
+			if (j < (this.length() - 1)) {
 				bw.append(' ');
 				bw.append('(');
 			} else if (withClassLabel) {
 				bw.append(':');
+				// logger.info("classlabel={}", this.getLabel());
 				bw.append(Integer.toString(this.getLabel().getClassLabel()));
 			}
 		}
@@ -183,7 +184,7 @@ public class TimedWord implements Serializable{
 			bw.append(this.getSymbol(j));
 			bw.append(' ');
 			bw.append(Integer.toString(this.getTimeValue(j)));
-			if (j < (this.getLength() - 1)) {
+			if (j < (this.length() - 1)) {
 				bw.append(' ');
 				bw.append(' ');
 			} else if (withClassLabel) {
