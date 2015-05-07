@@ -21,6 +21,7 @@ import sadl.constants.ClassLabel;
  *
  */
 public class TimedIntWord extends TimedWord {
+	private static final long serialVersionUID = 7777907017898321854L;
 	TIntList intSymbols = new TIntArrayList();
 	public TimedIntWord() {
 		super();

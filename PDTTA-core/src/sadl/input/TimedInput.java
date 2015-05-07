@@ -18,6 +18,8 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,9 +44,28 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 
 	private static Logger logger = LoggerFactory.getLogger(TimedInput.class);
 
-	private TObjectIntMap<String> alphabet;
-	private List<String> alphabetRev;
-	private List<TimedWord> words;
+	private final TObjectIntMap<String> alphabet = new TObjectIntHashMap<>();
+	private final List<String> alphabetRev = new ArrayList<>();
+	private final List<TimedWord> words = new ArrayList<>();
+
+	private static final String[] parseSymbols = new String[] { "^\\(", "\\)$", "\\)\\s+\\(", "\\s*,\\s*", "\\s*:\\s*" };
+	private static final String[] parseSymbolsAlt = new String[] { "^\\d+ ", "$", "\\s{2}", "\\s", "\\s*:\\s*" };
+	private static final int parseStart = 0;
+	private static final int parseStartAlt = 1;
+
+	public TimedInput(List<TimedWord> words) {
+		this.words.addAll(words);
+		for (final TimedWord w : words) {
+			if (w.getClass() == TimedWord.class) {
+				for (final String s : w.symbols) {
+					if (!alphabet.containsKey(s)) {
+						alphabet.put(s, alphabet.size());
+						alphabetRev.add(s);
+					}
+				}
+			}
+		}
+	}
 
 	// TODO maybe add parsing for anomaly type?!
 	/**
@@ -63,7 +84,26 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	 * @throws IOException
 	 */
 	public static TimedInput parse(Path in) throws IOException {
-		return new TimedInput(in, 0, "^\\(", "\\)$", "\\)\\s+\\(", "\\s*,\\s*", "\\s*:\\s*");
+		return parseCustom(in, parseStart, parseSymbols[0], parseSymbols[1], parseSymbols[2], parseSymbols[3], parseSymbols[4]);
+	}
+
+	/**
+	 * Parses timed sequences from a file. Each line contains exactly one of those sequences that have the following format:
+	 * 
+	 * <pre>
+	 * {@code (s_1,t_1) (s_2,t_2) ... (s_n,t_n) : label}
+	 * </pre>
+	 * 
+	 * where {@code s_i} is an (event) symbol of type {@link String} and {@code t_i} is the corresponding time delay of type {@code int}. The label at the end
+	 * is of type {@link ClassLabel} and is optional.
+	 * 
+	 * @param br
+	 *            A {@link InputStream} that contains timed sequences in the appropriate format
+	 * @return A {@link TimedInput} that represents the timed sequences parsed
+	 * @throws IOException
+	 */
+	public static TimedInput parse(Reader br) throws IOException {
+		return parseCustom(br, parseStart, parseSymbols[0], parseSymbols[1], parseSymbols[2], parseSymbols[3], parseSymbols[4]);
 	}
 
 	/**
@@ -87,7 +127,31 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	 * @throws IOException
 	 */
 	public static TimedInput parseAlt(Path in) throws IOException {
-		return parseAlt(in, 1);
+		return parseAlt(in, parseStartAlt);
+	}
+
+	/**
+	 * Parses timed sequences from a file that has the following alternative format:
+	 * 
+	 * <pre>
+	 * {@code x y}
+	 * {@code n s_1 t_1  s_2 t_2 ... s_n t_n : label}
+	 * :
+	 * :
+	 * </pre>
+	 * 
+	 * where @{@code x} is the number of sequences contained in that file and @ {@code y} the number of different symbols contained. Each of the following lines
+	 * contains exactly one sequence, where {@code s_i} is an (event) symbol of type {@link String} and {@code t_i} is the corresponding time delay of type
+	 * {@link Integer}. The {@code n} at the beginning of the line is the number of symbols in that sequence. Note that between {@code t_i} and {@code s_(i+1)}
+	 * is a double space.The label at the end is of type {@link ClassLabel} and is optional.
+	 * 
+	 * @param br
+	 *            A {@link BufferedReader} that contains timed sequences in the appropriate alternative format
+	 * @return A {@link TimedInput} that represents the timed sequences parsed
+	 * @throws IOException
+	 */
+	public static TimedInput parseAlt(Reader br) throws IOException {
+		return parseAlt(br, parseStartAlt);
 	}
 
 	/**
@@ -113,7 +177,33 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	 * @throws IOException
 	 */
 	public static TimedInput parseAlt(Path in, int lineOffset) throws IOException {
-		return new TimedInput(in, lineOffset, "^\\d+ ", "$", "\\s{2}", "\\s", "\\s*:\\s*");
+		return parseCustom(in, lineOffset, parseSymbolsAlt[0], parseSymbolsAlt[1], parseSymbolsAlt[2], parseSymbolsAlt[3], parseSymbolsAlt[4]);
+	}
+
+	/**
+	 * Parses timed sequences from a file that has the following alternative format:
+	 * 
+	 * <pre>
+	 * {@code x y}
+	 * {@code n s_1 t_1  s_2 t_2 ... s_n t_n : label}
+	 * :
+	 * :
+	 * </pre>
+	 * 
+	 * where @{@code x} is the number of sequences contained in that file and @ {@code y} the number of different symbols contained. Each of the following lines
+	 * contains exactly one sequence, where {@code s_i} is an (event) symbol of type {@link String} and {@code t_i} is the corresponding time delay of type
+	 * {@link Integer}. The {@code n} at the beginning of the line is the number of symbols in that sequence. Note that between {@code t_i} and {@code s_(i+1)}
+	 * is a double space.The label at the end is of type {@link ClassLabel} and is optional.
+	 * 
+	 * @param br
+	 *            A {@link BufferedReader} that contains timed sequences in the appropriate alternative format
+	 * @param lineOffset
+	 *            The number of lines that will be skipped at the beginning of the file because they contain a header with meta data
+	 * @return A {@link TimedInput} that represents the timed sequences parsed
+	 * @throws IOException
+	 */
+	public static TimedInput parseAlt(Reader br, int lineOffset) throws IOException {
+		return parseCustom(br, lineOffset, parseSymbolsAlt[0], parseSymbolsAlt[1], parseSymbolsAlt[2], parseSymbolsAlt[3], parseSymbolsAlt[4]);
 	}
 
 	/**
@@ -141,30 +231,57 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	 */
 	public static TimedInput parseCustom(Path in, int lineOffset, String seqPrefix, String seqPostfix, String pairSep, String valueSep, String classSep)
 			throws IOException {
+		if (Files.notExists(in)) {
+			logger.warn("File {} was not found.", in);
+			throw new FileNotFoundException("input file on path " + in.toAbsolutePath() + " was not found");
+		}
+		try (BufferedReader br = Files.newBufferedReader(in)) {
+			return parseCustom(br, lineOffset, seqPrefix, seqPostfix, pairSep, valueSep, classSep);
+		}
+	}
+
+	/**
+	 * Parses timed sequences from a file in a custom format:
+	 * 
+	 * @param br
+	 *            A {@link BufferedReader} that contains timed sequences in the appropriate alternative format
+	 * @param lineOffset
+	 *            The number of lines that will be skipped at the beginning of the file because they contain a header with meta data
+	 * @param seqPrefix
+	 *            A regular expression that matches the prefix of each sequence; after removing the prefix the line must begin with the first symbol
+	 *            {@link String}
+	 * @param seqPostfix
+	 *            A regular expression that matches the postfix of each sequence (until the regular expression in {@code classSep} appears); after removing the
+	 *            postfix the line must end with the last time delay.
+	 * @param pairSep
+	 *            A regular expression that matches the separator between two value pairs in a sequence; must not be a substring of {@code valueSep}
+	 * @param valueSep
+	 *            A regular expression that matches the separator between two values of a pair in a sequence
+	 * @param classSep
+	 *            A regular expression that matches the separator between the sequence and the optional class label of a sequence; must not be a substring of
+	 *            {@code pairSep}
+	 * @return A {@link TimedInput} that represents the timed sequences parsed
+	 * @throws IOException
+	 */
+	public static TimedInput parseCustom(Reader br, int lineOffset, String seqPrefix, String seqPostfix, String pairSep, String valueSep,
+			String classSep) throws IOException {
 
 		final String pre = !seqPrefix.startsWith("^") ? "^" + seqPrefix : seqPrefix;
 		final String post = !seqPostfix.endsWith("$") ? seqPostfix + "$" : seqPostfix;
 
-		return new TimedInput(in, lineOffset, pre, post, pairSep, valueSep, classSep);
+		return new TimedInput(br, lineOffset, pre, post, pairSep, valueSep, classSep);
 	}
 
-	private TimedInput(Path input, int lineOffset, String seqPrefix, String seqPostfix, String pairSep, String valueSep, String classSep)
+	private TimedInput(Reader br, int lineOffset, String seqPrefix, String seqPostfix, String pairSep, String valueSep, String classSep)
 			throws IOException {
-		if (Files.notExists(input)) {
-			logger.warn("File {} was not found.", input);
-			throw new FileNotFoundException("input file on path " + input.toAbsolutePath() + " was not found");
-		}
-		try (BufferedReader br = Files.newBufferedReader(input)) {
-			loadData(br, lineOffset, seqPrefix, seqPostfix, pairSep, valueSep, classSep);
-		}
+		loadData(br, lineOffset, seqPrefix, seqPostfix, pairSep, valueSep, classSep);
 	}
 
-	private void loadData(BufferedReader in, int lineOffset, String seqPrefix, String seqPostfix, String pairSep, String valueSep, String classSep)
+	private void loadData(Reader br, int lineOffset, String seqPrefix, String seqPostfix, String pairSep, String valueSep, String classSep)
 			throws IOException {
 
-		words = new ArrayList<>();
-		alphabet = new TObjectIntHashMap<>();
-		alphabetRev = new ArrayList<>();
+
+		final BufferedReader in = new BufferedReader(br);
 
 		// Skip offset lines at the beginning of the file
 		int counter = 0;
@@ -416,6 +533,7 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	}
 
 	public void toTimedIntWords() {
+		// FIXME what about the alphabet? Does it also need to be adjusted?
 		for (int i = 0; i < size(); i++) {
 			words.set(i, words.get(i).toIntWord());
 		}

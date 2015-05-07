@@ -36,7 +36,8 @@ import java.util.Set;
 
 import jsat.distributions.Distribution;
 
-import org.apache.commons.math3.fraction.Fraction;
+import org.apache.commons.math3.exception.MathArithmeticException;
+import org.apache.commons.math3.fraction.BigFraction;
 import org.apache.commons.math3.util.Precision;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -152,13 +153,18 @@ public class PDTTA implements AutomatonModel, Serializable {
 			logger.debug("Corrected sum of transition probabilities is {}", newSum);
 			if (!Precision.equals(newSum, 1.0)) {
 				logger.debug("Probabilities do not sum up to one, so doing it again with the Fraction class");
-				final List<Fraction> probabilities = new ArrayList<>(outgoingTransitions.size());
+				final List<BigFraction> probabilities = new ArrayList<>(outgoingTransitions.size());
 				for (int i = 0; i < outgoingTransitions.size(); i++) {
-					probabilities.add(i, new Fraction(outgoingTransitions.get(i).getProbability()));
+					probabilities.add(i, new BigFraction(outgoingTransitions.get(i).getProbability()));
 				}
-				Fraction fracSum = Fraction.ZERO;
-				for (final Fraction f : probabilities) {
-					fracSum = fracSum.add(f);
+				BigFraction fracSum = BigFraction.ZERO;
+				for (final BigFraction f : probabilities) {
+					try {
+						fracSum = fracSum.add(f);
+					} catch (final MathArithmeticException e) {
+						logger.error("Arithmetic Exception for fracSum={}, FractionToAdd={}", fracSum, f, e);
+						throw e;
+					}
 				}
 				for (int i = 0; i < outgoingTransitions.size(); i++) {
 					changeTransitionProbability(outgoingTransitions.get(i), probabilities.get(i).divide(fracSum).doubleValue());
@@ -552,7 +558,6 @@ public class PDTTA implements AutomatonModel, Serializable {
 				return false;
 			}
 		} else if (!transitionDistributions.equals(other.transitionDistributions)) {
-			// TODO why are the transitionDistributions unequal??? continue here
 			final Set<Entry<ZeroProbTransition, Distribution>> e1 = transitionDistributions.entrySet();
 			final Set<Entry<ZeroProbTransition, Distribution>> e2 = other.transitionDistributions.entrySet();
 			int count = 0;
@@ -591,7 +596,6 @@ public class PDTTA implements AutomatonModel, Serializable {
 				return false;
 			}
 		} else if (!transitions.equals(other.transitions)) {
-			// TODO why are the transitionDistributions unequal??? continue here
 			int count = 0;
 			for (final Transition t : transitions) {
 				if (!other.transitions.contains(t)) {

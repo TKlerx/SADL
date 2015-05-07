@@ -53,7 +53,8 @@
 				<directory>resources</directory>
 				<excludes>
 					<exclude>**/*.java</exclude>
-				</excludes>			</testResource>
+				</excludes>
+			</testResource>
 		</testResources>
 		<plugins>
 			<plugin>
@@ -90,6 +91,7 @@
 					<source>1.8</source>
 					<target>1.8</target>
 					<excludes>
+						<exclude>**/GenericSmacPipeline.java</exclude>
 						<exclude>**/SmacPipeline.java</exclude>
 						<exclude>**/WekaSvmClassifier.java</exclude>
 					</excludes>
@@ -111,14 +113,14 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>de.upb.timok.run.GenericSmacPipeline</mainClass>
+							<mainClass>de.upb.timok.run.smac.NewSmacPipeline</mainClass>
 							<packageName>de.upb.timok.run</packageName>
 							<addClasspath>true</addClasspath>
 							<classpathPrefix>lib/</classpathPrefix>
 						</manifest>
 						<manifestEntries>
 							<mode>development</mode>
-							<url>${pom.url}</url>
+							<url>https://github.com/TKlerx/SADL</url>
 						</manifestEntries>
 					</archive>
 				</configuration>
