@@ -11,13 +11,13 @@
 
 package sadl.interfaces;
 
+
 /**
  * 
  * @author Timo Klerx
  *
  */
 public interface Model {
-
 
 
 }

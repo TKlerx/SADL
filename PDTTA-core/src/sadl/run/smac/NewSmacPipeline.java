@@ -61,9 +61,9 @@ import sadl.modellearner.PdttaLeaner;
 import sadl.models.PDTTA;
 import sadl.oneclassclassifier.LibSvmClassifier;
 import sadl.oneclassclassifier.clustering.DbScanClassifier;
-import sadl.run.GenericSmacPipeline;
 import sadl.utils.IoUtils;
 import sadl.utils.MasterSeed;
+import sadl.utils.Settings;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -76,7 +76,7 @@ import com.beust.jcommander.Parameter;
 public class NewSmacPipeline implements Serializable {
 	private static final long serialVersionUID = 4962328747559099050L;
 
-	private static Logger logger = LoggerFactory.getLogger(GenericSmacPipeline.class);
+	private static Logger logger = LoggerFactory.getLogger(NewSmacPipeline.class);
 	// TODO move this to experiment project
 
 	// just for parsing the one silly smac parameter
@@ -119,7 +119,7 @@ public class NewSmacPipeline implements Serializable {
 	double kdeBandwidth;
 
 	@Parameter(names = "-debug")
-	static boolean debug = false;
+	private final boolean debug = false;
 
 	@Parameter(names = "-kdeKernelFunction")
 	KdeKernelFunction kdeKernelFunctionQualifier;
@@ -207,7 +207,9 @@ public class NewSmacPipeline implements Serializable {
 	PdttaDetector pdttaDetector;
 
 	public PdttaExperimentResult run() throws IOException, InterruptedException {
-
+		if (debug) {
+			Settings.setDebug(debug);
+		}
 		if (featureCreatorMethod == FeatureCreatorMethod.FULL_FEATURE_CREATOR) {
 			featureCreator = new FullFeatureCreator();
 		} else if (featureCreatorMethod == FeatureCreatorMethod.SMALL_FEATURE_CREATOR) {
@@ -332,7 +334,4 @@ public class NewSmacPipeline implements Serializable {
 
 	}
 
-	public static boolean isDebug() {
-		return debug;
-	}
 }

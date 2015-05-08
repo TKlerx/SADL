@@ -150,7 +150,7 @@ public class TauPTA extends PDTTA {
 			final List<Transition> stateTransitions = initialPta.getTransitions(state, false);
 			for (final Transition t : stateTransitions) {
 				if (initialPta.transitionCount.get(t) < threshold) {
-					initialPta.removeTransition(t, false);
+					initialPta.removeTimedTransition(t, false);
 				}
 			}
 			if (initialPta.finalStateCount.get(state) < threshold) {
@@ -330,7 +330,7 @@ public class TauPTA extends PDTTA {
 		} else {
 			throw new IllegalArgumentException("the AnomalyInsertionType " + newAnomalyType + " is not supported.");
 		}
-		this.restoreConsistency();
+		this.checkAndRestoreConsistency();
 	}
 
 	private void insertSequentialAnomaly(IntUnaryOperator f) {
@@ -380,7 +380,7 @@ public class TauPTA extends PDTTA {
 	private void changeAnomalyType(Transition t, @SuppressWarnings("hiding") AnomalyInsertionType anomalyType) {
 		if ((t.getAnomalyInsertionType() != anomalyType)) {
 			final Transition newTransition = addAbnormalTransition(t, anomalyType);
-			final Distribution d = removeTransition(t);
+			final Distribution d = removeTimedTransition(t);
 			bindTransitionDistribution(newTransition, d);
 		}
 	}
@@ -477,7 +477,7 @@ public class TauPTA extends PDTTA {
 		}
 		final Transition chosenTransition = chooseRandomObject(possibleTransitions, r);
 		logger.debug("Chose transition {} for inserting an anomaly of type 3", chosenTransition);
-		final Distribution d = removeTransition(chosenTransition);
+		final Distribution d = removeTimedTransition(chosenTransition);
 		final Transition newTransition = addAbnormalTransition(chosenTransition.getFromState(), chosenTransition.getToState(), chosenTransition.getSymbol(),
 				chosenTransition.getProbability(), AnomalyInsertionType.TYPE_THREE);
 		bindTransitionDistribution(newTransition.toZeroProbTransition(), d);
@@ -553,7 +553,7 @@ public class TauPTA extends PDTTA {
 				continue;
 			} else {
 				final int chosenEvent = notOccuringEvents.get(r.nextInt(notOccuringEvents.size()));
-				final Distribution d = removeTransition(chosenTransition);
+				final Distribution d = removeTimedTransition(chosenTransition);
 				final Transition newTransition = addAbnormalTransition(chosenTransition.getFromState(), chosenTransition.getToState(), chosenEvent,
 						chosenTransition.getProbability(), AnomalyInsertionType.TYPE_ONE);
 				bindTransitionDistribution(newTransition.toZeroProbTransition(), d);

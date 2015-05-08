@@ -22,9 +22,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sadl.constants.ScalingMethod;
-import sadl.run.GenericSmacPipeline;
 import sadl.utils.DatasetTransformationUtils;
 import sadl.utils.IoUtils;
+import sadl.utils.Settings;
 import weka.core.Instances;
 import weka.filters.Filter;
 import weka.filters.unsupervised.attribute.Normalize;
@@ -53,7 +53,7 @@ public abstract class NumericClassifier implements OneClassClassifier {
 		} else if (scalingMethod == ScalingMethod.NONE) {
 			setFilter(null);
 		}
-		if (GenericSmacPipeline.isDebug()) {
+		if (Settings.isDebug()) {
 			try {
 				Files.deleteIfExists(classificationTestFile);
 				Files.deleteIfExists(classificationTrainFile);
@@ -91,7 +91,7 @@ public abstract class NumericClassifier implements OneClassClassifier {
 
 	@Override
 	public final boolean[] areAnomalies(List<double[]> testSamples) {
-		if (GenericSmacPipeline.isDebug()) {
+		if (Settings.isDebug()) {
 			try {
 				IoUtils.writeToFile(testSamples, classificationTestFile);
 			} catch (final IOException e) {
@@ -108,7 +108,7 @@ public abstract class NumericClassifier implements OneClassClassifier {
 
 	@Override
 	public final boolean isOutlier(double[] testSample) {
-		if (GenericSmacPipeline.isDebug()) {
+		if (Settings.isDebug()) {
 			try {
 				IoUtils.writeToFile(testSample, classificationTestFile);
 			} catch (final IOException e) {
@@ -135,7 +135,7 @@ public abstract class NumericClassifier implements OneClassClassifier {
 
 	@Override
 	public final void train(List<double[]> trainingSamples) {
-		if (GenericSmacPipeline.isDebug()) {
+		if (Settings.isDebug()) {
 			try {
 				IoUtils.writeToFile(trainingSamples, classificationTrainFile);
 			} catch (final IOException e) {

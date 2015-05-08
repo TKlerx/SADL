@@ -570,8 +570,5 @@ public class GenericSmacPipeline implements Serializable {
 	}
 
 
-	public static boolean isDebug() {
-		return debug;
-	}
 
 }

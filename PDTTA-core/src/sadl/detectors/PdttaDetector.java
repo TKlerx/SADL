@@ -34,8 +34,8 @@ import sadl.input.TimedWord;
 import sadl.interfaces.AnomalyDetector;
 import sadl.interfaces.Model;
 import sadl.models.PDTTA;
-import sadl.run.GenericSmacPipeline;
 import sadl.structure.Transition;
+import sadl.utils.Settings;
 
 /**
  * 
@@ -143,7 +143,7 @@ public abstract class PdttaDetector implements AnomalyDetector {
 
 	@Override
 	public boolean[] areAnomalies(TimedInput testSequences) {
-		if (GenericSmacPipeline.isDebug()) {
+		if (Settings.isDebug()) {
 			final Path testLabelFile = Paths.get("testLabels.csv");
 			try {
 				Files.deleteIfExists(testLabelFile);
