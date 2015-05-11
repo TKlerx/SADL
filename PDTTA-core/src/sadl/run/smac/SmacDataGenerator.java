@@ -43,11 +43,10 @@ import com.beust.jcommander.Parameter;
  *
  */
 public class SmacDataGenerator implements Serializable {
+	public static final String TRAIN_TEST_SEP = "?????????????????????????";
+
 	private static Logger logger = LoggerFactory.getLogger(SmacDataGenerator.class);
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -6230657726489919272L;
 
 	// just for parsing the one silly smac parameter
@@ -98,6 +97,8 @@ public class SmacDataGenerator implements Serializable {
 		while (k < 100) {
 			for (final AnomalyInsertionType type : AnomalyInsertionType.values()) {
 				if (type != AnomalyInsertionType.NONE && type != AnomalyInsertionType.ALL) {
+					trainSequences.clear();
+					testSequences.clear();
 					final TauPTA anomaly = SerializationUtils.clone(pta);
 					logger.info("inserting Anomaly Type {}", type);
 					anomaly.makeAbnormal(type);
@@ -126,7 +127,7 @@ public class SmacDataGenerator implements Serializable {
 					final BufferedWriter bw = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8);
 					trainset.toFile(bw, true);
 					bw.write('\n');
-					bw.write("?????????????????????????");
+					bw.write(TRAIN_TEST_SEP);
 					bw.write('\n');
 					testset.toFile(bw, true);
 					bw.close();
