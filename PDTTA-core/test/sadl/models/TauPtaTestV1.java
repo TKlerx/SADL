@@ -23,7 +23,7 @@ public class TauPtaTestV1 {
 
 	@BeforeClass
 	public static void setup() throws URISyntaxException, IOException {
-		final Path p = Paths.get(TauPtaTestV1.class.getResource("/medium/rti_medium.txt").toURI());
+		final Path p = Paths.get(TauPtaTestV1.class.getResource("/taupta/medium/rti_medium.txt").toURI());
 		trainingTimedSequences = TimedInput.parseAlt(p, 1);
 	}
 
@@ -33,14 +33,14 @@ public class TauPtaTestV1 {
 	}
 	@Test
 	public void testTauPTATimedInputNormal() throws IOException, URISyntaxException {
-		final Path p = Paths.get(this.getClass().getResource("/medium/pta_normal.xml").toURI());
+		final Path p = Paths.get(this.getClass().getResource("/taupta/medium/pta_normal.xml").toURI());
 		final TauPTA pta = new TauPTA(trainingTimedSequences);
 		final TauPTA saved = (TauPTA) IoUtils.xmlDeserialize(p);
 		assertEquals(pta, saved);
 	}
 	@Test
 	public void testTauPTATimedInputAbnormal1() throws IOException, URISyntaxException {
-		final Path p = Paths.get(this.getClass().getResource("/medium/pta_abnormal_1.xml").toURI());
+		final Path p = Paths.get(this.getClass().getResource("/taupta/medium/pta_abnormal_1.xml").toURI());
 		final TauPTA pta = new TauPTA(trainingTimedSequences);
 		pta.makeAbnormal(AnomalyInsertionType.TYPE_ONE);
 		final TauPTA saved = (TauPTA) IoUtils.xmlDeserialize(p);
@@ -48,7 +48,7 @@ public class TauPtaTestV1 {
 	}
 	@Test
 	public void testTauPTATimedInputAbnormal2() throws IOException, URISyntaxException {
-		final Path p = Paths.get(this.getClass().getResource("/medium/pta_abnormal_2.xml").toURI());
+		final Path p = Paths.get(this.getClass().getResource("/taupta/medium/pta_abnormal_2.xml").toURI());
 		final TauPTA pta = new TauPTA(trainingTimedSequences);
 		pta.makeAbnormal(AnomalyInsertionType.TYPE_TWO);
 		final TauPTA saved = (TauPTA) IoUtils.xmlDeserialize(p);
@@ -57,7 +57,7 @@ public class TauPtaTestV1 {
 
 	@Test
 	public void testTauPTATimedInputAbnormal3() throws IOException, URISyntaxException {
-		final Path p = Paths.get(this.getClass().getResource("/medium/pta_abnormal_3.xml").toURI());
+		final Path p = Paths.get(this.getClass().getResource("/taupta/medium/pta_abnormal_3.xml").toURI());
 		final TauPTA pta = new TauPTA(trainingTimedSequences);
 		pta.makeAbnormal(AnomalyInsertionType.TYPE_THREE);
 		final TauPTA saved = (TauPTA) IoUtils.xmlDeserialize(p);
@@ -65,7 +65,7 @@ public class TauPtaTestV1 {
 	}
 	@Test
 	public void testTauPTATimedInputAbnormal4() throws IOException, URISyntaxException {
-		final Path p = Paths.get(this.getClass().getResource("/medium/pta_abnormal_4.xml").toURI());
+		final Path p = Paths.get(this.getClass().getResource("/taupta/medium/pta_abnormal_4.xml").toURI());
 		final TauPTA pta = new TauPTA(trainingTimedSequences);
 		pta.makeAbnormal(AnomalyInsertionType.TYPE_FOUR);
 		final TauPTA saved = (TauPTA) IoUtils.xmlDeserialize(p);
@@ -73,7 +73,7 @@ public class TauPtaTestV1 {
 	}
 	@Test
 	public void testTauPTATimedInputAbnormal5() throws IOException, URISyntaxException {
-		final Path p = Paths.get(this.getClass().getResource("/medium/pta_abnormal_5.xml").toURI());
+		final Path p = Paths.get(this.getClass().getResource("/taupta/medium/pta_abnormal_5.xml").toURI());
 		final TauPTA pta = new TauPTA(trainingTimedSequences);
 		pta.makeAbnormal(AnomalyInsertionType.TYPE_FIVE);
 		final TauPTA saved = (TauPTA) IoUtils.xmlDeserialize(p);

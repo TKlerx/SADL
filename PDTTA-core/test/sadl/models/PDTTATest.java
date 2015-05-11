@@ -2,11 +2,20 @@ package sadl.models;
 
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
+
+import org.apache.commons.lang3.SerializationUtils;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import sadl.input.TimedInput;
+import sadl.interfaces.Model;
+import sadl.modellearner.PdttaLeaner;
 
 public class PDTTATest {
 
@@ -27,8 +36,12 @@ public class PDTTATest {
 	}
 
 	@Test
-	public void test() {
-		// TODO Test whether PDTTAold and PDTTA produce the same result for the same input
+	public void test() throws IOException, URISyntaxException {
+		final TimedInput ti1 = TimedInput.parse(Paths.get(this.getClass().getResource("/pdtta/input_data.txt").toURI()));
+		final TimedInput ti2 = SerializationUtils.clone(ti1);
+		final PdttaLeaner l1 = new PdttaLeaner(0.05, false);
+		final PdttaLeaner l2 = new PdttaLeaner(0.05, false);
+		final Model p1 = l1.train(ti1);
 		fail("Not yet implemented");
 	}
 
