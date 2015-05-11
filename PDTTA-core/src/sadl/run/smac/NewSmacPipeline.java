@@ -255,15 +255,7 @@ public class NewSmacPipeline implements Serializable {
 
 		// parse timed sequences
 		// final List<TimedSequence> trainingTimedSequences = TimedSequence.parseTimedSequences(timedInputTrainFile, false, false);´
-		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(Paths.get(dataString), (reader) -> {
-			try {
-				return TimedInput.parse(reader);
-			} catch (final Exception e) {
-				logger.error("Exception occured when splitting train and test file", e);
-				System.exit(1);
-			}
-			return null;
-		});
+		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(Paths.get(dataString));
 		final TimedInput trainingInput = trainTest.getKey();
 		trainingInput.toTimedIntWords();
 		final ModelLearner learner = new PdttaLeaner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0);

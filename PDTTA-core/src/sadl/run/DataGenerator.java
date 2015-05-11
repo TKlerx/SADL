@@ -19,9 +19,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
@@ -32,9 +30,6 @@ import sadl.input.TimedInput;
 import sadl.models.TauPTA;
 import sadl.utils.IoUtils;
 
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
-
 /**
  * 
  * @author Timo Klerx
@@ -43,14 +38,7 @@ import com.beust.jcommander.Parameter;
 public class DataGenerator implements Serializable {
 	private static Logger logger = LoggerFactory.getLogger(DataGenerator.class);
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -6230657726489919272L;
-
-	// just for parsing the one silly smac parameter
-	@Parameter()
-	private final List<String> rest = new ArrayList<>();
 
 	String dataString;
 
@@ -63,7 +51,6 @@ public class DataGenerator implements Serializable {
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException {
 		final DataGenerator sp = new DataGenerator();
-		new JCommander(sp, args);
 		sp.dataString = args[0];
 		logger.info("Running DataGenerator with args" + Arrays.toString(args));
 		sp.run();

@@ -43,7 +43,7 @@ import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.Model;
 import sadl.interfaces.ModelLearner;
-import sadl.models.PDTTA;
+import sadl.models.PDTTAold;
 import sadl.structure.ZeroProbTransition;
 import sadl.utils.IoUtils;
 import sadl.utils.Settings;
@@ -57,56 +57,56 @@ import treba.wfsa;
  * @author Timo Klerx
  *
  */
-public class PdttaLeaner implements ModelLearner {
+public class PdttaLeanerOld implements ModelLearner {
 	double mergeAlpha;
 	MergeTest mergeTest = MergeTest.ALERGIA;
 	boolean recursiveMergeTest;
-	private static Logger logger = LoggerFactory.getLogger(PdttaLeaner.class);
+	private static Logger logger = LoggerFactory.getLogger(PdttaLeanerOld.class);
 	int fsmStateCount = -1;
 	KernelFunction kdeKernelFunction;
 	double kdeBandwidth;
 	double smoothingPrior = 0.00;
 	int mergeT0 = 3;
 
-	public PdttaLeaner(double mergeAlpha, boolean recursiveMergeTest) {
+	public PdttaLeanerOld(double mergeAlpha, boolean recursiveMergeTest) {
 		this.mergeAlpha = mergeAlpha;
 		this.recursiveMergeTest = recursiveMergeTest;
 	}
 
-	public PdttaLeaner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth) {
+	public PdttaLeanerOld(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth) {
 		this(mergeAlpha, recursiveMergeTest);
 		this.kdeKernelFunction = kdeKernelFunction;
 		this.kdeBandwidth = kdeBandwidth;
 	}
 
-	public PdttaLeaner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest) {
+	public PdttaLeanerOld(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest) {
 		this(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth);
 		this.mergeTest = mergeTest;
 	}
-	public PdttaLeaner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
+	public PdttaLeanerOld(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
 			double smoothingPrior) {
 		this(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest);
 		this.smoothingPrior = smoothingPrior;
 	}
 
-	public PdttaLeaner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
+	public PdttaLeanerOld(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
 			double smoothingPrior, int mergeT0) {
 		this(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior);
 		this.mergeT0 = mergeT0;
 	}
 
-	public PdttaLeaner(double mergeAlpha, boolean recursiveMergeTest, MergeTest mergeTest) {
+	public PdttaLeanerOld(double mergeAlpha, boolean recursiveMergeTest, MergeTest mergeTest) {
 		this(mergeAlpha, recursiveMergeTest, null, -1, mergeTest);
 	}
 
-	public PdttaLeaner(double mergeAlpha, boolean recursiveMergeTest, MergeTest mergeTest, double smoothingPrior) {
+	public PdttaLeanerOld(double mergeAlpha, boolean recursiveMergeTest, MergeTest mergeTest, double smoothingPrior) {
 		this(mergeAlpha, recursiveMergeTest, null, -1, mergeTest, smoothingPrior);
 	}
 
 
 	@Override
 	public Model train(TimedInput trainingSequences) {
-		final PDTTA pdtta;
+		final PDTTAold pdtta;
 		treba.log1plus_init_wrapper();
 		final Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"));
 		final long jobNumber = Double.doubleToLongBits(Math.random());
@@ -130,7 +130,7 @@ public class PdttaLeaner implements ModelLearner {
 			// do the fitting
 			final Map<ZeroProbTransition, Distribution> transitionDistributions = fit(timeValueBuckets);
 			// compute likelihood on test set for automaton and for time PDFs
-			pdtta = new PDTTA(Paths.get(trebaAutomatonFile));
+			pdtta = new PDTTAold(Paths.get(trebaAutomatonFile));
 			pdtta.setTransitionDistributions(transitionDistributions);
 			if (!Settings.isDebug()) {
 				IoUtils.deleteFiles(new String[] { trebaTrainSetFileString, trebaAutomatonFile, trebaResultPathFile });

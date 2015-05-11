@@ -528,8 +528,95 @@ public class PDTTAold implements AutomatonModel, Serializable {
 		if (obj == null) {
 			return false;
 		}
-		if (!(obj instanceof PDTTAold)) {
+		if (!(obj instanceof PDTTAold) && !(obj instanceof PDTTA)) {
 			return false;
+		}
+		if (obj instanceof PDTTA) {
+			final PDTTA other = (PDTTA) obj;
+			if (abnormalFinalStates == null) {
+				if (other.abnormalFinalStates != null) {
+					return false;
+				}
+			} else if (!abnormalFinalStates.equals(other.abnormalFinalStates)) {
+				return false;
+			}
+			if (alphabet == null) {
+				if (other.alphabet != null) {
+					return false;
+				}
+			} else if (!alphabet.equals(other.alphabet)) {
+				return false;
+			}
+			if (finalStateProbabilities == null) {
+				if (other.finalStateProbabilities != null) {
+					return false;
+				}
+			} else if (!finalStateProbabilities.equals(other.finalStateProbabilities)) {
+				return false;
+			}
+			if (transitionDistributions == null) {
+				if (other.transitionDistributions != null) {
+					return false;
+				}
+			} else if (!transitionDistributions.equals(other.transitionDistributions)) {
+				final Set<Entry<ZeroProbTransition, Distribution>> e1 = transitionDistributions.entrySet();
+				final Set<Entry<ZeroProbTransition, Distribution>> e2 = other.transitionDistributions.entrySet();
+				int count = 0;
+				for (final Entry<ZeroProbTransition, Distribution> e : e1) {
+					if (!e2.contains(e)) {
+						logger.error("Entry {} not contained in e2", e);
+						final Distribution result = other.transitionDistributions.get(e.getKey());
+						if (result != null) {
+							final boolean compare = e.getValue().equals(result);
+							logger.info("Both maps contain a distribution for key {}; distributions are equal: {}", e.getKey(), compare);
+							logger.info("d1: {}, d2: {}", e.getValue(), result);
+							e.getValue().equals(result);
+						}
+						count++;
+					}
+				}
+				logger.error("");
+				for (final Entry<ZeroProbTransition, Distribution> e : e2) {
+					if (!e1.contains(e)) {
+						logger.error("Entry {} not contained in e1", e);
+						final Distribution result = transitionDistributions.get(e.getKey());
+						if (result != null) {
+							final boolean compare = e.getValue().equals(result);
+							logger.info("Both maps contain a distribution for key {}; distributions are equal: {}", e.getKey(), compare);
+							logger.info("d1: {}, d2: {}", e.getValue(), result);
+						}
+						count++;
+					}
+				}
+				if (count > 0) {
+					logger.error("{} out of {} entries did not match", count, transitionDistributions.size());
+				}
+				return false;
+			}
+			if (transitions == null) {
+				if (other.transitions != null) {
+					return false;
+				}
+			} else if (!transitions.equals(other.transitions)) {
+				int count = 0;
+				for (final Transition t : transitions) {
+					if (!other.transitions.contains(t)) {
+						logger.error("Transition {} not contained in other.transitions", t);
+						count++;
+					}
+				}
+				for (final Transition t : other.transitions) {
+					if (!transitions.contains(t)) {
+						logger.error("Transition {} not contained in transitions", t);
+						count++;
+					}
+				}
+				if (count > 0) {
+					logger.error("{} out of {} transitions did not match", count, transitions.size());
+				}
+				return false;
+			}
+			return true;
 		}
 		final PDTTAold other = (PDTTAold) obj;
 		if (abnormalFinalStates == null) {

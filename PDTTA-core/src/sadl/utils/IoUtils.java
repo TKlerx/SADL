@@ -40,6 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sadl.input.TimedInput;
+import sadl.run.smac.SmacDataGenerator;
 import weka.core.xml.XStream;
 
 /**
@@ -66,6 +67,17 @@ public class IoUtils {
 		}
 	}
 
+	public static Pair<TimedInput, TimedInput> readTrainTestFile(Path trainTestFile) {
+		return readTrainTestFile(trainTestFile, (reader) -> {
+			try {
+				return TimedInput.parse(reader);
+			} catch (final Exception e) {
+				logger.error("Error while parsing train-test file {}", trainTestFile, e);
+				throw new RuntimeException(e);
+			}
+		});
+	}
+
 	public static Pair<TimedInput, TimedInput> readTrainTestFile(Path trainTestFile, Function<Reader, TimedInput> f) {
 		try (BufferedReader br = Files.newBufferedReader(trainTestFile);
 				PipedWriter trainWriter = new PipedWriter();
@@ -79,8 +91,9 @@ public class IoUtils {
 			ex.shutdown();
 			boolean writeTrain = true;
 			while ((line = br.readLine()) != null) {
-				if (line.startsWith("????")) {
+				if (line.startsWith(SmacDataGenerator.TRAIN_TEST_SEP)) {
 					writeTrain = false;
+					trainWriter.close();
 					continue;
 				}
 				if (writeTrain) {
@@ -91,11 +104,10 @@ public class IoUtils {
 					testWriter.write('\n');
 				}
 			}
-			trainWriter.flush();
-			testWriter.flush();
-			trainWriter.close();
 			testWriter.close();
-			return new Pair<>(trainWorker.get(), testWorker.get());
+			ex.shutdown();
+			final Pair<TimedInput, TimedInput> result = new Pair<>(trainWorker.get(), testWorker.get());
+			return result;
 		} catch (final IOException | InterruptedException | ExecutionException e) {
 			logger.error("Unexpected exception!", e);
 		}

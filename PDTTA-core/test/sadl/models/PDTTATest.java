@@ -1,12 +1,13 @@
 package sadl.models;
 
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
 
 import org.apache.commons.lang3.SerializationUtils;
+import org.apache.commons.math3.util.Pair;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -16,6 +17,9 @@ import org.junit.Test;
 import sadl.input.TimedInput;
 import sadl.interfaces.Model;
 import sadl.modellearner.PdttaLeaner;
+import sadl.modellearner.PdttaLeanerOld;
+import sadl.utils.IoUtils;
+import sadl.utils.MasterSeed;
 
 public class PDTTATest {
 
@@ -37,12 +41,26 @@ public class PDTTATest {
 
 	@Test
 	public void test() throws IOException, URISyntaxException {
-		final TimedInput ti1 = TimedInput.parse(Paths.get(this.getClass().getResource("/pdtta/input_data.txt").toURI()));
-		final TimedInput ti2 = SerializationUtils.clone(ti1);
-		final PdttaLeaner l1 = new PdttaLeaner(0.05, false);
-		final PdttaLeaner l2 = new PdttaLeaner(0.05, false);
-		final Model p1 = l1.train(ti1);
-		fail("Not yet implemented");
+		for (int i = 5; i <= 5; i++) {
+			final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(
+					Paths.get(this.getClass().getResource("/pdtta/smac_mix_type" + i + ".txt").toURI()), (reader) -> {
+						try {
+							return TimedInput.parse(reader);
+						} catch (final Exception e) {
+							e.printStackTrace();
+							throw new RuntimeException(e);
+						}
+					});
+			final TimedInput ti1 = trainTest.getKey();
+			ti1.toTimedIntWords();
+			final TimedInput ti2 = SerializationUtils.clone(ti1);
+			final PdttaLeaner l1 = new PdttaLeaner(0.05, false);
+			final Model p1 = l1.train(ti1);
+			MasterSeed.reset();
+			final PdttaLeanerOld l2 = new PdttaLeanerOld(0.05, false);
+			final Model p2 = l2.train(ti2);
+			assertEquals("PDTTAs for files " + i + " are not equal", p2, p1);
+		}
 	}
 
 }

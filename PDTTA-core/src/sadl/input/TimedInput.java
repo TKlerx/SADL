@@ -327,34 +327,43 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 
 			// Remove sequence postfix
 			line = line.replaceAll(seqPostfix, "");
-
-			// Parse sequence
-			splitWord = line.split(pairSep);
-			for (int i = 0; i < splitWord.length; i++) {
-				splitPair = splitWord[i].split(valueSep, 2);
-				if (splitPair.length < 2) {
-					throw new IllegalArgumentException("Pair \"" + splitWord[i] + "\" in line " + lineCount + " is in the wrong format. Separator \""
-							+ valueSep + "\" not found!");
+			if (!line.isEmpty()) {
+				// Parse sequence
+				splitWord = line.split(pairSep);
+				for (int i = 0; i < splitWord.length; i++) {
+					splitPair = splitWord[i].split(valueSep, 2);
+					if (splitPair.length < 2) {
+						final String errorMessage = "Pair \"" + splitWord[i] + "\" in line " + lineCount + " is in the wrong format. Separator \"" + valueSep
+								+ "\" not found!";
+						final IllegalArgumentException e = new IllegalArgumentException(errorMessage);
+						logger.error(errorMessage, e);
+						throw e;
+					}
+					symbol = splitPair[0];
+					if (symbol.matches("\\W")) {
+						// Only characters, digits and underscores are allowed for
+						// event names ([a-zA-Z_0-9])
+						final String errorMessage = "Event name \"" + symbol + "\" in line " + lineCount + " contains forbidden characters. "
+								+ "Only [a-zA-Z_0-9] are allowed.";
+						final IllegalArgumentException e = new IllegalArgumentException(errorMessage);
+						logger.error(errorMessage, e);
+						throw e;
+					}
+					timeDelay = Integer.parseInt(splitPair[1].trim());
+					if (!alphabet.containsKey(symbol)) {
+						alphabet.put(symbol, alphabet.size());
+						alphabetRev.add(symbol);
+					}
+					// Use String in alphabet to avoid redundant event name
+					// instances in input
+					word.appendPair(alphabetRev.get(alphabet.get(symbol)), timeDelay);
 				}
-				symbol = splitPair[0];
-				if (symbol.matches("\\W")) {
-					// Only characters, digits and underscores are allowed for
-					// event names ([a-zA-Z_0-9])
-					throw new IllegalArgumentException("Event name \"" + symbol + "\" in line " + lineCount + " contains forbidden characters. "
-							+ "Only [a-zA-Z_0-9] are allowed.");
-				}
-				timeDelay = Integer.parseInt(splitPair[1].trim());
-				if (!alphabet.containsKey(symbol)) {
-					alphabet.put(symbol, alphabet.size());
-					alphabetRev.add(symbol);
-				}
-				// Use String in alphabet to avoid redundant event name
-				// instances in input
-				word.appendPair(alphabetRev.get(alphabet.get(symbol)), timeDelay);
 			}
 			words.add(word);
 			lineCount++;
 		}
+		br.close();
+		in.close();
 	}
 
 	/**
