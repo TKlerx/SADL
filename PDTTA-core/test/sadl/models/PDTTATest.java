@@ -16,7 +16,7 @@ import org.junit.Test;
 
 import sadl.input.TimedInput;
 import sadl.interfaces.Model;
-import sadl.modellearner.PdttaLeaner;
+import sadl.modellearner.PdttaLearner;
 import sadl.modellearner.PdttaLeanerOld;
 import sadl.utils.IoUtils;
 import sadl.utils.MasterSeed;
@@ -54,7 +54,7 @@ public class PDTTATest {
 			final TimedInput ti1 = trainTest.getKey();
 			ti1.toTimedIntWords();
 			final TimedInput ti2 = SerializationUtils.clone(ti1);
-			final PdttaLeaner l1 = new PdttaLeaner(0.05, false);
+			final PdttaLearner l1 = new PdttaLearner(0.05, false);
 			final Model p1 = l1.train(ti1);
 			MasterSeed.reset();
 			final PdttaLeanerOld l2 = new PdttaLeanerOld(0.05, false);

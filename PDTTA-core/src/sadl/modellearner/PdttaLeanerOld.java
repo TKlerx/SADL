@@ -41,7 +41,6 @@ import org.slf4j.LoggerFactory;
 import sadl.constants.MergeTest;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
-import sadl.interfaces.Model;
 import sadl.interfaces.ModelLearner;
 import sadl.models.PDTTAold;
 import sadl.structure.ZeroProbTransition;
@@ -105,7 +104,7 @@ public class PdttaLeanerOld implements ModelLearner {
 
 
 	@Override
-	public Model train(TimedInput trainingSequences) {
+	public PDTTAold train(TimedInput trainingSequences) {
 		final PDTTAold pdtta;
 		treba.log1plus_init_wrapper();
 		final Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"));

@@ -57,7 +57,7 @@ import sadl.input.TimedWord;
 import sadl.interfaces.Model;
 import sadl.interfaces.ModelLearner;
 import sadl.interfaces.TrainableDetector;
-import sadl.modellearner.PdttaLeaner;
+import sadl.modellearner.PdttaLearner;
 import sadl.models.PDTTA;
 import sadl.oneclassclassifier.LibSvmClassifier;
 import sadl.oneclassclassifier.clustering.DbScanClassifier;
@@ -258,7 +258,7 @@ public class NewSmacPipeline implements Serializable {
 		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(Paths.get(dataString));
 		final TimedInput trainingInput = trainTest.getKey();
 		trainingInput.toTimedIntWords();
-		final ModelLearner learner = new PdttaLeaner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0);
+		final ModelLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0);
 
 		final Model model = learner.train(trainingInput);
 		PDTTA automaton;

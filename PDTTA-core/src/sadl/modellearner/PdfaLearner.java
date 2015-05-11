@@ -11,11 +11,16 @@
 
 package sadl.modellearner;
 
+import sadl.input.TimedInput;
+import sadl.interfaces.ModelLearner;
+import sadl.models.PDFA;
+
 /**
  * 
  * @author Timo Klerx
  *
  */
-public interface PdfaLearner {
-
+public interface PdfaLearner extends ModelLearner {
+	@Override
+	public PDFA train(TimedInput trainingSequences);
 }

@@ -41,7 +41,6 @@ import org.slf4j.LoggerFactory;
 import sadl.constants.MergeTest;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
-import sadl.interfaces.Model;
 import sadl.interfaces.ModelLearner;
 import sadl.models.PDTTA;
 import sadl.structure.ZeroProbTransition;
@@ -57,55 +56,56 @@ import treba.wfsa;
  * @author Timo Klerx
  *
  */
-public class PdttaLeaner implements ModelLearner {
+public class PdttaLearner implements ModelLearner {
 	double mergeAlpha;
 	MergeTest mergeTest = MergeTest.ALERGIA;
 	boolean recursiveMergeTest;
-	private static Logger logger = LoggerFactory.getLogger(PdttaLeaner.class);
+	private static Logger logger = LoggerFactory.getLogger(PdttaLearner.class);
 	int fsmStateCount = -1;
 	KernelFunction kdeKernelFunction;
 	double kdeBandwidth;
 	double smoothingPrior = 0.00;
 	int mergeT0 = 3;
 
-	public PdttaLeaner(double mergeAlpha, boolean recursiveMergeTest) {
+	// TODO implement as extension of PDTALearner
+	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest) {
 		this.mergeAlpha = mergeAlpha;
 		this.recursiveMergeTest = recursiveMergeTest;
 	}
 
-	public PdttaLeaner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth) {
+	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth) {
 		this(mergeAlpha, recursiveMergeTest);
 		this.kdeKernelFunction = kdeKernelFunction;
 		this.kdeBandwidth = kdeBandwidth;
 	}
 
-	public PdttaLeaner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest) {
+	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest) {
 		this(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth);
 		this.mergeTest = mergeTest;
 	}
-	public PdttaLeaner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
+	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
 			double smoothingPrior) {
 		this(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest);
 		this.smoothingPrior = smoothingPrior;
 	}
 
-	public PdttaLeaner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
+	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
 			double smoothingPrior, int mergeT0) {
 		this(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior);
 		this.mergeT0 = mergeT0;
 	}
 
-	public PdttaLeaner(double mergeAlpha, boolean recursiveMergeTest, MergeTest mergeTest) {
+	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, MergeTest mergeTest) {
 		this(mergeAlpha, recursiveMergeTest, null, -1, mergeTest);
 	}
 
-	public PdttaLeaner(double mergeAlpha, boolean recursiveMergeTest, MergeTest mergeTest, double smoothingPrior) {
+	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, MergeTest mergeTest, double smoothingPrior) {
 		this(mergeAlpha, recursiveMergeTest, null, -1, mergeTest, smoothingPrior);
 	}
 
 
 	@Override
-	public Model train(TimedInput trainingSequences) {
+	public PDTTA train(TimedInput trainingSequences) {
 		final PDTTA pdtta;
 		treba.log1plus_init_wrapper();
 		final Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"));
