@@ -7296,6 +7296,15 @@
     <int>0</int>
     <double>0.0</double>
   </finalStateProbabilities>
+  <abnormalFinalStates class="gnu.trove.set.hash.TIntHashSet">
+    <byte>1</byte>
+    <byte>0</byte>
+    <float>0.5</float>
+    <float>0.5</float>
+    <int>0</int>
+    <float>0.5</float>
+    <int>0</int>
+  </abnormalFinalStates>
   <transitionDistributions>
     <entry>
       <sadl.structure.ZeroProbTransition>
@@ -24440,15 +24449,6 @@
       </jsat.distributions.SingleValueDistribution>
     </entry>
   </transitionDistributions>
-  <abnormalFinalStates class="gnu.trove.set.hash.TIntHashSet">
-    <byte>1</byte>
-    <byte>0</byte>
-    <float>0.5</float>
-    <float>0.5</float>
-    <int>0</int>
-    <float>0.5</float>
-    <int>0</int>
-  </abnormalFinalStates>
   <transitionCount class="gnu.trove.map.hash.TObjectIntHashMap">
     <byte>0</byte>
     <byte>0</byte>

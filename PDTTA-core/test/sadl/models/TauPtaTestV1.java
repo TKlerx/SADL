@@ -77,7 +77,7 @@ public class TauPtaTestV1 {
 		final TauPTA pta = new TauPTA(trainingTimedSequences);
 		pta.makeAbnormal(AnomalyInsertionType.TYPE_FIVE);
 		final TauPTA saved = (TauPTA) IoUtils.xmlDeserialize(p);
-		assertEquals(pta, saved);
+		assertEquals("TauPTAs of type 5 are not equal", pta, saved);
 	}
 
 }

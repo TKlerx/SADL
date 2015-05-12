@@ -11,10 +11,8 @@
 
 package sadl.run;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -66,13 +64,13 @@ public class DataGenerator implements Serializable {
 		final TauPTA pta = new TauPTA(trainingTimedSequences);
 		IoUtils.xmlSerialize(pta, outputDir.resolve(Paths.get("pta_normal.xml")));
 		pta.toGraphvizFile(outputDir.resolve(Paths.get("pta_normal.dot")), false);
-		try (BufferedWriter br = Files.newBufferedWriter(outputDir.resolve(Paths.get("normal_sequences")), StandardCharsets.UTF_8)) {
-			logger.info("sampling normal sequences");
-			for (int i = 0; i < 1000000; i++) {
-				br.write(pta.sampleSequence().toString(true));
-				br.write('\n');
-			}
-		}
+		// try (BufferedWriter br = Files.newBufferedWriter(outputDir.resolve(Paths.get("normal_sequences")), StandardCharsets.UTF_8)) {
+		// logger.info("sampling normal sequences");
+		// for (int i = 0; i < 1000000; i++) {
+		// br.write(pta.sampleSequence().toString(true));
+		// br.write('\n');
+		// }
+		// }
 		// for(final AnomalyInsertionType type : AnomalyInsertionType.values()){
 
 		for (final AnomalyInsertionType type : AnomalyInsertionType.values()) {
@@ -90,13 +88,13 @@ public class DataGenerator implements Serializable {
 				} catch (final IOException e) {
 					logger.error("unexpected exception while printing graphviz file", e);
 				}
-				try (BufferedWriter br = Files.newBufferedWriter(outputDir.resolve(Paths.get("abnormal_sequences_type_" + type.getTypeIndex())),
-						StandardCharsets.UTF_8)) {
-					for (int i = 0; i < 100000; i++) {
-						br.write(anomaly1.sampleSequence().toString(true));
-						br.write('\n');
-					}
-				}
+				// try (BufferedWriter br = Files.newBufferedWriter(outputDir.resolve(Paths.get("abnormal_sequences_type_" + type.getTypeIndex())),
+				// StandardCharsets.UTF_8)) {
+				// for (int i = 0; i < 100000; i++) {
+				// br.write(anomaly1.sampleSequence().toString(true));
+				// br.write('\n');
+				// }
+				// }
 			}
 		}
 		logger.info("Starting to dot PTAs");

@@ -984,6 +984,12 @@
       <probability>1.0</probability>
     </sadl.structure.Transition>
     <sadl.structure.Transition>
+      <fromState>4</fromState>
+      <toState>25</toState>
+      <symbol>8</symbol>
+      <probability>0.35637371632913883</probability>
+    </sadl.structure.Transition>
+    <sadl.structure.Transition>
       <fromState>822</fromState>
       <toState>823</toState>
       <symbol>3</symbol>
@@ -2206,12 +2212,6 @@
       <toState>520</toState>
       <symbol>14</symbol>
       <probability>1.0</probability>
-    </sadl.structure.Transition>
-    <sadl.structure.Transition>
-      <fromState>4</fromState>
-      <toState>126</toState>
-      <symbol>10</symbol>
-      <probability>0.10181664675552213</probability>
     </sadl.structure.Transition>
     <sadl.structure.Transition>
       <fromState>274</fromState>
@@ -3822,12 +3822,6 @@
       <probability>1.0</probability>
     </sadl.structure.Transition>
     <sadl.structure.Transition>
-      <fromState>4</fromState>
-      <toState>5</toState>
-      <symbol>13</symbol>
-      <probability>0.40727862777974644</probability>
-    </sadl.structure.Transition>
-    <sadl.structure.Transition>
       <fromState>112</fromState>
       <toState>113</toState>
       <symbol>1</symbol>
@@ -4312,12 +4306,6 @@
       <toState>724</toState>
       <symbol>5</symbol>
       <probability>0.8725443947374069</probability>
-    </sadl.structure.Transition>
-    <sadl.structure.Transition>
-      <fromState>4</fromState>
-      <toState>25</toState>
-      <symbol>8</symbol>
-      <probability>0.35637760571248006</probability>
     </sadl.structure.Transition>
     <sadl.structure.Transition>
       <fromState>544</fromState>
@@ -4974,6 +4962,12 @@
       <probability>1.0</probability>
     </sadl.structure.Transition>
     <sadl.structure.Transition>
+      <fromState>4</fromState>
+      <toState>5</toState>
+      <symbol>13</symbol>
+      <probability>0.40728424723330153</probability>
+    </sadl.structure.Transition>
+    <sadl.structure.Transition>
       <fromState>128</fromState>
       <toState>129</toState>
       <symbol>14</symbol>
@@ -5356,6 +5350,12 @@
       <toState>594</toState>
       <symbol>8</symbol>
       <probability>1.0</probability>
+    </sadl.structure.Transition>
+    <sadl.structure.Transition>
+      <fromState>4</fromState>
+      <toState>126</toState>
+      <symbol>10</symbol>
+      <probability>0.10182106180832538</probability>
     </sadl.structure.Transition>
     <sadl.structure.Transition>
       <fromState>659</fromState>
@@ -7286,7 +7286,7 @@
     <int>5</int>
     <double>0.0</double>
     <int>4</int>
-    <double>0.13452711975225137</double>
+    <double>0.13452097462923426</double>
     <int>3</int>
     <double>0.0</double>
     <int>2</int>
@@ -7296,6 +7296,61 @@
     <int>0</int>
     <double>0.14619393618753926</double>
   </finalStateProbabilities>
+  <abnormalFinalStates class="gnu.trove.set.hash.TIntHashSet">
+    <byte>1</byte>
+    <byte>0</byte>
+    <float>0.5</float>
+    <float>0.5</float>
+    <int>46</int>
+    <float>0.5</float>
+    <int>0</int>
+    <int>37</int>
+    <int>239</int>
+    <int>810</int>
+    <int>716</int>
+    <int>803</int>
+    <int>630</int>
+    <int>302</int>
+    <int>133</int>
+    <int>783</int>
+    <int>111</int>
+    <int>271</int>
+    <int>102</int>
+    <int>749</int>
+    <int>905</int>
+    <int>734</int>
+    <int>407</int>
+    <int>892</int>
+    <int>403</int>
+    <int>238</int>
+    <int>723</int>
+    <int>721</int>
+    <int>720</int>
+    <int>719</int>
+    <int>390</int>
+    <int>715</int>
+    <int>714</int>
+    <int>713</int>
+    <int>712</int>
+    <int>711</int>
+    <int>710</int>
+    <int>532</int>
+    <int>531</int>
+    <int>529</int>
+    <int>689</int>
+    <int>525</int>
+    <int>524</int>
+    <int>358</int>
+    <int>27</int>
+    <int>515</int>
+    <int>25</int>
+    <int>182</int>
+    <int>477</int>
+    <int>4</int>
+    <int>654</int>
+    <int>1</int>
+    <int>0</int>
+  </abnormalFinalStates>
   <transitionDistributions>
     <entry>
       <sadl.structure.ZeroProbTransition>
@@ -24440,61 +24495,6 @@
       </jsat.distributions.SingleValueDistribution>
     </entry>
   </transitionDistributions>
-  <abnormalFinalStates class="gnu.trove.set.hash.TIntHashSet">
-    <byte>1</byte>
-    <byte>0</byte>
-    <float>0.5</float>
-    <float>0.5</float>
-    <int>46</int>
-    <float>0.5</float>
-    <int>0</int>
-    <int>37</int>
-    <int>239</int>
-    <int>810</int>
-    <int>716</int>
-    <int>803</int>
-    <int>630</int>
-    <int>302</int>
-    <int>133</int>
-    <int>783</int>
-    <int>111</int>
-    <int>271</int>
-    <int>102</int>
-    <int>749</int>
-    <int>905</int>
-    <int>734</int>
-    <int>407</int>
-    <int>892</int>
-    <int>403</int>
-    <int>238</int>
-    <int>723</int>
-    <int>721</int>
-    <int>720</int>
-    <int>719</int>
-    <int>390</int>
-    <int>715</int>
-    <int>714</int>
-    <int>713</int>
-    <int>712</int>
-    <int>711</int>
-    <int>710</int>
-    <int>532</int>
-    <int>531</int>
-    <int>529</int>
-    <int>689</int>
-    <int>525</int>
-    <int>524</int>
-    <int>358</int>
-    <int>27</int>
-    <int>515</int>
-    <int>25</int>
-    <int>182</int>
-    <int>477</int>
-    <int>4</int>
-    <int>654</int>
-    <int>1</int>
-    <int>0</int>
-  </abnormalFinalStates>
   <transitionCount class="gnu.trove.map.hash.TObjectIntHashMap">
     <byte>0</byte>
     <byte>0</byte>

@@ -206,55 +206,26 @@ public class PDTTA extends PDFA {
 		return new TimedIntWord(eventList, timeList, ClassLabel.NORMAL);
 	}
 
-
-
 	@Override
 	public int hashCode() {
-		// TODO use super.hashcode
 		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((abnormalFinalStates == null) ? 0 : abnormalFinalStates.hashCode());
-		result = prime * result + ((alphabet == null) ? 0 : alphabet.hashCode());
-		result = prime * result + ((finalStateProbabilities == null) ? 0 : finalStateProbabilities.hashCode());
+		int result = super.hashCode();
 		result = prime * result + ((transitionDistributions == null) ? 0 : transitionDistributions.hashCode());
-		result = prime * result + ((transitions == null) ? 0 : transitions.hashCode());
 		return result;
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		// TODO use super.equals
 		if (this == obj) {
 			return true;
 		}
-		if (obj == null) {
+		if (!super.equals(obj)) {
 			return false;
 		}
-		if (!(obj instanceof PDTTA)) {
+		if (getClass() != obj.getClass()) {
 			return false;
 		}
 		final PDTTA other = (PDTTA) obj;
-		if (abnormalFinalStates == null) {
-			if (other.abnormalFinalStates != null) {
-				return false;
-			}
-		} else if (!abnormalFinalStates.equals(other.abnormalFinalStates)) {
-			return false;
-		}
-		if (alphabet == null) {
-			if (other.alphabet != null) {
-				return false;
-			}
-		} else if (!alphabet.equals(other.alphabet)) {
-			return false;
-		}
-		if (finalStateProbabilities == null) {
-			if (other.finalStateProbabilities != null) {
-				return false;
-			}
-		} else if (!finalStateProbabilities.equals(other.finalStateProbabilities)) {
-			return false;
-		}
 		if (transitionDistributions == null) {
 			if (other.transitionDistributions != null) {
 				return false;
@@ -293,29 +264,7 @@ public class PDTTA extends PDFA {
 			}
 			return false;
 		}
-		if (transitions == null) {
-			if (other.transitions != null) {
-				return false;
-			}
-		} else if (!transitions.equals(other.transitions)) {
-			int count = 0;
-			for (final Transition t : transitions) {
-				if (!other.transitions.contains(t)) {
-					logger.error("Transition {} not contained in other.transitions", t);
-					count++;
-				}
-			}
-			for (final Transition t : other.transitions) {
-				if (!transitions.contains(t)) {
-					logger.error("Transition {} not contained in transitions", t);
-					count++;
-				}
-			}
-			if (count > 0) {
-				logger.error("{} out of {} transitions did not match", count, transitions.size());
-			}
-			return false;
-		}
 		return true;
 	}
+
 }
