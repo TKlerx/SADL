@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import sadl.constants.AnomalyInsertionType;
 import sadl.input.TimedInput;
+import sadl.modellearner.TauPtaLearner;
 import sadl.models.TauPTA;
 import sadl.utils.IoUtils;
 
@@ -60,8 +61,8 @@ public class DataGenerator implements Serializable {
 		}
 		// parse timed sequences
 		final TimedInput trainingTimedSequences = TimedInput.parseAlt(Paths.get(dataString), 1);
-
-		final TauPTA pta = new TauPTA(trainingTimedSequences);
+		final TauPtaLearner learner = new TauPtaLearner();
+		final TauPTA pta = learner.train(trainingTimedSequences);
 		IoUtils.xmlSerialize(pta, outputDir.resolve(Paths.get("pta_normal.xml")));
 		pta.toGraphvizFile(outputDir.resolve(Paths.get("pta_normal.dot")), false);
 		// try (BufferedWriter br = Files.newBufferedWriter(outputDir.resolve(Paths.get("normal_sequences")), StandardCharsets.UTF_8)) {

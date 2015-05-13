@@ -13,6 +13,7 @@ import org.junit.Test;
 
 import sadl.constants.AnomalyInsertionType;
 import sadl.input.TimedInput;
+import sadl.modellearner.TauPtaLearner;
 import sadl.utils.IoUtils;
 import sadl.utils.MasterSeed;
 
@@ -25,7 +26,8 @@ public class TauPtaTestSmallV2 {
 	public void testTauPTATimedInputAbnormal() throws IOException, URISyntaxException {
 		Path p = Paths.get(TauPtaTestSmallV2.class.getResource("/taupta/small/rti_small.txt").toURI());
 		final TimedInput trainingTimedSequences = TimedInput.parseAlt(p, 1);
-		final TauPTA pta = new TauPTA(trainingTimedSequences);
+		final TauPtaLearner learner = new TauPtaLearner();
+		final TauPTA pta = learner.train(trainingTimedSequences);
 		for (final AnomalyInsertionType type : AnomalyInsertionType.values()) {
 			if (type != AnomalyInsertionType.NONE && type != AnomalyInsertionType.ALL) {
 				final TauPTA anomaly1 = SerializationUtils.clone(pta);

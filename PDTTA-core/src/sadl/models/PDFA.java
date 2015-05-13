@@ -408,13 +408,13 @@ public class PDFA implements AutomatonModel, Serializable {
 	}
 
 	/**
-	 * Returns all outgoing probabilities from the given state
+	 * Returns all outgoing transitions for a given state
 	 * 
 	 * @param currentState
 	 *            the given state
 	 * @param includeStoppingTransition
 	 *            whether to include final transition probabilities
-	 * @return
+	 * @return the outgoing transitions
 	 */
 	public List<Transition> getTransitions(int currentState, boolean includeStoppingTransition) {
 		final List<Transition> result = new ArrayList<>();

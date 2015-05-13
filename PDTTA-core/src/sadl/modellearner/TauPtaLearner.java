@@ -164,13 +164,13 @@ public class TauPtaLearner extends PdttaLearner {
 	}
 
 	private void addEventSequence(TauPTA pta, TimedWord s) {
-		int currentState = pta.START_STATE;
+		int currentState = TauPTA.START_STATE;
 
 		for (int i = 0; i < s.length(); i++) {
 			final int nextEvent = s.getIntSymbol(i);
 			Transition t = pta.getTransition(currentState, nextEvent);
 			if (t == null) {
-				t = pta.addTransition(currentState, pta.getStateCount(), nextEvent, pta.NO_TRANSITION_PROBABILITY);
+				t = pta.addTransition(currentState, pta.getStateCount(), nextEvent, TauPTA.NO_TRANSITION_PROBABILITY);
 				transitionCount.put(t, 0);
 			}
 			transitionCount.increment(t);

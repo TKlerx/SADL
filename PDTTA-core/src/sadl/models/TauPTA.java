@@ -213,7 +213,7 @@ public class TauPTA extends PDTTA {
 				trainingSequences.size(), SEQUENCE_OMMIT_THRESHOLD * trainingSequences.size());
 		final Map<ZeroProbTransition, Distribution> distributions = fit(timeValueBuckets);
 		setTransitionDistributions(distributions);
-		if (distributions.size() != transitions.size()) {
+		if (distributions.size() != getTransitionCount()) {
 			final List<Transition> missingDistributions = new ArrayList<>();
 			for (final Transition t : transitions) {
 				if (distributions.get(t.toZeroProbTransition()) == null) {
@@ -222,7 +222,7 @@ public class TauPTA extends PDTTA {
 			}
 			System.out.println(missingDistributions);
 			throw new IllegalStateException("It is not possible to more/less distributions than transitions (" + distributions.size() + "/"
-					+ transitions.size() + ").");
+					+ getTransitionCount() + ").");
 			// compute what is missing in the distribution set
 		}
 	}
@@ -247,8 +247,6 @@ public class TauPTA extends PDTTA {
 		}
 		return result;
 	}
-
-	// TODO create an TauPTA Learner class which does the mapping and "learning" and so on
 
 	@SuppressWarnings("boxing")
 	private Distribution fitDistribution(TDoubleList transitionTimes) {
@@ -313,9 +311,9 @@ public class TauPTA extends PDTTA {
 		}
 		setAnomalyType(newAnomalyType);
 		if (anomalyType == AnomalyInsertionType.TYPE_ONE) {
-			logger.debug("TransitionCount before inserting {} anomalies={}", anomalyType, transitions.size());
+			logger.debug("TransitionCount before inserting {} anomalies={}", anomalyType, getTransitionCount());
 			insertPerLevelAnomaly(this::computeTransitionCandicatesType13, this::changeTransitionEvent);
-			logger.debug("TransitionCount after inserting {} anomalies={}", anomalyType, transitions.size());
+			logger.debug("TransitionCount after inserting {} anomalies={}", anomalyType, getTransitionCount());
 		} else if (anomalyType == AnomalyInsertionType.TYPE_TWO) {
 			insertSequentialAnomaly(this::insertAnomaly2);
 		} else if (anomalyType == AnomalyInsertionType.TYPE_THREE) {
@@ -337,7 +335,7 @@ public class TauPTA extends PDTTA {
 		// List<UntimedSequence> abnormalSequences = getAllSequences().stream().sort(one way or the other depending on the type of anomaly).take First $K$
 		// elements.collect(as List)
 		logger.debug("AllSequences.size()={}", allSequences.size());
-		logger.debug("Transitions.size()={}", transitions.size());
+		logger.debug("Transitions.size()={}", getTransitionCount());
 		final Comparator<UntimedSequence> c = (s1, s2) -> {
 			final int probCompare = Double.compare(sequenceProbabilities.get(s1), sequenceProbabilities.get(s2));
 			if (probCompare != 0) {
@@ -364,7 +362,7 @@ public class TauPTA extends PDTTA {
 			final Transition t = getTransition(currentState, event);
 			if (t == null) {
 				logger.warn("Transition for state {} and event {} is null while processing sequence {}", currentState, event, s);
-				logger.warn("Transitions.size={}", transitions.size());
+				logger.warn("Transitions.size={}", getTransitionCount());
 				throw new NullPointerException();
 			} else {
 				changeAnomalyType(t, anomalyinsertionType);

@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import sadl.constants.AnomalyInsertionType;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
+import sadl.modellearner.TauPtaLearner;
 import sadl.models.TauPTA;
 import sadl.utils.MasterSeed;
 
@@ -91,7 +92,8 @@ public class SmacDataGenerator implements Serializable {
 		final Random r = MasterSeed.nextRandom();
 		final List<TimedWord> trainSequences = new ArrayList<>();
 		final List<TimedWord> testSequences = new ArrayList<>();
-		final TauPTA pta = new TauPTA(trainingTimedSequences);
+		final TauPtaLearner learner = new TauPtaLearner();
+		final TauPTA pta = learner.train(trainingTimedSequences);
 		final DecimalFormat df = new DecimalFormat("00");
 		logger.info("Finished TauPTA creation.");
 		while (k < 100) {

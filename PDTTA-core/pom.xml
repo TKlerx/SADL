@@ -92,11 +92,6 @@
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
-					<excludes>
-						<exclude>**/GenericSmacPipeline.java</exclude>
-						<exclude>**/SmacPipeline.java</exclude>
-						<exclude>**/WekaSvmClassifier.java</exclude>
-					</excludes>
 				</configuration>
 			</plugin>
 

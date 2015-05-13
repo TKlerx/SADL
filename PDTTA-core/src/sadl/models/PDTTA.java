@@ -61,8 +61,8 @@ public class PDTTA extends PDFA {
 
 	@Override
 	protected boolean isConsistent() {
-		if (transitions.size() != transitionDistributions.size()) {
-			logger.warn("transitions and transitionDistributions must be of same size! {}!={}", transitions.size(), transitionDistributions.size());
+		if (getTransitionCount() != transitionDistributions.size()) {
+			logger.warn("transitions and transitionDistributions must be of same size! {}!={}", getTransitionCount(), transitionDistributions.size());
 			return false;
 		}
 		return super.isConsistent();
@@ -73,17 +73,17 @@ public class PDTTA extends PDFA {
 	 * @return true if irrelevant transitions were removed.
 	 */
 	private boolean deleteIrrelevantTransitions() {
-		logger.debug("There are {} many transitions before removing irrelevant ones", transitions.size());
+		logger.debug("There are {} many transitions before removing irrelevant ones", getTransitionCount());
 		// there may be more transitions than transitionDistributions
 		final boolean removedTransitions = transitions.removeIf(t -> !transitionDistributions.containsKey(t.toZeroProbTransition()));
 		if (removedTransitions) {
 			logger.info("Removed some unnecessary transitions");
 		}
-		if (transitions.size() != transitionDistributions.size()) {
+		if (getTransitionCount() != transitionDistributions.size()) {
 			logger.error("This should never happen because trainsitions.size() and transitionDistributions.size() should be equal now, but are not! {}!={}",
-					transitions.size(), transitionDistributions.size());
+					getTransitionCount(), transitionDistributions.size());
 		}
-		logger.debug("There are {} many transitions after removing irrelevant ones", transitions.size());
+		logger.debug("There are {} many transitions after removing irrelevant ones", getTransitionCount());
 		return removedTransitions;
 	}
 
