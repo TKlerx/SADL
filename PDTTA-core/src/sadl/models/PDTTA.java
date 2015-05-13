@@ -15,8 +15,6 @@ import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -51,6 +49,7 @@ public class PDTTA extends PDFA {
 	}
 
 	public void setTransitionDistributions(Map<ZeroProbTransition, Distribution> transitionDistributions) {
+		checkImmutable();
 		this.transitionDistributions = transitionDistributions;
 		checkAndRestoreConsistency();
 	}
@@ -101,7 +100,8 @@ public class PDTTA extends PDFA {
 	 *            also bind the time distribution to the internally created new transition. Only set this to false if there is no time information present in
 	 *            this automaton
 	 */
-	protected void changeTransitionProbability(Transition transition, double newProbability, boolean bindTimeInformation) {
+	public void changeTransitionProbability(Transition transition, double newProbability, boolean bindTimeInformation) {
+		checkImmutable();
 		if (transition.isStopTraversingTransition()) {
 			super.changeTransitionProbability(transition, newProbability);
 		} else {
@@ -128,6 +128,7 @@ public class PDTTA extends PDFA {
 	}
 
 	protected void bindTransitionDistribution(Transition newTransition, Distribution d) {
+		checkImmutable();
 		if (transitionDistributions != null) {
 			transitionDistributions.put(newTransition.toZeroProbTransition(), d);
 		} else {
@@ -149,7 +150,7 @@ public class PDTTA extends PDFA {
 		return removeTimedTransition(t) != null;
 	}
 
-	protected Distribution removeTimedTransition(Transition t, boolean removeTimeDistribution) {
+	public Distribution removeTimedTransition(Transition t, boolean removeTimeDistribution) {
 		super.removeTransition(t);
 		if (removeTimeDistribution) {
 			if (transitionDistributions != null) {
@@ -165,27 +166,12 @@ public class PDTTA extends PDFA {
 
 	@Override
 	public TimedWord sampleSequence() {
-		// TODO use the method of PDFA and/or externalize the first part! then go on here with adding the time information
 		int currentState = START_STATE;
-
 		final TIntList eventList = new TIntArrayList();
 		final TIntList timeList = new TIntArrayList();
 		boolean choseFinalState = false;
 		while (!choseFinalState) {
-			final List<Transition> possibleTransitions = getTransitions(currentState, true);
-			Collections.sort(possibleTransitions, (t1, t2) -> -Double.compare(t2.getProbability(), t1.getProbability()));
-			final double random = r.nextDouble();
-			double summedProbs = 0;
-			int index = -1;
-			for (int i = 0; i < possibleTransitions.size(); i++) {
-				summedProbs += possibleTransitions.get(i).getProbability();
-				if (random < summedProbs) {
-					index = i;
-					break;
-				}
-			}
-
-			final Transition chosenTransition = possibleTransitions.get(index);
+			final Transition chosenTransition = chooseNextTransition(currentState);
 			if (chosenTransition.isStopTraversingTransition()) {
 				choseFinalState = true;
 			} else if (eventList.size() > MAX_SEQUENCE_LENGTH) {

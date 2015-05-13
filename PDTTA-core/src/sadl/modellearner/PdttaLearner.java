@@ -103,6 +103,7 @@ public class PdttaLearner implements ModelLearner {
 			final Map<ZeroProbTransition, TDoubleList> timeValueBuckets = fillTimeValueBuckets(pdfa, trainingSequences);
 			final Map<ZeroProbTransition, Distribution> transitionDistributions = fit(timeValueBuckets);
 			pdtta = new PDTTA(pdfa, transitionDistributions);
+			pdtta.makeImmutable();
 			return pdtta;
 		} catch (final IOException e) {
 			logger.error("An unexpected error occured", e);
@@ -111,7 +112,7 @@ public class PdttaLearner implements ModelLearner {
 		return null;
 	}
 
-	private Map<ZeroProbTransition, TDoubleList> fillTimeValueBuckets(PDFA pdfa, TimedInput trainingSequences) {
+	protected Map<ZeroProbTransition, TDoubleList> fillTimeValueBuckets(PDFA pdfa, TimedInput trainingSequences) {
 		final Map<ZeroProbTransition, TDoubleList> result = new HashMap<>();
 		int currentState = -1;
 		int followingState = -1;
@@ -130,7 +131,7 @@ public class PdttaLearner implements ModelLearner {
 	}
 
 
-	private void addTimeValue(Map<ZeroProbTransition, TDoubleList> result, int currentState, int followingState, int event, double timeValue) {
+	protected static void addTimeValue(Map<ZeroProbTransition, TDoubleList> result, int currentState, int followingState, int event, double timeValue) {
 		final ZeroProbTransition t = new ZeroProbTransition(currentState, followingState, event);
 		final TDoubleList list = result.get(t);
 		if (list == null) {
@@ -142,7 +143,7 @@ public class PdttaLearner implements ModelLearner {
 		}
 	}
 
-	private Map<ZeroProbTransition, Distribution> fit(Map<ZeroProbTransition, TDoubleList> timeValueBuckets) {
+	protected Map<ZeroProbTransition, Distribution> fit(Map<ZeroProbTransition, TDoubleList> timeValueBuckets) {
 		final Map<ZeroProbTransition, Distribution> result = new HashMap<>();
 		for (final ZeroProbTransition t : timeValueBuckets.keySet()) {
 			result.put(t, fitDistribution(timeValueBuckets.get(t)));
@@ -151,7 +152,7 @@ public class PdttaLearner implements ModelLearner {
 	}
 
 	@SuppressWarnings("boxing")
-	private Distribution fitDistribution(TDoubleList transitionTimes) {
+	protected Distribution fitDistribution(TDoubleList transitionTimes) {
 		final Vec v = new DenseVector(transitionTimes.toArray());
 		final jsat.utils.Pair<Boolean, Double> sameValues = MyDistributionSearch.checkForDifferentValues(v);
 		if (sameValues.getFirstItem()) {

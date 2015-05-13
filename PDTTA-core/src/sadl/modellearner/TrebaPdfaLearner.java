@@ -77,6 +77,7 @@ public class TrebaPdfaLearner implements PdfaLearner {
 				IoUtils.deleteFiles(new String[] { trebaTrainSetFileString, trebaAutomatonFile });
 			}
 			treba.log1plus_free_wrapper();
+			pdfa.makeImmutable();
 			return pdfa;
 		} catch (final IOException e) {
 			logger.error("An unexpected error occured", e);

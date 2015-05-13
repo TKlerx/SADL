@@ -225,7 +225,6 @@ public class PdttaLeanerOld implements ModelLearner {
 
 	@SuppressWarnings("null")
 	private void computeAutomatonPaths(String trebaAutomatonFile, String trebaTrainFileString, String trebaResultPathFile) {
-		// TODO do this in java!
 		// treba.log1plus_taylor_init_wrapper();
 		final observations o = treba.observations_read(trebaTrainFileString);
 		final wfsa fsm = treba.wfsa_read_file(trebaAutomatonFile);

@@ -1,4 +1,4 @@
-package sadl.models;
+package sadl.modellearner;
 
 import static org.junit.Assert.assertEquals;
 
@@ -21,7 +21,7 @@ import sadl.modellearner.PdttaLeanerOld;
 import sadl.utils.IoUtils;
 import sadl.utils.MasterSeed;
 
-public class PDTTATest {
+public class PdttaLearnerTest {
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {

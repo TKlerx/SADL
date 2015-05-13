@@ -58,19 +58,30 @@ public class PDFA implements AutomatonModel, Serializable {
 
 	private static final long serialVersionUID = -3584763240370878883L;
 
-	protected static final int START_STATE = 0;
+	public static final int START_STATE = 0;
 
 
 	transient private static Logger logger = LoggerFactory.getLogger(PDFA.class);
 	// TODO maybe change Set<Transition> transitions to Map<State,Set<Transition>>
 	protected Random r = MasterSeed.nextRandom();
 
-	protected static final double NO_TRANSITION_PROBABILITY = 0;
+	public static final double NO_TRANSITION_PROBABILITY = 0;
 
-	TIntHashSet alphabet = new TIntHashSet();
-	Set<Transition> transitions = new HashSet<>();
-	TIntDoubleMap finalStateProbabilities = new TIntDoubleHashMap();
-	TIntSet abnormalFinalStates = new TIntHashSet();
+	protected TIntHashSet alphabet = new TIntHashSet();
+	protected Set<Transition> transitions = new HashSet<>();
+	protected TIntDoubleMap finalStateProbabilities = new TIntDoubleHashMap();
+	protected TIntSet abnormalFinalStates = new TIntHashSet();
+
+	protected boolean immutable = false;
+
+	public void makeImmutable() {
+		immutable = true;
+	}
+
+
+	public boolean isImmutable() {
+		return immutable;
+	}
 
 	/**
 	 * 
@@ -151,6 +162,7 @@ public class PDFA implements AutomatonModel, Serializable {
 	}
 
 	protected void changeTransitionProbability(Transition transition, double newProbability) {
+		checkImmutable();
 		if (!transition.isStopTraversingTransition()) {
 			removeTransition(transition);
 			addTransition(transition.getFromState(), transition.getToState(), transition.getSymbol(), newProbability);
@@ -159,6 +171,12 @@ public class PDFA implements AutomatonModel, Serializable {
 			if (Double.doubleToLongBits(adjusted) == Double.doubleToLongBits(finalStateProbabilities.getNoEntryValue())) {
 				logger.warn("Was not possible to adjust final state prob for transition {}", transition);
 			}
+		}
+	}
+
+	protected void checkImmutable() {
+		if (isImmutable()) {
+			throw new IllegalStateException(this.getClass() + " is immutable and cannot be changed anymore");
 		}
 	}
 
@@ -198,6 +216,7 @@ public class PDFA implements AutomatonModel, Serializable {
 	}
 
 	public Transition addTransition(int fromState, int toState, int symbol, double probability) {
+		checkImmutable();
 		addState(fromState);
 		addState(toState);
 		alphabet.add(symbol);
@@ -206,7 +225,8 @@ public class PDFA implements AutomatonModel, Serializable {
 		return t;
 	}
 
-	public Transition addAbnormalTransition(int fromState, int toState, int symbol, double probability, AnomalyInsertionType anomalyType) {
+	protected Transition addAbnormalTransition(int fromState, int toState, int symbol, double probability, AnomalyInsertionType anomalyType) {
+		checkImmutable();
 		addState(fromState);
 		addState(toState);
 		alphabet.add(symbol);
@@ -215,11 +235,12 @@ public class PDFA implements AutomatonModel, Serializable {
 		return t;
 	}
 
-	public Transition addAbnormalTransition(Transition t, AnomalyInsertionType anomalyType) {
+	protected Transition addAbnormalTransition(Transition t, AnomalyInsertionType anomalyType) {
 		return addAbnormalTransition(t.getFromState(), t.getToState(), t.getSymbol(), t.getProbability(), anomalyType);
 	}
 
-	protected void addState(int state) {
+	public void addState(int state) {
+		checkImmutable();
 		if (!finalStateProbabilities.containsKey(state)) {
 			// finalStateProbabilities is also the set of states. so add the state to this set with a probability of zero
 			addFinalState(state, NO_TRANSITION_PROBABILITY);
@@ -296,10 +317,12 @@ public class PDFA implements AutomatonModel, Serializable {
 	}
 
 	public void addFinalState(int state, double probability) {
+		checkImmutable();
 		finalStateProbabilities.put(state, probability);
 	}
 
 	protected void addAbnormalFinalState(int state, double probability) {
+		checkImmutable();
 		addFinalState(state, probability);
 		abnormalFinalStates.add(state);
 	}
@@ -337,6 +360,7 @@ public class PDFA implements AutomatonModel, Serializable {
 
 
 	protected boolean removeTransition(Transition t) {
+		checkImmutable();
 		final boolean wasRemoved = transitions.remove(t);
 		if (!wasRemoved) {
 			logger.warn("Tried to remove a non existing transition={}", t);
@@ -350,23 +374,9 @@ public class PDFA implements AutomatonModel, Serializable {
 		int currentState = START_STATE;
 
 		final TIntList eventList = new TIntArrayList();
-		final TIntList timeList = new TIntArrayList();
 		boolean choseFinalState = false;
 		while (!choseFinalState) {
-			final List<Transition> possibleTransitions = getTransitions(currentState, true);
-			Collections.sort(possibleTransitions, (t1, t2) -> -Double.compare(t2.getProbability(), t1.getProbability()));
-			final double random = r.nextDouble();
-			double summedProbs = 0;
-			int index = -1;
-			for (int i = 0; i < possibleTransitions.size(); i++) {
-				summedProbs += possibleTransitions.get(i).getProbability();
-				if (random < summedProbs) {
-					index = i;
-					break;
-				}
-			}
-
-			final Transition chosenTransition = possibleTransitions.get(index);
+			final Transition chosenTransition = chooseNextTransition(currentState);
 			if (chosenTransition.isStopTraversingTransition()) {
 				choseFinalState = true;
 			} else if (eventList.size() > MAX_SEQUENCE_LENGTH) {
@@ -376,7 +386,25 @@ public class PDFA implements AutomatonModel, Serializable {
 				eventList.add(chosenTransition.getSymbol());
 			}
 		}
-		return new TimedIntWord(eventList, timeList, ClassLabel.NORMAL);
+		return new TimedIntWord(eventList, null, ClassLabel.NORMAL);
+	}
+
+	protected Transition chooseNextTransition(int currentState) {
+		final List<Transition> possibleTransitions = getTransitions(currentState, true);
+		Collections.sort(possibleTransitions, (t1, t2) -> -Double.compare(t2.getProbability(), t1.getProbability()));
+		final double random = r.nextDouble();
+		double summedProbs = 0;
+		int index = -1;
+		for (int i = 0; i < possibleTransitions.size(); i++) {
+			summedProbs += possibleTransitions.get(i).getProbability();
+			if (random < summedProbs) {
+				index = i;
+				break;
+			}
+		}
+
+		final Transition chosenTransition = possibleTransitions.get(index);
+		return chosenTransition;
 	}
 
 	/**
@@ -388,7 +416,7 @@ public class PDFA implements AutomatonModel, Serializable {
 	 *            whether to include final transition probabilities
 	 * @return
 	 */
-	protected List<Transition> getTransitions(int currentState, boolean includeStoppingTransition) {
+	public List<Transition> getTransitions(int currentState, boolean includeStoppingTransition) {
 		final List<Transition> result = new ArrayList<>();
 		for (final Transition t : transitions) {
 			if (t.getFromState() == currentState) {
@@ -413,7 +441,7 @@ public class PDFA implements AutomatonModel, Serializable {
 		this.r = r;
 	}
 
-	protected boolean isInAutomaton(TimedWord s) {
+	public boolean isInAutomaton(TimedWord s) {
 		int currentState = START_STATE;
 		for (int i = 0; i < s.length(); i++) {
 			final int nextEvent = s.getIntSymbol(i);
@@ -439,6 +467,7 @@ public class PDFA implements AutomatonModel, Serializable {
 	}
 
 	protected void removeState(int i) {
+		checkImmutable();
 		finalStateProbabilities.remove(i);
 	}
 
@@ -542,6 +571,10 @@ public class PDFA implements AutomatonModel, Serializable {
 			}
 		}
 		return result;
+	}
+
+	public int[] getStates() {
+		return finalStateProbabilities.keys();
 	}
 
 

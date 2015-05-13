@@ -15,7 +15,6 @@ import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TObjectDoubleMap;
 import gnu.trove.map.TObjectIntMap;
@@ -76,6 +75,8 @@ public class TauPTA extends PDTTA {
 	private static final int SEQUENTIAL_ANOMALY_K = 20;
 	private static final double ANOMALY_3_CHANGE_RATE = 0.5;
 	private static final double ANOMALY_4_CHANGE_RATE = 0.1;
+	public static final double SEQUENCE_OMMIT_THRESHOLD = 0.0001;
+	private static final double MAX_TYPE_FIVE_PROBABILITY = 0.2;
 
 	int ommitedSequenceCount = 0;
 
@@ -105,23 +106,17 @@ public class TauPTA extends PDTTA {
 		return true;
 	}
 
-	// private static final int SEQUENCE_OMMIT_THRESHOLD = 10;
-	private static final double SEQUENCE_OMMIT_THRESHOLD = 0.0001;
 
-	private static final double MAX_TYPE_FIVE_PROBABILITY = 0.2;
 
 	public AnomalyInsertionType getAnomalyType() {
 		return anomalyType;
 	}
 
 	private void setAnomalyType(AnomalyInsertionType anomalyType) {
+		checkImmutable();
 		this.anomalyType = anomalyType;
 	}
 
-	public TauPTA(Set<Transition> transitions, TIntDoubleMap finalStateProbabilities) {
-		this.transitions = transitions;
-		this.finalStateProbabilities = finalStateProbabilities;
-	}
 
 	public TauPTA() {
 
@@ -132,6 +127,7 @@ public class TauPTA extends PDTTA {
 	 * 
 	 * @param trainingSequences
 	 */
+	@Deprecated
 	public TauPTA(TimedInput trainingSequences) {
 		super();
 		trainingSequences = SerializationUtils.clone(trainingSequences);
@@ -252,7 +248,7 @@ public class TauPTA extends PDTTA {
 		return result;
 	}
 
-	// TODO create an TauPTA Learner class which does the mapping and learning and so on
+	// TODO create an TauPTA Learner class which does the mapping and "learning" and so on
 
 	@SuppressWarnings("boxing")
 	private Distribution fitDistribution(TDoubleList transitionTimes) {
@@ -675,6 +671,10 @@ public class TauPTA extends PDTTA {
 		} else {
 			return (int) (value * factor);
 		}
+	}
+
+	public Set<Transition> getAllTransitions() {
+		return transitions;
 	}
 
 }
