@@ -15,7 +15,6 @@ import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +43,6 @@ public class PDTTA extends PDFA {
 	private static final long serialVersionUID = 3017416753740710943L;
 
 	transient private static Logger logger = LoggerFactory.getLogger(PDTTA.class);
-
 
 	Map<ZeroProbTransition, Distribution> transitionDistributions = null;
 
@@ -90,16 +88,23 @@ public class PDTTA extends PDFA {
 		return removedTransitions;
 	}
 
-
-
 	@Override
 	protected void changeTransitionProbability(Transition transition, double newProbability) {
 		changeTransitionProbability(transition, newProbability, true);
 	}
 
+	/**
+	 * 
+	 * @param transition
+	 * @param newProbability
+	 * @param bindTimeInformation
+	 *            also bind the time distribution to the internally created new transition. Only set this to false if there is no time information present in
+	 *            this automaton
+	 */
 	protected void changeTransitionProbability(Transition transition, double newProbability, boolean bindTimeInformation) {
-		// TODO use super.changeTransitionProbability
-		if (!transition.isStopTraversingTransition()) {
+		if (transition.isStopTraversingTransition()) {
+			super.changeTransitionProbability(transition, newProbability);
+		} else {
 			Distribution d = null;
 			d = removeTimedTransition(transition, bindTimeInformation);
 			final Transition t = new Transition(transition.getFromState(), transition.getToState(), transition.getSymbol(), newProbability);
@@ -110,21 +115,17 @@ public class PDTTA extends PDFA {
 			if (d == null && bindTimeInformation) {
 				logger.warn("Should incorporate time but there was no time distribution associated with transition {}", t);
 			}
-		} else {
-			final double adjusted = finalStateProbabilities.put(transition.getFromState(), newProbability);
-			if (Double.doubleToLongBits(adjusted) == Double.doubleToLongBits(finalStateProbabilities.getNoEntryValue())) {
-				logger.warn("Was not possible to adjust final state prob for transition {}",transition);
-			}
 		}
 	}
 
 	protected PDTTA() {
 	}
 
-	public PDTTA(Path trebaPath) throws IOException {
-		super(trebaPath);
+	public PDTTA(PDFA pdfa, Map<ZeroProbTransition, Distribution> transitionDistributions) throws IOException {
+		super(pdfa);
+		this.transitionDistributions = transitionDistributions;
+		checkAndRestoreConsistency();
 	}
-
 
 	protected void bindTransitionDistribution(Transition newTransition, Distribution d) {
 		if (transitionDistributions != null) {
@@ -161,7 +162,6 @@ public class PDTTA extends PDFA {
 			return null;
 		}
 	}
-
 
 	@Override
 	public TimedWord sampleSequence() {
@@ -203,6 +203,7 @@ public class PDTTA extends PDFA {
 				timeList.add(timeValue);
 			}
 		}
+		// TODO add the capability to create abnormal sequences with a PDTTA
 		return new TimedIntWord(eventList, timeList, ClassLabel.NORMAL);
 	}
 

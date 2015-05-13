@@ -40,6 +40,7 @@ import sadl.constants.ClassLabel;
  *
  */
 public class TimedInput implements Iterable<TimedWord>, Serializable {
+	// TODO we also need (untimed)Input for PDFAs etc
 	private static final long serialVersionUID = -2175576201528760567L;
 
 	private static Logger logger = LoggerFactory.getLogger(TimedInput.class);

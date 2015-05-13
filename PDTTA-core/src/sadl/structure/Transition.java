@@ -21,14 +21,12 @@ import sadl.constants.AnomalyInsertionType;
  *
  */
 public class Transition implements Serializable, Comparable<Transition> {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -8764538459984228024L;
 	public static final int STOP_TRAVERSING_SYMBOL = -1;
 	int fromState, toState, symbol;
 	double probability;
 
+	// TODO this is an IntTransition, we also need transitions with real Strings/Symbols
 	public int getFromState() {
 		return fromState;
 	}

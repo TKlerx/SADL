@@ -67,7 +67,6 @@ public class PDTTAold implements AutomatonModel, Serializable {
 	 */
 	private static final long serialVersionUID = 3017416753740710943L;
 
-	// TODO implement PDTTA as an extension of a PDFA
 	transient private static Logger logger = LoggerFactory.getLogger(PDTTAold.class);
 	// TODO maybe change Set<Transition> transitions to Map<State,Set<Transition>>
 	protected Random r = MasterSeed.nextRandom();

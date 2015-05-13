@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -253,6 +252,8 @@ public class TauPTA extends PDTTA {
 		return result;
 	}
 
+	// TODO create an TauPTA Learner class which does the mapping and learning and so on
+
 	@SuppressWarnings("boxing")
 	private Distribution fitDistribution(TDoubleList transitionTimes) {
 		final Vec v = new DenseVector(transitionTimes.toArray());
@@ -408,37 +409,7 @@ public class TauPTA extends PDTTA {
 		// return product(probabilities);
 	}
 
-	private Set<UntimedSequence> getAllSequences() {
-		return getAllSequences(0, new UntimedSequence());
-	}
 
-	/**
-	 * 
-	 * @param fromState
-	 * @param s
-	 *            the sequence taken from the root node so far
-	 * @return
-	 */
-	private Set<UntimedSequence> getAllSequences(int fromState, UntimedSequence s) {
-		final Set<UntimedSequence> result = new HashSet<>();
-		final List<Transition> outgoingTransitions = getTransitions(fromState, true);
-		for (final Transition t : outgoingTransitions) {
-			if (t.getProbability() > 0) {
-				try {
-					final UntimedSequence copy = s.clone();
-					if (t.isStopTraversingTransition()) {
-						result.add(copy);
-					} else {
-						copy.addEvent(t.getSymbol());
-						result.addAll(getAllSequences(t.getToState(), copy));
-					}
-				} catch (final CloneNotSupportedException e) {
-					logger.error("This should never happen.", e);
-				}
-			}
-		}
-		return result;
-	}
 
 	private int insertAnomaly2(int i) {
 		// take the least probable $k$ sequences, traverse the TauPTA with those sequences and set every transition on its way to anomalyType2

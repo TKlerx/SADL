@@ -45,6 +45,7 @@ import sadl.input.TimedWord;
 import sadl.interfaces.AutomatonModel;
 import sadl.structure.AbnormalTransition;
 import sadl.structure.Transition;
+import sadl.structure.UntimedSequence;
 import sadl.utils.MasterSeed;
 
 /**
@@ -151,8 +152,8 @@ public class PDFA implements AutomatonModel, Serializable {
 
 	protected void changeTransitionProbability(Transition transition, double newProbability) {
 		if (!transition.isStopTraversingTransition()) {
-			final Transition t = new Transition(transition.getFromState(), transition.getToState(), transition.getSymbol(), newProbability);
-			transitions.add(t);
+			removeTransition(transition);
+			addTransition(transition.getFromState(), transition.getToState(), transition.getSymbol(), newProbability);
 		} else {
 			final double adjusted = finalStateProbabilities.put(transition.getFromState(), newProbability);
 			if (Double.doubleToLongBits(adjusted) == Double.doubleToLongBits(finalStateProbabilities.getNoEntryValue())) {
@@ -183,6 +184,13 @@ public class PDFA implements AutomatonModel, Serializable {
 				addFinalState(state, finalProb);
 			}
 		}
+	}
+
+	protected PDFA(PDFA pdfa) {
+		this.alphabet = pdfa.alphabet;
+		this.transitions = pdfa.transitions;
+		this.finalStateProbabilities = pdfa.finalStateProbabilities;
+		this.abnormalFinalStates = pdfa.abnormalFinalStates;
 	}
 
 	public int getTransitionCount() {
@@ -502,6 +510,38 @@ public class PDFA implements AutomatonModel, Serializable {
 			return false;
 		}
 		return true;
+	}
+
+	protected Set<UntimedSequence> getAllSequences() {
+		return getAllSequences(0, new UntimedSequence());
+	}
+
+	/**
+	 * 
+	 * @param fromState
+	 * @param s
+	 *            the sequence taken from the root node so far
+	 * @return
+	 */
+	private Set<UntimedSequence> getAllSequences(int fromState, UntimedSequence s) {
+		final Set<UntimedSequence> result = new HashSet<>();
+		final List<Transition> outgoingTransitions = getTransitions(fromState, true);
+		for (final Transition t : outgoingTransitions) {
+			if (t.getProbability() > 0) {
+				try {
+					final UntimedSequence copy = s.clone();
+					if (t.isStopTraversingTransition()) {
+						result.add(copy);
+					} else {
+						copy.addEvent(t.getSymbol());
+						result.addAll(getAllSequences(t.getToState(), copy));
+					}
+				} catch (final CloneNotSupportedException e) {
+					logger.error("This should never happen.", e);
+				}
+			}
+		}
+		return result;
 	}
 
 

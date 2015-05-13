@@ -179,7 +179,6 @@ public class PdttaLeanerOld implements ModelLearner {
 	}
 
 	private Map<ZeroProbTransition, TDoubleList> parseAutomatonPaths(String trebaResultPathFile, TimedInput timedSequences) throws IOException {
-		// TODO when this is done in java, do this in memory instead of with files
 		final Map<ZeroProbTransition, TDoubleList> result = new HashMap<>();
 		final BufferedReader br = Files.newBufferedReader(Paths.get(trebaResultPathFile), StandardCharsets.UTF_8);
 		String line = null;

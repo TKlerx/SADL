@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import sadl.models.PDTTA;
+import sadl.models.PDFA;
 
 /**
  * 
@@ -25,7 +25,7 @@ import sadl.models.PDTTA;
 public class TrebaToGraphviz {
 
 	public static void transform(Path trebaPath, Path graphvizResult) throws IOException {
-		final PDTTA a = new PDTTA(trebaPath);
+		final PDFA a = new PDFA(trebaPath);
 		a.toGraphvizFile(graphvizResult, false);
 		// Runtime.getRuntime().exec("dot -Tpdf " + graphvizResult +
 		// " -o graph.pdf");
