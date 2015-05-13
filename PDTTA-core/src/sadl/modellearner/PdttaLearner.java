@@ -44,15 +44,9 @@ import sadl.structure.ZeroProbTransition;
  *
  */
 public class PdttaLearner implements ModelLearner {
-	double mergeAlpha;
-	MergeTest mergeTest = MergeTest.ALERGIA;
-	boolean recursiveMergeTest;
 	private static Logger logger = LoggerFactory.getLogger(PdttaLearner.class);
-	int fsmStateCount = -1;
 	KernelFunction kdeKernelFunction;
 	double kdeBandwidth;
-	double smoothingPrior = 0.00;
-	int mergeT0 = 3;
 	private final PdfaLearner pdfaLearner;
 
 	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest) {

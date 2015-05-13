@@ -34,17 +34,27 @@ import treba.wfsa;
 
 public class TrebaPdfaLearner implements PdfaLearner {
 
-	double mergeAlpha;
-	MergeTest mergeTest = MergeTest.ALERGIA;
-	boolean recursiveMergeTest;
+	protected double mergeAlpha;
+	protected MergeTest mergeTest = getDefaultMergeTest();
+	protected boolean recursiveMergeTest;
 	private static Logger logger = LoggerFactory.getLogger(TrebaPdfaLearner.class);
-	int fsmStateCount = -1;
-	double smoothingPrior = 0.00;
-	int mergeT0 = 3;
+	protected int fsmStateCount = -1;
+	protected double smoothingPrior = 0.00;
+	protected int mergeT0 = 3;
 
 	public TrebaPdfaLearner(double mergeAlpha, boolean recursiveMergeTest) {
 		this.mergeAlpha = mergeAlpha;
 		this.recursiveMergeTest = recursiveMergeTest;
+	}
+
+	private MergeTest getDefaultMergeTest() {
+		final String osName = System.getProperty("os.name");
+		if (osName.toLowerCase().contains("linux")) {
+			return MergeTest.ALERGIA;
+		} else if (osName.toLowerCase().contains("windows")) {
+			return null;
+		}
+		return null;
 	}
 
 	public TrebaPdfaLearner(double mergeAlpha, boolean recursiveMergeTest, MergeTest mergeTest) {
