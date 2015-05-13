@@ -542,10 +542,14 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 		};
 	}
 
+	boolean transformedToInt = false;
 	public void toTimedIntWords() {
 		// FIXME what about the alphabet? Does it also need to be adjusted?
-		for (int i = 0; i < size(); i++) {
-			words.set(i, words.get(i).toIntWord());
+		if (!transformedToInt) {
+			for (int i = 0; i < size(); i++) {
+				words.set(i, words.get(i).toIntWord());
+			}
+			transformedToInt = true;
 		}
 	}
 

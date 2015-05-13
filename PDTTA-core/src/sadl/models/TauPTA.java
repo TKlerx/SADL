@@ -123,7 +123,7 @@ public class TauPTA extends PDTTA {
 	}
 
 	/**
-	 * WARNING: The input is changed!
+	 * WARNING: The input is changed (transformed to TimedIntWords)
 	 * 
 	 * @param trainingSequences
 	 */

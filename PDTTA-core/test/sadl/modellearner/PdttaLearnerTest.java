@@ -16,8 +16,6 @@ import org.junit.Test;
 
 import sadl.input.TimedInput;
 import sadl.interfaces.Model;
-import sadl.modellearner.PdttaLearner;
-import sadl.modellearner.PdttaLeanerOld;
 import sadl.utils.IoUtils;
 import sadl.utils.MasterSeed;
 
@@ -41,7 +39,7 @@ public class PdttaLearnerTest {
 
 	@Test
 	public void test() throws IOException, URISyntaxException {
-		for (int i = 5; i <= 5; i++) {
+		for (int i = 1; i <= 5; i++) {
 			final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(
 					Paths.get(this.getClass().getResource("/pdtta/smac_mix_type" + i + ".txt").toURI()), (reader) -> {
 						try {

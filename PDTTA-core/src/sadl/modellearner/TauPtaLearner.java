@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import jsat.distributions.Distribution;
+import jsat.distributions.empirical.kernelfunc.KernelFunction;
 
 import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
@@ -42,7 +43,18 @@ public class TauPtaLearner extends PdttaLearner {
 
 	public TauPtaLearner() {
 		super(null, null, -1);
+	}
 
+	public TauPtaLearner(KernelFunction kdeKernelFunction, double kdeBandwidth) {
+		super(null, kdeKernelFunction, kdeBandwidth);
+	}
+
+	public TauPtaLearner(KernelFunction kdeKernelFunction) {
+		super(null, kdeKernelFunction, -1);
+	}
+
+	public TauPtaLearner(double kdeBandwidth) {
+		super(null, null, kdeBandwidth);
 	}
 
 	int ommitedSequenceCount = 0;
