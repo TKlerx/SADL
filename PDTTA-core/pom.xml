@@ -110,10 +110,11 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>de.upb.timok.run.smac.NewSmacPipeline</mainClass>
-							<packageName>de.upb.timok.run</packageName>
+							<mainClass>sadl.run.smac.NewSmacPipeline</mainClass>
+							<packageName>sadl.run.smac</packageName>
 							<addClasspath>true</addClasspath>
 							<classpathPrefix>lib/</classpathPrefix>
+							<useUniqueVersions>false</useUniqueVersions>
 						</manifest>
 						<manifestEntries>
 							<mode>development</mode>
@@ -136,8 +137,9 @@
 						<configuration>
 							<outputDirectory>${project.build.directory}/lib</outputDirectory>
 							<overWriteReleases>false</overWriteReleases>
-							<overWriteSnapshots>false</overWriteSnapshots>
+							<overWriteSnapshots>true</overWriteSnapshots>
 							<overWriteIfNewer>true</overWriteIfNewer>
+							<useBaseVersion>true</useBaseVersion>
 						</configuration>
 					</execution>
 				</executions>
