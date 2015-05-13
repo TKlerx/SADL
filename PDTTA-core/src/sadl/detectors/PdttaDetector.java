@@ -171,7 +171,7 @@ public abstract class PdttaDetector implements AnomalyDetector {
 	@Override
 	public void setModel(Model model) {
 		if (model instanceof PDTTA) {
-			logger.info("Setting model to {}", model);
+			logger.debug("Setting model to {}", model);
 			this.model = (PDTTA) model;
 		} else {
 			throw new UnsupportedOperationException("This AnomalyDetector can only use PDTTAs for anomaly detection");

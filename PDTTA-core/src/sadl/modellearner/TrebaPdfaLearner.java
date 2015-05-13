@@ -38,7 +38,6 @@ public class TrebaPdfaLearner implements PdfaLearner {
 	protected MergeTest mergeTest = getDefaultMergeTest();
 	protected boolean recursiveMergeTest;
 	private static Logger logger = LoggerFactory.getLogger(TrebaPdfaLearner.class);
-	protected int fsmStateCount = -1;
 	protected double smoothingPrior = 0.00;
 	protected int mergeT0 = 3;
 

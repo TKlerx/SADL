@@ -53,7 +53,7 @@ public class trebaJNI {
 			//System.out.println(rootDir.resolve(opt.get()).normalize().toAbsolutePath());
 			return rootDir.resolve(opt.get());
 		}else{
-			throw new IOException("Could not find treba library from rootDir"+rootDir.normalize());
+			throw new IOException("Could not find treba library from rootDir "+rootDir.normalize());
 		}
 	}
 

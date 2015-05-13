@@ -309,6 +309,7 @@ public class TauPTA extends PDTTA {
 					this.anomalyType, anomalyType);
 			return;
 		}
+		immutable = false;
 		setAnomalyType(newAnomalyType);
 		if (anomalyType == AnomalyInsertionType.TYPE_ONE) {
 			logger.debug("TransitionCount before inserting {} anomalies={}", anomalyType, getTransitionCount());
@@ -326,6 +327,7 @@ public class TauPTA extends PDTTA {
 			throw new IllegalArgumentException("the AnomalyInsertionType " + newAnomalyType + " is not supported.");
 		}
 		this.checkAndRestoreConsistency();
+		immutable = true;
 	}
 
 	private void insertSequentialAnomaly(IntUnaryOperator f) {

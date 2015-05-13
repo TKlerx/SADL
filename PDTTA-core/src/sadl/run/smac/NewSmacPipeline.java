@@ -247,15 +247,16 @@ public class NewSmacPipeline implements Serializable {
 		} else if (kdeKernelFunctionQualifier == KdeKernelFunction.ESTIMATE) {
 			kdeKernelFunction = null;
 		}
-		final long jobNumber = Double.doubleToLongBits(Math.random());
-
-		String jobName = Long.toString(jobNumber);
-		jobName = jobName.substring(0, 10);
-		// create treba input file
+		final Path dataPath = Paths.get(dataString);
+		if (Files.notExists(dataPath)) {
+			final IOException e = new IOException("Path with input data does not exist(" + dataPath + ")");
+			logger.error("Input data file does not exist", e);
+			throw e;
+		}
 
 		// parse timed sequences
 		// final List<TimedSequence> trainingTimedSequences = TimedSequence.parseTimedSequences(timedInputTrainFile, false, false);´
-		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(Paths.get(dataString));
+		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(dataPath);
 		final TimedInput trainingInput = trainTest.getKey();
 		trainingInput.toTimedIntWords();
 		final ModelLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0);
