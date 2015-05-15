@@ -11,6 +11,7 @@
 
 package sadl.models;
 
+import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TIntDoubleMap;
@@ -36,6 +37,7 @@ import java.util.Set;
 
 import jsat.distributions.Distribution;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.exception.MathArithmeticException;
 import org.apache.commons.math3.fraction.BigFraction;
 import org.apache.commons.math3.util.Precision;
@@ -701,5 +703,11 @@ public class PDTTAold implements AutomatonModel, Serializable {
 			return false;
 		}
 		return true;
+	}
+
+	@Override
+	public Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord seq) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
