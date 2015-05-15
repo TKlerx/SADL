@@ -12,7 +12,6 @@
 package sadl.modellearner;
 
 import gnu.trove.list.TDoubleList;
-import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TDoubleArrayList;
 
 import java.io.BufferedReader;
@@ -129,10 +128,12 @@ public class PdttaLeanerOld implements ModelLearner {
 			// do the fitting
 			final Map<ZeroProbTransition, Distribution> transitionDistributions = fit(timeValueBuckets);
 			// compute likelihood on test set for automaton and for time PDFs
-			pdtta = new PDTTAold(Paths.get(trebaAutomatonFile));
+			pdtta = new PDTTAold(Paths.get(trebaAutomatonFile), trainingSequences);
 			pdtta.setTransitionDistributions(transitionDistributions);
 			if (!Settings.isDebug()) {
 				IoUtils.deleteFiles(new String[] { trebaTrainSetFileString, trebaAutomatonFile, trebaResultPathFile });
+			} else {
+				logger.info("temp dir: {}", tempDir);
 			}
 			treba.log1plus_free_wrapper();
 			return pdtta;
@@ -187,11 +188,9 @@ public class PdttaLeanerOld implements ModelLearner {
 		int followingState = -1;
 		while ((line = br.readLine()) != null) {
 			final String[] split = line.split("\\s+");
-			final TIntList timeValues = timedSequences.get(rowIndex).getTimeValues();
-			final TIntList eventValues = timedSequences.get(rowIndex).getIntSymbols();
-			if (split.length - 2 != timeValues.size()) {
+			if (split.length - 2 != timedSequences.get(rowIndex).getTimeValues().size()) {
 				logger.error("There should be one more state than there are time values (time values fill the gaps between the states\n{}\n{}",
-						Arrays.toString(split), timeValues);
+						Arrays.toString(split), timedSequences.get(rowIndex).getTimeValues());
 				logger.error("Error occured in line={}", rowIndex);
 				break;
 			}
@@ -199,7 +198,8 @@ public class PdttaLeanerOld implements ModelLearner {
 			for (int i = 1; i < split.length - 1; i++) {
 				currentState = Integer.parseInt(split[i]);
 				followingState = Integer.parseInt(split[i + 1]);
-				addTimeValue(result, currentState, followingState, eventValues.get(i - 1), timeValues.get(i - 1));
+				addTimeValue(result, currentState, followingState, timedSequences.get(rowIndex).getSymbol(i - 1),
+						timedSequences.get(rowIndex).getTimeValue(i - 1));
 			}
 
 			rowIndex++;
@@ -211,7 +211,7 @@ public class PdttaLeanerOld implements ModelLearner {
 		return result;
 	}
 
-	private void addTimeValue(Map<ZeroProbTransition, TDoubleList> result, int currentState, int followingState, int event, double timeValue) {
+	private void addTimeValue(Map<ZeroProbTransition, TDoubleList> result, int currentState, int followingState, String event, double timeValue) {
 		final ZeroProbTransition t = new ZeroProbTransition(currentState, followingState, event);
 		final TDoubleList list = result.get(t);
 		if (list == null) {
@@ -259,11 +259,22 @@ public class PdttaLeanerOld implements ModelLearner {
 	private void createTrebaFile(TimedInput timedSequences, String trebaTrainFileString) throws IOException {
 		try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(trebaTrainFileString), StandardCharsets.UTF_8)) {
 			for (final TimedWord ts : timedSequences) {
-				bw.write(ts.getSymbolString());
+				bw.write(getSymbolString(ts, timedSequences));
 				bw.append('\n');
 			}
 			bw.close();
 		}
+	}
+
+	private String getSymbolString(TimedWord ts, TimedInput timedSequences) {
+		final StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < ts.length(); i++) {
+			sb.append(timedSequences.getAlphIndex(ts.getSymbol(i)));
+			if (i != ts.length() - 1) {
+				sb.append(' ');
+			}
+		}
+		return sb.toString();
 	}
 
 	protected double trainFsm(String eventTrainFile, String fsmOutputFile) {

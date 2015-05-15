@@ -23,6 +23,7 @@ import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
@@ -376,11 +377,13 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 		return words.isEmpty();
 	}
 
+	private boolean cleared = false;
 	/**
 	 * Removes all {@link TimedWord}s from the {@link TimedInput} to reduce memory consumption.
 	 */
 	public void clearWords() {
 		words.clear();
+		cleared = true;
 	}
 
 	/**
@@ -391,11 +394,7 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	 * @return The {@link TimedWord} at the given index or {@code null} if the index does not exist
 	 */
 	public TimedWord getWord(int i) {
-
-		if (i >= 0 && i < words.size()) {
-			return words.get(i);
-		}
-		return null;
+		return get(i);
 	}
 
 	/**
@@ -406,11 +405,8 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	 * @return The {@link TimedWord} at the given index or {@code null} if the index does not exist
 	 */
 	public TimedWord get(int i) {
-
-		if (i >= 0 && i < words.size()) {
-			return words.get(i);
-		}
-		return null;
+		checkCleared();
+		return words.get(i);
 	}
 
 	/**
@@ -419,6 +415,7 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	 * @return The number of timed sequences
 	 */
 	public int size() {
+		checkCleared();
 		return words.size();
 	}
 
@@ -439,11 +436,7 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	 * @return The symbol with the given index or {@code null} if the index does not exist
 	 */
 	public String getSymbol(int i) {
-
-		if (i >= 0 && i < alphabetRev.size()) {
-			return alphabetRev.get(i);
-		}
-		return null;
+		return alphabetRev.get(i);
 	}
 
 	/**
@@ -454,11 +447,16 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	 * @return The index for the given symbol or {@code -1} if the symbol is not contained in the {@link TimedInput}
 	 */
 	public int getAlphIndex(String s) {
-
 		if (alphabet.containsKey(s)) {
 			return alphabet.get(s);
 		}
 		return -1;
+	}
+
+	public String[] getSymbols() {
+		final String[] result = alphabet.keys(new String[0]);
+		Arrays.sort(result);
+		return result;
 	}
 
 	/**
@@ -495,6 +493,7 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	}
 
 	private void toFile(Appendable a, Function<TimedWord, String> f) throws IOException {
+		checkCleared();
 		for (int i = 0; i < words.size(); i++) {
 			a.append(f.apply(words.get(i)));
 			if (i < (words.size() - 1)) {
@@ -524,6 +523,7 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 
 	@Override
 	public Iterator<TimedWord> iterator() {
+		checkCleared();
 		return new Iterator<TimedWord>() {
 			int i = 0;
 
@@ -540,16 +540,57 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 		};
 	}
 
-	// TODO remove this. Remove TimedIntWord. Use timedinput.clearWords and getAlphIndex
-	boolean transformedToInt = false;
-	public void toTimedIntWords() {
-		// FIXME what about the alphabet? Does it also need to be adjusted?
-		if (!transformedToInt) {
-			for (int i = 0; i < size(); i++) {
-				words.set(i, words.get(i).toIntWord());
-			}
-			transformedToInt = true;
+	protected void checkCleared() {
+		if (cleared) {
+			throw new IllegalStateException("Input was cleared before");
 		}
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((alphabet == null) ? 0 : alphabet.hashCode());
+		result = prime * result + ((alphabetRev == null) ? 0 : alphabetRev.hashCode());
+		result = prime * result + ((words == null) ? 0 : words.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final TimedInput other = (TimedInput) obj;
+		if (alphabet == null) {
+			if (other.alphabet != null) {
+				return false;
+			}
+		} else if (!alphabet.equals(other.alphabet)) {
+			return false;
+		}
+		if (alphabetRev == null) {
+			if (other.alphabetRev != null) {
+				return false;
+			}
+		} else if (!alphabetRev.equals(other.alphabetRev)) {
+			return false;
+		}
+		if (words == null) {
+			if (other.words != null) {
+				return false;
+			}
+		} else if (!words.equals(other.words)) {
+			return false;
+		}
+		return true;
+	}
+
 
 }

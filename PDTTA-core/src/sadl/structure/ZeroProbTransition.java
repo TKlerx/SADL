@@ -20,16 +20,23 @@ import java.io.Serializable;
  */
 public class ZeroProbTransition extends Transition implements Serializable {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -5201104088874076824L;
 
-	public ZeroProbTransition(int fromState, int toState, int symbol) {
+	public ZeroProbTransition(int fromState, int toState, String symbol) {
 		super();
 		this.fromState = fromState;
 		this.toState = toState;
 		this.symbol = symbol;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + fromState;
+		result = prime * result + ((symbol == null) ? 0 : symbol.hashCode());
+		result = prime * result + toState;
+		return result;
 	}
 
 	@Override
@@ -47,7 +54,7 @@ public class ZeroProbTransition extends Transition implements Serializable {
 		if (fromState != other.fromState) {
 			return false;
 		}
-		if (symbol != other.symbol) {
+		if (!symbol.equals(other.symbol)) {
 			return false;
 		}
 		if (toState != other.toState) {
@@ -56,15 +63,6 @@ public class ZeroProbTransition extends Transition implements Serializable {
 		return true;
 	}
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + fromState;
-		result = prime * result + symbol;
-		result = prime * result + toState;
-		return result;
-	}
 
 	@Override
 	public double getProbability() {
@@ -78,6 +76,7 @@ public class ZeroProbTransition extends Transition implements Serializable {
 
 	@Override
 	public String toString() {
-		return "ZeroProbTransition [" + super.toString() + "]";
+		return "ZeroProbTransition [fromState=" + fromState + ", toState=" + toState + ", symbol=" + symbol + "]";
 	}
+
 }

@@ -15,6 +15,8 @@ import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -25,7 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sadl.constants.ClassLabel;
-import sadl.input.TimedIntWord;
 import sadl.input.TimedWord;
 import sadl.structure.Transition;
 import sadl.structure.ZeroProbTransition;
@@ -167,7 +168,7 @@ public class PDTTA extends PDFA {
 	@Override
 	public TimedWord sampleSequence() {
 		int currentState = START_STATE;
-		final TIntList eventList = new TIntArrayList();
+		final List<String> eventList = new ArrayList<>();
 		final TIntList timeList = new TIntArrayList();
 		boolean choseFinalState = false;
 		while (!choseFinalState) {
@@ -190,7 +191,7 @@ public class PDTTA extends PDFA {
 			}
 		}
 		// TODO add the capability to create abnormal sequences with a PDTTA
-		return new TimedIntWord(eventList, timeList, ClassLabel.NORMAL);
+		return new TimedWord(eventList, timeList, ClassLabel.NORMAL);
 	}
 
 	@Override

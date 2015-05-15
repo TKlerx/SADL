@@ -100,7 +100,7 @@ public abstract class PdttaDetector implements AnomalyDetector {
 		final TDoubleList list = new TDoubleArrayList();
 		int currentState = 0;
 		for (int i = 0; i < ts.length(); i++) {
-			final Transition t = model.getTransition(currentState, ts.getIntSymbol(i));
+			final Transition t = model.getTransition(currentState, ts.getSymbol(i));
 			// DONE this is crap, isnt it? why not return an empty list or null iff there is no transition for the given sequence? or at least put a '0' in the
 			// last slot.
 			if (t == null) {
@@ -195,7 +195,7 @@ public abstract class PdttaDetector implements AnomalyDetector {
 		final TDoubleList list = new TDoubleArrayList();
 		int currentState = 0;
 		for (int i = 0; i < s.length(); i++) {
-			final Transition t = model.getTransition(currentState, s.getIntSymbol(i));
+			final Transition t = model.getTransition(currentState, s.getSymbol(i));
 			// DONE this is crap, isnt it? why not return an empty list or null iff there is no transition for the given sequence? or at least put a '0' in the
 			// last slot.
 			if (t == null) {

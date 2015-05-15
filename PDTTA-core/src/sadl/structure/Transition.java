@@ -22,11 +22,11 @@ import sadl.constants.AnomalyInsertionType;
  */
 public class Transition implements Serializable, Comparable<Transition> {
 	private static final long serialVersionUID = -8764538459984228024L;
-	public static final int STOP_TRAVERSING_SYMBOL = -1;
-	int fromState, toState, symbol;
-	double probability;
+	public static final String STOP_TRAVERSING_SYMBOL = "-1";
+	protected int fromState, toState;
+	protected String symbol;
+	protected double probability;
 
-	// TODO this is an IntTransition, we also need transitions with real Strings/Symbols
 	public int getFromState() {
 		return fromState;
 	}
@@ -43,7 +43,7 @@ public class Transition implements Serializable, Comparable<Transition> {
 		return AnomalyInsertionType.NONE;
 	}
 
-	public int getSymbol() {
+	public String getSymbol() {
 		return symbol;
 	}
 
@@ -55,7 +55,7 @@ public class Transition implements Serializable, Comparable<Transition> {
 
 	}
 
-	public Transition(int fromState, int toState, int symbol, double probability) {
+	public Transition(int fromState, int toState, String symbol, double probability) {
 		super();
 		this.fromState = fromState;
 		this.toState = toState;
@@ -71,7 +71,7 @@ public class Transition implements Serializable, Comparable<Transition> {
 		long temp;
 		temp = Double.doubleToLongBits(probability);
 		result = prime * result + (int) (temp ^ temp >>> 32);
-		result = prime * result + symbol;
+		result = prime * result + ((symbol == null) ? 0 : symbol.hashCode());
 		result = prime * result + toState;
 		return result;
 	}
@@ -94,7 +94,7 @@ public class Transition implements Serializable, Comparable<Transition> {
 		if (Double.doubleToLongBits(probability) != Double.doubleToLongBits(other.probability)) {
 			return false;
 		}
-		if (symbol != other.symbol) {
+		if (!symbol.equals(other.symbol)) {
 			return false;
 		}
 		if (toState != other.toState) {
@@ -113,7 +113,7 @@ public class Transition implements Serializable, Comparable<Transition> {
 	}
 
 	public boolean isStopTraversingTransition() {
-		return symbol == STOP_TRAVERSING_SYMBOL;
+		return symbol.equals(STOP_TRAVERSING_SYMBOL);
 	}
 
 
@@ -125,8 +125,8 @@ public class Transition implements Serializable, Comparable<Transition> {
 		if (getToState() != o.getToState()) {
 			return Integer.compare(getToState(), o.getToState());
 		}
-		if (getSymbol() != o.getSymbol()) {
-			return Integer.compare(getSymbol(), o.getSymbol());
+		if (!getSymbol().equals(o.getSymbol())) {
+			return getSymbol().compareTo(o.getSymbol());
 		}
 		if (Double.doubleToLongBits(getProbability()) != Double.doubleToLongBits(o.getProbability())) {
 			return Long.compare(Double.doubleToLongBits(getProbability()), Double.doubleToLongBits(o.getProbability()));

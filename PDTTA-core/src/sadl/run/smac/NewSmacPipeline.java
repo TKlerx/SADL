@@ -258,10 +258,9 @@ public class NewSmacPipeline implements Serializable {
 		// final List<TimedSequence> trainingTimedSequences = TimedSequence.parseTimedSequences(timedInputTrainFile, false, false);´
 		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(dataPath);
 		final TimedInput trainingInput = trainTest.getKey();
-		trainingInput.toTimedIntWords();
 		final ModelLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0);
-
 		final Model model = learner.train(trainingInput);
+		trainingInput.clearWords();
 		PDTTA automaton;
 		if (model instanceof PDTTA) {
 			automaton = (PDTTA) model;
@@ -275,9 +274,8 @@ public class NewSmacPipeline implements Serializable {
 
 		// compute likelihood on test set for automaton and for time PDFs
 		final TimedInput testInput = trainTest.getValue();
-		testInput.toTimedIntWords();
-
 		final PdttaExperimentResult result = testPdtta(testInput, automaton);
+		testInput.clearWords();
 		logger.info("F-Measure={}", result.getfMeasure());
 		System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - result.getfMeasure()) + ", 0");
 		// IoUtils.xmlSerialize(automaton, Paths.get("pdtta.xml"));

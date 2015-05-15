@@ -11,8 +11,6 @@
 
 package sadl.models;
 
-import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.set.TIntSet;
@@ -40,7 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.ClassLabel;
-import sadl.input.TimedIntWord;
+import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.AutomatonModel;
 import sadl.structure.AbnormalTransition;
@@ -67,7 +65,7 @@ public class PDFA implements AutomatonModel, Serializable {
 
 	public static final double NO_TRANSITION_PROBABILITY = 0;
 
-	protected TIntHashSet alphabet = new TIntHashSet();
+	protected TimedInput alphabet;
 	protected Set<Transition> transitions = new HashSet<>();
 	protected TIntDoubleMap finalStateProbabilities = new TIntDoubleHashMap();
 	protected TIntSet abnormalFinalStates = new TIntHashSet();
@@ -183,8 +181,9 @@ public class PDFA implements AutomatonModel, Serializable {
 	protected PDFA() {
 	}
 
-	public PDFA(Path trebaPath) throws IOException {
+	public PDFA(Path trebaPath, TimedInput trainingSequences) throws IOException {
 		final BufferedReader inputReader = Files.newBufferedReader(trebaPath, StandardCharsets.UTF_8);
+		this.alphabet = trainingSequences;
 		String line = "";
 		// 172 172 3 0,013888888888888892
 		// from state ; to state ; symbol ; probability
@@ -193,7 +192,12 @@ public class PDFA implements AutomatonModel, Serializable {
 			if (lineSplit.length == 4) {
 				final int fromState = Integer.parseInt(lineSplit[0]);
 				final int toState = Integer.parseInt(lineSplit[1]);
-				final int symbol = Integer.parseInt(lineSplit[2]);
+				final String symbol;
+				if(alphabet == null){
+					symbol = lineSplit[2];
+				}else{
+					symbol = trainingSequences.getSymbol(Integer.parseInt(lineSplit[2]));
+				}
 				final double probability = Double.parseDouble(lineSplit[3]);
 				addTransition(fromState, toState, symbol, probability);
 			} else if (lineSplit.length == 2) {
@@ -204,6 +208,10 @@ public class PDFA implements AutomatonModel, Serializable {
 		}
 	}
 
+	public PDFA(Path trebaPath) throws IOException {
+		this(trebaPath, null);
+	}
+
 	protected PDFA(PDFA pdfa) {
 		this.alphabet = pdfa.alphabet;
 		this.transitions = pdfa.transitions;
@@ -211,25 +219,24 @@ public class PDFA implements AutomatonModel, Serializable {
 		this.abnormalFinalStates = pdfa.abnormalFinalStates;
 	}
 
+
 	public int getTransitionCount() {
 		return transitions.size();
 	}
 
-	public Transition addTransition(int fromState, int toState, int symbol, double probability) {
+	public Transition addTransition(int fromState, int toState, String symbol, double probability) {
 		checkImmutable();
 		addState(fromState);
 		addState(toState);
-		alphabet.add(symbol);
 		final Transition t = new Transition(fromState, toState, symbol, probability);
 		transitions.add(t);
 		return t;
 	}
 
-	protected Transition addAbnormalTransition(int fromState, int toState, int symbol, double probability, AnomalyInsertionType anomalyType) {
+	protected Transition addAbnormalTransition(int fromState, int toState, String symbol, double probability, AnomalyInsertionType anomalyType) {
 		checkImmutable();
 		addState(fromState);
 		addState(toState);
-		alphabet.add(symbol);
 		final Transition t = new AbnormalTransition(fromState, toState, symbol, probability, anomalyType);
 		transitions.add(t);
 		return t;
@@ -293,7 +300,7 @@ public class PDFA implements AutomatonModel, Serializable {
 			writer.write(" -> ");
 			writer.write(Integer.toString(t.getToState()));
 			writer.write(" [label=<");
-			writer.write(Integer.toString(t.getSymbol()));
+			writer.write(t.getSymbol());
 			if (t.getProbability() > 0) {
 				writer.write(" p=");
 				writer.write(Double.toString(Precision.round(t.getProbability(), 2)));
@@ -331,22 +338,22 @@ public class PDFA implements AutomatonModel, Serializable {
 		return finalStateProbabilities.get(state);
 	}
 
-	public double getTransitionProbability(int fromState, int toState, int symbol) {
+	public double getTransitionProbability(int fromState, int toState, String symbol) {
 		for (final Transition t : transitions) {
-			if (t.getFromState() == fromState && t.getToState() == toState && t.getSymbol() == symbol) {
+			if (t.getFromState() == fromState && t.getToState() == toState && t.getSymbol().equals(symbol)) {
 				return t.getProbability();
 			}
 		}
 		return NO_TRANSITION_PROBABILITY;
 	}
 
-	public Transition getTransition(int currentState, int event) {
+	public Transition getTransition(int currentState, String event) {
 		Transition result = null;
-		if (event == Transition.STOP_TRAVERSING_SYMBOL) {
+		if (event.equals(Transition.STOP_TRAVERSING_SYMBOL)) {
 			result = getFinalTransition(currentState);
 		} else {
 			for (final Transition t : transitions) {
-				if (t.getFromState() == currentState && t.getSymbol() == event) {
+				if (t.getFromState() == currentState && t.getSymbol().equals(event)) {
 					if (result != null) {
 						logger.error("Found more than one transition for state " + currentState + " and event " + event);
 					}
@@ -373,7 +380,7 @@ public class PDFA implements AutomatonModel, Serializable {
 	public TimedWord sampleSequence() {
 		int currentState = START_STATE;
 
-		final TIntList eventList = new TIntArrayList();
+		final List<String> eventList = new ArrayList<>();
 		boolean choseFinalState = false;
 		while (!choseFinalState) {
 			final Transition chosenTransition = chooseNextTransition(currentState);
@@ -386,7 +393,7 @@ public class PDFA implements AutomatonModel, Serializable {
 				eventList.add(chosenTransition.getSymbol());
 			}
 		}
-		return new TimedIntWord(eventList, null, ClassLabel.NORMAL);
+		return new TimedWord(eventList, null, ClassLabel.NORMAL);
 	}
 
 	protected Transition chooseNextTransition(int currentState) {
@@ -444,7 +451,7 @@ public class PDFA implements AutomatonModel, Serializable {
 	public boolean isInAutomaton(TimedWord s) {
 		int currentState = START_STATE;
 		for (int i = 0; i < s.length(); i++) {
-			final int nextEvent = s.getIntSymbol(i);
+			final String nextEvent = s.getSymbol(i);
 			final Transition t = getTransition(currentState, nextEvent);
 			if (t == null) {
 				return false;
@@ -577,5 +584,13 @@ public class PDFA implements AutomatonModel, Serializable {
 		return finalStateProbabilities.keys();
 	}
 
+
+	public TimedInput getAlphabet() {
+		return alphabet;
+	}
+
+	public void setAlphabet(TimedInput alphabet) {
+		this.alphabet = alphabet;
+	}
 
 }

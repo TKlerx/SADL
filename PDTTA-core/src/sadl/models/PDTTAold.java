@@ -44,7 +44,7 @@ import org.slf4j.LoggerFactory;
 
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.ClassLabel;
-import sadl.input.TimedIntWord;
+import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.AutomatonModel;
 import sadl.structure.AbnormalTransition;
@@ -62,9 +62,6 @@ public class PDTTAold implements AutomatonModel, Serializable {
 
 	protected static final int START_STATE = 0;
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 3017416753740710943L;
 
 	transient private static Logger logger = LoggerFactory.getLogger(PDTTAold.class);
@@ -74,7 +71,6 @@ public class PDTTAold implements AutomatonModel, Serializable {
 	protected static final double NO_TRANSITION_PROBABILITY = 0;
 
 	private static final boolean DELETE_NO_TIME_INFORMATION_TRANSITIONS = true;
-	TIntHashSet alphabet = new TIntHashSet();
 	Set<Transition> transitions = new HashSet<>();
 	TIntDoubleMap finalStateProbabilities = new TIntDoubleHashMap();
 	Map<ZeroProbTransition, Distribution> transitionDistributions = null;
@@ -205,7 +201,7 @@ public class PDTTAold implements AutomatonModel, Serializable {
 	protected PDTTAold() {
 	}
 
-	public PDTTAold(Path trebaPath) throws IOException {
+	public PDTTAold(Path trebaPath, TimedInput trainingSequences) throws IOException {
 		final BufferedReader inputReader = Files.newBufferedReader(trebaPath, StandardCharsets.UTF_8);
 		String line = "";
 		// 172 172 3 0,013888888888888892
@@ -215,7 +211,12 @@ public class PDTTAold implements AutomatonModel, Serializable {
 			if (lineSplit.length == 4) {
 				final int fromState = Integer.parseInt(lineSplit[0]);
 				final int toState = Integer.parseInt(lineSplit[1]);
-				final int symbol = Integer.parseInt(lineSplit[2]);
+				final String symbol;
+				if (trainingSequences == null) {
+					symbol = lineSplit[2];
+				} else {
+					symbol = trainingSequences.getSymbol(Integer.parseInt(lineSplit[2]));
+				}
 				final double probability = Double.parseDouble(lineSplit[3]);
 				addTransition(fromState, toState, symbol, probability);
 			} else if (lineSplit.length == 2) {
@@ -230,19 +231,17 @@ public class PDTTAold implements AutomatonModel, Serializable {
 		return transitions.size();
 	}
 
-	public Transition addTransition(int fromState, int toState, int symbol, double probability) {
+	public Transition addTransition(int fromState, int toState, String symbol, double probability) {
 		addState(fromState);
 		addState(toState);
-		alphabet.add(symbol);
 		final Transition t = new Transition(fromState, toState, symbol, probability);
 		transitions.add(t);
 		return t;
 	}
 
-	public Transition addAbnormalTransition(int fromState, int toState, int symbol, double probability, AnomalyInsertionType anomalyType) {
+	public Transition addAbnormalTransition(int fromState, int toState, String symbol, double probability, AnomalyInsertionType anomalyType) {
 		addState(fromState);
 		addState(toState);
-		alphabet.add(symbol);
 		final Transition t = new AbnormalTransition(fromState, toState, symbol, probability, anomalyType);
 		transitions.add(t);
 		return t;
@@ -305,7 +304,7 @@ public class PDTTAold implements AutomatonModel, Serializable {
 			writer.write(" -> ");
 			writer.write(Integer.toString(t.getToState()));
 			writer.write(" [label=<");
-			writer.write(Integer.toString(t.getSymbol()));
+			writer.write(t.getSymbol());
 			if (t.getProbability() > 0) {
 				writer.write(" p=");
 				writer.write(Double.toString(Precision.round(t.getProbability(), 2)));
@@ -341,18 +340,18 @@ public class PDTTAold implements AutomatonModel, Serializable {
 		return finalStateProbabilities.get(state);
 	}
 
-	public double getTransitionProbability(int fromState, int toState, int symbol) {
+	public double getTransitionProbability(int fromState, int toState, String symbol) {
 		for (final Transition t : transitions) {
-			if (t.getFromState() == fromState && t.getToState() == toState && t.getSymbol() == symbol) {
+			if (t.getFromState() == fromState && t.getToState() == toState && t.getSymbol().equals(symbol)) {
 				return t.getProbability();
 			}
 		}
 		return NO_TRANSITION_PROBABILITY;
 	}
 
-	public Transition getTransition(int currentState, int event) {
+	public Transition getTransition(int currentState, String event) {
 		Transition result = null;
-		if (event == Transition.STOP_TRAVERSING_SYMBOL) {
+		if (event.equals(Transition.STOP_TRAVERSING_SYMBOL)) {
 			result = getFinalTransition(currentState);
 		} else {
 			for (final Transition t : transitions) {
@@ -406,7 +405,7 @@ public class PDTTAold implements AutomatonModel, Serializable {
 	public TimedWord sampleSequence() {
 		int currentState = START_STATE;
 
-		final TIntList eventList = new TIntArrayList();
+		final List<String> eventList = new ArrayList<>();
 		final TIntList timeList = new TIntArrayList();
 		boolean choseFinalState = false;
 		while (!choseFinalState) {
@@ -441,7 +440,7 @@ public class PDTTAold implements AutomatonModel, Serializable {
 				timeList.add(timeValue);
 			}
 		}
-		return new TimedIntWord(eventList, timeList, ClassLabel.NORMAL);
+		return new TimedWord(eventList, timeList, ClassLabel.NORMAL);
 	}
 
 	/**
@@ -481,7 +480,7 @@ public class PDTTAold implements AutomatonModel, Serializable {
 	protected boolean isInAutomaton(TimedWord s) {
 		int currentState = START_STATE;
 		for (int i = 0; i < s.length(); i++) {
-			final int nextEvent = s.getIntSymbol(i);
+			final String nextEvent = s.getSymbol(i);
 			final Transition t = getTransition(currentState, nextEvent);
 			if (t == null) {
 				return false;
@@ -512,7 +511,6 @@ public class PDTTAold implements AutomatonModel, Serializable {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((abnormalFinalStates == null) ? 0 : abnormalFinalStates.hashCode());
-		result = prime * result + ((alphabet == null) ? 0 : alphabet.hashCode());
 		result = prime * result + ((finalStateProbabilities == null) ? 0 : finalStateProbabilities.hashCode());
 		result = prime * result + ((transitionDistributions == null) ? 0 : transitionDistributions.hashCode());
 		result = prime * result + ((transitions == null) ? 0 : transitions.hashCode());
@@ -539,13 +537,6 @@ public class PDTTAold implements AutomatonModel, Serializable {
 			} else if (!abnormalFinalStates.equals(other.abnormalFinalStates)) {
 				return false;
 			}
-			if (alphabet == null) {
-				if (other.alphabet != null) {
-					return false;
-				}
-			} else if (!alphabet.equals(other.alphabet)) {
-				return false;
-			}
 			if (finalStateProbabilities == null) {
 				if (other.finalStateProbabilities != null) {
 					return false;
@@ -560,6 +551,7 @@ public class PDTTAold implements AutomatonModel, Serializable {
 			} else if (!transitionDistributions.equals(other.transitionDistributions)) {
 				final Set<Entry<ZeroProbTransition, Distribution>> e1 = transitionDistributions.entrySet();
 				final Set<Entry<ZeroProbTransition, Distribution>> e2 = other.transitionDistributions.entrySet();
+
 				int count = 0;
 				for (final Entry<ZeroProbTransition, Distribution> e : e1) {
 					if (!e2.contains(e)) {
@@ -588,7 +580,8 @@ public class PDTTAold implements AutomatonModel, Serializable {
 					}
 				}
 				if (count > 0) {
-					logger.error("{} out of {} entries did not match", count, transitionDistributions.size());
+					logger.error("{} out of {} entries did not match (other.size={})", count, transitionDistributions.size(),
+							other.transitionDistributions.size());
 				}
 				return false;
 			}
@@ -623,13 +616,6 @@ public class PDTTAold implements AutomatonModel, Serializable {
 				return false;
 			}
 		} else if (!abnormalFinalStates.equals(other.abnormalFinalStates)) {
-			return false;
-		}
-		if (alphabet == null) {
-			if (other.alphabet != null) {
-				return false;
-			}
-		} else if (!alphabet.equals(other.alphabet)) {
 			return false;
 		}
 		if (finalStateProbabilities == null) {

@@ -97,6 +97,7 @@ public class PdttaLearner implements ModelLearner {
 			final Map<ZeroProbTransition, TDoubleList> timeValueBuckets = fillTimeValueBuckets(pdfa, trainingSequences);
 			final Map<ZeroProbTransition, Distribution> transitionDistributions = fit(timeValueBuckets);
 			pdtta = new PDTTA(pdfa, transitionDistributions);
+			pdtta.setAlphabet(trainingSequences);
 			pdtta.makeImmutable();
 			return pdtta;
 		} catch (final IOException e) {
@@ -113,7 +114,7 @@ public class PdttaLearner implements ModelLearner {
 		for (final TimedWord word : trainingSequences) {
 			currentState = pdfa.getStartState();
 			for (int i = 0; i < word.length(); i++) {
-				final int symbol = word.getIntSymbol(i);
+				final String symbol = word.getSymbol(i);
 				final int timeValue = word.getTimeValue(i);
 				final Transition t = pdfa.getTransition(currentState, symbol);
 				followingState = t.getToState();
@@ -125,7 +126,7 @@ public class PdttaLearner implements ModelLearner {
 	}
 
 
-	protected static void addTimeValue(Map<ZeroProbTransition, TDoubleList> result, int currentState, int followingState, int event, double timeValue) {
+	protected static void addTimeValue(Map<ZeroProbTransition, TDoubleList> result, int currentState, int followingState, String event, double timeValue) {
 		final ZeroProbTransition t = new ZeroProbTransition(currentState, followingState, event);
 		final TDoubleList list = result.get(t);
 		if (list == null) {

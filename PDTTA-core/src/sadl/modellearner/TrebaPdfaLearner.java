@@ -92,12 +92,14 @@ public class TrebaPdfaLearner implements PdfaLearner {
 			// 'trebaResultPathFile'
 			// parse the 'trebaResultPathFile'
 			// compute likelihood on test set for automaton and for time PDFs
-			pdfa = new PDFA(Paths.get(trebaAutomatonFile));
+			pdfa = new PDFA(Paths.get(trebaAutomatonFile), trainingSequences);
+			pdfa.makeImmutable();
 			if (!Settings.isDebug()) {
 				IoUtils.deleteFiles(new String[] { trebaTrainSetFileString, trebaAutomatonFile });
+			} else {
+				logger.info("temp dir: {}", tempDir);
 			}
 			treba.log1plus_free_wrapper();
-			pdfa.makeImmutable();
 			return pdfa;
 		} catch (final IOException e) {
 			logger.error("An unexpected error occured", e);
@@ -111,11 +113,22 @@ public class TrebaPdfaLearner implements PdfaLearner {
 	private void createTrebaFile(TimedInput timedSequences, String trebaTrainFileString) throws IOException {
 		try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(trebaTrainFileString), StandardCharsets.UTF_8)) {
 			for (final TimedWord ts : timedSequences) {
-				bw.write(ts.getSymbolString());
+				bw.write(getIntString(ts, timedSequences));
 				bw.append('\n');
 			}
 			bw.close();
 		}
+	}
+
+	private String getIntString(TimedWord ts, TimedInput timedSequences) {
+		final StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < ts.length(); i++) {
+			sb.append(timedSequences.getAlphIndex(ts.getSymbol(i)));
+			if (i != ts.length() - 1) {
+				sb.append(' ');
+			}
+		}
+		return sb.toString();
 	}
 
 	protected double trainFsm(String eventTrainFile, String fsmOutputFile) {
