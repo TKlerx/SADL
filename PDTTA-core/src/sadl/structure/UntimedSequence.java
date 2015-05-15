@@ -1,5 +1,5 @@
 /**
- * This file is part of SADL, a library for learning Probabilistic deterministic timed-transition Automata.
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
  * Copyright (C) 2013-2015  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -14,11 +14,6 @@ package sadl.structure;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -162,31 +157,6 @@ public class UntimedSequence implements Cloneable {
 		events.remove(toDelete, 1);
 	}
 
-
-	/**
-	 * 
-	 * @param timedInputTrainFile
-	 * @param isRti
-	 *            set to true to skip first line
-	 * @param containsClassLabels
-	 * @throws IOException
-	 */
-	public static List<TimedSequence> parseTimedSequences(String timedInputTrainFile, boolean isRti, boolean containsClassLabels) throws IOException {
-		final List<TimedSequence> result = new ArrayList<>();
-		final BufferedReader br = Files.newBufferedReader(Paths.get(timedInputTrainFile), StandardCharsets.UTF_8);
-
-		String line = null;
-		if (isRti) {
-			// skip info with alphabet size
-			br.readLine();
-		}
-		while ((line = br.readLine()) != null) {
-			if (!line.trim().isEmpty()) {
-				result.add(new TimedSequence(line, isRti, containsClassLabels));
-			}
-		}
-		return result;
-	}
 
 	@Override
 	public UntimedSequence clone() throws CloneNotSupportedException {

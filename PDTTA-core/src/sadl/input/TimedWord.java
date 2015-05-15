@@ -1,5 +1,5 @@
 /**
- * This file is part of SADL, a library for learning Probabilistic deterministic timed-transition Automata.
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
  * Copyright (C) 2013-2015  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -14,6 +14,7 @@ package sadl.input;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,7 +30,9 @@ import sadl.constants.ClassLabel;
  * @author Timo Klerx
  *
  */
-public class TimedWord {
+public class TimedWord implements Serializable{
+	private static final long serialVersionUID = 111992823193054086L;
+
 	private static Logger logger = LoggerFactory.getLogger(TimedWord.class);
 
 	protected TIntList timeValues;
@@ -148,19 +151,20 @@ public class TimedWord {
 	 */
 	public String toString(boolean withClassLabel) {
 		final StringBuilder bw = new StringBuilder();
-		bw.append('(');
-		for (int j = 0; j < this.getLength(); j++) {
+		for (int j = 0; j < this.length(); j++) {
+			bw.append('(');
 			bw.append(this.getSymbol(j));
 			bw.append(',');
 			bw.append(Integer.toString(this.getTimeValue(j)));
 			bw.append(')');
-			if (j < (this.getLength() - 1)) {
+			if (j < (this.length() - 1)) {
 				bw.append(' ');
-				bw.append('(');
-			} else if (withClassLabel) {
-				bw.append(':');
-				bw.append(Integer.toString(this.getLabel().getClassLabel()));
 			}
+		}
+		if (withClassLabel) {
+			bw.append(':');
+			// logger.info("classlabel={}", this.getLabel());
+			bw.append(Integer.toString(this.getLabel().getClassLabel()));
 		}
 		return bw.toString();
 	}
@@ -180,7 +184,7 @@ public class TimedWord {
 			bw.append(this.getSymbol(j));
 			bw.append(' ');
 			bw.append(Integer.toString(this.getTimeValue(j)));
-			if (j < (this.getLength() - 1)) {
+			if (j < (this.length() - 1)) {
 				bw.append(' ');
 				bw.append(' ');
 			} else if (withClassLabel) {

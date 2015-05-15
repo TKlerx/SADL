@@ -1,5 +1,5 @@
 /**
- * This file is part of SADL, a library for learning Probabilistic deterministic timed-transition Automata.
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
  * Copyright (C) 2013-2015  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -15,7 +15,7 @@ import gnu.trove.list.TDoubleList;
 
 import java.util.List;
 
-import sadl.structure.TimedSequence;
+import sadl.input.TimedWord;
 
 /**
  * This does not work as intended, because e.g. PDTTA with thresholds computes more than one score (min. 2, may be extended to 4).
@@ -24,6 +24,7 @@ import sadl.structure.TimedSequence;
  *
  */
 public interface AnomalyScoreCalculator {
-	double computeScore(TimedSequence s);
-	TDoubleList computeScores(List<TimedSequence> sequences);
+	double computeScore(TimedWord s);
+
+	TDoubleList computeScores(List<TimedWord> sequences);
 }

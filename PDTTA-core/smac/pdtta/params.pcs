@@ -17,10 +17,10 @@ featureCreator | detectorMethod in {SVM,DBSCAN}
 scalingMethod {NONE,NORMALIZE,STANDARDIZE} [NORMALIZE]
 scalingMethod | detectorMethod in {SVM,DBSCAN}
 
-aggregatedTimeThreshold [0.0,1.0] [0.00001]
+aggregatedTimeThreshold [-100,0.0] [-5]
 aggregatedTimeThreshold | detectorMethod in {THRESHOLD_ALL,THRESHOLD_AGG_ONLY}
 
-aggregatedEventThreshold [0.0,1.0] [0.00001]
+aggregatedEventThreshold [-100,0.0] [-8]
 aggregatedEventThreshold | detectorMethod in {THRESHOLD_ALL,THRESHOLD_AGG_ONLY}
 
 singleEventThreshold [0.0,1.0] [0.00001]

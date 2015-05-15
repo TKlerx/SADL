@@ -1,5 +1,5 @@
 /**
- * This file is part of SADL, a library for learning Probabilistic deterministic timed-transition Automata.
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
  * Copyright (C) 2013-2015  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -21,6 +21,7 @@ import sadl.constants.ClassLabel;
  *
  */
 public class TimedIntWord extends TimedWord {
+	private static final long serialVersionUID = 7777907017898321854L;
 	TIntList intSymbols = new TIntArrayList();
 	public TimedIntWord() {
 		super();

@@ -1,5 +1,5 @@
 /**
- * This file is part of SADL, a library for learning Probabilistic deterministic timed-transition Automata.
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
  * Copyright (C) 2013-2015  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -23,11 +23,12 @@ import org.slf4j.LoggerFactory;
  */
 public class MasterSeed {
 	private static Logger logger = LoggerFactory.getLogger(MasterSeed.class);
-
-	private static Random r = new Random(1234);
+	private static long seed = 7222525536004714236L;
+	private static Random r = new Random(seed);
 	private static boolean wasSet = false;
 
 	public static void setSeed(long seed) {
+		MasterSeed.seed = seed;
 		if (wasSet) {
 			logger.warn("Replacing Random object with new seed {}", seed);
 		}
@@ -41,5 +42,9 @@ public class MasterSeed {
 
 	public static Random nextRandom() {
 		return new Random(r.nextLong());
+	}
+
+	public static void reset(){
+		r = new Random(seed);
 	}
 }

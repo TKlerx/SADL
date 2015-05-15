@@ -1,5 +1,5 @@
 /**
- * This file is part of SADL, a library for learning Probabilistic deterministic timed-transition Automata.
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
  * Copyright (C) 2013-2015  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -20,15 +20,13 @@ import sadl.constants.AnomalyInsertionType;
  * @author Timo Klerx
  *
  */
-public class Transition implements Serializable {
-	/**
-	 * 
-	 */
+public class Transition implements Serializable, Comparable<Transition> {
 	private static final long serialVersionUID = -8764538459984228024L;
 	public static final int STOP_TRAVERSING_SYMBOL = -1;
 	int fromState, toState, symbol;
 	double probability;
 
+	// TODO this is an IntTransition, we also need transitions with real Strings/Symbols
 	public int getFromState() {
 		return fromState;
 	}
@@ -118,8 +116,22 @@ public class Transition implements Serializable {
 		return symbol == STOP_TRAVERSING_SYMBOL;
 	}
 
-	public void setProbability(double probability) {
-		this.probability = probability;
+
+	@Override
+	public int compareTo(Transition o) {
+		if (getFromState() != o.getFromState()) {
+			return Integer.compare(getFromState(), o.getFromState());
+		}
+		if (getToState() != o.getToState()) {
+			return Integer.compare(getToState(), o.getToState());
+		}
+		if (getSymbol() != o.getSymbol()) {
+			return Integer.compare(getSymbol(), o.getSymbol());
+		}
+		if (Double.doubleToLongBits(getProbability()) != Double.doubleToLongBits(o.getProbability())) {
+			return Long.compare(Double.doubleToLongBits(getProbability()), Double.doubleToLongBits(o.getProbability()));
+		}
+		return 0;
 	}
 
 }

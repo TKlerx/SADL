@@ -1,5 +1,5 @@
 /**
- * This file is part of SADL, a library for learning Probabilistic deterministic timed-transition Automata.
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
  * Copyright (C) 2013-2015  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -44,7 +44,7 @@ public class PdttaAggregatedThresholdDetector extends PdttaDetector {
 		// Sollte eigentlich nur -infty zurückgeben
 		final double aggregatedEventScore = aggregate(eventLikelihoods, aggType);
 		final double aggregatedTimeScore = aggregate(timeLikelihoods, aggType);
-		logger.info("aggEventScore={}\taggTimeScore={}", aggregatedEventScore, aggregatedTimeScore);
+		logger.debug("aggEventScore={}\taggTimeScore={}", aggregatedEventScore, aggregatedTimeScore);
 
 		if (aggregatedEventScore <= normalizedEventThreshold || aggregatedTimeScore <= normalizedTimeThreshold) {
 			// one of the scores is so low, that this indicates an anomaly

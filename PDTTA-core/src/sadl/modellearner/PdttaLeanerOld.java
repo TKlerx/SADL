@@ -1,5 +1,5 @@
 /**
- * This file is part of SADL, a library for learning Probabilistic deterministic timed-transition Automata.
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
  * Copyright (C) 2013-2015  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -41,11 +41,11 @@ import org.slf4j.LoggerFactory;
 import sadl.constants.MergeTest;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
-import sadl.interfaces.Model;
 import sadl.interfaces.ModelLearner;
-import sadl.models.PDTTA;
+import sadl.models.PDTTAold;
 import sadl.structure.ZeroProbTransition;
 import sadl.utils.IoUtils;
+import sadl.utils.Settings;
 import treba.observations;
 import treba.treba;
 import treba.trebaConstants;
@@ -56,56 +56,56 @@ import treba.wfsa;
  * @author Timo Klerx
  *
  */
-public class PdttaLeaner implements ModelLearner {
+public class PdttaLeanerOld implements ModelLearner {
 	double mergeAlpha;
 	MergeTest mergeTest = MergeTest.ALERGIA;
 	boolean recursiveMergeTest;
-	private static Logger logger = LoggerFactory.getLogger(PdttaLeaner.class);
+	private static Logger logger = LoggerFactory.getLogger(PdttaLeanerOld.class);
 	int fsmStateCount = -1;
 	KernelFunction kdeKernelFunction;
 	double kdeBandwidth;
 	double smoothingPrior = 0.00;
 	int mergeT0 = 3;
 
-	public PdttaLeaner(double mergeAlpha, boolean recursiveMergeTest) {
+	public PdttaLeanerOld(double mergeAlpha, boolean recursiveMergeTest) {
 		this.mergeAlpha = mergeAlpha;
 		this.recursiveMergeTest = recursiveMergeTest;
 	}
 
-	public PdttaLeaner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth) {
+	public PdttaLeanerOld(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth) {
 		this(mergeAlpha, recursiveMergeTest);
 		this.kdeKernelFunction = kdeKernelFunction;
 		this.kdeBandwidth = kdeBandwidth;
 	}
 
-	public PdttaLeaner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest) {
+	public PdttaLeanerOld(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest) {
 		this(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth);
 		this.mergeTest = mergeTest;
 	}
-	public PdttaLeaner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
+	public PdttaLeanerOld(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
 			double smoothingPrior) {
 		this(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest);
 		this.smoothingPrior = smoothingPrior;
 	}
 
-	public PdttaLeaner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
+	public PdttaLeanerOld(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
 			double smoothingPrior, int mergeT0) {
 		this(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior);
 		this.mergeT0 = mergeT0;
 	}
 
-	public PdttaLeaner(double mergeAlpha, boolean recursiveMergeTest, MergeTest mergeTest) {
+	public PdttaLeanerOld(double mergeAlpha, boolean recursiveMergeTest, MergeTest mergeTest) {
 		this(mergeAlpha, recursiveMergeTest, null, -1, mergeTest);
 	}
 
-	public PdttaLeaner(double mergeAlpha, boolean recursiveMergeTest, MergeTest mergeTest, double smoothingPrior) {
+	public PdttaLeanerOld(double mergeAlpha, boolean recursiveMergeTest, MergeTest mergeTest, double smoothingPrior) {
 		this(mergeAlpha, recursiveMergeTest, null, -1, mergeTest, smoothingPrior);
 	}
 
 
 	@Override
-	public Model train(TimedInput trainingSequences) {
-		final PDTTA pdtta;
+	public PDTTAold train(TimedInput trainingSequences) {
+		final PDTTAold pdtta;
 		treba.log1plus_init_wrapper();
 		final Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"));
 		final long jobNumber = Double.doubleToLongBits(Math.random());
@@ -129,9 +129,11 @@ public class PdttaLeaner implements ModelLearner {
 			// do the fitting
 			final Map<ZeroProbTransition, Distribution> transitionDistributions = fit(timeValueBuckets);
 			// compute likelihood on test set for automaton and for time PDFs
-			pdtta = new PDTTA(Paths.get(trebaAutomatonFile));
+			pdtta = new PDTTAold(Paths.get(trebaAutomatonFile));
 			pdtta.setTransitionDistributions(transitionDistributions);
-			IoUtils.deleteFiles(new String[] { trebaTrainSetFileString, trebaAutomatonFile, trebaResultPathFile });
+			if (!Settings.isDebug()) {
+				IoUtils.deleteFiles(new String[] { trebaTrainSetFileString, trebaAutomatonFile, trebaResultPathFile });
+			}
 			treba.log1plus_free_wrapper();
 			return pdtta;
 		} catch (final IOException e) {
@@ -149,8 +151,14 @@ public class PdttaLeaner implements ModelLearner {
 		return result;
 	}
 
+	double[] ds = new double[] { 627.0, 667.0, 691.0, 743.0, 756.0, 821.0, 823.0, 923.0, 1285.0, 2054.0, 2599.0, 2617.0, 2970.0, 3854.0, 4132.0, 5002.0,
+			5186.0, 5327.0, 6281.0, 6395.0, 8111.0, 8168.0, 8431.0, 8811.0, 8886.0, 9147.0, 9410.0, 9461.0, 9565.0, 9612.0, 9893.0, 10017.0, 10755.0, 10775.0,
+			12439.0, 13232.0, 13329.0, 13435.0, 18433.0, 22705.0, 24529.0, 37176.0 };
 	@SuppressWarnings("boxing")
 	private Distribution fitDistribution(TDoubleList transitionTimes) {
+		if (Arrays.equals(ds, transitionTimes.toArray())) {
+			logger.info("Peng");
+		}
 		final Vec v = new DenseVector(transitionTimes.toArray());
 		final jsat.utils.Pair<Boolean, Double> sameValues = MyDistributionSearch.checkForDifferentValues(v);
 		if (sameValues.getFirstItem()) {
@@ -171,7 +179,6 @@ public class PdttaLeaner implements ModelLearner {
 	}
 
 	private Map<ZeroProbTransition, TDoubleList> parseAutomatonPaths(String trebaResultPathFile, TimedInput timedSequences) throws IOException {
-		// TODO when this is done in java, do this in memory instead of with files
 		final Map<ZeroProbTransition, TDoubleList> result = new HashMap<>();
 		final BufferedReader br = Files.newBufferedReader(Paths.get(trebaResultPathFile), StandardCharsets.UTF_8);
 		String line = null;
@@ -218,7 +225,6 @@ public class PdttaLeaner implements ModelLearner {
 
 	@SuppressWarnings("null")
 	private void computeAutomatonPaths(String trebaAutomatonFile, String trebaTrainFileString, String trebaResultPathFile) {
-		// TODO do this in java!
 		// treba.log1plus_taylor_init_wrapper();
 		final observations o = treba.observations_read(trebaTrainFileString);
 		final wfsa fsm = treba.wfsa_read_file(trebaAutomatonFile);
@@ -260,7 +266,7 @@ public class PdttaLeaner implements ModelLearner {
 		}
 	}
 
-	public double trainFsm(String eventTrainFile, String fsmOutputFile) {
+	protected double trainFsm(String eventTrainFile, String fsmOutputFile) {
 		int recursive_merge_test = 0;
 		if (recursiveMergeTest) {
 			recursive_merge_test = 1;

@@ -1,5 +1,5 @@
 /**
- * This file is part of SADL, a library for learning Probabilistic deterministic timed-transition Automata.
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
  * Copyright (C) 2013-2015  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import sadl.models.PDTTA;
+import sadl.models.PDFA;
 
 /**
  * 
@@ -25,7 +25,7 @@ import sadl.models.PDTTA;
 public class TrebaToGraphviz {
 
 	public static void transform(Path trebaPath, Path graphvizResult) throws IOException {
-		final PDTTA a = new PDTTA(trebaPath);
+		final PDFA a = new PDFA(trebaPath);
 		a.toGraphvizFile(graphvizResult, false);
 		// Runtime.getRuntime().exec("dot -Tpdf " + graphvizResult +
 		// " -o graph.pdf");

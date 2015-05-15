@@ -1,5 +1,5 @@
 /**
- * This file is part of SADL, a library for learning Probabilistic deterministic timed-transition Automata.
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
  * Copyright (C) 2013-2015  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -37,13 +37,12 @@ import sadl.constants.ClassLabel;
  */
 @Deprecated
 public class TimedSequence {
-	//TODO include the anomalyType in input (reading from line) and output (to line)
-	// this may be needed for a mixed test set to know which anomalies are well detected
 	private static Logger logger = LoggerFactory.getLogger(TimedSequence.class);
 
 	private TIntList events = new TIntArrayList();
 	private TDoubleList timeValues = new TDoubleArrayList();
 	private ClassLabel label = ClassLabel.NORMAL;
+	@SuppressWarnings("unused")
 	private AnomalyInsertionType anomalyType = AnomalyInsertionType.NONE;
 
 	public void setTimeValues(TDoubleList timeValues) {
@@ -198,7 +197,6 @@ public class TimedSequence {
 	 * @param isRti
 	 *            set to true to skip first line
 	 * @param containsClassLabels
-	 * @return
 	 * @throws IOException
 	 */
 	public static List<TimedSequence> parseTimedSequences(String timedInputTrainFile, boolean isRti, boolean containsClassLabels) throws IOException {

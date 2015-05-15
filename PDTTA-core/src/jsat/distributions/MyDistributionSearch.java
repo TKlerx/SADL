@@ -1,5 +1,5 @@
 /**
- * This file is part of SADL, a library for learning Probabilistic deterministic timed-transition Automata.
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
  * Copyright (C) 2013-2015  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -29,7 +29,7 @@ import org.apache.commons.math3.util.Precision;
  */
 public class MyDistributionSearch extends DistributionSearch
 {
-	private static Distribution[] possibleDistributions = new Distribution[]
+	private static Distribution[] possibleDistributionSet = new Distribution[]
 			{
 		new Normal(),
 		new LogNormal(), new Exponential(),
@@ -47,7 +47,7 @@ public class MyDistributionSearch extends DistributionSearch
 	 */
 	public static Distribution getBestDistribution(Vec v)
 	{
-		return getBestDistribution(v, possibleDistributions);
+		return getBestDistribution(v, possibleDistributionSet);
 	}
 
 	/**
@@ -63,7 +63,7 @@ public class MyDistributionSearch extends DistributionSearch
 	 */
 	public static Distribution getBestDistribution(Vec v, double KDECutOff)
 	{
-		return getBestDistribution(v, KDECutOff, possibleDistributions);
+		return getBestDistribution(v, KDECutOff, possibleDistributionSet);
 	}
 
 	/**
@@ -174,7 +174,7 @@ public class MyDistributionSearch extends DistributionSearch
 		if(!includeKDE){
 			return getBestDistribution(v);
 		}else{
-			final Distribution[] possibleDists = Arrays.copyOf(possibleDistributions, possibleDistributions.length+1);
+			final Distribution[] possibleDists = Arrays.copyOf(possibleDistributionSet, possibleDistributionSet.length+1);
 			possibleDists[possibleDists.length-1] = new KernelDensityEstimator(v);
 			return getBestDistribution(v,possibleDists);
 		}

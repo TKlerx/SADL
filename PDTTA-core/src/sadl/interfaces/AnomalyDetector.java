@@ -1,5 +1,5 @@
 /**
- * This file is part of SADL, a library for learning Probabilistic deterministic timed-transition Automata.
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
  * Copyright (C) 2013-2015  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -26,7 +26,6 @@ public interface AnomalyDetector {
 	 * 0 indicates normal sequence, 1 indicates abnormal sequence
 	 * 
 	 * @param testSequences
-	 * @return
 	 */
 	boolean[] areAnomalies(Model model, TimedInput testSequences);
 
@@ -36,7 +35,6 @@ public interface AnomalyDetector {
 	 * 0 indicates normal sequence, 1 indicates abnormal sequence
 	 * 
 	 * @param testSequences
-	 * @return
 	 */
 	boolean[] areAnomalies(TimedInput testSequences);
 

@@ -1,6 +1,6 @@
 <!--
 
-    This file is part of SADL, a library for learning Probabilistic deterministic timed-transition Automata.
+    This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
     Copyright (C) 2013-2015  the original author or authors.
 
     SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -50,6 +50,14 @@
 				</excludes>
 			</resource>
 		</resources>
+		<testResources>
+			<testResource>
+				<directory>resources</directory>
+				<excludes>
+					<exclude>**/*.java</exclude>
+				</excludes>
+			</testResource>
+		</testResources>
 		<plugins>
 			<plugin>
 				<groupId>com.mycila.maven-license-plugin</groupId>
@@ -84,10 +92,6 @@
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
-					<excludes>
-						<exclude>**/SmacPipeline.java</exclude>
-						<exclude>**/WekaSvmClassifier.java</exclude>
-					</excludes>
 				</configuration>
 			</plugin>
 
@@ -106,14 +110,15 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>de.upb.timok.run.GenericSmacPipeline</mainClass>
-							<packageName>de.upb.timok.run</packageName>
+							<mainClass>sadl.run.smac.NewSmacPipeline</mainClass>
+							<packageName>sadl.run.smac</packageName>
 							<addClasspath>true</addClasspath>
 							<classpathPrefix>lib/</classpathPrefix>
+							<useUniqueVersions>false</useUniqueVersions>
 						</manifest>
 						<manifestEntries>
 							<mode>development</mode>
-							<url>${pom.url}</url>
+							<url>https://github.com/TKlerx/SADL</url>
 						</manifestEntries>
 					</archive>
 				</configuration>
@@ -132,8 +137,9 @@
 						<configuration>
 							<outputDirectory>${project.build.directory}/lib</outputDirectory>
 							<overWriteReleases>false</overWriteReleases>
-							<overWriteSnapshots>false</overWriteSnapshots>
+							<overWriteSnapshots>true</overWriteSnapshots>
 							<overWriteIfNewer>true</overWriteIfNewer>
+							<useBaseVersion>true</useBaseVersion>
 						</configuration>
 					</execution>
 				</executions>

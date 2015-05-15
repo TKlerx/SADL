@@ -1,5 +1,5 @@
 /**
- * This file is part of SADL, a library for learning Probabilistic deterministic timed-transition Automata.
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
  * Copyright (C) 2013-2015  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -34,8 +34,8 @@ import sadl.input.TimedWord;
 import sadl.interfaces.AnomalyDetector;
 import sadl.interfaces.Model;
 import sadl.models.PDTTA;
-import sadl.run.GenericSmacPipeline;
 import sadl.structure.Transition;
+import sadl.utils.Settings;
 
 /**
  * 
@@ -143,7 +143,7 @@ public abstract class PdttaDetector implements AnomalyDetector {
 
 	@Override
 	public boolean[] areAnomalies(TimedInput testSequences) {
-		if (GenericSmacPipeline.isDebug()) {
+		if (Settings.isDebug()) {
 			final Path testLabelFile = Paths.get("testLabels.csv");
 			try {
 				Files.deleteIfExists(testLabelFile);
@@ -171,7 +171,7 @@ public abstract class PdttaDetector implements AnomalyDetector {
 	@Override
 	public void setModel(Model model) {
 		if (model instanceof PDTTA) {
-			logger.info("Setting model to {}", model);
+			logger.debug("Setting model to {}", model);
 			this.model = (PDTTA) model;
 		} else {
 			throw new UnsupportedOperationException("This AnomalyDetector can only use PDTTAs for anomaly detection");
@@ -194,7 +194,7 @@ public abstract class PdttaDetector implements AnomalyDetector {
 
 		final TDoubleList list = new TDoubleArrayList();
 		int currentState = 0;
-		for (int i = 0; i < s.getLength(); i++) {
+		for (int i = 0; i < s.length(); i++) {
 			final Transition t = model.getTransition(currentState, s.getIntSymbol(i));
 			// DONE this is crap, isnt it? why not return an empty list or null iff there is no transition for the given sequence? or at least put a '0' in the
 			// last slot.
