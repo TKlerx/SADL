@@ -9,13 +9,13 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.models;
+package sadl.modellearner.rtiplus.boolop;
 
-/**
- * 
- * @author Timo Klerx
- *
- */
-public class RtiPlus {
+public class AndOperator implements BooleanOperator {
+
+	@Override
+	public boolean eval(boolean b1, boolean b2) {
+		return b1 && b2;
+	}
 
 }
