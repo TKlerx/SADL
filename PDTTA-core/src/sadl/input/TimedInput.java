@@ -15,7 +15,6 @@ import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +25,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -471,13 +471,13 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		for (int i = 0; i < words.size(); i++) {
-			builder.append(words.get(i).toString());
-			if (i < (words.size() - 1)) {
-				builder.append('\n');
-			}
+		try {
+			toFile(builder, true);
+			return builder.toString();
+		} catch (final IOException e) {
+			logger.error("Unexpected exception", e);
+			throw new RuntimeException(e);
 		}
-		return builder.toString();
 	}
 
 	/**
@@ -490,11 +490,15 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	 * @see TimedWord#toString(boolean)
 	 * @see TimedInput#parse(Path)
 	 */
-	public void toFile(BufferedWriter bw, boolean withClassLabel) throws IOException {
+	public void toFile(Appendable bw, boolean withClassLabel) throws IOException {
+		toFile(bw, word -> word.toString(withClassLabel));
+	}
+
+	private void toFile(Appendable a, Function<TimedWord, String> f) throws IOException {
 		for (int i = 0; i < words.size(); i++) {
-			bw.append(words.get(i).toString(withClassLabel));
+			a.append(f.apply(words.get(i)));
 			if (i < (words.size() - 1)) {
-				bw.append('\n');
+				a.append('\n');
 			}
 		}
 	}
@@ -510,18 +514,12 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	 * @see TimedWord#toString(boolean)
 	 * @see TimedInput#parseAlt(Path)
 	 */
-	public void toFileAlt(BufferedWriter bw, boolean withClassLabel) throws IOException {
-
+	public void toFileAlt(Appendable bw, boolean withClassLabel) throws IOException {
 		bw.append(Integer.toString(words.size()));
 		bw.append(' ');
 		bw.append(Integer.toString(alphabet.size()));
 		bw.append('\n');
-		for (int i = 0; i < words.size(); i++) {
-			bw.append(words.get(i).toStringAlt(withClassLabel));
-			if (i < (words.size() - 1)) {
-				bw.append('\n');
-			}
-		}
+		toFile(bw, word -> word.toStringAlt(withClassLabel));
 	}
 
 	@Override
@@ -542,6 +540,7 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 		};
 	}
 
+	// TODO remove this. Remove TimedIntWord. Use timedinput.clearWords and getAlphIndex
 	boolean transformedToInt = false;
 	public void toTimedIntWords() {
 		// FIXME what about the alphabet? Does it also need to be adjusted?
