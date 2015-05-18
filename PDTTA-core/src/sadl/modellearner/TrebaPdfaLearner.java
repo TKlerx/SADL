@@ -87,7 +87,7 @@ public class TrebaPdfaLearner implements PdfaLearner {
 			createTrebaFile(trainingSequences, trebaTrainSetFileString);
 			final String trebaAutomatonFile = tempFilePrefix + "fsm.fsm";
 			final double loglikelihood = trainFsm(trebaTrainSetFileString, trebaAutomatonFile);
-			logger.info("learned event automaton has loglikelihood of {}", loglikelihood);
+			logger.debug("learned event automaton has loglikelihood of {}", loglikelihood);
 			// compute paths through the automata for the training set and write to
 			// 'trebaResultPathFile'
 			// parse the 'trebaResultPathFile'
@@ -97,7 +97,7 @@ public class TrebaPdfaLearner implements PdfaLearner {
 			if (!Settings.isDebug()) {
 				IoUtils.deleteFiles(new String[] { trebaTrainSetFileString, trebaAutomatonFile });
 			} else {
-				logger.info("temp dir: {}", tempDir);
+				logger.debug("temp dir: {}", tempDir);
 			}
 			treba.log1plus_free_wrapper();
 			return pdfa;

@@ -518,13 +518,13 @@ public class TauPTA extends PDTTA {
 				continue;
 			} else {
 				final String chosenEvent = notOccuringEvents.get(r.nextInt(notOccuringEvents.size()));
-				logger.info("Chose event {} from {}", chosenEvent, notOccuringEvents);
+				logger.debug("Chose event {} from {}", chosenEvent, notOccuringEvents);
 				final Distribution d = removeTimedTransition(chosenTransition);
 				final Transition newTransition = addAbnormalTransition(chosenTransition.getFromState(), chosenTransition.getToState(), chosenEvent,
 						chosenTransition.getProbability(), AnomalyInsertionType.TYPE_ONE);
 				bindTransitionDistribution(newTransition.toZeroProbTransition(), d);
 				logger.debug("possibleTransitions={}", possibleTransitions);
-				logger.info("Changed {} to {} for inserting an anomaly of type 1", chosenTransition, newTransition);
+				logger.debug("Changed {} to {} for inserting an anomaly of type 1", chosenTransition, newTransition);
 				return 1;
 			}
 		}

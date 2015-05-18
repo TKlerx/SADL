@@ -36,12 +36,16 @@ public class PdttaAggregatedThresholdDetector extends PdttaDetector {
 		this.aggregatedTimeThreshold = aggregatedTimeThreshold;
 	}
 
+	public PdttaAggregatedThresholdDetector(double aggregatedEventThreshold, double aggregatedTimeThreshold) {
+		this(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, aggregatedEventThreshold, aggregatedTimeThreshold);
+	}
+
 	@Override
 	protected boolean decide(TDoubleList eventLikelihoods, TDoubleList timeLikelihoods) {
 		final double normalizedEventThreshold = aggregatedEventThreshold;
 		final double normalizedTimeThreshold = aggregatedTimeThreshold;
-		// Was passiert, wenn aggregate NAN zurück gibt?!
-		// Sollte eigentlich nur -infty zurückgeben
+		// What happens if aggregate returns NaN?!
+		// Should only return -infty
 		final double aggregatedEventScore = aggregate(eventLikelihoods, aggType);
 		final double aggregatedTimeScore = aggregate(timeLikelihoods, aggType);
 		logger.debug("aggEventScore={}\taggTimeScore={}", aggregatedEventScore, aggregatedTimeScore);
@@ -53,6 +57,5 @@ public class PdttaAggregatedThresholdDetector extends PdttaDetector {
 			return false;
 		}
 	}
-
 
 }

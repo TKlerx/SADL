@@ -22,7 +22,6 @@ import sadl.constants.ProbabilityAggregationMethod;
  *
  */
 public class PdttaExperimentResult {
-	private double fsmLogLikelihood;
 
 	public PdttaExperimentResult(int truePositives, int trueNegatives, int falsePositives, int falseNegatives) {
 		super();
@@ -56,7 +55,7 @@ public class PdttaExperimentResult {
 
 	@Override
 	public String toString() {
-		return "PdttaExperimentResult [fsmLogLikelihood=" + fsmLogLikelihood + ", precision=" + precision + ", recall=" + recall + ", fMeasure=" + fMeasure
+		return "PdttaExperimentResult [precision=" + precision + ", recall=" + recall + ", fMeasure=" + fMeasure
 				+ ", truePositives=" + truePositives + ", trueNegatives=" + trueNegatives + ", falsePositives=" + falsePositives + ", falseNegatives="
 				+ falseNegatives + ", recMergeTest=" + recMergeTest + ", mergeAlpha=" + mergeAlpha + ", anomalyInsertionType=" + anomalyInsertionType
 				+ ", mergeTest=" + mergeTest + ", timeTreshold=" + timeThreshold + ", eventTreshold=" + eventThreshold + ", aggType=" + aggType + "]";
@@ -66,11 +65,10 @@ public class PdttaExperimentResult {
 	double eventThreshold;
 	ProbabilityAggregationMethod aggType;
 
-	public PdttaExperimentResult(double fsmLogLikelihood, double precision, double recall, double fMeasure, int truePositives, int trueNegatives,
+	public PdttaExperimentResult(double precision, double recall, double fMeasure, int truePositives, int trueNegatives,
 			int falsePositives, int falseNegatives, boolean recMergeTest, double mergeAlpha, MergeTest mergeTest, double timeTreshold, double eventTreshold,
 			ProbabilityAggregationMethod aggType, AnomalyInsertionType anomalyInsertionType) {
 		this(truePositives, trueNegatives, falsePositives, falseNegatives);
-		this.fsmLogLikelihood = fsmLogLikelihood;
 		this.precision = precision;
 		this.recall = recall;
 		this.fMeasure = fMeasure;
@@ -83,14 +81,6 @@ public class PdttaExperimentResult {
 		this.anomalyInsertionType = anomalyInsertionType;
 	}
 
-	public void setLogLikelihood(double loglikelihood) {
-		this.fsmLogLikelihood = loglikelihood;
-
-	}
-
-	public double getFsmLogLikelihood() {
-		return fsmLogLikelihood;
-	}
 
 	public double getPrecision() {
 		return precision;
@@ -100,7 +90,7 @@ public class PdttaExperimentResult {
 		return recall;
 	}
 
-	public double getfMeasure() {
+	public double getFMeasure() {
 		if (Double.isNaN(fMeasure)) {
 			return 0;
 		}
@@ -174,15 +164,43 @@ public class PdttaExperimentResult {
 	static String separator = ";";
 
 	public static String CsvHeader() {
-		return "fsmLogLikelihood" + separator + "precision" + separator + "recall" + separator + "fMeasure" + separator + "truePositives" + separator
+		return "precision" + separator + "recall" + separator + "fMeasure" + separator + "truePositives" + separator
 				+ "trueNegatives" + separator + "falsePositives" + separator + "falseNegatives" + separator + "recMergeTest" + separator + "mergeAlpha"
 				+ separator + "anomalyInsertionType" + separator + "mergeTest" + separator + "timeTreshold" + separator + "eventTreshold" + separator
 				+ "aggType";
 	}
 	public String toCsvString() {
-		return fsmLogLikelihood + separator + precision + separator + recall + separator + fMeasure + separator + truePositives + separator + trueNegatives
+		return precision + separator + recall + separator + fMeasure + separator + truePositives + separator + trueNegatives
 				+ separator + falsePositives + separator + falseNegatives + separator + recMergeTest + separator + mergeAlpha + separator
 				+ anomalyInsertionType + separator + mergeTest + separator + timeThreshold + separator + eventThreshold + separator + aggType;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		long temp;
+		temp = Double.doubleToLongBits(fMeasure);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final PdttaExperimentResult other = (PdttaExperimentResult) obj;
+		if (Double.doubleToLongBits(fMeasure) != Double.doubleToLongBits(other.fMeasure)) {
+			return false;
+		}
+		return true;
 	}
 
 }
