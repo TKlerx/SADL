@@ -27,9 +27,16 @@ public class SmallFeatureCreator extends MinimalFeatureCreator {
 
 		final double eventMax = eventLikelihoods.max();
 		final double eventMin = eventLikelihoods.min();
-
-		final double timeMax = timeLikelihoods.max();
-		final double timeMin = timeLikelihoods.min();
+		final double timeMax;
+		final double timeMin;
+		if (timeLikelihoods.size() == 0) {
+			// happens if the first state is the final state
+			timeMax = Double.NEGATIVE_INFINITY;
+			timeMin = Double.NEGATIVE_INFINITY;
+		} else {
+			timeMax = timeLikelihoods.max();
+			timeMin = timeLikelihoods.min();
+		}
 		return new double[] { eventMax, eventMin, superCall[0], timeMax, timeMin, superCall[1] };
 	}
 
