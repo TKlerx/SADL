@@ -17,5 +17,5 @@ package sadl.constants;
  *
  */
 public enum FeatureCreatorMethod {
-	FULL_FEATURE_CREATOR, SMALL_FEATURE_CREATOR;
+	FULL_FEATURE_CREATOR, SMALL_FEATURE_CREATOR, MINIMAL_FEATURE_CREATOR;
 }

@@ -13,30 +13,26 @@ package sadl.detectors.featureCreators;
 
 import gnu.trove.list.TDoubleList;
 import sadl.constants.ProbabilityAggregationMethod;
-import sadl.detectors.PdttaDetector;
 
 /**
  * 
  * @author Timo Klerx
  *
  */
-public class SmallFeatureCreator implements FeatureCreator {
+public class SmallFeatureCreator extends MinimalFeatureCreator {
 
 	@Override
 	public double[] createFeatures(TDoubleList eventLikelihoods, TDoubleList timeLikelihoods, ProbabilityAggregationMethod aggType) {
+		final double[] superCall = super.createFeatures(eventLikelihoods, timeLikelihoods, aggType);
+
 		final double eventMax = eventLikelihoods.max();
 		final double eventMin = eventLikelihoods.min();
-		final double eventAgg = PdttaDetector.aggregate(eventLikelihoods, aggType);
 
 		final double timeMax = timeLikelihoods.max();
 		final double timeMin = timeLikelihoods.min();
-		final double timeAgg = PdttaDetector.aggregate(timeLikelihoods, aggType);
-		return new double[] { eventMax, eventMin, eventAgg, timeMax, timeMin, timeAgg };
+		return new double[] { eventMax, eventMin, superCall[0], timeMax, timeMin, superCall[1] };
 	}
 
-	@Override
-	public double[] createFeatures(TDoubleList eventLikelihoods, TDoubleList timeLikelihoods) {
-		return createFeatures(eventLikelihoods, timeLikelihoods, ProbabilityAggregationMethod.NORMALIZED_MULTIPLY);
-	}
+
 
 }

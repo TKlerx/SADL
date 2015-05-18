@@ -85,7 +85,6 @@ public class PdttaAnomalyDetection {
 
 	public Model train(TimedInput trainingInput) {
 		learnedModel = learner.train(trainingInput);
-		trainingInput.clearWords();
 		if (learnedModel instanceof PDTTA) {
 			automaton = (PDTTA) learnedModel;
 		} else {
@@ -95,6 +94,7 @@ public class PdttaAnomalyDetection {
 			pdttaDetector.setModel(automaton);
 			((TrainableDetector) pdttaDetector).train(trainingInput);
 		}
+		trainingInput.clearWords();
 		return learnedModel;
 
 	}

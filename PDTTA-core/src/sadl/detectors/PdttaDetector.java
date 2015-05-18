@@ -210,6 +210,9 @@ public abstract class PdttaDetector implements AnomalyDetector {
 	}
 
 	public static double aggregate(TDoubleList list, ProbabilityAggregationMethod aggType) {
+		if (list.isEmpty()) {
+			return Double.NEGATIVE_INFINITY;
+		}
 		double result = -1;
 		if (aggType == ProbabilityAggregationMethod.MULTIPLY) {
 			result = 0;

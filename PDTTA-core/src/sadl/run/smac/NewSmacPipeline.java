@@ -46,6 +46,7 @@ import sadl.detectors.PdttaDetector;
 import sadl.detectors.PdttaVectorDetector;
 import sadl.detectors.featureCreators.FeatureCreator;
 import sadl.detectors.featureCreators.FullFeatureCreator;
+import sadl.detectors.featureCreators.MinimalFeatureCreator;
 import sadl.detectors.featureCreators.SmallFeatureCreator;
 import sadl.detectors.threshold.PdttaAggregatedThresholdDetector;
 import sadl.detectors.threshold.PdttaFullThresholdDetector;
@@ -206,6 +207,8 @@ public class NewSmacPipeline implements Serializable {
 			featureCreator = new FullFeatureCreator();
 		} else if (featureCreatorMethod == FeatureCreatorMethod.SMALL_FEATURE_CREATOR) {
 			featureCreator = new SmallFeatureCreator();
+		} else if (featureCreatorMethod == FeatureCreatorMethod.MINIMAL_FEATURE_CREATOR) {
+			featureCreator = new MinimalFeatureCreator();
 		} else {
 			featureCreator = null;
 		}
