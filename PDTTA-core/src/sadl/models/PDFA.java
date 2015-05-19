@@ -11,6 +11,8 @@
 
 package sadl.models;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.set.TIntSet;
@@ -32,6 +34,7 @@ import java.util.Set;
 
 import org.apache.commons.math3.exception.MathArithmeticException;
 import org.apache.commons.math3.fraction.BigFraction;
+import org.apache.commons.math3.util.Pair;
 import org.apache.commons.math3.util.Precision;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -591,6 +594,34 @@ public class PDFA implements AutomatonModel, Serializable {
 
 	public void setAlphabet(TimedInput alphabet) {
 		this.alphabet = alphabet;
+	}
+
+	/**
+	 * 
+	 * @return the list up to the last probability that exists. list may be shorter than the events list, iff there is an event which has no transition
+	 */
+	protected TDoubleList computeEventLikelihoods(TimedWord s) {
+
+		final TDoubleList list = new TDoubleArrayList();
+		int currentState = 0;
+		for (int i = 0; i < s.length(); i++) {
+			final Transition t = getTransition(currentState, s.getSymbol(i));
+			// DONE this is crap, isnt it? why not return an empty list or null iff there is no transition for the given sequence? or at least put a '0' in the
+			// last slot.
+			if (t == null) {
+				list.add(0);
+				return list;
+			}
+			list.add(t.getProbability());
+			currentState = t.getToState();
+		}
+		list.add(getFinalStateProbability(currentState));
+		return list;
+	}
+
+	@Override
+	public Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord s) {
+		return Pair.create(computeEventLikelihoods(s), null);
 	}
 
 }

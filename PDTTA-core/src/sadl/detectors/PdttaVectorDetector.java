@@ -16,6 +16,8 @@ import gnu.trove.list.TDoubleList;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.math3.util.Pair;
+
 import sadl.constants.ProbabilityAggregationMethod;
 import sadl.detectors.featureCreators.FeatureCreator;
 import sadl.input.TimedInput;
@@ -49,9 +51,8 @@ public class PdttaVectorDetector extends PdttaDetector implements TrainableDetec
 	public void train(TimedInput trainingInput) {
 		final List<double[]> trainingSet = new ArrayList<>(trainingInput.size());
 		for (final TimedWord s : trainingInput) {
-			final TDoubleList eventLikelihoods = computeEventLikelihoods(s);
-			final TDoubleList timeLikelihoods = computeTimeLikelihoods(s);
-			trainingSet.add(fc.createFeatures(eventLikelihoods, timeLikelihoods, aggType));
+			final Pair<TDoubleList, TDoubleList> p = model.calculateProbabilities(s);
+			trainingSet.add(fc.createFeatures(p.getKey(), p.getValue(), aggType));
 		}
 		c.train(trainingSet);
 	}

@@ -12,7 +12,6 @@
 package sadl.detectors;
 
 import gnu.trove.list.TDoubleList;
-import gnu.trove.list.array.TDoubleArrayList;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -23,8 +22,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import jsat.distributions.Distribution;
-
+import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +32,6 @@ import sadl.input.TimedWord;
 import sadl.interfaces.AnomalyDetector;
 import sadl.interfaces.Model;
 import sadl.models.PDTTA;
-import sadl.structure.Transition;
 import sadl.utils.Settings;
 
 /**
@@ -79,56 +76,21 @@ public abstract class PdttaDetector implements AnomalyDetector {
 	public List<double[]> computeAggregatedLikelihoods(TimedInput testTimedSequences) {
 		final List<double[]> result = new ArrayList<>();
 		for (final TimedWord ts : testTimedSequences) {
-			final double eventProb = computeAggregatedEventLikelihood(ts);
-			final double timeProb = computeAggregatedTimeLikelihood(ts);
+			final Pair<TDoubleList, TDoubleList> p = model.calculateProbabilities(ts);
+			final double eventProb = aggregate(p.getKey(), aggType);
+			final double timeProb = aggregate(p.getValue(), aggType);
 			result.add(new double[] { eventProb, timeProb });
 		}
 		return result;
 	}
 
-	/**
-	 * returns two double values for every timed sequence. The first value is the event likelihood, the second the time likelihood
-	 * 
-	 */
-	public double[] computeAggregatedLikelihood(TimedWord testTimedSequence) {
-		final double eventProb = computeAggregatedEventLikelihood(testTimedSequence);
-		final double timeProb = computeAggregatedTimeLikelihood(testTimedSequence);
-		return new double[] { eventProb, timeProb };
-	}
 
-	protected TDoubleList computeTimeLikelihoods(TimedWord ts) {
-		final TDoubleList list = new TDoubleArrayList();
-		int currentState = 0;
-		for (int i = 0; i < ts.length(); i++) {
-			final Transition t = model.getTransition(currentState, ts.getSymbol(i));
-			// DONE this is crap, isnt it? why not return an empty list or null iff there is no transition for the given sequence? or at least put a '0' in the
-			// last slot.
-			if (t == null) {
-				list.add(0);
-				return list;
-			}
-			final Distribution d = model.getTransitionDistributions().get(t.toZeroProbTransition());
-			if (d == null) {
-				// System.out.println("Found no time distribution for Transition "
-				// + t);
-				list.add(0);
-			} else {
-				list.add(d.pdf(ts.getTimeValue(i)));
-			}
-			currentState = t.getToState();
-		}
-		return list;
-	}
-
-	public double computeAggregatedTimeLikelihood(TimedWord ts) {
-		final TDoubleList list = computeTimeLikelihoods(ts);
-		return aggregate(list, aggType);
-	}
 
 	@Override
 	public boolean isAnomaly(TimedWord s) {
-		final TDoubleList eventLikelihoods = computeEventLikelihoods(s);
-		final TDoubleList timeLikelihoods = computeTimeLikelihoods(s);
+		final Pair<TDoubleList, TDoubleList> p = model.calculateProbabilities(s);
+		final TDoubleList eventLikelihoods = p.getKey();
+		final TDoubleList timeLikelihoods = p.getValue();
 		return decide(eventLikelihoods, timeLikelihoods);
 	}
 
@@ -179,35 +141,7 @@ public abstract class PdttaDetector implements AnomalyDetector {
 	}
 
 
-	private double computeAggregatedEventLikelihood(TimedWord s) {
-		final TDoubleList list = computeEventLikelihoods(s);
-		return aggregate(list, aggType);
-	}
 
-	/**
-	 * 
-	 * @param events
-	 * @param aggType
-	 * @return the list up to the last probability that exists. list may be shorter than the events list, iff there is an event which has no transition
-	 */
-	protected TDoubleList computeEventLikelihoods(TimedWord s) {
-
-		final TDoubleList list = new TDoubleArrayList();
-		int currentState = 0;
-		for (int i = 0; i < s.length(); i++) {
-			final Transition t = model.getTransition(currentState, s.getSymbol(i));
-			// DONE this is crap, isnt it? why not return an empty list or null iff there is no transition for the given sequence? or at least put a '0' in the
-			// last slot.
-			if (t == null) {
-				list.add(0);
-				return list;
-			}
-			list.add(t.getProbability());
-			currentState = t.getToState();
-		}
-		list.add(model.getFinalStateProbability(currentState));
-		return list;
-	}
 
 	public static double aggregate(TDoubleList list, ProbabilityAggregationMethod aggType) {
 		if (list.isEmpty()) {

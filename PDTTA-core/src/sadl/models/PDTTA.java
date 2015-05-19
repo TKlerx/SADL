@@ -11,7 +11,9 @@
 
 package sadl.models;
 
+import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.io.IOException;
@@ -23,6 +25,7 @@ import java.util.Set;
 
 import jsat.distributions.Distribution;
 
+import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -253,6 +256,35 @@ public class PDTTA extends PDFA {
 			return false;
 		}
 		return true;
+	}
+
+	protected TDoubleList computeTimeLikelihoods(TimedWord ts) {
+		final TDoubleList list = new TDoubleArrayList();
+		int currentState = 0;
+		for (int i = 0; i < ts.length(); i++) {
+			final Transition t = getTransition(currentState, ts.getSymbol(i));
+			// DONE this is crap, isnt it? why not return an empty list or null iff there is no transition for the given sequence? or at least put a '0' in the
+			// last slot.
+			if (t == null) {
+				list.add(0);
+				return list;
+			}
+			final Distribution d = getTransitionDistributions().get(t.toZeroProbTransition());
+			if (d == null) {
+				// System.out.println("Found no time distribution for Transition "
+				// + t);
+				list.add(0);
+			} else {
+				list.add(d.pdf(ts.getTimeValue(i)));
+			}
+			currentState = t.getToState();
+		}
+		return list;
+	}
+
+	@Override
+	public Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord s) {
+		return Pair.create(computeEventLikelihoods(s), computeTimeLikelihoods(s));
 	}
 
 }
