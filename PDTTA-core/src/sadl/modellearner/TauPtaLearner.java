@@ -38,8 +38,8 @@ import sadl.structure.ZeroProbTransition;
 public class TauPtaLearner extends PdttaLearner {
 	private static Logger logger = LoggerFactory.getLogger(TauPtaLearner.class);
 
-	TObjectIntMap<Transition> transitionCount = new TObjectIntHashMap<>();
-	TIntIntMap finalStateCount = new TIntIntHashMap();
+	protected TObjectIntMap<Transition> transitionCount = new TObjectIntHashMap<>();
+	protected TIntIntMap finalStateCount = new TIntIntHashMap();
 
 	public TauPtaLearner() {
 		super(null, null, -1);
