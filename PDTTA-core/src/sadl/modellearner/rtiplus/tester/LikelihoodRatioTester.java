@@ -12,6 +12,7 @@
 package sadl.modellearner.rtiplus.tester;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -19,8 +20,8 @@ import jsat.distributions.ChiSquared;
 import sadl.modellearner.rtiplus.OperationUtil;
 import sadl.models.pdrta.Interval;
 import sadl.models.pdrta.PDRTA;
-import sadl.models.pdrta.StateStatistic;
 import sadl.models.pdrta.PDRTAState;
+import sadl.models.pdrta.StateStatistic;
 import sadl.models.pdrta.TimedTail;
 
 import com.google.common.collect.HashMultimap;
@@ -109,8 +110,11 @@ public class LikelihoodRatioTester implements OperationTester {
 		final PDRTAState cR = cA.getCorrespondingCopy(red);
 		final PDRTAState cB = cA.getCorrespondingCopy(blue);
 
+		final Collection<PDRTAState> cRedStates = new HashSet<>(redStates);
+		final Collection<PDRTAState> cBlueStates = new HashSet<>(blueStates);
+
 		final LikelihoodValue lv = new LikelihoodValue(0.0, 0);
-		lv.add(OperationUtil.merge(cR, cB, redStates, blueStates, true, advancedPooling));
+		lv.add(OperationUtil.merge(cR, cB, cRedStates, cBlueStates, true, advancedPooling));
 
 		// TODO delete. only for debug
 		// System.out.println("p=" + (-2.0 * lv.ratio) + " , df="

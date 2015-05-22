@@ -11,6 +11,7 @@
 
 package sadl.models.pdrta;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -28,7 +29,12 @@ import com.google.common.collect.TreeMultimap;
  * @author Fabian Witter
  * 
  */
-public class Interval {
+public class Interval implements Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * Defines the inclusive begin of the interval
@@ -306,6 +312,50 @@ public class Interval {
 		}
 		tails = TreeMultimap.create();
 		target = null;
+	}
+
+	@Override
+	public int hashCode() {
+
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + begin;
+		result = prime * result + end;
+		result = prime * result + ((tails == null) ? 0 : tails.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final Interval other = (Interval) obj;
+		if (begin != other.begin) {
+			return false;
+		}
+		if (end != other.end) {
+			return false;
+		}
+		if (tails == null) {
+			if (other.tails != null) {
+				return false;
+			}
+		} else if (!tails.equals(other.tails)) {
+			return false;
+		}
+		return true;
+	}
+
+	void cleanUp() {
+		tails.clear();
 	}
 
 }

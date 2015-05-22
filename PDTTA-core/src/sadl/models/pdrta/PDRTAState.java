@@ -11,6 +11,7 @@
 
 package sadl.models.pdrta;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -26,11 +27,17 @@ import sadl.modellearner.rtiplus.tester.LikelihoodValue;
  * @author Fabian Witter
  *
  */
-public class PDRTAState {
+public class PDRTAState implements Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
 	private final PDRTA automaton;
 	private final List<NavigableMap<Integer, Interval>> intervals;
 	private final StateStatistic stat;
+	private int id;
 
 	protected PDRTAState(PDRTA ta) {
 
@@ -40,7 +47,7 @@ public class PDRTAState {
 			intervals.add(Interval.createInitialIntervalMap(ta.getMinTimeDelay(), ta.getMaxTimeDelay()));
 		}
 		stat = StateStatistic.initStat(ta.getAlphSize(), ta.getHistSizes());
-		automaton.addState(this, automaton.getNumStates());
+		id = automaton.addState(this, automaton.getNumStates());
 	}
 
 	protected PDRTAState(PDRTA ta, int idx, StateStatistic st) {
@@ -62,10 +69,6 @@ public class PDRTAState {
 		return stat;
 	}
 
-	protected PDRTA getAutomaton() {
-		return automaton;
-	}
-
 	protected PDRTAState(PDRTAState s, PDRTA a) {
 
 		automaton = a;
@@ -79,7 +82,8 @@ public class PDRTAState {
 			intervals.add(newIns);
 		}
 		stat = new StateStatistic(s.stat);
-		automaton.addState(this, s.automaton.getIndex(s));
+		id = automaton.addState(this, s.getId());
+		assert (id == s.getId());
 	}
 
 	/**
@@ -275,6 +279,65 @@ public class PDRTAState {
 				return in;
 			} else {
 				return null;
+			}
+		}
+	}
+
+	@Override
+	public int hashCode() {
+
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + id;
+		result = prime * result + ((intervals == null) ? 0 : intervals.hashCode());
+		result = prime * result + ((stat == null) ? 0 : stat.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final PDRTAState other = (PDRTAState) obj;
+		if (id != other.id) {
+			return false;
+		}
+		if (intervals == null) {
+			if (other.intervals != null) {
+				return false;
+			}
+		} else if (!intervals.equals(other.intervals)) {
+			return false;
+		}
+		if (stat == null) {
+			if (other.stat != null) {
+				return false;
+			}
+		} else if (!stat.equals(other.stat)) {
+			return false;
+		}
+		return true;
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	void cleanUp() {
+
+		stat.cleanUp(this);
+		for (int i = 0; i < automaton.getAlphSize(); i++) {
+			final NavigableMap<Integer, Interval> m = intervals.get(i);
+			for (final Interval in : m.values()) {
+				in.cleanUp();
 			}
 		}
 	}

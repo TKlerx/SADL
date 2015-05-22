@@ -50,7 +50,7 @@ import sadl.models.pdrta.TimedTail;
  */
 public class SimplePDRTALearner implements ModelLearner {
 
-	protected enum RunMode {
+	public enum RunMode {
 		SILENT, NORMAL_CONSOLE, NORMAL_FILE, NORMAL_BATCH, DEBUG, DEBUG_STEPS, DEBUG_DEEP
 	}
 
@@ -122,9 +122,10 @@ public class SimplePDRTALearner implements ModelLearner {
 		startTime = System.currentTimeMillis();
 		final Set<PDRTAState> redStates = new HashSet<>();
 		final Set<PDRTAState> blueStates = new HashSet<>();
+		setRed(a.getRoot(), redStates, blueStates);
 		tester.setStateSets(redStates, blueStates);
 		complete(a, redStates, blueStates);
-		in.clear();
+		a.cleanUp();
 		persistFinalResult(a);
 
 		System.out.println("Time: " + getDuration(startTime, System.currentTimeMillis()));
@@ -159,11 +160,11 @@ public class SimplePDRTALearner implements ModelLearner {
 							maxVisit = in.getTails().size();
 							trans = new Transition(a, r, i, in, in.getTarget());
 						} else if (maxVisit == in.getTails().size() && trans != null) {
-							if (a.getIndex(trans.source) >= a.getIndex(r)) {
-								if (a.getIndex(trans.source) > a.getIndex(r)) {
+							if (trans.source.getId() >= r.getId()) {
+								if (trans.source.getId() > r.getId()) {
 									trans = new Transition(a, r, i, in, in.getTarget());
-								} else if (a.getIndex(trans.target) >= a.getIndex(in.getTarget())) {
-									if (a.getIndex(trans.target) > a.getIndex(in.getTarget())) {
+								} else if (trans.target.getId() >= in.getTarget().getId()) {
+									if (trans.target.getId() > in.getTarget().getId()) {
 										trans = new Transition(a, r, i, in, in.getTarget());
 									} else if (trans.symAlphIdx >= i) {
 										if (trans.symAlphIdx > i) {
@@ -194,7 +195,7 @@ public class SimplePDRTALearner implements ModelLearner {
 		for (final PDRTAState r : redStates) {
 			double score = tester.testMerge(r, t.target);
 			if (runMode.compareTo(RunMode.DEBUG_DEEP) >= 0) {
-				System.out.println("Score: " + score + " (MERGE " + t.ta.getIndex(r) + " with " + t.ta.getIndex(t.target) + ")");
+				System.out.println("Score: " + score + " (MERGE " + r.getId() + " with " + t.target.getId() + ")");
 			}
 			if (score > significance && score <= 1.0) {
 				score = (score - significance) / (1.0 - significance);
@@ -225,8 +226,7 @@ public class SimplePDRTALearner implements ModelLearner {
 				final int splitTime = (int) Math.rint(((cur - last) - 1) / 2.0) + last;
 				double score = tester.testSplit(t.source, t.symAlphIdx, splitTime);
 				if (runMode.compareTo(RunMode.DEBUG_DEEP) >= 0) {
-					System.out.println("Score: " + score + " (SPLIT " + t.ta.getIndex(t.source) + " @ (" + t.ta.getSymbol(t.symAlphIdx) + "," + splitTime
-							+ "))");
+					System.out.println("Score: " + score + " (SPLIT " + t.source.getId() + " @ (" + t.ta.getSymbol(t.symAlphIdx) + "," + splitTime + "))");
 				}
 				if (score < significance && score >= 0) {
 					score = (significance - score) / significance;
@@ -311,24 +311,20 @@ public class SimplePDRTALearner implements ModelLearner {
 					r.refine();
 				} else {
 					if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
-						System.out.println("#" + counter + " DO: Color state " + a.getIndex(t.target) + " red");
+						System.out.println("#" + counter + " DO: Color state " + t.target.getId() + " red");
 					}
 					setRed(t.target, redsC, bluesC);
 				}
 			}
 
 			if (runMode.compareTo(RunMode.DEBUG) >= 0) {
-				if (!a.isConsistent()) {
-					throw new IllegalStateException("Automaton not consistent!");
-				}
+				a.checkConsistency();
 			}
 		}
 
 		assert (a.getNumStates() == redsC.size());
 
-		if (!a.isConsistent()) {
-			throw new IllegalStateException("Automaton not consistent!");
-		}
+		a.checkConsistency();
 		if (runMode.compareTo(RunMode.DEBUG_STEPS) >= 0) {
 			try {
 				draw(a, true, directory + "steps/step_" + counter + ".png");
@@ -517,8 +513,8 @@ public class SimplePDRTALearner implements ModelLearner {
 
 		@Override
 		public String toString() {
-			final String s = "((" + ta.getIndex(source) + "))---" + ta.getSymbol(symAlphIdx) + "-[" + in.getBegin() + "," + in.getEnd() + "]--->(("
-					+ ta.getIndex(target) + "))";
+			final String s = "((" + source.getId() + "))---" + ta.getSymbol(symAlphIdx) + "-[" + in.getBegin() + "," + in.getEnd() + "]--->((" + target.getId()
+					+ "))";
 			return s;
 		}
 	}

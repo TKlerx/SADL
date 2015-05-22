@@ -14,24 +14,29 @@ package sadl.models.pdrta;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TObjectDoubleHashMap;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map.Entry;
+import java.util.NavigableMap;
 
 import sadl.modellearner.rtiplus.tester.LikelihoodValue;
 
 import com.google.common.collect.Multimap;
 
 /**
- * This class manages the time and symbol probabilities for a {@link PDRTAState}
- * which are needed for calculating the Likelihood Ratio Test and anomaly
- * detection. It also provides static methods for calculating the Likelihood
- * Ratio.
+ * This class manages the time and symbol probabilities for a {@link PDRTAState} which are needed for calculating the Likelihood Ratio Test and anomaly
+ * detection. It also provides static methods for calculating the Likelihood Ratio.
  * 
  * @author Fabian Witter
  * 
  */
-public class StateStatistic {
+public class StateStatistic implements Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * Contains the sizes (width) of the histogram bins
@@ -39,14 +44,12 @@ public class StateStatistic {
 	private int[] histBarSizes;
 
 	/**
-	 * Contains the number of outgoing {@link TimedTail}s for each histogram bin
-	 * while training
+	 * Contains the number of outgoing {@link TimedTail}s for each histogram bin while training
 	 */
 	private int[] timeCount;
 
 	/**
-	 * Contains the number of outgoing {@link TimedTail}s for each symbol while
-	 * training
+	 * Contains the number of outgoing {@link TimedTail}s for each symbol while training
 	 */
 	private int[] symbolCount;
 
@@ -61,32 +64,27 @@ public class StateStatistic {
 	private int totalInCount;
 
 	/**
-	 * Determines if this {@link StateStatistic} exists while training or during
-	 * anomaly detection
+	 * Determines if this {@link StateStatistic} exists while training or during anomaly detection
 	 */
 	private boolean trainMode;
 
 	/**
-	 * Contains the probabilities for outgoing {@link TimedTail}s for each
-	 * histogram bin during anomaly detection
+	 * Contains the probabilities for outgoing {@link TimedTail}s for each histogram bin during anomaly detection
 	 */
 	private double[] timeProbs;
 
 	/**
-	 * Contains the probabilities for outgoing {@link TimedTail}s for each
-	 * symbol during anomaly detection
+	 * Contains the probabilities for outgoing {@link TimedTail}s for each symbol during anomaly detection
 	 */
 	private double[] symbolProbs;
 
 	/**
-	 * Contains the probability for incoming {@link TimedTail}s to end in the
-	 * {@link PDRTAState} during anomaly detection
+	 * Contains the probability for incoming {@link TimedTail}s to end in the {@link PDRTAState} during anomaly detection
 	 */
 	private double tailEndProb;
 
 	/**
-	 * Contains the probabilities for transitions to be used by
-	 * {@link TimedTail}s during anomaly detection
+	 * Contains the probabilities for transitions to be used by {@link TimedTail}s during anomaly detection
 	 */
 	private TObjectDoubleHashMap<Interval> intervalProbs;
 
@@ -105,21 +103,17 @@ public class StateStatistic {
 	}
 
 	/**
-	 * Creates a {@link StateStatistic} reconstructed from a already trained and
-	 * persisted {@link PDRTA}
+	 * Creates a {@link StateStatistic} reconstructed from a already trained and persisted {@link PDRTA}
 	 * 
 	 * @param alphSize
 	 *            The number of symbols
 	 * @param histoBarSizes
 	 *            The sizes of the histogram bins
 	 * @param stats
-	 *            A set containing the probabilities embedded in formated
-	 *            {@link String}s
-	 * @return A {@link StateStatistic} reconstructed from a already trained and
-	 *         persisted {@link PDRTA}
+	 *            A set containing the probabilities embedded in formated {@link String}s
+	 * @return A {@link StateStatistic} reconstructed from a already trained and persisted {@link PDRTA}
 	 */
-	protected static StateStatistic reconstructStat(int alphSize,
-			int[] histoBarSizes, Collection<String> stats) {
+	protected static StateStatistic reconstructStat(int alphSize, int[] histoBarSizes, Collection<String> stats) {
 
 		double tailEndProb = 0.0;
 		double[] timeProbs = new double[0];
@@ -139,8 +133,7 @@ public class StateStatistic {
 					}
 				}
 				if (timeProbs.length != histoBarSizes.length) {
-					throw new IllegalArgumentException(
-							"Content is not correct!");
+					throw new IllegalArgumentException("Content is not correct!");
 				}
 			} else if (s.matches("^\\d+ S.+")) {
 				// Sample: 0 SYM 0.0 / 0.0 / 0.0
@@ -154,8 +147,7 @@ public class StateStatistic {
 					}
 				}
 				if (symbolProbs.length != alphSize) {
-					throw new IllegalArgumentException(
-							"Content is not correct!");
+					throw new IllegalArgumentException("Content is not correct!");
 				}
 			} else if (s.matches("^\\d+ \\[.+")) {
 				// Sample: 0 [ xlabel = "0.0", fillcolor = "#FFA9A9" ];
@@ -168,27 +160,23 @@ public class StateStatistic {
 			}
 		}
 
-		return new StateStatistic(histoBarSizes, timeProbs, symbolProbs,
-				tailEndProb);
+		return new StateStatistic(histoBarSizes, timeProbs, symbolProbs, tailEndProb);
 	}
 
 	/**
-	 * Calculates the {@link LikelihoodValue} of the symbol distributions for
-	 * merging two {@link PDRTAState}s
+	 * Calculates the {@link LikelihoodValue} of the symbol distributions for merging two {@link PDRTAState}s
 	 * 
 	 * @param s1
 	 *            First {@link PDRTAState} for merging
 	 * @param s2
 	 *            Second {@link PDRTAState} for merging
-	 * @return The {@link LikelihoodValue} of the symbol distributions for
-	 *         merging
+	 * @return The {@link LikelihoodValue} of the symbol distributions for merging
 	 */
-	public static LikelihoodValue getLikelihoodRatioSym(PDRTAState s1,
-			PDRTAState s2, boolean advancedPooling) {
+	public static LikelihoodValue getLikelihoodRatioSym(PDRTAState s1, PDRTAState s2, boolean advancedPooling) {
 
 		final StateStatistic st1 = s1.getStat();
 		final StateStatistic st2 = s2.getStat();
-		final PDRTA a = s1.getAutomaton();
+		final PDRTA a = s1.getPDRTA();
 		final int minData = PDRTA.getMinData();
 
 		if (!st1.trainMode || !st2.trainMode) {
@@ -199,28 +187,24 @@ public class StateStatistic {
 		if (st1.totalOutCount < minData && st2.totalOutCount < minData) {
 			return new LikelihoodValue(0.0, 0);
 		} else {
-			return calcInterimLRT(a, st1.symbolCount, st2.symbolCount,
-					advancedPooling);
+			return calcInterimLRT(a, st1.symbolCount, st2.symbolCount, advancedPooling);
 		}
 	}
 
 	/**
-	 * Calculates the {@link LikelihoodValue} of the histogram bin distributions
-	 * for merging two {@link PDRTAState}s
+	 * Calculates the {@link LikelihoodValue} of the histogram bin distributions for merging two {@link PDRTAState}s
 	 * 
 	 * @param s1
 	 *            First {@link PDRTAState} for merging
 	 * @param s2
 	 *            Second {@link PDRTAState} for merging
-	 * @return The {@link LikelihoodValue} of the histogram bin distributions
-	 *         for merging
+	 * @return The {@link LikelihoodValue} of the histogram bin distributions for merging
 	 */
-	public static LikelihoodValue getLikelihoodRatioTime(PDRTAState s1,
-			PDRTAState s2, boolean advancedPooling) {
+	public static LikelihoodValue getLikelihoodRatioTime(PDRTAState s1, PDRTAState s2, boolean advancedPooling) {
 
 		final StateStatistic st1 = s1.getStat();
 		final StateStatistic st2 = s2.getStat();
-		final PDRTA a = s1.getAutomaton();
+		final PDRTA a = s1.getPDRTA();
 		final int minData = PDRTA.getMinData();
 
 		if (!st1.trainMode || !st2.trainMode) {
@@ -231,29 +215,24 @@ public class StateStatistic {
 		if (st1.totalOutCount < minData && st2.totalOutCount < minData) {
 			return new LikelihoodValue(0.0, 0);
 		} else {
-			return calcInterimLRT(a, st1.timeCount, st2.timeCount,
-					advancedPooling);
+			return calcInterimLRT(a, st1.timeCount, st2.timeCount, advancedPooling);
 		}
 	}
 
 	/**
-	 * Calculates the {@link LikelihoodValue} of the symbol distributions for
-	 * splitting a transition. This done by splitting the set of
-	 * {@link TimedTail}s in a {@link PDRTAState}
+	 * Calculates the {@link LikelihoodValue} of the symbol distributions for splitting a transition. This done by splitting the set of {@link TimedTail}s in a
+	 * {@link PDRTAState}
 	 * 
 	 * @param s
 	 *            The {@link PDRTAState} for splitting
 	 * @param mSym
-	 *            The Set of {@link TimedTail}s to be split apart clustered by
-	 *            symbol index
-	 * @return The {@link LikelihoodValue} of the symbol distributions for
-	 *         splitting a transition
+	 *            The Set of {@link TimedTail}s to be split apart clustered by symbol index
+	 * @return The {@link LikelihoodValue} of the symbol distributions for splitting a transition
 	 */
-	public static LikelihoodValue getLikelihoodRatioSym(PDRTAState s,
-			Multimap<Integer, TimedTail> mSym, boolean advancedPooling) {
+	public static LikelihoodValue getLikelihoodRatioSym(PDRTAState s, Multimap<Integer, TimedTail> mSym, boolean advancedPooling) {
 
 		final StateStatistic st = s.getStat();
-		final PDRTA a = s.getAutomaton();
+		final PDRTA a = s.getPDRTA();
 		final int minData = PDRTA.getMinData();
 
 		if (!st.trainMode) {
@@ -265,11 +244,9 @@ public class StateStatistic {
 			return new LikelihoodValue(0.0, 0);
 		}
 
-		final int[] part1SymCount = Arrays.copyOf(st.symbolCount,
-				st.symbolCount.length);
+		final int[] part1SymCount = Arrays.copyOf(st.symbolCount, st.symbolCount.length);
 		final int[] part2SymCount = new int[st.symbolCount.length];
-		for (final Entry<Integer, Collection<TimedTail>> eCol : mSym.asMap()
-				.entrySet()) {
+		for (final Entry<Integer, Collection<TimedTail>> eCol : mSym.asMap().entrySet()) {
 			part1SymCount[eCol.getKey()] -= eCol.getValue().size();
 			part2SymCount[eCol.getKey()] += eCol.getValue().size();
 		}
@@ -278,23 +255,19 @@ public class StateStatistic {
 	}
 
 	/**
-	 * Calculates the {@link LikelihoodValue} of the histogram bin distributions
-	 * for splitting a transition. This done by splitting the set of
-	 * {@link TimedTail}s in a {@link PDRTAState}
+	 * Calculates the {@link LikelihoodValue} of the histogram bin distributions for splitting a transition. This done by splitting the set of {@link TimedTail}
+	 * s in a {@link PDRTAState}
 	 * 
 	 * @param s
 	 *            The {@link PDRTAState} for splitting
 	 * @param mHist
-	 *            The Set of {@link TimedTail}s to be split apart clustered by
-	 *            histogram index
-	 * @return The {@link LikelihoodValue} of the histogram bin distributions
-	 *         for splitting a transition
+	 *            The Set of {@link TimedTail}s to be split apart clustered by histogram index
+	 * @return The {@link LikelihoodValue} of the histogram bin distributions for splitting a transition
 	 */
-	public static LikelihoodValue getLikelihoodRatioTime(PDRTAState s,
-			Multimap<Integer, TimedTail> mHist, boolean advancedPooling) {
+	public static LikelihoodValue getLikelihoodRatioTime(PDRTAState s, Multimap<Integer, TimedTail> mHist, boolean advancedPooling) {
 
 		final StateStatistic st = s.getStat();
-		final PDRTA a = s.getAutomaton();
+		final PDRTA a = s.getPDRTA();
 		final int minData = PDRTA.getMinData();
 
 		if (!st.trainMode) {
@@ -302,21 +275,18 @@ public class StateStatistic {
 		}
 
 		// LRT_FIX : || -> &&
-		if ((st.totalOutCount - mHist.size()) < minData
-				&& mHist.size() < minData) {
+		if ((st.totalOutCount - mHist.size()) < minData && mHist.size() < minData) {
 			return new LikelihoodValue(0.0, 0);
 		}
 
 		final int[] part1TimeCount = Arrays.copyOf(st.timeCount, st.timeCount.length);
 		final int[] part2TimeCount = new int[st.timeCount.length];
-		for (final Entry<Integer, Collection<TimedTail>> eCol : mHist.asMap()
-				.entrySet()) {
+		for (final Entry<Integer, Collection<TimedTail>> eCol : mHist.asMap().entrySet()) {
 			part1TimeCount[eCol.getKey()] -= eCol.getValue().size();
 			part2TimeCount[eCol.getKey()] += eCol.getValue().size();
 		}
 
-		return calcInterimLRT(a, part1TimeCount, part2TimeCount,
-				advancedPooling);
+		return calcInterimLRT(a, part1TimeCount, part2TimeCount, advancedPooling);
 	}
 
 	/**
@@ -361,8 +331,7 @@ public class StateStatistic {
 	}
 
 	/**
-	 * Merges another {@link StateStatistic} into this statistic while training.
-	 * This is used when two {@link PDRTAState}s are merged.
+	 * Merges another {@link StateStatistic} into this statistic while training. This is used when two {@link PDRTAState}s are merged.
 	 * 
 	 * @param st
 	 *            The {@link StateStatistic} to be merged
@@ -385,9 +354,8 @@ public class StateStatistic {
 	}
 
 	/**
-	 * Adds the probability for a transition to be used by a {@link TimedTail}
-	 * when reconstructing the {@link StateStatistic} from an already trained
-	 * and persisted {@link PDRTA}
+	 * Adds the probability for a transition to be used by a {@link TimedTail} when reconstructing the {@link StateStatistic} from an already trained and
+	 * persisted {@link PDRTA}
 	 * 
 	 * @param in
 	 *            A transition
@@ -404,11 +372,9 @@ public class StateStatistic {
 	}
 
 	/**
-	 * Returns the probability for incoming {@link TimedTail}s to end in the
-	 * {@link PDRTAState}
+	 * Returns the probability for incoming {@link TimedTail}s to end in the {@link PDRTAState}
 	 * 
-	 * @return The probability for incoming {@link TimedTail}s to end in the
-	 *         {@link PDRTAState}
+	 * @return The probability for incoming {@link TimedTail}s to end in the {@link PDRTAState}
 	 */
 	protected double getTailEndProb() {
 
@@ -420,8 +386,7 @@ public class StateStatistic {
 	}
 
 	/**
-	 * Returns the probability for a given transition to be used by
-	 * {@link TimedTail}s
+	 * Returns the probability for a given transition to be used by {@link TimedTail}s
 	 * 
 	 * @param in
 	 *            The transition to get the probability for
@@ -441,13 +406,11 @@ public class StateStatistic {
 	}
 
 	/**
-	 * Returns the probability for a given {@link TimedTail} according to the
-	 * independent symbol and histogram bin probabilities
+	 * Returns the probability for a given {@link TimedTail} according to the independent symbol and histogram bin probabilities
 	 * 
 	 * @param t
 	 *            The {@link TimedTail} to get the probability for
-	 * @return The probability for a given {@link TimedTail} according to the
-	 *         independent symbol and histogram bin probabilities
+	 * @return The probability for a given {@link TimedTail} according to the independent symbol and histogram bin probabilities
 	 */
 	protected double getHistProb(TimedTail t) {
 
@@ -456,15 +419,11 @@ public class StateStatistic {
 		}
 
 		if (trainMode) {
-			final double timeP = (double) timeCount[t.getHistBarIndex()]
-					/ (double) totalOutCount;
-			final double symP = (double) symbolCount[t.getSymbolAlphIndex()]
-					/ (double) totalOutCount;
+			final double timeP = (double) timeCount[t.getHistBarIndex()] / (double) totalOutCount;
+			final double symP = (double) symbolCount[t.getSymbolAlphIndex()] / (double) totalOutCount;
 			return symP * (timeP / histBarSizes[t.getHistBarIndex()]);
 		} else {
-			return symbolProbs[t.getSymbolAlphIndex()]
-					* (timeProbs[t.getHistBarIndex()] / histBarSizes[t
-					                                                 .getHistBarIndex()]);
+			return symbolProbs[t.getSymbolAlphIndex()] * (timeProbs[t.getHistBarIndex()] / histBarSizes[t.getHistBarIndex()]);
 		}
 	}
 
@@ -483,11 +442,9 @@ public class StateStatistic {
 	}
 
 	/**
-	 * Returns a {@link String} representation of the histogram bin distribution
-	 * for persistence
+	 * Returns a {@link String} representation of the histogram bin distribution for persistence
 	 * 
-	 * @return The {@link String} representation of the histogram bin
-	 *         distribution
+	 * @return The {@link String} representation of the histogram bin distribution
 	 */
 	protected String getTimeProbsString() {
 
@@ -515,8 +472,7 @@ public class StateStatistic {
 	}
 
 	/**
-	 * Returns a {@link String} representation of the symbol distribution for
-	 * persistence
+	 * Returns a {@link String} representation of the symbol distribution for persistence
 	 * 
 	 * @return The {@link String} representation of the symbol distribution
 	 */
@@ -564,23 +520,18 @@ public class StateStatistic {
 	}
 
 	/**
-	 * Creates a {@link StateStatistic} reconstructed from a already trained and
-	 * persisted {@link PDRTA}
+	 * Creates a {@link StateStatistic} reconstructed from a already trained and persisted {@link PDRTA}
 	 * 
 	 * @param histoBarSizes
 	 *            The sizes of the histogram bins
 	 * @param timeProbs
-	 *            The probabilities for outgoing {@link TimedTail}s for each
-	 *            histogram bin
+	 *            The probabilities for outgoing {@link TimedTail}s for each histogram bin
 	 * @param symbolProbs
-	 *            The probabilities for outgoing {@link TimedTail}s for each
-	 *            symbol
+	 *            The probabilities for outgoing {@link TimedTail}s for each symbol
 	 * @param tailEndProb
-	 *            The probability for incoming {@link TimedTail}s to end in the
-	 *            {@link PDRTAState}
+	 *            The probability for incoming {@link TimedTail}s to end in the {@link PDRTAState}
 	 */
-	private StateStatistic(int[] histoBarSizes, double[] timeProbs,
-			double[] symbolProbs, double tailEndProb) {
+	private StateStatistic(int[] histoBarSizes, double[] timeProbs, double[] symbolProbs, double tailEndProb) {
 
 		histBarSizes = histoBarSizes;
 		this.timeProbs = timeProbs;
@@ -591,8 +542,7 @@ public class StateStatistic {
 	}
 
 	/**
-	 * Calculates the {@link LikelihoodValue} for two given sets of
-	 * {@link TimedTail} counts in a {@link PDRTA}
+	 * Calculates the {@link LikelihoodValue} for two given sets of {@link TimedTail} counts in a {@link PDRTA}
 	 * 
 	 * @param a
 	 *            The {@link PDRTA}
@@ -600,11 +550,9 @@ public class StateStatistic {
 	 *            The first set of {@link TimedTail} counts
 	 * @param v2
 	 *            The second set of {@link TimedTail} counts
-	 * @return The {@link LikelihoodValue} for two given sets of
-	 *         {@link TimedTail} counts
+	 * @return The {@link LikelihoodValue} for two given sets of {@link TimedTail} counts
 	 */
-	private static LikelihoodValue calcInterimLRT(PDRTA a, int[] v1,
-			int[] v2, boolean advancedPooling) {
+	private static LikelihoodValue calcInterimLRT(PDRTA a, int[] v1, int[] v2, boolean advancedPooling) {
 
 		double ratio = 0.0;
 		int parameters = 0;
@@ -618,8 +566,7 @@ public class StateStatistic {
 
 		// Calculating ratio and parameters
 		for (int i = 0; i < (pooled[0].size() - 1); i++) {
-			ratio += calcRatio(pooled[0].get(i), total1, pooled[1].get(i),
-					total2);
+			ratio += calcRatio(pooled[0].get(i), total1, pooled[1].get(i), total2);
 		}
 		parameters = pooled[0].size() - 1;
 
@@ -680,8 +627,7 @@ public class StateStatistic {
 		return ratio;
 	}
 
-	private static TIntArrayList[] poolStats(int[] stat1, int[] stat2,
-			int minData, boolean advanced) {
+	private static TIntArrayList[] poolStats(int[] stat1, int[] stat2, int minData, boolean advanced) {
 
 		assert (stat1.length == stat2.length);
 
@@ -700,8 +646,7 @@ public class StateStatistic {
 			sum2 += stat2[i];
 			if (stat1[i] < minData && stat2[i] < minData) {
 				// Number of sequences is less than minData
-				if (advanced
-						&& (pooled1.get(iPool) >= minData || pooled2.get(iPool) >= minData)) {
+				if (advanced && (pooled1.get(iPool) >= minData || pooled2.get(iPool) >= minData)) {
 					// Close full pool and open new pool
 					iPool = pooled1.size();
 					pooled1.add(stat1[i]);
@@ -736,4 +681,101 @@ public class StateStatistic {
 		pools[1] = pooled2;
 		return pools;
 	}
+
+	@Override
+	public int hashCode() {
+
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + Arrays.hashCode(histBarSizes);
+		result = prime * result + ((intervalProbs == null) ? 0 : intervalProbs.hashCode());
+		result = prime * result + Arrays.hashCode(symbolCount);
+		result = prime * result + Arrays.hashCode(symbolProbs);
+		long temp;
+		temp = Double.doubleToLongBits(tailEndProb);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + Arrays.hashCode(timeCount);
+		result = prime * result + Arrays.hashCode(timeProbs);
+		result = prime * result + totalInCount;
+		result = prime * result + totalOutCount;
+		result = prime * result + (trainMode ? 1231 : 1237);
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final StateStatistic other = (StateStatistic) obj;
+		if (!Arrays.equals(histBarSizes, other.histBarSizes)) {
+			return false;
+		}
+		if (intervalProbs == null) {
+			if (other.intervalProbs != null) {
+				return false;
+			}
+		} else if (!intervalProbs.equals(other.intervalProbs)) {
+			return false;
+		}
+		if (!Arrays.equals(symbolCount, other.symbolCount)) {
+			return false;
+		}
+		if (!Arrays.equals(symbolProbs, other.symbolProbs)) {
+			return false;
+		}
+		if (Double.doubleToLongBits(tailEndProb) != Double.doubleToLongBits(other.tailEndProb)) {
+			return false;
+		}
+		if (!Arrays.equals(timeCount, other.timeCount)) {
+			return false;
+		}
+		if (!Arrays.equals(timeProbs, other.timeProbs)) {
+			return false;
+		}
+		if (totalInCount != other.totalInCount) {
+			return false;
+		}
+		if (totalOutCount != other.totalOutCount) {
+			return false;
+		}
+		if (trainMode != other.trainMode) {
+			return false;
+		}
+		return true;
+	}
+
+	void cleanUp(PDRTAState s) {
+
+		intervalProbs = new TObjectDoubleHashMap<>();
+		for (int i = 0; i < symbolCount.length; i++) {
+			final NavigableMap<Integer, Interval> ins = s.getIntervals(i);
+			for (final Interval in : ins.values()) {
+				intervalProbs.put(in, getTransProb(in));
+			}
+		}
+		symbolProbs = new double[symbolCount.length];
+		for (int i = 0; i < symbolCount.length; i++) {
+			symbolProbs[i] = (double) symbolCount[i] / (double) totalOutCount;
+		}
+		timeProbs = new double[histBarSizes.length];
+		for (int i = 0; i < histBarSizes.length; i++) {
+			timeProbs[i] = (double) timeCount[i] / (double) totalOutCount;
+		}
+		tailEndProb = getTailEndProb();
+		trainMode = false;
+
+		timeCount = null;
+		symbolCount = null;
+		totalOutCount = -1;
+		totalInCount = -1;
+	}
+
 }

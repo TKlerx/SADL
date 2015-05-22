@@ -552,4 +552,56 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 		}
 	}
 
+	@Override
+	public int hashCode() {
+
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((alphabet == null) ? 0 : alphabet.hashCode());
+		result = prime * result + ((alphabetRev == null) ? 0 : alphabetRev.hashCode());
+		result = prime * result + (transformedToInt ? 1231 : 1237);
+		result = prime * result + ((words == null) ? 0 : words.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final TimedInput other = (TimedInput) obj;
+		if (alphabet == null) {
+			if (other.alphabet != null) {
+				return false;
+			}
+		} else if (!alphabet.equals(other.alphabet)) {
+			return false;
+		}
+		if (alphabetRev == null) {
+			if (other.alphabetRev != null) {
+				return false;
+			}
+		} else if (!alphabetRev.equals(other.alphabetRev)) {
+			return false;
+		}
+		if (transformedToInt != other.transformedToInt) {
+			return false;
+		}
+		if (words == null) {
+			if (other.words != null) {
+				return false;
+			}
+		} else if (!words.equals(other.words)) {
+			return false;
+		}
+		return true;
+	}
+
 }

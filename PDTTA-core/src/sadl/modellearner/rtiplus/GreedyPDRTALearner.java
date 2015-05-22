@@ -56,11 +56,14 @@ public class GreedyPDRTALearner extends SimplePDRTALearner {
 
 		System.out.println("*** Performing greedy RTI+ ***");
 		startTime = System.currentTimeMillis();
+
 		final Set<PDRTAState> redStates = new HashSet<>();
 		final Set<PDRTAState> blueStates = new HashSet<>();
+		setRed(a.getRoot(), redStates, blueStates);
+
 		tester.setStateSets(redStates, blueStates);
 		greedyRTIplus(a, redStates, blueStates);
-		in.clear();
+		a.cleanUp();
 		persistFinalResult(a);
 
 		System.out.println("Time: " + getDuration(startTime, System.currentTimeMillis()));
@@ -167,21 +170,17 @@ public class GreedyPDRTALearner extends SimplePDRTALearner {
 				r.refine();
 			} else {
 				if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
-					System.out.println("DO: Color state " + a.getIndex(t.target) + " red");
+					System.out.println("DO: Color state " + t.target.getId() + " red");
 				}
 				setRed(t.target, redStates, blueStates);
 			}
 			if (runMode.compareTo(RunMode.DEBUG) >= 0) {
-				if (!a.isConsistent()) {
-					throw new IllegalStateException("Automaton not consistent!");
-				}
+				a.checkConsistency();
 			}
 			t = getMostVisitedTrans(a, redStates, blueStates);
 		}
 
-		if (!a.isConsistent()) {
-			throw new IllegalStateException("Automaton not consistent!");
-		}
+		a.checkConsistency();
 		assert (a.getNumStates() == redStates.size());
 		if (runMode.compareTo(RunMode.DEBUG_STEPS) >= 0) {
 			try {

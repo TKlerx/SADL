@@ -12,8 +12,6 @@
 package sadl.models.pdrta;
 
 import gnu.trove.list.TDoubleList;
-import gnu.trove.map.TObjectIntMap;
-import gnu.trove.map.hash.TObjectIntHashMap;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -25,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -56,7 +55,6 @@ public class PDRTA implements AutomatonModel, Serializable {
 	private Map<PDRTAState, PDRTAState> invCopyMap;
 
 	private Map<Integer, PDRTAState> states;
-	private TObjectIntMap<PDRTAState> invStates;
 	private PDRTAState root;
 	private final PDRTAInput input;
 
@@ -97,7 +95,6 @@ public class PDRTA implements AutomatonModel, Serializable {
 
 		input = a.input;
 		states = new TreeMap<>();
-		invStates = new TObjectIntHashMap<>(a.getNumStates());
 		copyMap = new HashMap<>();
 		invCopyMap = new HashMap<>();
 		for (final PDRTAState org : a.states.values()) {
@@ -210,8 +207,9 @@ public class PDRTA implements AutomatonModel, Serializable {
 		return states.values();
 	}
 
-	public boolean isConsistent() {
+	public void checkConsistency() {
 
+		// Checking that a path for each sequence exists
 		for (int i = 0; i < input.getAlphSize(); i++) {
 			final Set<Entry<Integer, Interval>> ins = root.getIntervals(i).entrySet();
 			for (final Entry<Integer, Interval> eIn : ins) {
@@ -223,15 +221,42 @@ public class PDRTA implements AutomatonModel, Serializable {
 						assert (target.getInterval(t.getSymbolAlphIndex(), t.getTimeDelay()).getTails().containsValue(t));
 						target = target.getTarget(t);
 						if (target == null) {
-							// TODO Throw exception for more debug information
-							return false;
+							throw new IllegalStateException("The tail (" + input.getSymbol(t.getSymbolAlphIndex()) + "," + t.getTimeDelay()
+									+ ") has no transition!");
 						}
 						t = t.getNextTail();
 					}
 				}
 			}
 		}
-		return true;
+
+		// Checking that number of states in structure is equal to number of states in map
+		int counter = 0;
+		final Set<PDRTAState> seen = new HashSet<>();
+		seen.add(root);
+		final Queue<PDRTAState> q = new LinkedList<>();
+		q.add(root);
+		while (!q.isEmpty()) {
+			final PDRTAState s = q.poll();
+			PDRTAState s2 = states.get(s.getId());
+			if (!s.equals(s2)) {
+				throw new IllegalStateException("State (" + s.getId() + ") is not in map!");
+			}
+			counter++;
+			for (int i = 0; i < input.getAlphSize(); i++) {
+				final Set<Entry<Integer, Interval>> ins = s.getIntervals(i).entrySet();
+				for (final Entry<Integer, Interval> eIn : ins) {
+					s2 = eIn.getValue().getTarget();
+					if (s2 != null && !seen.contains(s2)) {
+						seen.add(s2);
+						q.add(s2);
+					}
+				}
+			}
+		}
+		if (counter != states.size()) {
+			throw new IllegalStateException("Found " + counter + " sates in structure but " + states.size() + " states are in map!");
+		}
 	}
 
 	public int getNumStates() {
@@ -261,14 +286,6 @@ public class PDRTA implements AutomatonModel, Serializable {
 
 	public boolean containsState(PDRTAState s) {
 		return states.containsKey(s);
-	}
-
-	public int getIndex(PDRTAState s) {
-
-		if (invStates.containsKey(s)) {
-			return invStates.get(s);
-		}
-		return -1;
 	}
 
 	public String getSymbol(int idx) {
@@ -325,9 +342,9 @@ public class PDRTA implements AutomatonModel, Serializable {
 							found.add(t);
 						}
 						// Write transition
-						sb.append(getIndex(s));
+						sb.append(s.getId());
 						sb.append(" -> ");
-						sb.append(getIndex(t));
+						sb.append(t.getId());
 						sb.append(" [ label = \"");
 						sb.append(getSymbol(i));
 						sb.append(" [");
@@ -360,7 +377,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 			for (final Entry<Integer, PDRTAState> eS : states.entrySet()) {
 				final PDRTAState s = eS.getValue();
 				if (found.contains(s)) {
-					ap.append(Integer.toString(getIndex(s)));
+					ap.append(Integer.toString(s.getId()));
 					ap.append(" [ xlabel = \"");
 					ap.append(Double.toString(s.getStat().getTailEndProb()));
 					ap.append("\"");
@@ -378,16 +395,14 @@ public class PDRTA implements AutomatonModel, Serializable {
 		}
 	}
 
-	void addState(PDRTAState s, int idx) {
+	int addState(PDRTAState s, int idx) {
 
-		assert (!states.containsValue(s));
 		while (states.containsKey(idx)) {
 			idx++;
 		}
 		final PDRTAState x1 = states.put(idx, s);
-		final int x2 = invStates.put(s, idx);
 		assert (x1 == null);
-		assert (x2 == invStates.getNoEntryValue());
+		return idx;
 	}
 
 	protected boolean hasInput() {
@@ -425,7 +440,6 @@ public class PDRTA implements AutomatonModel, Serializable {
 		copyMap = null;
 		invCopyMap = null;
 		states = new TreeMap<>();
-		invStates = new TObjectIntHashMap<>();
 		root = new PDRTAState(this);
 		createTAPTA();
 	}
@@ -546,10 +560,8 @@ public class PDRTA implements AutomatonModel, Serializable {
 
 	public void removeState(PDRTAState s) {
 
-		if (invStates.containsKey(s)) {
-			final int idx = invStates.remove(s);
-			PDRTAState s2 = states.remove(idx);
-			assert (s.equals(s2));
+		if (states.containsKey(s.getId()) && states.get(s.getId()).equals(s)) {
+			PDRTAState s2 = states.remove(s.getId());
 			if (copyMap != null) {
 				s2 = invCopyMap.remove(s);
 				s2 = copyMap.remove(s2);
@@ -604,10 +616,81 @@ public class PDRTA implements AutomatonModel, Serializable {
 		}
 	}
 
-	@Override
 	public Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord seq) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public int hashCode() {
+
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((copyMap == null) ? 0 : copyMap.hashCode());
+		result = prime * result + ((input == null) ? 0 : input.hashCode());
+		result = prime * result + ((invCopyMap == null) ? 0 : invCopyMap.hashCode());
+		result = prime * result + ((root == null) ? 0 : root.hashCode());
+		result = prime * result + ((states == null) ? 0 : states.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final PDRTA other = (PDRTA) obj;
+		if (copyMap == null) {
+			if (other.copyMap != null) {
+				return false;
+			}
+		} else if (!copyMap.equals(other.copyMap)) {
+			return false;
+		}
+		if (input == null) {
+			if (other.input != null) {
+				return false;
+			}
+		} else if (!input.equals(other.input)) {
+			return false;
+		}
+		if (invCopyMap == null) {
+			if (other.invCopyMap != null) {
+				return false;
+			}
+		} else if (!invCopyMap.equals(other.invCopyMap)) {
+			return false;
+		}
+		if (root == null) {
+			if (other.root != null) {
+				return false;
+			}
+		} else if (!root.equals(other.root)) {
+			return false;
+		}
+		if (states == null) {
+			if (other.states != null) {
+				return false;
+			}
+		} else if (!states.equals(other.states)) {
+			return false;
+		}
+		return true;
+	}
+
+	public void cleanUp() {
+
+		input.clear();
+		for (final PDRTAState s : states.values()) {
+			s.cleanUp();
+		}
 	}
 
 }

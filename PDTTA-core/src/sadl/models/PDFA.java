@@ -11,7 +11,6 @@
 
 package sadl.models;
 
-import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TIntDoubleMap;
@@ -33,7 +32,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.exception.MathArithmeticException;
 import org.apache.commons.math3.fraction.BigFraction;
 import org.apache.commons.math3.util.Precision;
@@ -579,11 +577,5 @@ public class PDFA implements AutomatonModel, Serializable {
 		return finalStateProbabilities.keys();
 	}
 
-
-	@Override
-	public Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord seq) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 }

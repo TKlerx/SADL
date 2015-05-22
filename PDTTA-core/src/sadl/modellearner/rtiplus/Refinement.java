@@ -88,9 +88,9 @@ class Refinement implements Comparable<Refinement> {
 
 		String s = null;
 		if (type == OpType.MERGE) {
-			s = "merge (" + ta.getIndex(source) + ")>-<(" + ta.getIndex(target) + ") to (" + ta.getIndex(source) + ")";
+			s = "merge (" + source.getId() + ")>-<(" + target.getId() + ") to (" + source.getId() + ")";
 		} else if (type == OpType.SPLIT) {
-			s = "split ((" + ta.getIndex(source) + "))---" + ta.getSymbol(symbolAlphIdx) + "-[" + source.getInterval(symbolAlphIdx, time).getBegin() + ","
+			s = "split ((" + source.getId() + "))---" + ta.getSymbol(symbolAlphIdx) + "-[" + source.getInterval(symbolAlphIdx, time).getBegin() + ","
 					+ source.getInterval(symbolAlphIdx, time).getEnd() + "]---> @ " + time;
 			// if (LOG_LVL.compareTo(LogLvl.DEBUG_DEEP) >= 0) {
 			// s = s + "  Distr.: [";
@@ -141,7 +141,7 @@ class Refinement implements Comparable<Refinement> {
 					}
 				} else if (type == OpType.MERGE && r.type == OpType.MERGE) {
 					assert (target.equals(r.target));
-					if (ta.getIndex(source) == ta.getIndex(r.source)) {
+					if (source.getId() == r.source.getId()) {
 						return true;
 					} else {
 						return false;
@@ -186,9 +186,9 @@ class Refinement implements Comparable<Refinement> {
 					}
 				} else {
 					assert (target.equals(r.target));
-					if (ta.getIndex(source) < ta.getIndex(r.source)) {
+					if (source.getId() < r.source.getId()) {
 						return 1;
-					} else if (ta.getIndex(source) > ta.getIndex(r.source)) {
+					} else if (source.getId() > r.source.getId()) {
 						return -1;
 					} else {
 						return 0;

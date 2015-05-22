@@ -367,4 +367,60 @@ public class PDRTAInput implements Serializable {
 		return null;
 	}
 
+	@Override
+	public int hashCode() {
+
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + Arrays.hashCode(histoBorders);
+		result = prime * result + Arrays.hashCode(histoSizes);
+		result = prime * result + ((inp == null) ? 0 : inp.hashCode());
+		result = prime * result + maxTimeDelay;
+		result = prime * result + minTimeDelay;
+		result = prime * result + ((tails == null) ? 0 : tails.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final PDRTAInput other = (PDRTAInput) obj;
+		if (!Arrays.equals(histoBorders, other.histoBorders)) {
+			return false;
+		}
+		if (!Arrays.equals(histoSizes, other.histoSizes)) {
+			return false;
+		}
+		if (inp == null) {
+			if (other.inp != null) {
+				return false;
+			}
+		} else if (!inp.equals(other.inp)) {
+			return false;
+		}
+		if (maxTimeDelay != other.maxTimeDelay) {
+			return false;
+		}
+		if (minTimeDelay != other.minTimeDelay) {
+			return false;
+		}
+		if (tails == null) {
+			if (other.tails != null) {
+				return false;
+			}
+		} else if (!tails.equals(other.tails)) {
+			return false;
+		}
+		return true;
+	}
+
 }
