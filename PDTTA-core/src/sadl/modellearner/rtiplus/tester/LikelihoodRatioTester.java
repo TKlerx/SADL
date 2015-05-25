@@ -12,12 +12,12 @@
 package sadl.modellearner.rtiplus.tester;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
 
 import jsat.distributions.ChiSquared;
 import sadl.modellearner.rtiplus.OperationUtil;
+import sadl.modellearner.rtiplus.StateColoring;
 import sadl.models.pdrta.Interval;
 import sadl.models.pdrta.PDRTA;
 import sadl.models.pdrta.PDRTAState;
@@ -34,8 +34,7 @@ import com.google.common.collect.Multimap;
  */
 public class LikelihoodRatioTester implements OperationTester {
 
-	private Collection<PDRTAState> redStates;
-	private Collection<PDRTAState> blueStates;
+	private StateColoring stateColoring;
 	private final boolean advancedPooling;
 
 	public LikelihoodRatioTester(boolean advancedPooling) {
@@ -48,9 +47,9 @@ public class LikelihoodRatioTester implements OperationTester {
 		final PDRTAState t = s.getTarget(symAlphIdx, time);
 		assert (t != null);
 
-		if (!redStates.contains(s)) {
+		if (!stateColoring.isRed(s)) {
 			throw new IllegalArgumentException("s must be red!");
-		} else if (!blueStates.contains(t)) {
+		} else if (!stateColoring.isBlue(t)) {
 			throw new IllegalArgumentException("Target must be blue!");
 		}
 
@@ -92,14 +91,14 @@ public class LikelihoodRatioTester implements OperationTester {
 	@Override
 	public double testMerge(PDRTAState red, PDRTAState blue) {
 
-		if (!redStates.contains(red)) {
+		if (!stateColoring.isRed(red)) {
 			throw new IllegalArgumentException("First state must be red!");
-		} else if (!blueStates.contains(blue)) {
+		} else if (!stateColoring.isBlue(blue)) {
 			throw new IllegalArgumentException("Second state must be blue!");
 		}
 
 		final PDRTA a = red.getPDRTA();
-		assert (a.equals(blue.getPDRTA()));
+		assert (a == blue.getPDRTA());
 
 		// LRT_FIX Deleted because of new && condition
 		// if (blue.getTotalOutEvents() < minData) {
@@ -107,14 +106,13 @@ public class LikelihoodRatioTester implements OperationTester {
 		// }
 
 		final PDRTA cA = new PDRTA(a);
-		final PDRTAState cR = cA.getCorrespondingCopy(red);
-		final PDRTAState cB = cA.getCorrespondingCopy(blue);
+		final PDRTAState cR = cA.getState(red.getIndex());
+		final PDRTAState cB = cA.getState(blue.getIndex());
 
-		final Collection<PDRTAState> cRedStates = new HashSet<>(redStates);
-		final Collection<PDRTAState> cBlueStates = new HashSet<>(blueStates);
+		final StateColoring cColoring = new StateColoring(stateColoring, cA);
 
 		final LikelihoodValue lv = new LikelihoodValue(0.0, 0);
-		lv.add(OperationUtil.merge(cR, cB, cRedStates, cBlueStates, true, advancedPooling));
+		lv.add(OperationUtil.merge(cR, cB, cColoring, true, advancedPooling));
 
 		// TODO delete. only for debug
 		// System.out.println("p=" + (-2.0 * lv.ratio) + " , df="
@@ -166,9 +164,8 @@ public class LikelihoodRatioTester implements OperationTester {
 	}
 
 	@Override
-	public void setStateSets(Collection<PDRTAState> redStates, Collection<PDRTAState> blueStates) {
-		this.redStates = redStates;
-		this.blueStates = blueStates;
+	public void setColoring(StateColoring sc) {
+		stateColoring = sc;
 	}
 
 }

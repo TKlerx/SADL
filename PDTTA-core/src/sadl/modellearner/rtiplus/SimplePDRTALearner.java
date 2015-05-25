@@ -19,7 +19,6 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -120,11 +119,10 @@ public class SimplePDRTALearner implements ModelLearner {
 
 		System.out.println("*** Performing simple RTI+ ***");
 		startTime = System.currentTimeMillis();
-		final Set<PDRTAState> redStates = new HashSet<>();
-		final Set<PDRTAState> blueStates = new HashSet<>();
-		setRed(a.getRoot(), redStates, blueStates);
-		tester.setStateSets(redStates, blueStates);
-		complete(a, redStates, blueStates);
+		final StateColoring sc = new StateColoring(a);
+		sc.setRed(a.getRoot());
+		tester.setColoring(sc);
+		complete(a, sc);
 		a.cleanUp();
 		persistFinalResult(a);
 
@@ -145,26 +143,26 @@ public class SimplePDRTALearner implements ModelLearner {
 		}
 	}
 
-	protected Transition getMostVisitedTrans(PDRTA a, Collection<PDRTAState> redStates, Collection<PDRTAState> blueStates) {
+	protected Transition getMostVisitedTrans(PDRTA a, StateColoring sc) {
 
 		int maxVisit = 0;
 		Transition trans = null;
-		for (final PDRTAState r : redStates) {
+		for (final PDRTAState r : sc) {
 			for (int i = 0; i < a.getAlphSize(); i++) {
 				final Set<Entry<Integer, Interval>> ins = r.getIntervals(i).entrySet();
 				for (final Entry<Integer, Interval> eIn : ins) {
 					final Interval in = eIn.getValue();
-					assert (in.getTarget() == null || blueStates.contains(in.getTarget()) || redStates.contains(in.getTarget()));
-					if (blueStates.contains(in.getTarget())) {
+					assert (in.getTarget() == null || sc.isBlue(in.getTarget()) || sc.isRed(in.getTarget()));
+					if (sc.isBlue(in.getTarget())) {
 						if (maxVisit < in.getTails().size()) {
 							maxVisit = in.getTails().size();
 							trans = new Transition(a, r, i, in, in.getTarget());
 						} else if (maxVisit == in.getTails().size() && trans != null) {
-							if (trans.source.getId() >= r.getId()) {
-								if (trans.source.getId() > r.getId()) {
+							if (trans.source.getIndex() >= r.getIndex()) {
+								if (trans.source.getIndex() > r.getIndex()) {
 									trans = new Transition(a, r, i, in, in.getTarget());
-								} else if (trans.target.getId() >= in.getTarget().getId()) {
-									if (trans.target.getId() > in.getTarget().getId()) {
+								} else if (trans.target.getIndex() >= in.getTarget().getIndex()) {
+									if (trans.target.getIndex() > in.getTarget().getIndex()) {
 										trans = new Transition(a, r, i, in, in.getTarget());
 									} else if (trans.symAlphIdx >= i) {
 										if (trans.symAlphIdx > i) {
@@ -184,22 +182,22 @@ public class SimplePDRTALearner implements ModelLearner {
 	}
 
 	@SuppressWarnings("null")
-	protected NavigableSet<Refinement> getMergeRefs(Transition t, Collection<PDRTAState> redStates, Collection<PDRTAState> blueStates) {
+	protected NavigableSet<Refinement> getMergeRefs(Transition t, StateColoring sc) {
 
 		ProgressBarPrinter pbp = null;
 		if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
-			pbp = new ProgressBarPrinter(redStates.size());
+			pbp = new ProgressBarPrinter(sc.getNumRedStates());
 		}
 
 		final NavigableSet<Refinement> refs = new TreeSet<>();
-		for (final PDRTAState r : redStates) {
+		for (final PDRTAState r : sc) {
 			double score = tester.testMerge(r, t.target);
 			if (runMode.compareTo(RunMode.DEBUG_DEEP) >= 0) {
-				System.out.println("Score: " + score + " (MERGE " + r.getId() + " with " + t.target.getId() + ")");
+				System.out.println("Score: " + score + " (MERGE " + r.getIndex() + " with " + t.target.getIndex() + ")");
 			}
 			if (score > significance && score <= 1.0) {
 				score = (score - significance) / (1.0 - significance);
-				final Refinement ref = new Refinement(r, t.target, score, redStates, blueStates);
+				final Refinement ref = new Refinement(r, t.target, score, sc);
 				refs.add(ref);
 			}
 			if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
@@ -210,7 +208,7 @@ public class SimplePDRTALearner implements ModelLearner {
 	}
 
 	@SuppressWarnings("null")
-	protected NavigableSet<Refinement> getSplitRefs(Transition t, Collection<PDRTAState> redStates, Collection<PDRTAState> blueStates) {
+	protected NavigableSet<Refinement> getSplitRefs(Transition t, StateColoring sc) {
 
 		ProgressBarPrinter pbp = null;
 		if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
@@ -226,11 +224,11 @@ public class SimplePDRTALearner implements ModelLearner {
 				final int splitTime = (int) Math.rint(((cur - last) - 1) / 2.0) + last;
 				double score = tester.testSplit(t.source, t.symAlphIdx, splitTime);
 				if (runMode.compareTo(RunMode.DEBUG_DEEP) >= 0) {
-					System.out.println("Score: " + score + " (SPLIT " + t.source.getId() + " @ (" + t.ta.getSymbol(t.symAlphIdx) + "," + splitTime + "))");
+					System.out.println("Score: " + score + " (SPLIT " + t.source.getIndex() + " @ (" + t.ta.getSymbol(t.symAlphIdx) + "," + splitTime + "))");
 				}
 				if (score < significance && score >= 0) {
 					score = (significance - score) / significance;
-					final Refinement ref = new Refinement(t.source, t.symAlphIdx, splitTime, score, redStates, blueStates);
+					final Refinement ref = new Refinement(t.source, t.symAlphIdx, splitTime, score, sc);
 					refs.add(ref);
 				}
 				if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
@@ -242,11 +240,11 @@ public class SimplePDRTALearner implements ModelLearner {
 		return refs;
 	}
 
-	protected void complete(PDRTA a, Collection<PDRTAState> redsC, Collection<PDRTAState> bluesC) {
+	protected void complete(PDRTA a, StateColoring sc) {
 
 		int counter = 0;
 		Transition t;
-		while ((t = getMostVisitedTrans(a, redsC, bluesC)) != null) {
+		while ((t = getMostVisitedTrans(a, sc)) != null) {
 			if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
 				if (runMode.compareTo(RunMode.DEBUG_STEPS) >= 0) {
 					try {
@@ -264,7 +262,7 @@ public class SimplePDRTALearner implements ModelLearner {
 				if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
 					System.out.print("Checking data distribution... ");
 				}
-				if (checkDistribution(t.source, t.symAlphIdx, distrCheckType, redsC, bluesC)) {
+				if (checkDistribution(t.source, t.symAlphIdx, distrCheckType, sc)) {
 					if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
 						System.out.print("Splited interval because of data distribution into:  ");
 						final NavigableMap<Integer, Interval> ins = t.source.getIntervals(t.symAlphIdx);
@@ -275,7 +273,7 @@ public class SimplePDRTALearner implements ModelLearner {
 						}
 						System.out.println();
 					}
-					t = getMostVisitedTrans(a, redsC, bluesC);
+					t = getMostVisitedTrans(a, sc);
 					continue;
 				} else if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
 					System.out.println("No splits because of data distributuion were perfomed in:  " + t.in.toString());
@@ -285,7 +283,7 @@ public class SimplePDRTALearner implements ModelLearner {
 			if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
 				System.out.print("Testing splits...");
 			}
-			final SortedSet<Refinement> splits = getSplitRefs(t, redsC, bluesC);
+			final SortedSet<Refinement> splits = getSplitRefs(t, sc);
 			if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
 				System.out.println("\nFound " + splits.size() + " possible splits.");
 			}
@@ -299,10 +297,12 @@ public class SimplePDRTALearner implements ModelLearner {
 				if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
 					System.out.print("Testing merges...");
 				}
-				final SortedSet<Refinement> merges = getMergeRefs(t, redsC, bluesC);
+				final SortedSet<Refinement> merges = getMergeRefs(t, sc);
 				if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
 					System.out.println("\nFound " + merges.size() + " possible merges.");
 				}
+				// TODO remove
+				a.checkConsistency();
 				if (merges.size() > 0) {
 					final Refinement r = merges.last();
 					if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
@@ -311,9 +311,9 @@ public class SimplePDRTALearner implements ModelLearner {
 					r.refine();
 				} else {
 					if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
-						System.out.println("#" + counter + " DO: Color state " + t.target.getId() + " red");
+						System.out.println("#" + counter + " DO: Color state " + t.target.getIndex() + " red");
 					}
-					setRed(t.target, redsC, bluesC);
+					sc.setRed(t.target);
 				}
 			}
 
@@ -322,7 +322,7 @@ public class SimplePDRTALearner implements ModelLearner {
 			}
 		}
 
-		assert (a.getNumStates() == redsC.size());
+		assert (a.getNumStates() == sc.getNumRedStates());
 
 		a.checkConsistency();
 		if (runMode.compareTo(RunMode.DEBUG_STEPS) >= 0) {
@@ -393,7 +393,7 @@ public class SimplePDRTALearner implements ModelLearner {
 		}
 	}
 
-	public boolean checkDistribution(PDRTAState s, int alphIdx, int type, Collection<PDRTAState> redStates, Collection<PDRTAState> blueStates) {
+	public boolean checkDistribution(PDRTAState s, int alphIdx, int type, StateColoring sc) {
 
 		final NavigableMap<Integer, Interval> ins = s.getIntervals(alphIdx);
 		if (ins.size() != 1) {
@@ -468,31 +468,10 @@ public class SimplePDRTALearner implements ModelLearner {
 		}
 
 		for (int i = 0; i < splits.size(); i++) {
-			OperationUtil.split(s, alphIdx, splits.get(i), redStates, blueStates);
+			OperationUtil.split(s, alphIdx, splits.get(i), sc);
 		}
 
 		return true;
-	}
-
-	public void setRed(PDRTAState s, Collection<PDRTAState> redsC, Collection<PDRTAState> bluesC) {
-
-		if (redsC.contains(s)) {
-			return;
-		} else {
-			redsC.add(s);
-			bluesC.remove(s);
-			final PDRTA a = s.getPDRTA();
-			for (int i = 0; i < a.getAlphSize(); i++) {
-				final Set<Entry<Integer, Interval>> ins = s.getIntervals(i).entrySet();
-				for (final Entry<Integer, Interval> eIn : ins) {
-					final PDRTAState t = eIn.getValue().getTarget();
-					if (t != null && !redsC.contains(t)) {
-						assert (a.containsState(t));
-						bluesC.add(t);
-					}
-				}
-			}
-		}
 	}
 
 	class Transition {
@@ -502,8 +481,8 @@ public class SimplePDRTALearner implements ModelLearner {
 		int symAlphIdx;
 
 		Transition(PDRTA a, PDRTAState s, int alphIdx, Interval i, PDRTAState t) {
-			assert (i.getTarget().equals(t));
-			assert (s.getInterval(alphIdx, i.getEnd()).equals(i));
+			assert (i.getTarget() == t);
+			assert (s.getInterval(alphIdx, i.getEnd()) == i);
 			ta = a;
 			source = s;
 			symAlphIdx = alphIdx;
@@ -513,8 +492,8 @@ public class SimplePDRTALearner implements ModelLearner {
 
 		@Override
 		public String toString() {
-			final String s = "((" + source.getId() + "))---" + ta.getSymbol(symAlphIdx) + "-[" + in.getBegin() + "," + in.getEnd() + "]--->((" + target.getId()
-					+ "))";
+			final String s = "((" + source.getIndex() + "))---" + ta.getSymbol(symAlphIdx) + "-[" + in.getBegin() + "," + in.getEnd() + "]--->(("
+					+ target.getIndex() + "))";
 			return s;
 		}
 	}

@@ -12,16 +12,12 @@
 package sadl.modellearner.rtiplus;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.NavigableSet;
-import java.util.Set;
 
 import sadl.input.TimedInput;
 import sadl.interfaces.Model;
 import sadl.models.pdrta.PDRTA;
 import sadl.models.pdrta.PDRTAInput;
-import sadl.models.pdrta.PDRTAState;
 
 import com.google.common.collect.TreeMultimap;
 
@@ -57,12 +53,12 @@ public class GreedyPDRTALearner extends SimplePDRTALearner {
 		System.out.println("*** Performing greedy RTI+ ***");
 		startTime = System.currentTimeMillis();
 
-		final Set<PDRTAState> redStates = new HashSet<>();
-		final Set<PDRTAState> blueStates = new HashSet<>();
-		setRed(a.getRoot(), redStates, blueStates);
+		final StateColoring sc = new StateColoring(a);
+		sc.setRed(a.getRoot());
 
-		tester.setStateSets(redStates, blueStates);
-		greedyRTIplus(a, redStates, blueStates);
+		tester.setColoring(sc);
+		;
+		greedyRTIplus(a, sc);
 		a.cleanUp();
 		persistFinalResult(a);
 
@@ -73,10 +69,10 @@ public class GreedyPDRTALearner extends SimplePDRTALearner {
 	}
 
 	@SuppressWarnings("null")
-	private void greedyRTIplus(PDRTA a, Collection<PDRTAState> redStates, Collection<PDRTAState> blueStates) {
+	private void greedyRTIplus(PDRTA a, StateColoring sc) {
 
 		int counter = 0;
-		Transition t = getMostVisitedTrans(a, redStates, blueStates);
+		Transition t = getMostVisitedTrans(a, sc);
 		while (t != null) {
 			if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
 				if (runMode.compareTo(RunMode.DEBUG_STEPS) >= 0) {
@@ -92,12 +88,12 @@ public class GreedyPDRTALearner extends SimplePDRTALearner {
 			}
 			counter++;
 
-			final NavigableSet<Refinement> splits = getSplitRefs(t, redStates, blueStates).descendingSet();
+			final NavigableSet<Refinement> splits = getSplitRefs(t, sc).descendingSet();
 			if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
 				System.out.println("\nFound " + splits.size() + " possible splits.");
 				System.out.print("Testing merges...");
 			}
-			final NavigableSet<Refinement> merges = getMergeRefs(t, redStates, blueStates).descendingSet();
+			final NavigableSet<Refinement> merges = getMergeRefs(t, sc).descendingSet();
 			if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
 				System.out.println("\nFound " + merges.size() + " possible merges.");
 				System.out.print("Calculating sizes for splits...");
@@ -115,12 +111,11 @@ public class GreedyPDRTALearner extends SimplePDRTALearner {
 				if (c >= maxSplitsToSearch) {
 					break;
 				}
-				final Collection<PDRTAState> redsC = new HashSet<>(redStates);
-				final Collection<PDRTAState> bluesC = new HashSet<>(blueStates);
 				final PDRTA copy = new PDRTA(a);
-				final Refinement cR = new Refinement(copy, r, redsC, bluesC);
+				final StateColoring cColoring = new StateColoring(sc, copy);
+				final Refinement cR = new Refinement(copy, r, cColoring);
 				cR.refine();
-				complete(copy, redsC, bluesC);
+				complete(copy, cColoring);
 				// TODO Use AIC
 				final int size = copy.getSize();
 				all.put((double) size, r);
@@ -143,12 +138,11 @@ public class GreedyPDRTALearner extends SimplePDRTALearner {
 				if (c >= maxMergesToSearch) {
 					break;
 				}
-				final Collection<PDRTAState> redsC = new HashSet<>(redStates);
-				final Collection<PDRTAState> bluesC = new HashSet<>(blueStates);
 				final PDRTA copy = new PDRTA(a);
-				final Refinement cR = new Refinement(copy, r, redsC, bluesC);
+				final StateColoring cColoring = new StateColoring(sc, copy);
+				final Refinement cR = new Refinement(copy, r, cColoring);
 				cR.refine();
-				complete(copy, redsC, bluesC);
+				complete(copy, cColoring);
 				// TODO Use AIC
 				final int size = copy.getSize();
 				all.put((double) size, r);
@@ -170,18 +164,18 @@ public class GreedyPDRTALearner extends SimplePDRTALearner {
 				r.refine();
 			} else {
 				if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
-					System.out.println("DO: Color state " + t.target.getId() + " red");
+					System.out.println("DO: Color state " + t.target.getIndex() + " red");
 				}
-				setRed(t.target, redStates, blueStates);
+				sc.setRed(t.target);
 			}
 			if (runMode.compareTo(RunMode.DEBUG) >= 0) {
 				a.checkConsistency();
 			}
-			t = getMostVisitedTrans(a, redStates, blueStates);
+			t = getMostVisitedTrans(a, sc);
 		}
 
 		a.checkConsistency();
-		assert (a.getNumStates() == redStates.size());
+		assert (a.getNumStates() == sc.getNumRedStates());
 		if (runMode.compareTo(RunMode.DEBUG_STEPS) >= 0) {
 			try {
 				draw(a, true, directory + "steps/step_" + counter + ".png");

@@ -21,7 +21,6 @@ import java.io.Serializable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -51,11 +50,8 @@ public class PDRTA implements AutomatonModel, Serializable {
 
 	private static final int minData = 10;
 
-	private Map<PDRTAState, PDRTAState> copyMap;
-	private Map<PDRTAState, PDRTAState> invCopyMap;
-
-	private Map<Integer, PDRTAState> states;
-	private PDRTAState root;
+	private final Map<Integer, PDRTAState> states;
+	private final PDRTAState root;
 	private final PDRTAInput input;
 
 	public static PDRTA parse(File file) throws IOException {
@@ -91,29 +87,29 @@ public class PDRTA implements AutomatonModel, Serializable {
 		return new PDRTA(trans, stats, in);
 	}
 
+	public PDRTAState getState(int index) {
+		return states.get(index);
+	}
+
 	public PDRTA(PDRTA a) {
 
 		input = a.input;
 		states = new TreeMap<>();
-		copyMap = new HashMap<>();
-		invCopyMap = new HashMap<>();
 		for (final PDRTAState org : a.states.values()) {
-			final PDRTAState copy = new PDRTAState(org, this);
-			copyMap.put(org, copy);
-			invCopyMap.put(copy, org);
+			new PDRTAState(org, this);
 		}
 		for (final PDRTAState org : a.states.values()) {
 			for (int i = 0; i < input.getAlphSize(); i++) {
 				final Set<Entry<Integer, Interval>> ins = org.getIntervals(i).entrySet();
 				for (final Entry<Integer, Interval> eIn : ins) {
-					final Interval cIn = copyMap.get(org).getInterval(i, eIn.getKey());
+					final Interval cIn = getState(org.getIndex()).getInterval(i, eIn.getKey());
 					assert (cIn.getBegin() == eIn.getValue().getBegin());
 					assert (cIn.getEnd() == eIn.getValue().getEnd());
 					assert (cIn.getTails().size() == eIn.getValue().getTails().size());
 					if (eIn.getValue().getTarget() != null) {
-						assert (cIn.getTarget().equals(eIn.getValue().getTarget()));
-						cIn.setTarget(copyMap.get(eIn.getValue().getTarget()));
-						assert (!cIn.getTarget().equals(eIn.getValue().getTarget()));
+						assert (cIn.getTarget() == eIn.getValue().getTarget());
+						cIn.setTarget(getState(eIn.getValue().getTarget().getIndex()));
+						assert (cIn.getTarget() != eIn.getValue().getTarget());
 					} else {
 						assert (cIn.getTarget() == null);
 					}
@@ -121,7 +117,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 			}
 		}
 
-		root = copyMap.get(a.root);
+		root = getState(a.root.getIndex());
 
 		assert (states.size() == a.states.size());
 
@@ -194,15 +190,6 @@ public class PDRTA implements AutomatonModel, Serializable {
 		return res;
 	}
 
-	public PDRTAState getCorrespondingCopy(PDRTAState org) {
-
-		if (copyMap == null) {
-			throw new IllegalStateException("This automaton is not a copy!");
-		} else {
-			return copyMap.get(org);
-		}
-	}
-
 	public Collection<PDRTAState> getStates() {
 		return states.values();
 	}
@@ -216,14 +203,15 @@ public class PDRTA implements AutomatonModel, Serializable {
 				final Set<Entry<Integer, TimedTail>> tails = eIn.getValue().getTails().entries();
 				for (final Entry<Integer, TimedTail> eTail : tails) {
 					TimedTail t = eTail.getValue();
-					PDRTAState target = root;
+					PDRTAState source = root, target;
 					while (t != null) {
-						assert (target.getInterval(t.getSymbolAlphIndex(), t.getTimeDelay()).getTails().containsValue(t));
-						target = target.getTarget(t);
+						assert (source.getInterval(t.getSymbolAlphIndex(), t.getTimeDelay()).getTails().containsValue(t));
+						target = source.getTarget(t);
 						if (target == null) {
 							throw new IllegalStateException("The tail (" + input.getSymbol(t.getSymbolAlphIndex()) + "," + t.getTimeDelay()
-									+ ") has no transition!");
+									+ ") has no transition from state ((" + source.getIndex() + "))!");
 						}
+						source = target;
 						t = t.getNextTail();
 					}
 				}
@@ -238,9 +226,9 @@ public class PDRTA implements AutomatonModel, Serializable {
 		q.add(root);
 		while (!q.isEmpty()) {
 			final PDRTAState s = q.poll();
-			PDRTAState s2 = states.get(s.getId());
-			if (!s.equals(s2)) {
-				throw new IllegalStateException("State (" + s.getId() + ") is not in map!");
+			PDRTAState s2 = states.get(s.getIndex());
+			if (s != s2) {
+				throw new IllegalStateException("State (" + s.getIndex() + ") is not in map!");
 			}
 			counter++;
 			for (int i = 0; i < input.getAlphSize(); i++) {
@@ -285,7 +273,13 @@ public class PDRTA implements AutomatonModel, Serializable {
 	}
 
 	public boolean containsState(PDRTAState s) {
-		return states.containsKey(s);
+
+		final PDRTAState s2 = states.get(s.getIndex());
+		if (s2 != null && s == s2) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	public String getSymbol(int idx) {
@@ -342,9 +336,9 @@ public class PDRTA implements AutomatonModel, Serializable {
 							found.add(t);
 						}
 						// Write transition
-						sb.append(s.getId());
+						sb.append(s.getIndex());
 						sb.append(" -> ");
-						sb.append(t.getId());
+						sb.append(t.getIndex());
 						sb.append(" [ label = \"");
 						sb.append(getSymbol(i));
 						sb.append(" [");
@@ -377,7 +371,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 			for (final Entry<Integer, PDRTAState> eS : states.entrySet()) {
 				final PDRTAState s = eS.getValue();
 				if (found.contains(s)) {
-					ap.append(Integer.toString(s.getId()));
+					ap.append(Integer.toString(s.getIndex()));
 					ap.append(" [ xlabel = \"");
 					ap.append(Double.toString(s.getStat().getTailEndProb()));
 					ap.append("\"");
@@ -432,13 +426,6 @@ public class PDRTA implements AutomatonModel, Serializable {
 	public PDRTA(PDRTAInput in) {
 
 		input = in;
-		init();
-	}
-
-	private void init() {
-
-		copyMap = null;
-		invCopyMap = null;
 		states = new TreeMap<>();
 		root = new PDRTAState(this);
 		createTAPTA();
@@ -446,8 +433,6 @@ public class PDRTA implements AutomatonModel, Serializable {
 
 	private PDRTA(TreeMultimap<Integer, String> trans, TreeMultimap<Integer, String> stats, PDRTAInput inp) {
 
-		copyMap = null;
-		invCopyMap = null;
 		input = inp;
 		states = new TreeMap<>();
 
@@ -560,13 +545,8 @@ public class PDRTA implements AutomatonModel, Serializable {
 
 	public void removeState(PDRTAState s) {
 
-		if (states.containsKey(s.getId()) && states.get(s.getId()).equals(s)) {
-			PDRTAState s2 = states.remove(s.getId());
-			if (copyMap != null) {
-				s2 = invCopyMap.remove(s);
-				s2 = copyMap.remove(s2);
-				assert (s.equals(s2));
-			}
+		if (states.containsKey(s.getIndex()) && states.get(s.getIndex()) == s) {
+			states.remove(s.getIndex());
 		} else {
 			throw new IllegalArgumentException("The given state is not part of the PDRTA!");
 		}
@@ -626,9 +606,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((copyMap == null) ? 0 : copyMap.hashCode());
 		result = prime * result + ((input == null) ? 0 : input.hashCode());
-		result = prime * result + ((invCopyMap == null) ? 0 : invCopyMap.hashCode());
 		result = prime * result + ((root == null) ? 0 : root.hashCode());
 		result = prime * result + ((states == null) ? 0 : states.hashCode());
 		return result;
@@ -647,25 +625,11 @@ public class PDRTA implements AutomatonModel, Serializable {
 			return false;
 		}
 		final PDRTA other = (PDRTA) obj;
-		if (copyMap == null) {
-			if (other.copyMap != null) {
-				return false;
-			}
-		} else if (!copyMap.equals(other.copyMap)) {
-			return false;
-		}
 		if (input == null) {
 			if (other.input != null) {
 				return false;
 			}
 		} else if (!input.equals(other.input)) {
-			return false;
-		}
-		if (invCopyMap == null) {
-			if (other.invCopyMap != null) {
-				return false;
-			}
-		} else if (!invCopyMap.equals(other.invCopyMap)) {
 			return false;
 		}
 		if (root == null) {

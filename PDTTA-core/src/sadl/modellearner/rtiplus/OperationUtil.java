@@ -11,7 +11,6 @@
 
 package sadl.modellearner.rtiplus;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -19,8 +18,8 @@ import java.util.Set;
 import sadl.modellearner.rtiplus.tester.LikelihoodValue;
 import sadl.models.pdrta.Interval;
 import sadl.models.pdrta.PDRTA;
-import sadl.models.pdrta.StateStatistic;
 import sadl.models.pdrta.PDRTAState;
+import sadl.models.pdrta.StateStatistic;
 import sadl.models.pdrta.TimedTail;
 
 /**
@@ -34,32 +33,31 @@ public class OperationUtil {
 		// Do not use
 	}
 
-	private static void preMerge(PDRTAState s1, PDRTAState s2, Collection<PDRTAState> red, Collection<PDRTAState> blue) {
+	private static void preMerge(PDRTAState s1, PDRTAState s2, StateColoring sc) {
 
-		if (red.contains(s1)) {
+		if (sc.isRed(s1)) {
 			final PDRTA a = s1.getPDRTA();
 			// Let transitions pointing to second state point to first state
-			for (final PDRTAState s : red) {
+			for (final PDRTAState s : sc) {
 				for (int i = 0; i < a.getAlphSize(); i++) {
 					final Set<Entry<Integer, Interval>> ins = s.getIntervals(i).entrySet();
 					for (final Entry<Integer, Interval> eIn : ins) {
 						final PDRTAState t = eIn.getValue().getTarget();
-						if (t != null && t.equals(s2)) {
+						if (t != null && t == s2) {
 							eIn.getValue().setTarget(s1);
 						}
 					}
 				}
 			}
-			// Merge neighbored intervals with same source and target (undo
-			// previous splits)
-			for (final PDRTAState s : red) {
+			// Merge neighbored intervals with same source and target (undo previous splits)
+			for (final PDRTAState s : sc) {
 				for (int i = 0; i < a.getAlphSize(); i++) {
 					final Iterator<Entry<Integer, Interval>> it = s.getIntervals(i).descendingMap().entrySet().iterator();
 					if (it.hasNext()) {
 						Interval neighbor = it.next().getValue();
 						while (it.hasNext()) {
 							final Interval in = it.next().getValue();
-							if (neighbor.getTarget() != null && in.getTarget() != null && neighbor.getTarget().equals(s1) && in.getTarget().equals(s1)) {
+							if (neighbor.getTarget() != null && in.getTarget() != null && neighbor.getTarget() == s1 && in.getTarget() == s1) {
 								assert (neighbor.getBegin() - 1 == in.getEnd());
 								neighbor.merge(in);
 								it.remove();
@@ -77,7 +75,7 @@ public class OperationUtil {
 				for (final Entry<Integer, Interval> eIn : iRs) {
 					assert (eIn.getValue().getBegin() == s2.getInterval(i, eIn.getKey()).getBegin());
 					if (eIn.getValue().getEnd() < s2.getInterval(i, eIn.getKey()).getEnd()) {
-						split(s2, i, eIn.getKey(), red, blue);
+						split(s2, i, eIn.getKey(), sc);
 					}
 				}
 				assert (s2.getIntervals(i).size() == s1.getIntervals(i).size());
@@ -95,12 +93,11 @@ public class OperationUtil {
 	 * @return LikelihoodValue
 	 */
 	@SuppressWarnings("null")
-	public static LikelihoodValue merge(PDRTAState s1, PDRTAState s2, Collection<PDRTAState> red, Collection<PDRTAState> blue, boolean test,
-			boolean advancedPooling) {
+	public static LikelihoodValue merge(PDRTAState s1, PDRTAState s2, StateColoring sc, boolean test, boolean advancedPooling) {
 
 		final PDRTA a = s1.getPDRTA();
-		assert (a.equals(s2.getPDRTA()));
-		assert (!red.contains(s2));
+		assert (a == s2.getPDRTA());
+		assert (!sc.isRed(s2));
 		a.removeState(s2);
 
 		LikelihoodValue lv = null;
@@ -110,7 +107,7 @@ public class OperationUtil {
 			lv.add(StateStatistic.getLikelihoodRatioTime(s1, s2, advancedPooling));
 		}
 
-		preMerge(s1, s2, red, blue);
+		preMerge(s1, s2, sc);
 
 		// Merge intervals
 		Iterator<Entry<Integer, Interval>> it1, it2;
@@ -131,11 +128,11 @@ public class OperationUtil {
 							out2 = in1.getTarget().getStat().getTotalOutEvents();
 							// Abort recursion when s1 is in a subtree and not
 							// enough data is available for testing
-							if (red.contains(in1.getTarget()) || !(out1 < PDRTA.getMinData() && out2 < PDRTA.getMinData())) {
-								lv.add(merge(in1.getTarget(), in2.getTarget(), red, blue, test, advancedPooling));
+							if (sc.isRed(in1.getTarget()) || !(out1 < PDRTA.getMinData() && out2 < PDRTA.getMinData())) {
+								lv.add(merge(in1.getTarget(), in2.getTarget(), sc, test, advancedPooling));
 							}
 						} else {
-							merge(in1.getTarget(), in2.getTarget(), red, blue, test, advancedPooling);
+							merge(in1.getTarget(), in2.getTarget(), sc, test, advancedPooling);
 						}
 						in1.getTails().putAll(in2.getTails());
 					} else {
@@ -143,8 +140,8 @@ public class OperationUtil {
 						// Move subtree of s2 to s1
 						assert (s1.getIntervals(i).containsKey(in2.getEnd()));
 						s1.getIntervals(i).put(in2.getEnd(), in2);
-						if (red.contains(s1)) {
-							blue.add(in2.getTarget());
+						if (sc.isRed(s1)) {
+							sc.setBlue(in2.getTarget());
 						}
 					}
 				}
@@ -155,7 +152,7 @@ public class OperationUtil {
 		return lv;
 	}
 
-	static void split(PDRTAState s, int symAlphIdx, int time, Collection<PDRTAState> red, Collection<PDRTAState> blue) {
+	static void split(PDRTAState s, int symAlphIdx, int time, StateColoring sc) {
 
 		final PDRTA a = s.getPDRTA();
 
@@ -164,18 +161,18 @@ public class OperationUtil {
 		final Interval newIn = in.split(time);
 		s.getIntervals(symAlphIdx).put(newIn.getEnd(), newIn);
 
-		assert (!newIn.equals(in));
+		assert (newIn == in);
 		assert (newIn.getTarget() == null);
 		assert (newIn.getEnd() == in.getBegin() - 1);
-		assert (s.getInterval(symAlphIdx, time).equals(newIn));
+		assert (s.getInterval(symAlphIdx, time) == newIn);
 
 		if (!newIn.isEmpty()) {
 			if (!in.isEmpty()) {
 				// Create new sub APTA for first interval
 				PDRTAState state = a.createState();
 				newIn.setTarget(state);
-				if (red.contains(s)) {
-					blue.add(state);
+				if (sc.isRed(s)) {
+					sc.setBlue(state);
 				}
 				Set<Entry<Integer, TimedTail>> tails = newIn.getTails().entries();
 				for (final Entry<Integer, TimedTail> e : tails) {
@@ -186,8 +183,8 @@ public class OperationUtil {
 				a.removeSubAPTA(in.getTarget());
 				state = a.createState();
 				in.setTarget(state);
-				if (red.contains(s)) {
-					blue.add(state);
+				if (sc.isRed(s)) {
+					sc.setBlue(state);
 				}
 				tails = in.getTails().entries();
 				for (final Entry<Integer, TimedTail> e : tails) {

@@ -11,8 +11,7 @@
 
 package sadl.modellearner.rtiplus.tester;
 
-import java.util.Collection;
-
+import sadl.modellearner.rtiplus.StateColoring;
 import sadl.models.pdrta.PDRTAState;
 
 /**
@@ -21,12 +20,6 @@ import sadl.models.pdrta.PDRTAState;
  *
  */
 public class NaiveLikelihoodRatioTester implements OperationTester {
-
-	@Override
-	public void setStateSets(Collection<PDRTAState> redStates, Collection<PDRTAState> blueStates) {
-		// TODO Auto-generated method stub
-
-	}
 
 	@Override
 	public double testSplit(PDRTAState red, int symAlphIdx, int time) {
@@ -38,6 +31,12 @@ public class NaiveLikelihoodRatioTester implements OperationTester {
 	public double testMerge(PDRTAState red, PDRTAState blue) {
 		// TODO Auto-generated method stub
 		return 0;
+	}
+
+	@Override
+	public void setColoring(StateColoring sc) {
+		// TODO Auto-generated method stub
+
 	}
 
 }

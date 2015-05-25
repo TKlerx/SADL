@@ -45,7 +45,7 @@ public class RtiPlusTest {
 			final TimedInput ti1 = TimedInput.parse(Paths.get(this.getClass().getResource("/pdrta/test_" + i + ".inp").toURI()));
 			final TimedInput ti2 = SerializationUtils.clone(ti1);
 
-			final SimplePDRTALearner l1 = new SimplePDRTALearner(0.05f, "4", 0, 1, RunMode.DEBUG_STEPS, "/home/fabian/sadl_rti_test/" + i + "/");
+			final SimplePDRTALearner l1 = new SimplePDRTALearner(0.05f, "4", 0, 1, RunMode.DEBUG_DEEP, "/home/fabi/sadl_rti_test/" + i + "/");
 			final Model p1 = l1.train(ti1);
 
 			final SimplePDRTALearner l2 = new SimplePDRTALearner(0.05f, "4", 0, 1, RunMode.SILENT, null);

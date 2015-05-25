@@ -11,8 +11,7 @@
 
 package sadl.modellearner.rtiplus.tester;
 
-import java.util.Collection;
-
+import sadl.modellearner.rtiplus.StateColoring;
 import sadl.models.pdrta.PDRTAState;
 
 /**
@@ -22,7 +21,7 @@ import sadl.models.pdrta.PDRTAState;
  */
 public interface OperationTester {
 
-	void setStateSets(Collection<PDRTAState> redStates, Collection<PDRTAState> blueStates);
+	void setColoring(StateColoring sc);
 
 	double testSplit(PDRTAState red, int symAlphIdx, int time);
 

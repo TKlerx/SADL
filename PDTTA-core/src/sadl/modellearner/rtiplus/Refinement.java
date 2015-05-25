@@ -11,8 +11,6 @@
 
 package sadl.modellearner.rtiplus;
 
-import java.util.Collection;
-
 import sadl.models.pdrta.PDRTA;
 import sadl.models.pdrta.PDRTAState;
 
@@ -35,42 +33,40 @@ class Refinement implements Comparable<Refinement> {
 	private OpType type;
 	private final double score;
 
-	private final Collection<PDRTAState> reds;
-	private final Collection<PDRTAState> blues;
+	private final StateColoring stateColoring;
 
-	Refinement(PDRTAState s, PDRTAState t, double sc, Collection<PDRTAState> redStates, Collection<PDRTAState> blueStates) {
+	Refinement(PDRTAState s, PDRTAState t, double score, StateColoring sc) {
 
-		this(s, t, -1, -1, sc, redStates, blueStates);
-		assert (redStates.contains(s));
-		assert (blueStates.contains(t));
+		this(s, t, -1, -1, score, sc);
+		assert (sc.isRed(s));
+		assert (sc.isBlue(t));
 		type = OpType.MERGE;
 	}
 
-	Refinement(PDRTAState s, int alphIdx, int t, double sc, Collection<PDRTAState> redStates, Collection<PDRTAState> blueStates) {
+	Refinement(PDRTAState s, int alphIdx, int t, double score, StateColoring sc) {
 
-		this(s, null, alphIdx, t, sc, redStates, blueStates);
-		assert (redStates.contains(s));
+		this(s, null, alphIdx, t, score, sc);
+		assert (sc.isRed(s));
 		assert (s.getInterval(alphIdx, t) != null);
 		type = OpType.SPLIT;
 	}
 
-	private Refinement(PDRTAState s, PDRTAState t, int alphIdx, int ti, double sc, Collection<PDRTAState> redStates, Collection<PDRTAState> blueStates) {
+	private Refinement(PDRTAState s, PDRTAState t, int alphIdx, int ti, double sco, StateColoring sc) {
 
 		source = s;
 		target = t;
 		ta = s.getPDRTA();
-		score = sc;
+		score = sco;
 		symbolAlphIdx = alphIdx;
 		time = ti;
-		reds = redStates;
-		blues = blueStates;
+		stateColoring = sc;
 	}
 
-	Refinement(PDRTA a, Refinement r, Collection<PDRTAState> newReds, Collection<PDRTAState> newBlues) {
+	Refinement(PDRTA a, Refinement r, StateColoring newSC) {
 
-		source = a.getCorrespondingCopy(r.source);
+		source = a.getState(r.source.getIndex());
 		if (r.target != null) {
-			target = a.getCorrespondingCopy(r.target);
+			target = a.getState(r.target.getIndex());
 		} else {
 			target = null;
 		}
@@ -79,8 +75,7 @@ class Refinement implements Comparable<Refinement> {
 		type = r.type;
 		symbolAlphIdx = r.symbolAlphIdx;
 		time = r.time;
-		reds = newReds;
-		blues = newBlues;
+		stateColoring = newSC;
 	}
 
 	@Override
@@ -88,9 +83,9 @@ class Refinement implements Comparable<Refinement> {
 
 		String s = null;
 		if (type == OpType.MERGE) {
-			s = "merge (" + source.getId() + ")>-<(" + target.getId() + ") to (" + source.getId() + ")";
+			s = "merge (" + source.getIndex() + ")>-<(" + target.getIndex() + ") to (" + source.getIndex() + ")";
 		} else if (type == OpType.SPLIT) {
-			s = "split ((" + source.getId() + "))---" + ta.getSymbol(symbolAlphIdx) + "-[" + source.getInterval(symbolAlphIdx, time).getBegin() + ","
+			s = "split ((" + source.getIndex() + "))---" + ta.getSymbol(symbolAlphIdx) + "-[" + source.getInterval(symbolAlphIdx, time).getBegin() + ","
 					+ source.getInterval(symbolAlphIdx, time).getEnd() + "]---> @ " + time;
 			// if (LOG_LVL.compareTo(LogLvl.DEBUG_DEEP) >= 0) {
 			// s = s + "  Distr.: [";
@@ -117,9 +112,9 @@ class Refinement implements Comparable<Refinement> {
 	void refine() {
 
 		if (type == OpType.MERGE) {
-			OperationUtil.merge(source, target, reds, blues, false, false);
+			OperationUtil.merge(source, target, stateColoring, false, false);
 		} else if (type == OpType.SPLIT) {
-			OperationUtil.split(source, symbolAlphIdx, time, reds, blues);
+			OperationUtil.split(source, symbolAlphIdx, time, stateColoring);
 		}
 	}
 
@@ -141,7 +136,7 @@ class Refinement implements Comparable<Refinement> {
 					}
 				} else if (type == OpType.MERGE && r.type == OpType.MERGE) {
 					assert (target.equals(r.target));
-					if (source.getId() == r.source.getId()) {
+					if (source.getIndex() == r.source.getIndex()) {
 						return true;
 					} else {
 						return false;
@@ -186,9 +181,9 @@ class Refinement implements Comparable<Refinement> {
 					}
 				} else {
 					assert (target.equals(r.target));
-					if (source.getId() < r.source.getId()) {
+					if (source.getIndex() < r.source.getIndex()) {
 						return 1;
-					} else if (source.getId() > r.source.getId()) {
+					} else if (source.getIndex() > r.source.getIndex()) {
 						return -1;
 					} else {
 						return 0;

@@ -37,7 +37,7 @@ public class PDRTAState implements Serializable {
 	private final PDRTA automaton;
 	private final List<NavigableMap<Integer, Interval>> intervals;
 	private final StateStatistic stat;
-	private int id;
+	private final int index;
 
 	protected PDRTAState(PDRTA ta) {
 
@@ -47,7 +47,7 @@ public class PDRTAState implements Serializable {
 			intervals.add(Interval.createInitialIntervalMap(ta.getMinTimeDelay(), ta.getMaxTimeDelay()));
 		}
 		stat = StateStatistic.initStat(ta.getAlphSize(), ta.getHistSizes());
-		id = automaton.addState(this, automaton.getNumStates());
+		index = automaton.addState(this, automaton.getNumStates());
 	}
 
 	protected PDRTAState(PDRTA ta, int idx, StateStatistic st) {
@@ -58,7 +58,10 @@ public class PDRTAState implements Serializable {
 			intervals.add(Interval.createInitialIntervalMap(ta.getMinTimeDelay(), ta.getMaxTimeDelay()));
 		}
 		stat = st;
-		automaton.addState(this, idx);
+		index = automaton.addState(this, idx);
+		if (index != idx) {
+			throw new IllegalStateException("Index " + idx + " already exists!");
+		}
 	}
 
 	public PDRTA getPDRTA() {
@@ -82,8 +85,10 @@ public class PDRTAState implements Serializable {
 			intervals.add(newIns);
 		}
 		stat = new StateStatistic(s.stat);
-		id = automaton.addState(this, s.getId());
-		assert (id == s.getId());
+		index = automaton.addState(this, s.getIndex());
+		if (index != s.index) {
+			throw new IllegalStateException("Index " + s.index + " already exists!");
+		}
 	}
 
 	/**
@@ -288,7 +293,7 @@ public class PDRTAState implements Serializable {
 
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + id;
+		result = prime * result + index;
 		result = prime * result + ((intervals == null) ? 0 : intervals.hashCode());
 		result = prime * result + ((stat == null) ? 0 : stat.hashCode());
 		return result;
@@ -307,7 +312,7 @@ public class PDRTAState implements Serializable {
 			return false;
 		}
 		final PDRTAState other = (PDRTAState) obj;
-		if (id != other.id) {
+		if (index != other.index) {
 			return false;
 		}
 		if (intervals == null) {
@@ -327,8 +332,8 @@ public class PDRTAState implements Serializable {
 		return true;
 	}
 
-	public int getId() {
-		return id;
+	public int getIndex() {
+		return index;
 	}
 
 	void cleanUp() {

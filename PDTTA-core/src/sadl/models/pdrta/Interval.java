@@ -230,7 +230,7 @@ public class Interval implements Serializable {
 	 */
 	public void merge(Interval in) {
 
-		if ((begin - 1 == in.end || end + 1 == in.begin) && target.equals(in.target)) {
+		if ((begin - 1 == in.end || end + 1 == in.begin) && target == in.target) {
 			if (begin - 1 == in.end) {
 				begin = in.begin;
 			} else {
@@ -260,6 +260,9 @@ public class Interval implements Serializable {
 	 */
 	public void setTarget(PDRTAState state) {
 		target = state;
+		if (target.getIndex() == 0) {
+			throw new IllegalStateException();
+		}
 	}
 
 	/**
