@@ -34,6 +34,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import sadl.input.TimedWord;
 import sadl.interfaces.AutomatonModel;
+import sadl.modellearner.rtiplus.StateColoring;
 
 import com.google.common.collect.TreeMultimap;
 
@@ -170,7 +171,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 			}
 			final Interval in = s.getInterval(t.getSymbolAlphIndex(), t.getTimeDelay());
 			assert (in != null);
-			vals.add(s.getStat().getTransProb(in));
+			vals.add(s.getStat().getTransProb(t.getSymbolAlphIndex(), in));
 			s = in.getTarget();
 			t = t.getNextTail();
 			if (s == null) {
@@ -328,7 +329,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 				final Set<Entry<Integer, Interval>> ins = s.getIntervals(i).entrySet();
 				for (final Entry<Integer, Interval> eIn : ins) {
 					final Interval in = eIn.getValue();
-					final double p = s.getStat().getTransProb(in);
+					final double p = s.getStat().getTransProb(i, in);
 					final PDRTAState t = in.getTarget();
 					if (t != null && p >= minP) {
 						if (!found.contains(t)) {
@@ -466,7 +467,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 			Interval in = s.getInterval(input.getAlphIndex(sym), end);
 			assert (in != null);
 			assert (in.getTarget() == null);
-			assert (s.getStat().getTransProb(in) == 0.0);
+			assert (s.getStat().getTransProb(input.getAlphIndex(sym), in) == 0.0);
 			assert (in.contains(begin));
 			Interval newIn;
 			if (end < in.getEnd()) {
@@ -479,7 +480,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 				s.getIntervals(input.getAlphIndex(sym)).put(newIn.getEnd(), newIn);
 			}
 			in.setTarget(t);
-			s.getStat().addInterval(in, prob);
+			s.getStat().addInterval(input.getAlphIndex(sym), in, prob);
 		}
 		root = states.get(0);
 	}
@@ -525,15 +526,15 @@ public class PDRTA implements AutomatonModel, Serializable {
 		return new PDRTAState(this);
 	}
 
-	public void removeSubAPTA(PDRTAState s) {
+	public void removeSubAPTA(PDRTAState s, StateColoring sc) {
 
-		removeState(s);
+		removeState(s, sc);
 
 		for (int i = 0; i < input.getAlphSize(); i++) {
 			final Set<Entry<Integer, Interval>> ins = s.getIntervals(i).entrySet();
 			for (final Entry<Integer, Interval> eIn : ins) {
 				if (eIn.getValue().getTarget() != null) {
-					removeSubAPTA(eIn.getValue().getTarget());
+					removeSubAPTA(eIn.getValue().getTarget(), sc);
 				}
 			}
 		}
@@ -543,10 +544,13 @@ public class PDRTA implements AutomatonModel, Serializable {
 		return minData;
 	}
 
-	public void removeState(PDRTAState s) {
+	public void removeState(PDRTAState s, StateColoring sc) {
 
 		if (states.containsKey(s.getIndex()) && states.get(s.getIndex()) == s) {
 			states.remove(s.getIndex());
+			if (sc.isBlue(s)) {
+				sc.remove(s);
+			}
 		} else {
 			throw new IllegalArgumentException("The given state is not part of the PDRTA!");
 		}

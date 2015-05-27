@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.apache.commons.lang3.SerializationUtils;
@@ -17,7 +18,7 @@ import sadl.input.TimedInput;
 import sadl.interfaces.Model;
 import sadl.modellearner.rtiplus.SimplePDRTALearner;
 import sadl.modellearner.rtiplus.SimplePDRTALearner.RunMode;
-import sadl.models.pdrta.PDRTA;
+import sadl.utils.IoUtils;
 
 public class RtiPlusTest {
 
@@ -40,30 +41,41 @@ public class RtiPlusTest {
 	@Test
 	public void testDeterminism() throws URISyntaxException, IOException {
 
-		for (int i = 2; i <= 5; i++) {
+		for (int i = 1; i <= 5; i++) {
 
 			final TimedInput ti1 = TimedInput.parse(Paths.get(this.getClass().getResource("/pdrta/test_" + i + ".inp").toURI()));
 			final TimedInput ti2 = SerializationUtils.clone(ti1);
 
-			final SimplePDRTALearner l1 = new SimplePDRTALearner(0.05f, "4", 0, 1, RunMode.DEBUG_DEEP, "/home/fabi/sadl_rti_test/" + i + "/");
+			final SimplePDRTALearner l1 = new SimplePDRTALearner(0.05f, "4", 0, 1, RunMode.SILENT, null);
 			final Model p1 = l1.train(ti1);
 
 			final SimplePDRTALearner l2 = new SimplePDRTALearner(0.05f, "4", 0, 1, RunMode.SILENT, null);
 			final Model p2 = l2.train(ti2);
 
-			// ******
-			final PDRTA a = (PDRTA) p1;
-			System.out.println("######### " + i + " ********");
-			System.out.println(a.toString());
-			// System.out.println(Base64.getEncoder().encodeToString(SerializationUtils.serialize(a)));
-			// ******
-
-			assertEquals("PDTTAs for files " + i + " are not equal", p2, p1);
+			assertEquals("PDRTAs for files " + i + " are not equal", p2, p1);
 		}
 	}
 
-	// @Test
-	public void testCorrectness() throws URISyntaxException, IOException {
+	@Test
+	public void testSerialization() throws URISyntaxException, IOException, ClassNotFoundException {
+
+		for (int i = 1; i <= 5; i++) {
+
+			final TimedInput ti = TimedInput.parse(Paths.get(this.getClass().getResource("/pdrta/test_" + i + ".inp").toURI()));
+
+			final SimplePDRTALearner l = new SimplePDRTALearner(0.05f, "4", 0, 1, RunMode.SILENT, null);
+			final Model p = l.train(ti);
+
+			final Path path = Paths.get(this.getClass().getResource("/pdrta/pdrta_" + i + ".aut").toURI());
+			IoUtils.serialize(p, path);
+			final Model cP = (Model) IoUtils.deserialize(path);
+
+			assertEquals("PDRTAs for files " + i + " are not equal", p, cP);
+		}
+	}
+
+	@Test
+	public void testCorrectness() throws URISyntaxException, IOException, ClassNotFoundException {
 
 		for (int i = 1; i <= 5; i++) {
 
@@ -73,9 +85,9 @@ public class RtiPlusTest {
 			final Model pdrta = l.train(ti);
 
 			// Deserialize;
-			final Model p = null;
+			final Model p = (Model) IoUtils.deserialize(Paths.get(this.getClass().getResource("/pdrta/pdrta_" + i + ".aut").toURI()));
 
-			assertEquals("PDTTAs for files " + i + " are not equal", pdrta, p);
+			assertEquals("PDRTAs for files " + i + " are not equal", pdrta, p);
 		}
 	}
 

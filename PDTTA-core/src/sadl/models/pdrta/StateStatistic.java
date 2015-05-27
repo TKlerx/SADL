@@ -12,6 +12,7 @@
 package sadl.models.pdrta;
 
 import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.map.hash.TObjectDoubleHashMap;
 
 import java.io.Serializable;
@@ -86,7 +87,7 @@ public class StateStatistic implements Serializable {
 	/**
 	 * Contains the probabilities for transitions to be used by {@link TimedTail}s during anomaly detection
 	 */
-	private TObjectDoubleHashMap<Interval> intervalProbs;
+	private TIntObjectHashMap<TObjectDoubleHashMap<Interval>> intervalProbs;
 
 	/**
 	 * Creates an initial {@link StateStatistic} for training
@@ -362,13 +363,24 @@ public class StateStatistic implements Serializable {
 	 * @param prob
 	 *            The probability corresponding to the transition
 	 */
-	protected void addInterval(Interval in, double prob) {
+	protected void addInterval(int symIdx, Interval in, double prob) {
 
 		if (!trainMode) {
-			intervalProbs.put(in, prob);
+			addToMap(symIdx, in, prob);
 		} else {
 			throw new UnsupportedOperationException();
 		}
+	}
+
+	private void addToMap(int symIdx, Interval in, double prob) {
+		TObjectDoubleHashMap<Interval> m;
+		if (intervalProbs.containsKey(symIdx)) {
+			m = intervalProbs.get(symIdx);
+		} else {
+			m = new TObjectDoubleHashMap<>();
+			intervalProbs.put(symIdx, m);
+		}
+		m.put(in, prob);
 	}
 
 	/**
@@ -392,16 +404,18 @@ public class StateStatistic implements Serializable {
 	 *            The transition to get the probability for
 	 * @return The probability the transition to be used by {@link TimedTail}s
 	 */
-	protected double getTransProb(Interval in) {
+	protected double getTransProb(int symIdx, Interval in) {
 
 		if (trainMode) {
 			return (double) in.getTails().size() / (double) totalOutCount;
 		} else {
-			if (intervalProbs.contains(in)) {
-				return intervalProbs.get(in);
-			} else {
-				return 0.0;
+			if (intervalProbs.containsKey(symIdx)) {
+				final TObjectDoubleHashMap<Interval> m = intervalProbs.get(symIdx);
+				if (m.containsKey(in)) {
+					return m.get(in);
+				}
 			}
+			return 0.0;
 		}
 	}
 
@@ -537,7 +551,7 @@ public class StateStatistic implements Serializable {
 		this.timeProbs = timeProbs;
 		this.symbolProbs = symbolProbs;
 		this.tailEndProb = tailEndProb;
-		this.intervalProbs = new TObjectDoubleHashMap<>();
+		this.intervalProbs = new TIntObjectHashMap<>();
 		this.trainMode = false;
 	}
 
@@ -754,11 +768,11 @@ public class StateStatistic implements Serializable {
 
 	void cleanUp(PDRTAState s) {
 
-		intervalProbs = new TObjectDoubleHashMap<>();
+		intervalProbs = new TIntObjectHashMap<>();
 		for (int i = 0; i < symbolCount.length; i++) {
 			final NavigableMap<Integer, Interval> ins = s.getIntervals(i);
 			for (final Interval in : ins.values()) {
-				intervalProbs.put(in, getTransProb(in));
+				addToMap(i, in, getTransProb(i, in));
 			}
 		}
 		symbolProbs = new double[symbolCount.length];

@@ -235,13 +235,13 @@ public class PDRTAState implements Serializable {
 		return getProbabilityTrans(tail.getSymbolAlphIndex(), tail.getTimeDelay());
 	}
 
-	public double getProbabilityTrans(int synAplhIdx, int timeDel) {
+	public double getProbabilityTrans(int symAplhIdx, int timeDel) {
 
-		final Interval in = getInterval(synAplhIdx, timeDel);
+		final Interval in = getInterval(symAplhIdx, timeDel);
 		if (in == null) {
 			return 0.0;
 		} else {
-			return stat.getTransProb(in);
+			return stat.getTransProb(symAplhIdx, in);
 		}
 	}
 

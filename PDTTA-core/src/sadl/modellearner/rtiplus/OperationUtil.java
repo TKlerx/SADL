@@ -98,7 +98,7 @@ public class OperationUtil {
 		final PDRTA a = s1.getPDRTA();
 		assert (a == s2.getPDRTA());
 		assert (!sc.isRed(s2));
-		a.removeState(s2);
+		a.removeState(s2, sc);
 
 		LikelihoodValue lv = null;
 		if (test) {
@@ -161,7 +161,7 @@ public class OperationUtil {
 		final Interval newIn = in.split(time);
 		s.getIntervals(symAlphIdx).put(newIn.getEnd(), newIn);
 
-		assert (newIn == in);
+		assert (newIn != in);
 		assert (newIn.getTarget() == null);
 		assert (newIn.getEnd() == in.getBegin() - 1);
 		assert (s.getInterval(symAlphIdx, time) == newIn);
@@ -180,7 +180,7 @@ public class OperationUtil {
 				}
 				a.createSubTAPTA(state);
 				// Create new sub APTA for second interval
-				a.removeSubAPTA(in.getTarget());
+				a.removeSubAPTA(in.getTarget(), sc);
 				state = a.createState();
 				in.setTarget(state);
 				if (sc.isRed(s)) {

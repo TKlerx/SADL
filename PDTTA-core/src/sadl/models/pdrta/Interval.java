@@ -260,9 +260,6 @@ public class Interval implements Serializable {
 	 */
 	public void setTarget(PDRTAState state) {
 		target = state;
-		if (target.getIndex() == 0) {
-			throw new IllegalStateException();
-		}
 	}
 
 	/**
@@ -324,7 +321,7 @@ public class Interval implements Serializable {
 		int result = 1;
 		result = prime * result + begin;
 		result = prime * result + end;
-		result = prime * result + ((tails == null) ? 0 : tails.hashCode());
+		result = prime * result + ((target == null) ? 0 : target.getIndex());
 		return result;
 	}
 
@@ -347,12 +344,14 @@ public class Interval implements Serializable {
 		if (end != other.end) {
 			return false;
 		}
-		if (tails == null) {
-			if (other.tails != null) {
+		if (target == null) {
+			if (other.target != null) {
 				return false;
 			}
-		} else if (!tails.equals(other.tails)) {
-			return false;
+		} else if (other.target != null) {
+			if (target.getIndex() != other.target.getIndex()) {
+				return false;
+			}
 		}
 		return true;
 	}
