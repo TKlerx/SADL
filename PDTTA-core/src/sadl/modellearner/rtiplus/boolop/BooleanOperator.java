@@ -9,10 +9,10 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.models;
+package sadl.modellearner.rtiplus.boolop;
 
-public class DFFA extends PDFA {
-
-	private static final long serialVersionUID = -5069514782507435996L;
+public interface BooleanOperator {
+	
+	public boolean eval(boolean b1,boolean b2);
 
 }

@@ -9,10 +9,28 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.models;
+package sadl.modellearner.rtiplus.tester;
 
-public class DFFA extends PDFA {
+/**
+ * 
+ * @author Fabian Witter
+ *
+ */
+public class LikelihoodValue {
 
-	private static final long serialVersionUID = -5069514782507435996L;
+	protected double ratio;
+	protected int additionalParam;
+
+	public LikelihoodValue(double ratio, int additionalParam) {
+
+		this.ratio = ratio;
+		this.additionalParam = additionalParam;
+	}
+
+	public void add(LikelihoodValue lv) {
+
+		this.ratio += lv.ratio;
+		this.additionalParam += lv.additionalParam;
+	}
 
 }

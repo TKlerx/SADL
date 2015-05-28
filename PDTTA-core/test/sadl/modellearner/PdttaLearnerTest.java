@@ -40,7 +40,8 @@ public class PdttaLearnerTest {
 
 	@Test
 	public void test() throws IOException, URISyntaxException {
-		for (int i = 5; i <= 5; i++) {
+		// TODO Change to train file (TimedInput.parse())
+		for (int i = 1; i <= 5; i++) {
 			final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(
 					Paths.get(this.getClass().getResource("/pdtta/smac_mix_type" + i + ".txt").toURI()), (reader) -> {
 						try {
@@ -59,6 +60,7 @@ public class PdttaLearnerTest {
 			final PdttaLeanerOld l2 = new PdttaLeanerOld(0.05, false);
 			final Model p2 = l2.train(ti2);
 			assertEquals("PDTTAs for files " + i + " are not equal", p2, p1);
+			// TODO Also compare with loaded model from file
 		}
 	}
 

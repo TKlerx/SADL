@@ -9,10 +9,34 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.models;
+package sadl.modellearner.rtiplus.tester;
 
-public class DFFA extends PDFA {
+import sadl.modellearner.rtiplus.StateColoring;
+import sadl.models.pdrta.PDRTAState;
 
-	private static final long serialVersionUID = -5069514782507435996L;
+/**
+ * 
+ * @author Fabian Witter
+ *
+ */
+public class FishersMethodTester implements OperationTester {
+
+	@Override
+	public double testSplit(PDRTAState red, int symAlphIdx, int time) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public double testMerge(PDRTAState red, PDRTAState blue) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public void setColoring(StateColoring sc) {
+		// TODO Auto-generated method stub
+
+	}
 
 }

@@ -592,5 +592,4 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 		return true;
 	}
 
-
 }
