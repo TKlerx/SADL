@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.run;
+package sadl.run.moe;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -28,7 +28,7 @@ import com.google.gson.Gson;
 public class MoeTest2 {
 
 	public static void main(String[] args) throws ClientProtocolException, IOException {
-		final String postUrl = "http://pc-kbpool-8.cs.upb.de:6543/gp/hyper_opt";// put in your url
+		final String postUrl = "http://pc-kbpool-8.cs.upb.de:6543/gp/next_points/epi";// put in your url
 		final HttpClient httpClient = HttpClientBuilder.create().build(); // Use this instead
 		final Parameters p = new Parameters(1, 2);
 		final Gson gson = new Gson();
