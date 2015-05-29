@@ -14,7 +14,7 @@ package jsat.distributions;
 
 import java.util.Arrays;
 
-import jsat.distributions.empirical.KernelDensityEstimator;
+import jsat.distributions.empirical.MyKernelDensityEstimator;
 import jsat.linear.Vec;
 import jsat.testing.goodnessoffit.KSTest;
 import jsat.utils.Pair;
@@ -53,7 +53,7 @@ public class MyDistributionSearch extends DistributionSearch
 	/**
 	 * Searches the distributions that are known for a possible fit, and returns
 	 * what appears to be the best fit. If no suitable fit can be found, a
-	 * {@link KernelDensityEstimator} is fit to the data.
+	 * {@link MyKernelDensityEstimator} is fit to the data.
 	 * 
 	 * @param v all the values from a sample
 	 * @param KDECutOff the cut off value used for using the KDE. Should be in
@@ -82,7 +82,7 @@ public class MyDistributionSearch extends DistributionSearch
 	/**
 	 * Searches the distributions that are given for a possible fit, and returns
 	 * what appears to be the best fit. If no suitable fit can be found, a
-	 * {@link KernelDensityEstimator} is fit to the data.
+	 * {@link MyKernelDensityEstimator} is fit to the data.
 	 * 
 	 * @param v all the values from a sample
 	 * @param KDECutOff the cut off value used for using the KDE. Should be in
@@ -140,7 +140,7 @@ public class MyDistributionSearch extends DistributionSearch
 			if(bestProb >= KDECutOff) {
 				return bestDist == null ? new Normal(v.mean(), v.standardDeviation()) : bestDist.clone();
 			} else {
-				return new KernelDensityEstimator(v);
+				return new MyKernelDensityEstimator(v);
 			}
 		}
 		catch (final RuntimeException ex)//Mostly likely occurs if all values are all zero
@@ -175,7 +175,7 @@ public class MyDistributionSearch extends DistributionSearch
 			return getBestDistribution(v);
 		}else{
 			final Distribution[] possibleDists = Arrays.copyOf(possibleDistributionSet, possibleDistributionSet.length+1);
-			possibleDists[possibleDists.length-1] = new KernelDensityEstimator(v);
+			possibleDists[possibleDists.length-1] = new MyKernelDensityEstimator(v);
 			return getBestDistribution(v,possibleDists);
 		}
 	}

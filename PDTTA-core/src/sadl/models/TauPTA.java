@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 import jsat.distributions.Distribution;
 import jsat.distributions.MyDistributionSearch;
 import jsat.distributions.SingleValueDistribution;
-import jsat.distributions.empirical.KernelDensityEstimator;
+import jsat.distributions.empirical.MyKernelDensityEstimator;
 import jsat.linear.DenseVector;
 import jsat.linear.Vec;
 
@@ -255,7 +255,7 @@ public class TauPTA extends PDTTA {
 			final Distribution d = new SingleValueDistribution(sameValues.getSecondItem());
 			return d;
 		} else {
-			final KernelDensityEstimator kde = new KernelDensityEstimator(v);
+			final MyKernelDensityEstimator kde = new MyKernelDensityEstimator(v);
 			return kde;
 		}
 	}

@@ -29,7 +29,7 @@ import java.util.Map;
 import jsat.distributions.Distribution;
 import jsat.distributions.MyDistributionSearch;
 import jsat.distributions.SingleValueDistribution;
-import jsat.distributions.empirical.KernelDensityEstimator;
+import jsat.distributions.empirical.MyKernelDensityEstimator;
 import jsat.distributions.empirical.kernelfunc.KernelFunction;
 import jsat.linear.DenseVector;
 import jsat.linear.Vec;
@@ -168,13 +168,13 @@ public class PdttaLeanerOld implements ModelLearner {
 		} else {
 			KernelFunction newKernelFunction = kdeKernelFunction;
 			if (newKernelFunction == null) {
-				newKernelFunction = KernelDensityEstimator.autoKernel(v);
+				newKernelFunction = MyKernelDensityEstimator.autoKernel(v);
 			}
 			double newKdeBandwidth = kdeBandwidth;
 			if (newKdeBandwidth <= 0) {
-				newKdeBandwidth = KernelDensityEstimator.BandwithGuassEstimate(v);
+				newKdeBandwidth = MyKernelDensityEstimator.BandwithGuassEstimate(v);
 			}
-			final KernelDensityEstimator kde = new KernelDensityEstimator(v, newKernelFunction, newKdeBandwidth);
+			final MyKernelDensityEstimator kde = new MyKernelDensityEstimator(v, newKernelFunction, newKdeBandwidth);
 			return kde;
 		}
 	}
