@@ -1,10 +1,16 @@
 package sadl.run.moe;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
-public class HistoryData {
+public class HistoryData implements Iterable<Configuration> {
 
-	Map<Parameters, Double> history = new HashMap<>();
+	Map<Configuration, Double> history = new HashMap<>();
+
+	@Override
+	public Iterator<Configuration> iterator() {
+		return history.keySet().iterator();
+	}
 
 }
