@@ -1,9 +1,20 @@
+/**
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
+ * Copyright (C) 2013-2015  the original author or authors.
+ *
+ * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * SADL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 package jsat.distributions;
 
 import java.util.Arrays;
 
-import jsat.distributions.empirical.KernelDensityEstimator;
+import jsat.distributions.empirical.MyKernelDensityEstimator;
 import jsat.linear.Vec;
 import jsat.testing.goodnessoffit.KSTest;
 import jsat.utils.Pair;
@@ -12,11 +23,13 @@ import org.apache.commons.math3.util.Precision;
 
 /**
  * Provides methods for selecting the distribution that best fits a given data set.
+ * 
  * @author Edward Raff
+ * @author Timo Klerx
  */
 public class MyDistributionSearch extends DistributionSearch
 {
-	private static Distribution[] possibleDistributions = new Distribution[]
+	private static Distribution[] possibleDistributionSet = new Distribution[]
 			{
 		new Normal(),
 		new LogNormal(), new Exponential(),
@@ -34,13 +47,13 @@ public class MyDistributionSearch extends DistributionSearch
 	 */
 	public static Distribution getBestDistribution(Vec v)
 	{
-		return getBestDistribution(v, possibleDistributions);
+		return getBestDistribution(v, possibleDistributionSet);
 	}
 
 	/**
 	 * Searches the distributions that are known for a possible fit, and returns
 	 * what appears to be the best fit. If no suitable fit can be found, a
-	 * {@link KernelDensityEstimator} is fit to the data.
+	 * {@link MyKernelDensityEstimator} is fit to the data.
 	 * 
 	 * @param v all the values from a sample
 	 * @param KDECutOff the cut off value used for using the KDE. Should be in
@@ -50,7 +63,7 @@ public class MyDistributionSearch extends DistributionSearch
 	 */
 	public static Distribution getBestDistribution(Vec v, double KDECutOff)
 	{
-		return getBestDistribution(v, KDECutOff, possibleDistributions);
+		return getBestDistribution(v, KDECutOff, possibleDistributionSet);
 	}
 
 	/**
@@ -69,7 +82,7 @@ public class MyDistributionSearch extends DistributionSearch
 	/**
 	 * Searches the distributions that are given for a possible fit, and returns
 	 * what appears to be the best fit. If no suitable fit can be found, a
-	 * {@link KernelDensityEstimator} is fit to the data.
+	 * {@link MyKernelDensityEstimator} is fit to the data.
 	 * 
 	 * @param v all the values from a sample
 	 * @param KDECutOff the cut off value used for using the KDE. Should be in
@@ -127,7 +140,7 @@ public class MyDistributionSearch extends DistributionSearch
 			if(bestProb >= KDECutOff) {
 				return bestDist == null ? new Normal(v.mean(), v.standardDeviation()) : bestDist.clone();
 			} else {
-				return new KernelDensityEstimator(v);
+				return new MyKernelDensityEstimator(v);
 			}
 		}
 		catch (final RuntimeException ex)//Mostly likely occurs if all values are all zero
@@ -141,7 +154,6 @@ public class MyDistributionSearch extends DistributionSearch
 	/**
 	 * True iff there are only identical values in the vector
 	 * @param v
-	 * @return
 	 */
 	public static Pair<Boolean, Double> checkForDifferentValues(Vec v) {
 		final double value = v.get(0);
@@ -157,14 +169,13 @@ public class MyDistributionSearch extends DistributionSearch
 	 * search for all possible distributions and maybe also for a KDE. Does not compare bestProb to cutoff
 	 * @param v
 	 * @param includeKDE
-	 * @return
 	 */
 	public static Distribution getBestDistribution(Vec v, boolean includeKDE) {
 		if(!includeKDE){
 			return getBestDistribution(v);
 		}else{
-			final Distribution[] possibleDists = Arrays.copyOf(possibleDistributions, possibleDistributions.length+1);
-			possibleDists[possibleDists.length-1] = new KernelDensityEstimator(v);
+			final Distribution[] possibleDists = Arrays.copyOf(possibleDistributionSet, possibleDistributionSet.length+1);
+			possibleDists[possibleDists.length-1] = new MyKernelDensityEstimator(v);
 			return getBestDistribution(v,possibleDists);
 		}
 	}
