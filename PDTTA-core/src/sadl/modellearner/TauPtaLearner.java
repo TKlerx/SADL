@@ -38,8 +38,8 @@ import sadl.structure.ZeroProbTransition;
 public class TauPtaLearner extends PdttaLearner {
 	private static Logger logger = LoggerFactory.getLogger(TauPtaLearner.class);
 
-	TObjectIntMap<Transition> transitionCount = new TObjectIntHashMap<>();
-	TIntIntMap finalStateCount = new TIntIntHashMap();
+	protected TObjectIntMap<Transition> transitionCount = new TObjectIntHashMap<>();
+	protected TIntIntMap finalStateCount = new TIntIntHashMap();
 
 	public TauPtaLearner() {
 		super(null, null, -1);
@@ -62,9 +62,9 @@ public class TauPtaLearner extends PdttaLearner {
 	@Override
 	public TauPTA train(TimedInput trainingSequences) {
 		trainingSequences = SerializationUtils.clone(trainingSequences);
-		trainingSequences.toTimedIntWords();
 		final TauPTA initialPta = new TauPTA();
 		initialPta.addState(TauPTA.START_STATE);
+		initialPta.setAlphabet(trainingSequences);
 
 		for (final TimedWord s : trainingSequences) {
 			addEventSequence(initialPta, s);
@@ -130,7 +130,7 @@ public class TauPtaLearner extends PdttaLearner {
 			if (newPta.isInAutomaton(s)) {
 				int currentState = TauPTA.START_STATE;
 				for (int i = 0; i < s.length(); i++) {
-					final int nextEvent = s.getIntSymbol(i);
+					final String nextEvent = s.getSymbol(i);
 					final Transition t = newPta.getTransition(currentState, nextEvent);
 					if (t == null) {
 						// this should never happen!
@@ -159,6 +159,7 @@ public class TauPtaLearner extends PdttaLearner {
 					+ newPta.getTransitionCount() + ").");
 			// compute what is missing in the distribution set
 		}
+		newPta.setAlphabet(trainingSequences);
 		newPta.makeImmutable();
 		return newPta;
 	}
@@ -167,7 +168,7 @@ public class TauPtaLearner extends PdttaLearner {
 		int currentState = TauPTA.START_STATE;
 
 		for (int i = 0; i < s.length(); i++) {
-			final int nextEvent = s.getIntSymbol(i);
+			final String nextEvent = s.getSymbol(i);
 			Transition t = pta.getTransition(currentState, nextEvent);
 			if (t == null) {
 				t = pta.addTransition(currentState, pta.getStateCount(), nextEvent, TauPTA.NO_TRANSITION_PROBABILITY);

@@ -12,32 +12,23 @@
 package sadl.detectors.featureCreators;
 
 import gnu.trove.list.TDoubleList;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import sadl.constants.ProbabilityAggregationMethod;
+import sadl.detectors.PdttaDetector;
 
-/**
- * 
- * @author Timo Klerx
- *
- */
-public class FullFeatureCreator extends SmallFeatureCreator {
-	@SuppressWarnings("unused")
-	private static Logger logger = LoggerFactory.getLogger(FullFeatureCreator.class);
+public class MinimalFeatureCreator implements FeatureCreator {
+
+
+	@Override
+	public double[] createFeatures(TDoubleList eventLikelihoods, TDoubleList timeLikelihoods) {
+		return createFeatures(eventLikelihoods, timeLikelihoods, ProbabilityAggregationMethod.NORMALIZED_MULTIPLY);
+	}
 
 	@Override
 	public double[] createFeatures(TDoubleList eventLikelihoods, TDoubleList timeLikelihoods, ProbabilityAggregationMethod aggType) {
-		final double[] superCall = super.createFeatures(eventLikelihoods, timeLikelihoods, aggType);
-		final double eventMean = eventLikelihoods.sum() / eventLikelihoods.size();
-		final double timeMean;
-		if (timeLikelihoods.size() == 0) {
-			// happens if the first state is the final state
-			timeMean = Double.NEGATIVE_INFINITY;
-		} else {
-			timeMean = timeLikelihoods.sum() / timeLikelihoods.size();
-		}
-		return new double[] { superCall[0], superCall[1], superCall[2], eventMean, superCall[3], superCall[4], superCall[5], timeMean };
+		final double timeAgg = PdttaDetector.aggregate(timeLikelihoods, aggType);
+		final double eventAgg = PdttaDetector.aggregate(eventLikelihoods, aggType);
+		return new double[] { eventAgg, timeAgg };
+
 	}
+
 }

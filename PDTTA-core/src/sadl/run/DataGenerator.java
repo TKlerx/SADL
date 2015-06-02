@@ -56,56 +56,59 @@ public class DataGenerator implements Serializable {
 	}
 
 	private void run() throws IOException, InterruptedException {
-		if (Files.notExists(outputDir)) {
-			Files.createDirectories(outputDir);
-		}
-		// parse timed sequences
-		final TimedInput trainingTimedSequences = TimedInput.parseAlt(Paths.get(dataString), 1);
-		final TauPtaLearner learner = new TauPtaLearner();
-		final TauPTA pta = learner.train(trainingTimedSequences);
-		IoUtils.xmlSerialize(pta, outputDir.resolve(Paths.get("pta_normal.xml")));
-		pta.toGraphvizFile(outputDir.resolve(Paths.get("pta_normal.dot")), false);
-		// try (BufferedWriter br = Files.newBufferedWriter(outputDir.resolve(Paths.get("normal_sequences")), StandardCharsets.UTF_8)) {
-		// logger.info("sampling normal sequences");
-		// for (int i = 0; i < 1000000; i++) {
-		// br.write(pta.sampleSequence().toString(true));
-		// br.write('\n');
-		// }
-		// }
-		// for(final AnomalyInsertionType type : AnomalyInsertionType.values()){
-
-		for (final AnomalyInsertionType type : AnomalyInsertionType.values()) {
-			if (type != AnomalyInsertionType.NONE && type != AnomalyInsertionType.ALL) {
-				final TauPTA anomaly1 = SerializationUtils.clone(pta);
-				logger.info("inserting Anomaly Type {}", type);
-				anomaly1.makeAbnormal(type);
-				try {
-					anomaly1.toGraphvizFile(outputDir.resolve(Paths.get("pta_abnormal_" + type.getTypeIndex() + ".dot")), false);
-					IoUtils.xmlSerialize(anomaly1, outputDir.resolve(Paths.get("pta_abnormal_" + type.getTypeIndex() + ".xml")));
-					final TauPTA des = (TauPTA) IoUtils.xmlDeserialize(outputDir.resolve(Paths.get("pta_abnormal_" + type.getTypeIndex() + ".xml")));
-					if (!anomaly1.equals(des)) {
-						throw new IllegalStateException();
-					}
-				} catch (final IOException e) {
-					logger.error("unexpected exception while printing graphviz file", e);
-				}
-				// try (BufferedWriter br = Files.newBufferedWriter(outputDir.resolve(Paths.get("abnormal_sequences_type_" + type.getTypeIndex())),
-				// StandardCharsets.UTF_8)) {
-				// for (int i = 0; i < 100000; i++) {
-				// br.write(anomaly1.sampleSequence().toString(true));
-				// br.write('\n');
-				// }
-				// }
+		try {
+			if (Files.notExists(outputDir)) {
+				Files.createDirectories(outputDir);
 			}
-		}
-		logger.info("Starting to dot PTAs");
-		final DirectoryStream<Path> ds = Files.newDirectoryStream(outputDir.resolve(Paths.get(".")), "*.dot");
-		for (final Path p : ds) {
-			if (System.getProperty("os.name").toLowerCase().contains("linux")) {
-				logger.info("dotting {}...", p);
-				Runtime.getRuntime().exec("dot -Tpdf -O " + p.toString());
-				Runtime.getRuntime().exec("dot -Tpng -O " + p.toString());
-				logger.info("dotted {}.", p);
+			// parse timed sequences
+			final TimedInput trainingTimedSequences = TimedInput.parseAlt(Paths.get(dataString), 1);
+			final TauPtaLearner learner = new TauPtaLearner();
+			final TauPTA pta = learner.train(trainingTimedSequences);
+			IoUtils.xmlSerialize(pta, outputDir.resolve(Paths.get("pta_normal.xml")));
+			pta.toGraphvizFile(outputDir.resolve(Paths.get("pta_normal.dot")), false);
+			// try (BufferedWriter br = Files.newBufferedWriter(outputDir.resolve(Paths.get("normal_sequences")), StandardCharsets.UTF_8)) {
+			// logger.info("sampling normal sequences");
+			// for (int i = 0; i < 1000000; i++) {
+			// br.write(pta.sampleSequence().toString(true));
+			// br.write('\n');
+			// }
+			// }
+			// for(final AnomalyInsertionType type : AnomalyInsertionType.values()){
+
+			for (final AnomalyInsertionType type : AnomalyInsertionType.values()) {
+				if (type != AnomalyInsertionType.NONE && type != AnomalyInsertionType.ALL) {
+					final TauPTA anomaly1 = SerializationUtils.clone(pta);
+					logger.info("inserting Anomaly Type {}", type);
+					anomaly1.makeAbnormal(type);
+					try {
+						anomaly1.toGraphvizFile(outputDir.resolve(Paths.get("pta_abnormal_" + type.getTypeIndex() + ".dot")), false);
+						IoUtils.xmlSerialize(anomaly1, outputDir.resolve(Paths.get("pta_abnormal_" + type.getTypeIndex() + ".xml")));
+						final TauPTA des = (TauPTA) IoUtils.xmlDeserialize(outputDir.resolve(Paths.get("pta_abnormal_" + type.getTypeIndex() + ".xml")));
+						if (!anomaly1.equals(des)) {
+							throw new IllegalStateException();
+						}
+					} catch (final IOException e) {
+						logger.error("unexpected exception while printing graphviz file", e);
+					}
+					// try (BufferedWriter br = Files.newBufferedWriter(outputDir.resolve(Paths.get("abnormal_sequences_type_" + type.getTypeIndex())),
+					// StandardCharsets.UTF_8)) {
+					// for (int i = 0; i < 100000; i++) {
+					// br.write(anomaly1.sampleSequence().toString(true));
+					// br.write('\n');
+					// }
+					// }
+				}
+			}
+		} finally {
+				logger.info("Starting to dot PTAs");
+				final DirectoryStream<Path> ds = Files.newDirectoryStream(outputDir.resolve(Paths.get(".")), "*.dot");
+				for (final Path p : ds) {
+					if (System.getProperty("os.name").toLowerCase().contains("linux")) {
+						logger.info("dotting {}...", p);
+						Runtime.getRuntime().exec("dot -Tpdf -O " + p.toString());
+						Runtime.getRuntime().exec("dot -Tpng -O " + p.toString());
+						logger.info("dotted {}.", p);
+					}
 			}
 		}
 

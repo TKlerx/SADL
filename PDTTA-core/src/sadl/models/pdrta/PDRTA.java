@@ -30,7 +30,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.math3.util.Pair;
 
 import sadl.input.TimedWord;
 import sadl.interfaces.AutomatonModel;
@@ -600,6 +600,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 		}
 	}
 
+	@Override
 	public Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord seq) {
 		// TODO Auto-generated method stub
 		return null;

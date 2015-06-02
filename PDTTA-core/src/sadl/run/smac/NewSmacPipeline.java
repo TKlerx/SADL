@@ -30,13 +30,11 @@ import jsat.distributions.empirical.kernelfunc.KernelFunction;
 import jsat.distributions.empirical.kernelfunc.TriweightKF;
 import jsat.distributions.empirical.kernelfunc.UniformKF;
 
-import org.apache.commons.lang3.NotImplementedException;
-import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sadl.anomalydetecion.PdttaAnomalyDetection;
 import sadl.constants.AnomalyInsertionType;
-import sadl.constants.ClassLabel;
 import sadl.constants.DetectorMethod;
 import sadl.constants.DistanceMethod;
 import sadl.constants.FeatureCreatorMethod;
@@ -48,20 +46,15 @@ import sadl.detectors.PdttaDetector;
 import sadl.detectors.PdttaVectorDetector;
 import sadl.detectors.featureCreators.FeatureCreator;
 import sadl.detectors.featureCreators.FullFeatureCreator;
+import sadl.detectors.featureCreators.MinimalFeatureCreator;
 import sadl.detectors.featureCreators.SmallFeatureCreator;
 import sadl.detectors.threshold.PdttaAggregatedThresholdDetector;
 import sadl.detectors.threshold.PdttaFullThresholdDetector;
 import sadl.experiments.PdttaExperimentResult;
-import sadl.input.TimedInput;
-import sadl.input.TimedWord;
-import sadl.interfaces.Model;
 import sadl.interfaces.ModelLearner;
-import sadl.interfaces.TrainableDetector;
 import sadl.modellearner.PdttaLearner;
-import sadl.models.PDTTA;
 import sadl.oneclassclassifier.LibSvmClassifier;
 import sadl.oneclassclassifier.clustering.DbScanClassifier;
-import sadl.utils.IoUtils;
 import sadl.utils.MasterSeed;
 import sadl.utils.Settings;
 
@@ -214,6 +207,8 @@ public class NewSmacPipeline implements Serializable {
 			featureCreator = new FullFeatureCreator();
 		} else if (featureCreatorMethod == FeatureCreatorMethod.SMALL_FEATURE_CREATOR) {
 			featureCreator = new SmallFeatureCreator();
+		} else if (featureCreatorMethod == FeatureCreatorMethod.MINIMAL_FEATURE_CREATOR) {
+			featureCreator = new MinimalFeatureCreator();
 		} else {
 			featureCreator = null;
 		}
@@ -247,84 +242,13 @@ public class NewSmacPipeline implements Serializable {
 		} else if (kdeKernelFunctionQualifier == KdeKernelFunction.ESTIMATE) {
 			kdeKernelFunction = null;
 		}
-		final Path dataPath = Paths.get(dataString);
-		if (Files.notExists(dataPath)) {
-			final IOException e = new IOException("Path with input data does not exist(" + dataPath + ")");
-			logger.error("Input data file does not exist", e);
-			throw e;
-		}
-
-		// parse timed sequences
-		// final List<TimedSequence> trainingTimedSequences = TimedSequence.parseTimedSequences(timedInputTrainFile, false, false);´
-		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(dataPath);
-		final TimedInput trainingInput = trainTest.getKey();
-		trainingInput.toTimedIntWords();
 		final ModelLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0);
-
-		final Model model = learner.train(trainingInput);
-		PDTTA automaton;
-		if (model instanceof PDTTA) {
-			automaton = (PDTTA) model;
-		} else {
-			throw new NotImplementedException("This approach only works for PDTTA models");
-		}
-		if (pdttaDetector instanceof TrainableDetector) {
-			pdttaDetector.setModel(automaton);
-			((TrainableDetector) pdttaDetector).train(trainingInput);
-		}
-
-		// compute likelihood on test set for automaton and for time PDFs
-		final TimedInput testInput = trainTest.getValue();
-		testInput.toTimedIntWords();
-
-		final PdttaExperimentResult result = testPdtta(testInput, automaton);
-		logger.info("F-Measure={}", result.getfMeasure());
-		System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - result.getfMeasure()) + ", 0");
+		final PdttaAnomalyDetection detection = new PdttaAnomalyDetection(pdttaDetector, learner);
+		final PdttaExperimentResult result = detection.trainTest(dataString);
+		System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - result.getFMeasure()) + ", 0");
 		// IoUtils.xmlSerialize(automaton, Paths.get("pdtta.xml"));
 		// automaton = (PDTTA) IoUtils.xmlDeserialize(Paths.get("pdtta.xml"));
 		return result;
-	}
-
-	private PdttaExperimentResult testPdtta(TimedInput testTimedSequences, PDTTA automaton) throws IOException {
-		// TODO put this in an evaluation class
-		logger.info("Testing with {} sequences", testTimedSequences.size());
-		pdttaDetector.setModel(automaton);
-		final boolean[] detectorResult = pdttaDetector.areAnomalies(testTimedSequences);
-		int truePos = 0;
-		int trueNeg = 0;
-		int falsePos = 0;
-		int falseNeg = 0;
-		// prec = tp/(tp +fp)
-		// The precision is the ratio between correctly detected anomalies and
-		// all detected anomalies
-		// rec = tp/(tp+fn)
-		// The recall is the ratio between detected anomalies and all anomalies
-
-		for (int i = 0; i < testTimedSequences.size(); i++) {
-			final TimedWord s = testTimedSequences.get(i);
-			if (s.getLabel() == ClassLabel.NORMAL) {
-				if (detectorResult[i]) {
-					// detector said anomaly
-					falsePos++;
-				} else {
-					// detector said normal
-					trueNeg++;
-				}
-			} else if (s.getLabel() == ClassLabel.ANOMALY) {
-				if (detectorResult[i]) {
-					// detector said anomaly
-					truePos++;
-				} else {
-					// detector said normal
-					falseNeg++;
-				}
-			}
-
-		}
-		final PdttaExperimentResult expResult = new PdttaExperimentResult(truePos, trueNeg, falsePos, falseNeg);
-
-		return expResult;
-
 	}
 
 }

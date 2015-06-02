@@ -9,13 +9,37 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.constants;
+package sadl.run.moe;
 
-/**
- * 
- * @author Timo Klerx
- *
- */
-public enum FeatureCreatorMethod {
-	FULL_FEATURE_CREATOR, SMALL_FEATURE_CREATOR, MINIMAL_FEATURE_CREATOR;
+public class Parameters {
+	int a;
+	int b;
+
+	public int getA() {
+		return a;
+	}
+
+	public void setA(int a) {
+		this.a = a;
+	}
+
+	public int getB() {
+		return b;
+	}
+
+	public void setB(int b) {
+		this.b = b;
+	}
+
+	public Parameters(int a, int b) {
+		super();
+		this.a = a;
+		this.b = b;
+	}
+
+	@Override
+	public String toString() {
+		return "Parameters [a=" + a + ", b=" + b + "]";
+	}
+
 }

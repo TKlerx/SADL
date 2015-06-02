@@ -11,9 +11,6 @@
 
 package sadl.structure;
 
-import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TIntArrayList;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,7 +29,7 @@ public class UntimedSequence implements Cloneable {
 	@SuppressWarnings("unused")
 	private static Logger logger = LoggerFactory.getLogger(UntimedSequence.class);
 
-	TIntList events = new TIntArrayList();
+	List<String> events = new ArrayList<>();
 	private ClassLabel label = ClassLabel.NORMAL;
 
 
@@ -79,7 +76,7 @@ public class UntimedSequence implements Cloneable {
 		return true;
 	}
 
-	public UntimedSequence(TIntList events, ClassLabel label) {
+	public UntimedSequence(List<String> events, ClassLabel label) {
 		super();
 		this.events = events;
 		this.label = label;
@@ -87,7 +84,7 @@ public class UntimedSequence implements Cloneable {
 
 
 	public UntimedSequence() {
-		this(new TIntArrayList(), ClassLabel.NORMAL);
+		this(new ArrayList<>(), ClassLabel.NORMAL);
 	}
 
 	public int length(){
@@ -111,10 +108,11 @@ public class UntimedSequence implements Cloneable {
 		return result;
 	}
 
-	public int getEvent(int index){
+	public String getEvent(int index) {
 		return getEvents().get(index);
 	}
-	public TIntList getEvents() {
+
+	public List<String> getEvents() {
 		return events;
 	}
 
@@ -153,17 +151,17 @@ public class UntimedSequence implements Cloneable {
 		return this.toTrebaString();
 	}
 
-	public void remove(int toDelete) {
-		events.remove(toDelete, 1);
+	public void remove(String toDelete) {
+		events.remove(toDelete);
 	}
 
 
 	@Override
 	public UntimedSequence clone() throws CloneNotSupportedException {
-		return new UntimedSequence(new TIntArrayList(events.toArray()),label);
+		return new UntimedSequence(new ArrayList<>( events), label);
 	}
 
-	public void addEvent(int symbol) {
+	public void addEvent(String symbol) {
 		events.add(symbol);
 	}
 

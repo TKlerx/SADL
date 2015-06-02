@@ -33,6 +33,7 @@ import sadl.constants.ClassLabel;
 public class TimedWord implements Serializable{
 	private static final long serialVersionUID = 111992823193054086L;
 
+	@SuppressWarnings("unused")
 	private static Logger logger = LoggerFactory.getLogger(TimedWord.class);
 
 	protected TIntList timeValues;
@@ -48,6 +49,13 @@ public class TimedWord implements Serializable{
 	TimedWord(ClassLabel l) {
 		this();
 		label = l;
+	}
+
+	public TimedWord(List<String> symbols, TIntList timeValues, ClassLabel label) {
+		super();
+		this.timeValues = timeValues;
+		this.symbols = symbols;
+		this.label = label;
 	}
 
 	void appendPair(String symbol, int timeDelay) {
@@ -72,18 +80,10 @@ public class TimedWord implements Serializable{
 	 *            The index to get the symbol for
 	 * @return The symbol at the given index or {@code null} if the index does not exist
 	 */
-	// XXX why not throw an arrayOutOfBoundException instead of returning null?
 	public String getSymbol(int i) {
-		if (i < symbols.size() && i >= 0) {
-			return symbols.get(i);
-		}
-		return null;
+		return symbols.get(i);
 	}
 
-	public int getIntSymbol(int i) {
-		logger.warn("Calling getIntSymbol on TimedWord. This is slow! Think of converting to TimedIntWord instead.");
-		return Integer.parseInt(getSymbol(i));
-	}
 
 	/**
 	 * Returns the time delay at the given index of the {@link TimedWord}.
@@ -93,11 +93,7 @@ public class TimedWord implements Serializable{
 	 * @return The time delay at the given index or {@code -1} if the index does not exist
 	 */
 	public int getTimeValue(int i) {
-
-		if (i < timeValues.size() && i >= 0) {
-			return timeValues.get(i);
-		}
-		return -1;
+		return timeValues.get(i);
 	}
 
 	/**
@@ -195,32 +191,10 @@ public class TimedWord implements Serializable{
 		return bw.toString();
 	}
 
-	public String getSymbolString() {
-		final StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < length(); i++) {
-			sb.append(getSymbol(i));
-			if (i != length() - 1) {
-				sb.append(' ');
-			}
-		}
-		return sb.toString();
-	}
+
 
 	public TIntList getTimeValues() {
 		return timeValues;
-	}
-
-	public TIntList getIntSymbols() {
-		logger.warn("Transforming String to int symbols. This is slow! Think of transforming to TimedIntWords");
-		return transformToIntList();
-	}
-
-	TIntList transformToIntList() {
-		return new TIntArrayList(symbols.stream().mapToInt(s -> Integer.parseInt(s)).toArray());
-	}
-
-	public TimedWord toIntWord() {
-		return new TimedIntWord(this);
 	}
 
 	public String toTrebaString() {
@@ -234,6 +208,48 @@ public class TimedWord implements Serializable{
 			}
 		}
 		return sb.toString();
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((label == null) ? 0 : label.hashCode());
+		result = prime * result + ((symbols == null) ? 0 : symbols.hashCode());
+		result = prime * result + ((timeValues == null) ? 0 : timeValues.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final TimedWord other = (TimedWord) obj;
+		if (label != other.label) {
+			return false;
+		}
+		if (symbols == null) {
+			if (other.symbols != null) {
+				return false;
+			}
+		} else if (!symbols.equals(other.symbols)) {
+			return false;
+		}
+		if (timeValues == null) {
+			if (other.timeValues != null) {
+				return false;
+			}
+		} else if (!timeValues.equals(other.timeValues)) {
+			return false;
+		}
+		return true;
 	}
 
 }

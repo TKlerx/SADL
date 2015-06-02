@@ -21,7 +21,7 @@ import java.util.Map;
 import jsat.distributions.Distribution;
 import jsat.distributions.MyDistributionSearch;
 import jsat.distributions.SingleValueDistribution;
-import jsat.distributions.empirical.KernelDensityEstimator;
+import jsat.distributions.empirical.MyKernelDensityEstimator;
 import jsat.distributions.empirical.kernelfunc.KernelFunction;
 import jsat.linear.DenseVector;
 import jsat.linear.Vec;
@@ -97,6 +97,7 @@ public class PdttaLearner implements ModelLearner {
 			final Map<ZeroProbTransition, TDoubleList> timeValueBuckets = fillTimeValueBuckets(pdfa, trainingSequences);
 			final Map<ZeroProbTransition, Distribution> transitionDistributions = fit(timeValueBuckets);
 			pdtta = new PDTTA(pdfa, transitionDistributions);
+			pdtta.setAlphabet(trainingSequences);
 			pdtta.makeImmutable();
 			return pdtta;
 		} catch (final IOException e) {
@@ -113,7 +114,7 @@ public class PdttaLearner implements ModelLearner {
 		for (final TimedWord word : trainingSequences) {
 			currentState = pdfa.getStartState();
 			for (int i = 0; i < word.length(); i++) {
-				final int symbol = word.getIntSymbol(i);
+				final String symbol = word.getSymbol(i);
 				final int timeValue = word.getTimeValue(i);
 				final Transition t = pdfa.getTransition(currentState, symbol);
 				followingState = t.getToState();
@@ -125,7 +126,7 @@ public class PdttaLearner implements ModelLearner {
 	}
 
 
-	protected static void addTimeValue(Map<ZeroProbTransition, TDoubleList> result, int currentState, int followingState, int event, double timeValue) {
+	protected static void addTimeValue(Map<ZeroProbTransition, TDoubleList> result, int currentState, int followingState, String event, double timeValue) {
 		final ZeroProbTransition t = new ZeroProbTransition(currentState, followingState, event);
 		final TDoubleList list = result.get(t);
 		if (list == null) {
@@ -155,13 +156,13 @@ public class PdttaLearner implements ModelLearner {
 		} else {
 			KernelFunction newKernelFunction = kdeKernelFunction;
 			if (newKernelFunction == null) {
-				newKernelFunction = KernelDensityEstimator.autoKernel(v);
+				newKernelFunction = MyKernelDensityEstimator.autoKernel(v);
 			}
 			double newKdeBandwidth = kdeBandwidth;
 			if (newKdeBandwidth <= 0) {
-				newKdeBandwidth = KernelDensityEstimator.BandwithGuassEstimate(v);
+				newKdeBandwidth = MyKernelDensityEstimator.BandwithGuassEstimate(v);
 			}
-			final KernelDensityEstimator kde = new KernelDensityEstimator(v, newKernelFunction, newKdeBandwidth);
+			final MyKernelDensityEstimator kde = new MyKernelDensityEstimator(v, newKernelFunction, newKdeBandwidth);
 			return kde;
 		}
 	}

@@ -31,7 +31,7 @@ public class AbnormalTransition extends Transition {
 		return anomalyType;
 	}
 
-	public AbnormalTransition(int fromState, int toState, int symbol, double probability, AnomalyInsertionType anomalyType) {
+	public AbnormalTransition(int fromState, int toState, String symbol, double probability, AnomalyInsertionType anomalyType) {
 		super(fromState, toState, symbol, probability);
 		this.anomalyType = anomalyType;
 	}

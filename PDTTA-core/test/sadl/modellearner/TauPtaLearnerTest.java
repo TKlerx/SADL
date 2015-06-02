@@ -37,7 +37,6 @@ public class TauPtaLearnerTest {
 	@Test
 	public void test() throws IOException, URISyntaxException {
 		final TimedInput train = TimedInput.parseAlt(Paths.get(TauPtaTestV1.class.getResource("/taupta/medium/rti_medium.txt").toURI()), 1);
-		train.toTimedIntWords();
 		@SuppressWarnings("deprecation")
 		final TauPTA oldPta = new TauPTA(train);
 		final TauPtaLearner learner = new TauPtaLearner();

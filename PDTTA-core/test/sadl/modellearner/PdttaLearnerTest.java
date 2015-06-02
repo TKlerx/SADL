@@ -18,6 +18,7 @@ import sadl.input.TimedInput;
 import sadl.interfaces.Model;
 import sadl.utils.IoUtils;
 import sadl.utils.MasterSeed;
+import sadl.utils.Settings;
 
 public class PdttaLearnerTest {
 
@@ -50,8 +51,8 @@ public class PdttaLearnerTest {
 							throw new RuntimeException(e);
 						}
 					});
+			Settings.setDebug(true);
 			final TimedInput ti1 = trainTest.getKey();
-			ti1.toTimedIntWords();
 			final TimedInput ti2 = SerializationUtils.clone(ti1);
 			final PdttaLearner l1 = new PdttaLearner(0.05, false);
 			final Model p1 = l1.train(ti1);

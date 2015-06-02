@@ -9,13 +9,10 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.constants;
+package sadl.models;
 
-/**
- * 
- * @author Timo Klerx
- *
- */
-public enum FeatureCreatorMethod {
-	FULL_FEATURE_CREATOR, SMALL_FEATURE_CREATOR, MINIMAL_FEATURE_CREATOR;
+public class DFFA extends PDFA {
+
+	private static final long serialVersionUID = -5069514782507435996L;
+
 }
