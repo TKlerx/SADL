@@ -1,9 +1,7 @@
-package jsat.distributions;
+package jsat.distributions.empirical;
 
 import jsat.distributions.empirical.kernelfunc.GaussKF;
 import jsat.distributions.empirical.kernelfunc.KernelFunction;
-
-import org.apache.commons.lang3.NotImplementedException;
 
 public class GaussKFDerivation implements KernelFunction {
 
@@ -40,12 +38,12 @@ public class GaussKFDerivation implements KernelFunction {
 
 	@Override
 	public double kPrime(double u) {
-		throw new NotImplementedException("");
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public double k2() {
-		throw new NotImplementedException("");
+		throw new UnsupportedOperationException();
 	}
 
 	@Override

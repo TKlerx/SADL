@@ -1,9 +1,9 @@
-package jsat.distributions;
+package jsat.distributions.empirical;
 
 import java.util.LinkedList;
 import java.util.List;
 
-import jsat.distributions.empirical.KernelDensityEstimator;
+import jsat.distributions.Distribution;
 import jsat.distributions.empirical.kernelfunc.GaussKF;
 import jsat.linear.DenseVector;
 import jsat.linear.Vec;
@@ -66,9 +66,9 @@ public class KernelDensityEstimatorDifferentiable extends Distribution {
 		double lastX = kernelDensity.min() + bandwidth;
 		double lastValue = kernelDerivationFunction.f(lastX);
 
-		final double endValue = kernelDensity.max() - bandwidth;
+		final double endX = kernelDensity.max() - bandwidth;
 
-		for (double x = lastX + bandwidth; x < endValue; x = x + bandwidth) {
+		for (double x = lastX + bandwidth; x < endX; x = x + bandwidth) {
 			final double newValue = kernelDerivationFunction.f(x);
 
 			if (lastValue < 0 && newValue > 0) {
