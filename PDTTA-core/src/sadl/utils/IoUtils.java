@@ -52,8 +52,16 @@ public class IoUtils {
 	private static Logger logger = LoggerFactory.getLogger(IoUtils.class);
 
 	public static void deleteFiles(String[] strings) throws IOException {
-		for (final String fileName : strings) {
-			final Path p = Paths.get(fileName);
+		final Path[] paths = new Path[strings.length];
+		for (int i = 0; i < strings.length; i++) {
+			final Path p = Paths.get(strings[i]);
+			paths[i] = p;
+		}
+		deleteFiles(paths);
+	}
+
+	public static void deleteFiles(Path[] paths) throws IOException {
+		for (final Path p : paths) {
 			if (!Files.deleteIfExists(p)) {
 				logger.warn("{} should have been explicitly deleted, but did not exist.", p);
 			}
