@@ -82,20 +82,18 @@ public class TrebaPdfaLearner implements PdfaLearner {
 		jobName = jobName.substring(0, 5);
 		// create treba input file
 		final String tempFilePrefix = tempDir.toString() + File.separatorChar + jobName + getClass().getName();
-		final String trebaTrainSetFileString = tempFilePrefix + "train_set";
-		final Path trebaTrainSetFile = createUniqueFile(Paths.get(trebaTrainSetFileString));
+		final Path trebaTrainSetFile = createUniqueFile(Paths.get(tempFilePrefix + "train_set"));
 
 		try {
 			createTrebaFile(trainingSequences, trebaTrainSetFile);
-			final String trebaAutomatonFile = tempFilePrefix + "fsm.fsm";
-			final Path trebaAutomaton = createUniqueFile(Paths.get(trebaAutomatonFile));
+			final Path trebaAutomaton = createUniqueFile(Paths.get(tempFilePrefix + "fsm.fsm"));
 			final double loglikelihood = trainFsm(trebaTrainSetFile, trebaAutomaton);
 			logger.debug("learned event automaton has loglikelihood of {}", loglikelihood);
 			// compute paths through the automata for the training set and write to
 			// 'trebaResultPathFile'
 			// parse the 'trebaResultPathFile'
 			// compute likelihood on test set for automaton and for time PDFs
-			pdfa = new PDFA(Paths.get(trebaAutomatonFile), trainingSequences);
+			pdfa = new PDFA(trebaAutomaton, trainingSequences);
 			pdfa.makeImmutable();
 			if (!Settings.isDebug()) {
 				IoUtils.deleteFiles(new Path[] { trebaTrainSetFile, trebaAutomaton });
