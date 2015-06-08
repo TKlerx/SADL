@@ -167,7 +167,6 @@ public class NewSmacPipeline implements Serializable {
 	public static void main(String[] args) throws IOException, InterruptedException {
 		final NewSmacPipeline sp = new NewSmacPipeline();
 		final JCommander jc = new JCommander(sp);
-		System.out.println(Arrays.toString(args));
 		if (args.length < 4) {
 			logger.error("Please provide the following inputs: [inputFile] 1 1 [Random Seed] [Parameter Arguments..]");
 			jc.usage();

@@ -51,7 +51,7 @@ public class PdttaLearnerTest {
 							throw new RuntimeException(e);
 						}
 					});
-			Settings.setDebug(true);
+			Settings.setDebug(false);
 			final TimedInput ti1 = trainTest.getKey();
 			final TimedInput ti2 = SerializationUtils.clone(ti1);
 			final PdttaLearner l1 = new PdttaLearner(0.05, false);

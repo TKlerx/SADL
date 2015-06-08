@@ -23,7 +23,7 @@ public class TauPtaTestSmallV2 {
 		MasterSeed.reset();
 	}
 	@Test
-	public void testTauPTATimedInputAbnormal() throws IOException, URISyntaxException {
+	public void testTauPTATimedInputAbnormal() throws IOException, URISyntaxException, ClassNotFoundException {
 		Path p = Paths.get(TauPtaTestSmallV2.class.getResource("/taupta/small/rti_small.txt").toURI());
 		final TimedInput trainingTimedSequences = TimedInput.parseAlt(p, 1);
 		final TauPtaLearner learner = new TauPtaLearner();
@@ -32,8 +32,8 @@ public class TauPtaTestSmallV2 {
 			if (type != AnomalyInsertionType.NONE && type != AnomalyInsertionType.ALL) {
 				final TauPTA anomaly1 = SerializationUtils.clone(pta);
 				anomaly1.makeAbnormal(type);
-				p = Paths.get(this.getClass().getResource("/taupta/small/pta_abnormal_" + type.getTypeIndex() + ".xml").toURI());
-				final TauPTA des = (TauPTA) IoUtils.xmlDeserialize(p);
+				p = Paths.get(this.getClass().getResource("/taupta/small/pta_abnormal_" + type.getTypeIndex() + ".ser").toURI());
+				final TauPTA des = (TauPTA) IoUtils.deserialize(p);
 				assertEquals("Test failed for anomaly type " + type.getTypeIndex(), anomaly1, des);
 				System.out.println("Test " + type + " passed.");
 			}
