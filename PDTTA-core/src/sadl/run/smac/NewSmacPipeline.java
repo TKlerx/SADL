@@ -19,8 +19,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import jsat.distributions.empirical.kernelfunc.BiweightKF;
@@ -183,8 +186,14 @@ public class NewSmacPipeline implements Serializable {
 		if (!Files.exists(resultPath)) {
 			Files.createFile(resultPath);
 		}
+		final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
 		try (BufferedWriter bw = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8, StandardOpenOption.APPEND)) {
-			bw.append(Arrays.toString(args) + "; " + result.toCsvString());
+			bw.append(df.format(new Date()));
+			bw.append(" ; ");
+			bw.append(Arrays.toString(args));
+			bw.append("; ");
+			bw.append(result.toCsvString());
 			bw.append('\n');
 		}
 
