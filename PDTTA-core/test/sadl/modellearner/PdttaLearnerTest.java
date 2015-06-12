@@ -42,15 +42,8 @@ public class PdttaLearnerTest {
 	public void test() throws IOException, URISyntaxException {
 		// TODO Change to train file (TimedInput.parse())
 		for (int i = 1; i <= 5; i++) {
-			final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(
-					Paths.get(this.getClass().getResource("/pdtta/smac_mix_type" + i + ".txt").toURI()), (reader) -> {
-						try {
-							return TimedInput.parse(reader);
-						} catch (final Exception e) {
-							e.printStackTrace();
-							throw new RuntimeException(e);
-						}
-					});
+			final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type" + i + ".txt")
+					.toURI()));
 			Settings.setDebug(false);
 			final TimedInput ti1 = trainTest.getKey();
 			final TimedInput ti2 = SerializationUtils.clone(ti1);
