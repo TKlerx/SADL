@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Function;
 
 import jsat.distributions.Distribution;
 
@@ -742,6 +743,14 @@ public class PDTTAold implements AutomatonModel, Serializable {
 		}
 		list.add(getFinalStateProbability(currentState));
 		return list;
+	}
+
+	@Override
+	public List<Function<TimedWord, Pair<TDoubleList, TDoubleList>>> getAvailableCalcMethods() {
+
+		final List<Function<TimedWord, Pair<TDoubleList, TDoubleList>>> m = new ArrayList<>();
+		m.add(this::calculateProbabilities);
+		return m;
 	}
 
 }

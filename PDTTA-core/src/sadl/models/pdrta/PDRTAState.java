@@ -138,11 +138,6 @@ public class PDRTAState implements Serializable {
 		}
 	}
 
-	public double getProbabilityHist(TimedTail tail) {
-
-		return stat.getHistProb(tail);
-	}
-
 	public int getTotalOutEvents() {
 
 		return stat.getTotalOutEvents();

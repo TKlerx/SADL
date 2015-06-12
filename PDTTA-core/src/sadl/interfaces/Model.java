@@ -13,6 +13,9 @@ package sadl.interfaces;
 
 import gnu.trove.list.TDoubleList;
 
+import java.util.List;
+import java.util.function.Function;
+
 import org.apache.commons.math3.util.Pair;
 
 import sadl.input.TimedWord;
@@ -23,6 +26,9 @@ import sadl.input.TimedWord;
  *
  */
 public interface Model {
+
 	Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord s);
+
+	List<Function<TimedWord, Pair<TDoubleList, TDoubleList>>> getAvailableCalcMethods();
 
 }

@@ -469,18 +469,20 @@ public class StateStatistic implements Serializable {
 	 *            The {@link TimedTail} to get the probability for
 	 * @return The probability for a given {@link TimedTail} according to the independent symbol and histogram bin probabilities
 	 */
-	protected double getHistProb(TimedTail t) {
+	protected double[] getHistProb(TimedTail t) {
 
 		if (t.getHistBarIndex() < 0 || t.getSymbolAlphIndex() < 0) {
-			return 0.0;
+			return new double[] { 0.0, 0.0 };
 		}
 
 		if (trainMode) {
 			final double timeP = (double) timeCount[t.getHistBarIndex()] / (double) totalOutCount;
 			final double symP = (double) symbolCount[t.getSymbolAlphIndex()] / (double) totalOutCount;
-			return symP * (timeP / histBarSizes[t.getHistBarIndex()]);
+			return new double[] { symP, (timeP / histBarSizes[t.getHistBarIndex()]) };
 		} else {
-			return symbolProbs[t.getSymbolAlphIndex()] * (timeProbs[t.getHistBarIndex()] / histBarSizes[t.getHistBarIndex()]);
+			final double timeP = (timeProbs[t.getHistBarIndex()] / histBarSizes[t.getHistBarIndex()]);
+			final double symP = symbolProbs[t.getSymbolAlphIndex()];
+			return new double[] { symP, timeP };
 		}
 	}
 
