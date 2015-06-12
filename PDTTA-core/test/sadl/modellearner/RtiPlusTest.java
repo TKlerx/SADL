@@ -17,7 +17,8 @@ import org.junit.Test;
 import sadl.input.TimedInput;
 import sadl.interfaces.Model;
 import sadl.modellearner.rtiplus.SimplePDRTALearner;
-import sadl.modellearner.rtiplus.SimplePDRTALearner.RunMode;
+import sadl.modellearner.rtiplus.SimplePDRTALearner.DistributionCheckType;
+import sadl.modellearner.rtiplus.SimplePDRTALearner.OperationTesterType;
 import sadl.utils.IoUtils;
 
 public class RtiPlusTest {
@@ -46,10 +47,29 @@ public class RtiPlusTest {
 			final TimedInput ti1 = TimedInput.parse(Paths.get(this.getClass().getResource("/pdrta/test_" + i + ".inp").toURI()));
 			final TimedInput ti2 = SerializationUtils.clone(ti1);
 
-			final SimplePDRTALearner l1 = new SimplePDRTALearner(0.05f, "4", 0, 1, RunMode.SILENT, null);
+			final SimplePDRTALearner l1 = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.ALL, "AAO", null);
 			final Model p1 = l1.train(ti1);
 
-			final SimplePDRTALearner l2 = new SimplePDRTALearner(0.05f, "4", 0, 1, RunMode.SILENT, null);
+			final SimplePDRTALearner l2 = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.ALL, "AAO", null);
+			final Model p2 = l2.train(ti2);
+
+			assertEquals("PDRTAs for files " + i + " are not equal", p2, p1);
+		}
+	}
+
+	// @Test
+	public void testDeterminismNaive() throws URISyntaxException, IOException {
+
+		for (int i = 1; i <= 5; i++) {
+
+			final TimedInput ti1 = TimedInput.parse(Paths.get(this.getClass().getResource("/pdrta/test_" + i + ".inp").toURI()));
+			final TimedInput ti2 = SerializationUtils.clone(ti1);
+
+			final SimplePDRTALearner l1 = new SimplePDRTALearner(0.05, "4", OperationTesterType.NAIVE_LRT, DistributionCheckType.ALL, "AOO",
+					"/home/fabian/sadl_rti_test/" + i + "/");
+			final Model p1 = l1.train(ti1);
+
+			final SimplePDRTALearner l2 = new SimplePDRTALearner(0.05, "4", OperationTesterType.NAIVE_LRT, DistributionCheckType.ALL, "AOO", null);
 			final Model p2 = l2.train(ti2);
 
 			assertEquals("PDRTAs for files " + i + " are not equal", p2, p1);
@@ -63,7 +83,7 @@ public class RtiPlusTest {
 
 			final TimedInput ti = TimedInput.parse(Paths.get(this.getClass().getResource("/pdrta/test_" + i + ".inp").toURI()));
 
-			final SimplePDRTALearner l = new SimplePDRTALearner(0.05f, "4", 0, 1, RunMode.SILENT, null);
+			final SimplePDRTALearner l = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.ALL, "AOO", null);
 			final Model p = l.train(ti);
 
 			final Path path = Paths.get(this.getClass().getResource("/pdrta/pdrta_" + i + ".aut").toURI());
@@ -81,10 +101,10 @@ public class RtiPlusTest {
 
 			final TimedInput ti = TimedInput.parse(Paths.get(this.getClass().getResource("/pdrta/test_" + i + ".inp").toURI()));
 
-			final SimplePDRTALearner l = new SimplePDRTALearner(0.05f, "4", 0, 1, RunMode.SILENT, null);
+			final SimplePDRTALearner l = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.ALL, "AOO", null);
 			final Model pdrta = l.train(ti);
 
-			// Deserialize;
+			// Deserialize
 			final Model p = (Model) IoUtils.deserialize(Paths.get(this.getClass().getResource("/pdrta/pdrta_" + i + ".aut").toURI()));
 
 			assertEquals("PDRTAs for files " + i + " are not equal", pdrta, p);
