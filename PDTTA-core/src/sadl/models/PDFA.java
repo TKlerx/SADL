@@ -31,7 +31,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import java.util.function.Function;
 
 import org.apache.commons.math3.exception.MathArithmeticException;
 import org.apache.commons.math3.fraction.BigFraction;
@@ -623,14 +622,6 @@ public class PDFA implements AutomatonModel, Serializable {
 	@Override
 	public Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord s) {
 		return Pair.create(computeEventLikelihoods(s), null);
-	}
-
-	@Override
-	public List<Function<TimedWord, Pair<TDoubleList, TDoubleList>>> getAvailableCalcMethods() {
-
-		final List<Function<TimedWord, Pair<TDoubleList, TDoubleList>>> m = new ArrayList<>();
-		m.add(this::calculateProbabilities);
-		return m;
 	}
 
 }

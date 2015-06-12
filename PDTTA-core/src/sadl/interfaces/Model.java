@@ -13,6 +13,7 @@ package sadl.interfaces;
 
 import gnu.trove.list.TDoubleList;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
@@ -29,6 +30,10 @@ public interface Model {
 
 	Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord s);
 
-	List<Function<TimedWord, Pair<TDoubleList, TDoubleList>>> getAvailableCalcMethods();
+	default List<Function<TimedWord, Pair<TDoubleList, TDoubleList>>> getAvailableCalcMethods() {
+		final List<Function<TimedWord, Pair<TDoubleList, TDoubleList>>> m = new ArrayList<>();
+		m.add(this::calculateProbabilities);
+		return m;
+	}
 
 }
