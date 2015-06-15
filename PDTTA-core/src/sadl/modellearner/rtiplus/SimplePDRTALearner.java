@@ -398,8 +398,10 @@ public class SimplePDRTALearner implements ModelLearner {
 			final NumberFormat nf = NumberFormat.getInstance(Locale.US);
 			nf.setMaximumFractionDigits(3);
 			// TODO Change filename
-			write(a, false, directory + "result" + ".aut");
-			draw(a, false, directory + "result" + ".png");
+			if (directory != null) {
+				write(a, false, directory + "result" + ".aut");
+				draw(a, false, directory + "result" + ".png");
+			}
 		} catch (final Exception e) {
 			e.printStackTrace();
 		}
