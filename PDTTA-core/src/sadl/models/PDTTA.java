@@ -60,7 +60,7 @@ public class PDTTA extends PDFA {
 
 	@Override
 	protected boolean restoreConsistency() {
-		return super.restoreConsistency() | deleteIrrelevantTransitions();
+		return deleteIrrelevantTransitions() | super.restoreConsistency();
 	}
 
 	@Override
