@@ -11,8 +11,12 @@
 
 package sadl.modellearner.rtiplus.tester;
 
+import jsat.distributions.ChiSquared;
+import sadl.modellearner.rtiplus.OperationUtil;
 import sadl.modellearner.rtiplus.StateColoring;
+import sadl.models.pdrta.PDRTA;
 import sadl.models.pdrta.PDRTAState;
+import sadl.models.pdrta.StateStatistic;
 
 /**
  * 
@@ -21,22 +25,79 @@ import sadl.models.pdrta.PDRTAState;
  */
 public class NaiveLikelihoodRatioTester implements OperationTester {
 
+	private StateColoring stateColoring;
+
 	@Override
 	public double testSplit(PDRTAState red, int symAlphIdx, int time) {
-		// TODO Auto-generated method stub
-		return 0;
+
+		final PDRTAState t = red.getTarget(symAlphIdx, time);
+		assert (t != null);
+
+		if (!stateColoring.isRed(red)) {
+			throw new IllegalArgumentException("Source must be red!");
+		} else if (!stateColoring.isBlue(t)) {
+			throw new IllegalArgumentException("Target must be blue!");
+		}
+
+		final PDRTA a = red.getPDRTA();
+
+		final PDRTA cA = new PDRTA(a);
+		final PDRTAState cRed = cA.getState(red.getIndex());
+		final StateColoring cColoring = new StateColoring(stateColoring, cA);
+
+		OperationUtil.split(cRed, symAlphIdx, time, cColoring);
+
+		return makeTest(calcLikelihood(a), calcLikelihood(cA));
 	}
 
 	@Override
 	public double testMerge(PDRTAState red, PDRTAState blue) {
-		// TODO Auto-generated method stub
-		return 0;
+
+		if (!stateColoring.isRed(red)) {
+			throw new IllegalArgumentException("First state must be red!");
+		} else if (!stateColoring.isBlue(blue)) {
+			throw new IllegalArgumentException("Second state must be blue!");
+		}
+
+		final PDRTA a = red.getPDRTA();
+		assert (a == blue.getPDRTA());
+
+		final PDRTA cA = new PDRTA(a);
+		final PDRTAState cRed = cA.getState(red.getIndex());
+		final PDRTAState cBlue = cA.getState(blue.getIndex());
+		final StateColoring cColoring = new StateColoring(stateColoring, cA);
+
+		OperationUtil.merge(cRed, cBlue, cColoring, false, false, null);
+
+		return makeTest(calcLikelihood(cA), calcLikelihood(a));
 	}
 
 	@Override
 	public void setColoring(StateColoring sc) {
-		// TODO Auto-generated method stub
+		stateColoring = sc;
+	}
 
+	private LikelihoodValue calcLikelihood(PDRTA a) {
+
+		final LikelihoodValue lv = new LikelihoodValue();
+		for (final PDRTAState s : a.getStates()) {
+			lv.add(StateStatistic.getLikelihoodSym(s));
+			lv.add(StateStatistic.getLikelihoodTime(s));
+		}
+		return lv;
+	}
+
+	private double makeTest(LikelihoodValue lvGeneral, LikelihoodValue lvSpecific) {
+
+		final double ratio = lvGeneral.getRatio() - lvSpecific.getRatio();
+		final int dof = lvSpecific.getParam() - lvGeneral.getParam();
+
+		if (dof > 0) {
+			final ChiSquared c = new ChiSquared(dof);
+			return 1.0 - c.cdf(-2.0 * ratio);
+		} else {
+			return -1.0;
+		}
 	}
 
 }

@@ -32,6 +32,9 @@ import java.util.TreeSet;
 import sadl.input.TimedInput;
 import sadl.interfaces.Model;
 import sadl.interfaces.ModelLearner;
+import sadl.modellearner.rtiplus.boolop.AndOperator;
+import sadl.modellearner.rtiplus.boolop.BooleanOperator;
+import sadl.modellearner.rtiplus.boolop.OrOperator;
 import sadl.modellearner.rtiplus.tester.FishersMethodTester;
 import sadl.modellearner.rtiplus.tester.LikelihoodRatioTester;
 import sadl.modellearner.rtiplus.tester.NaiveLikelihoodRatioTester;
@@ -53,7 +56,21 @@ public class SimplePDRTALearner implements ModelLearner {
 		SILENT, NORMAL_CONSOLE, NORMAL_FILE, NORMAL_BATCH, DEBUG, DEBUG_STEPS, DEBUG_DEEP
 	}
 
-	// Use JCommander and remove
+	public enum OperationTesterType {
+		LRT, LRT_ADV, NAIVE_LRT, FM, FM_ADV
+	}
+
+	public enum DistributionCheckType {
+		DISABLED, ALL_BORDER, ALL, MAD_BORDER, MAD, OUTLIER_BORDER, OUTLIER
+	}
+
+	// The boolean operators for the pooling strategy used by Verwer's LRT and FM
+	// 0: Operator for pooling (thesis: AND, impl: AND, own: AND)
+	// 1: Operator for pool discarding (thesis: missing, impl: [LRT: OR, FM: AND], own: AND)
+	// 2: Operator for calculation interruption (thesis: AND, impl: OR, own: AND)
+	public static BooleanOperator[] bOp;
+
+	// TODO Use JCommander and remove
 	private static final String USAGE = "Usage: java -cp jRTI+.jar de.upb.fw.searcher.Searcher"
 			+ " [SIGNIFICANCE] [DISTR_CHECK_TYPE] [HISTOGRAM_BINS] [FILE]\n"
 			+ "1.  SIGNIFICANCE  is a decision (float) value between 0.0 and 1.0, default is 0.05 (5% significance)\n"
@@ -61,45 +78,75 @@ public class SimplePDRTALearner implements ModelLearner {
 			+ "3.  HISTOGRAM_BINS  can be given as (inner) borders -b1-b2-...-bn- or as the number of bins to use\n"
 			+ "4.  FILE  is an input file conaining unlabeled timed strings";
 
-	public RunMode runMode = RunMode.NORMAL_BATCH;
+	public RunMode runMode = RunMode.SILENT;
 
 	protected long startTime;
 
 	protected final double significance;
-	protected final int distrCheckType;
+	protected final DistributionCheckType distrCheckType;
 	protected final String histBinsStr;
 	protected final OperationTester tester;
 
 	protected final String directory;
 
-	public SimplePDRTALearner(float sig, String histBins, int testerType, int distrCheckType, RunMode runMode, String dir) {
+	public SimplePDRTALearner(double sig, String histBins, OperationTesterType testerType, DistributionCheckType distrCheckType, String boolOps, String dir) {
 
-		checkParams(sig, distrCheckType);
+		if (sig < 0.0 || sig > 1.0) {
+			throw new IllegalArgumentException("Wrong parameter: SIGNIFICANCE must be a decision (float) value between 0.0 and 1.0");
+		}
+
+		parseBoolOps(boolOps);
 
 		this.significance = sig;
 		this.distrCheckType = distrCheckType;
 		this.histBinsStr = histBins;
-		this.runMode = runMode;
 		this.directory = dir;
 
 		switch (testerType) {
-		case 0:
+		case LRT:
 			this.tester = new LikelihoodRatioTester(false);
 			break;
-		case 1:
+		case LRT_ADV:
 			this.tester = new LikelihoodRatioTester(true);
 			break;
-		case 2:
+		case NAIVE_LRT:
 			this.tester = new NaiveLikelihoodRatioTester();
 			break;
-		case 3:
-			this.tester = new FishersMethodTester();
+		case FM:
+			this.tester = new FishersMethodTester(false);
+			break;
+		case FM_ADV:
+			this.tester = new FishersMethodTester(true);
 			break;
 		default:
 			this.tester = new LikelihoodRatioTester(false);
 			break;
 		}
+	}
 
+	private void parseBoolOps(String bOps) {
+
+		final char[] c = bOps.toUpperCase().toCharArray();
+
+		if (c.length != 3) {
+			throw new IllegalArgumentException("Boolean operators must be a tripple of 'A' or 'O' symbols!");
+		}
+
+		bOp = new BooleanOperator[c.length];
+		for (int i = 0; i < c.length; i++) {
+			switch (c[i]) {
+			case 'A':
+				bOp[i] = new AndOperator();
+				break;
+			case 'O':
+				bOp[i] = new OrOperator();
+				break;
+			default:
+				bOp[i] = new AndOperator();
+				System.err.println("The symbol '" + c[i] + "' is not appropriate for boolean operator. Using default 'A'.");
+				break;
+			}
+		}
 	}
 
 	@Override
@@ -107,7 +154,7 @@ public class SimplePDRTALearner implements ModelLearner {
 
 		System.out.println("RTI+: Building automaton from input sequences");
 
-		final boolean expand = distrCheckType >= 1;
+		final boolean expand = distrCheckType.compareTo(DistributionCheckType.ALL) > 0;
 		final PDRTAInput in = new PDRTAInput(trainingSequences, histBinsStr, expand);
 		final PDRTA a = new PDRTA(in);
 
@@ -130,17 +177,6 @@ public class SimplePDRTALearner implements ModelLearner {
 		System.out.println("END");
 
 		return a;
-	}
-
-	private void checkParams(float sig, int distrCheckT) {
-
-		if (sig < 0.0 || sig > 1.0) {
-			throw new IllegalArgumentException("Wrong parameter: SIGNIFICANCE must be a decision (float) value between 0.0 and 1.0");
-		}
-
-		if (distrCheckT < -1 || distrCheckT > 5) {
-			throw new IllegalArgumentException("Wrong parameter: DISTR_CHECK_TYPE must be -1, 0, 1, 2, 3, 4 or 5");
-		}
 	}
 
 	protected Transition getMostVisitedTrans(PDRTA a, StateColoring sc) {
@@ -258,7 +294,7 @@ public class SimplePDRTALearner implements ModelLearner {
 			}
 			counter++;
 
-			if (distrCheckType >= 0) {
+			if (distrCheckType.compareTo(DistributionCheckType.DISABLED) > 0) {
 				if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
 					System.out.print("Checking data distribution... ");
 				}
@@ -393,7 +429,7 @@ public class SimplePDRTALearner implements ModelLearner {
 		}
 	}
 
-	public boolean checkDistribution(PDRTAState s, int alphIdx, int type, StateColoring sc) {
+	public boolean checkDistribution(PDRTAState s, int alphIdx, DistributionCheckType type, StateColoring sc) {
 
 		final NavigableMap<Integer, Interval> ins = s.getIntervals(alphIdx);
 		if (ins.size() != 1) {
@@ -406,13 +442,13 @@ public class SimplePDRTALearner implements ModelLearner {
 		}
 
 		int tolerance;
-		if (type < 0) {
+		if (type.equals(DistributionCheckType.DISABLED)) {
 			return false;
-		} else if (type == 0 || type == 1) {
+		} else if (type.equals(DistributionCheckType.ALL_BORDER) || type.equals(DistributionCheckType.ALL)) {
 			tolerance = 0;
-		} else if (type == 2 || type == 3) {
+		} else if (type.equals(DistributionCheckType.MAD_BORDER) || type.equals(DistributionCheckType.MAD)) {
 			tolerance = getToleranceMAD(in, PDRTA.getMinData());
-		} else if (type == 4 || type == 5) {
+		} else if (type.equals(DistributionCheckType.OUTLIER_BORDER) || type.equals(DistributionCheckType.OUTLIER)) {
 			tolerance = getToleranceOutliers(in, PDRTA.getMinData());
 		} else {
 			throw new IllegalArgumentException("Nonexistent type used!");
@@ -421,7 +457,8 @@ public class SimplePDRTALearner implements ModelLearner {
 		final NavigableMap<Integer, Collection<TimedTail>> tails = in.getTails().asMap();
 		final List<Integer> splits = new ArrayList<>();
 
-		if (type % 2 == 1) {
+		if ((type.ordinal() - 1) % 2 == 1) {
+			// The types without border
 			final Iterator<Entry<Integer, Collection<TimedTail>>> it = tails.entrySet().iterator();
 			if (it.hasNext()) {
 				Entry<Integer, Collection<TimedTail>> ePrev = it.next();

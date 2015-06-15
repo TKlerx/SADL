@@ -17,11 +17,13 @@ import java.util.Set;
 
 import jsat.distributions.ChiSquared;
 import sadl.modellearner.rtiplus.OperationUtil;
+import sadl.modellearner.rtiplus.SimplePDRTALearner;
 import sadl.modellearner.rtiplus.StateColoring;
 import sadl.models.pdrta.Interval;
 import sadl.models.pdrta.PDRTA;
 import sadl.models.pdrta.PDRTAState;
 import sadl.models.pdrta.StateStatistic;
+import sadl.models.pdrta.StateStatistic.CalcRatio;
 import sadl.models.pdrta.TimedTail;
 
 import com.google.common.collect.HashMultimap;
@@ -44,6 +46,12 @@ public class LikelihoodRatioTester implements OperationTester {
 	@Override
 	public double testSplit(PDRTAState s, int symAlphIdx, int time) {
 
+		final LikelihoodValue lv = intTestSplit(s, symAlphIdx, time, StateStatistic::calcLRTRatio);
+		return compareToChiSquared(lv);
+	}
+
+	LikelihoodValue intTestSplit(PDRTAState s, int symAlphIdx, int time, CalcRatio cr) {
+
 		final PDRTAState t = s.getTarget(symAlphIdx, time);
 		assert (t != null);
 
@@ -55,7 +63,7 @@ public class LikelihoodRatioTester implements OperationTester {
 
 		// Abort because LRT will never be calculated for any state in the tree
 		if (t.getTotalOutEvents() < (2 * PDRTA.getMinData())) {
-			return -1.0;
+			return new LikelihoodValue();
 		}
 
 		final Multimap<Integer, TimedTail> mHist = HashMultimap.create();
@@ -68,21 +76,22 @@ public class LikelihoodRatioTester implements OperationTester {
 			}
 		}
 
-		final LikelihoodValue lv = new LikelihoodValue(0.0, 0);
-		lv.add(intTestSplit(t, mHist, mSym));
+		final LikelihoodValue lv = new LikelihoodValue();
+		lv.add(recTestSplit(t, mHist, mSym, cr));
 
 		// TODO delete. only for debug
 		// System.out.println("p=" + (-2.0 * lv.ratio) + " , df="
 		// + lv.additionalParam);
 
-		return compareToChiSquared(lv);
+		return lv;
 	}
 
-	private double compareToChiSquared(LikelihoodValue lv) {
+	double compareToChiSquared(LikelihoodValue lv) {
 
-		if (lv.additionalParam > 0) {
-			final ChiSquared c = new ChiSquared(lv.additionalParam);
-			return 1.0 - c.cdf(-2.0 * lv.ratio);
+		final int param = lv.getParam();
+		if (param > 0) {
+			final ChiSquared c = new ChiSquared(param);
+			return 1.0 - c.cdf(-2.0 * lv.getRatio());
 		} else {
 			return -1.0;
 		}
@@ -90,6 +99,12 @@ public class LikelihoodRatioTester implements OperationTester {
 
 	@Override
 	public double testMerge(PDRTAState red, PDRTAState blue) {
+
+		final LikelihoodValue lv = intTestMerge(red, blue, StateStatistic::calcLRTRatio);
+		return compareToChiSquared(lv);
+	}
+
+	LikelihoodValue intTestMerge(PDRTAState red, PDRTAState blue, CalcRatio cr) {
 
 		if (!stateColoring.isRed(red)) {
 			throw new IllegalArgumentException("First state must be red!");
@@ -111,30 +126,23 @@ public class LikelihoodRatioTester implements OperationTester {
 
 		final StateColoring cColoring = new StateColoring(stateColoring, cA);
 
-		final LikelihoodValue lv = new LikelihoodValue(0.0, 0);
-		lv.add(OperationUtil.merge(cR, cB, cColoring, true, advancedPooling));
+		final LikelihoodValue lv = OperationUtil.merge(cR, cB, cColoring, true, advancedPooling, cr);
 
 		// TODO delete. only for debug
 		// System.out.println("p=" + (-2.0 * lv.ratio) + " , df="
 		// + lv.additionalParam);
 
-		return compareToChiSquared(lv);
+		return lv;
 	}
 
-	/**
-	 * Belongs to testSplit_C
-	 * 
-	 * @param s
-	 * @param m
-	 * @return
-	 */
-	private LikelihoodValue intTestSplit(PDRTAState s, Multimap<Integer, TimedTail> mHist, Multimap<Integer, TimedTail> mSym) {
+	private LikelihoodValue recTestSplit(PDRTAState s, Multimap<Integer, TimedTail> mHist, Multimap<Integer, TimedTail> mSym, CalcRatio cr) {
 
 		final PDRTA a = s.getPDRTA();
+		final int minData = PDRTA.getMinData();
 
-		final LikelihoodValue lv = new LikelihoodValue(0.0, 0);
-		lv.add(StateStatistic.getLikelihoodRatioSym(s, mSym, advancedPooling));
-		lv.add(StateStatistic.getLikelihoodRatioTime(s, mHist, advancedPooling));
+		final LikelihoodValue lv = new LikelihoodValue();
+		lv.add(StateStatistic.getLikelihoodRatioSym(s, mSym, advancedPooling, cr));
+		lv.add(StateStatistic.getLikelihoodRatioTime(s, mHist, advancedPooling, cr));
 
 		Interval in;
 		TimedTail nt;
@@ -143,8 +151,7 @@ public class LikelihoodRatioTester implements OperationTester {
 		for (int i = 0; i < a.getAlphSize(); i++) {
 			assert (s.getIntervals(i).size() == 1);
 			in = s.getIntervals(i).firstEntry().getValue();
-			// LRT_FIX : || -> && stop recursion
-			if (in.getTails().size() >= 2 * PDRTA.getMinData()) {
+			if (in.getTails().size() > 0) {
 				assert (in.getTarget() != null);
 				mNextHist = HashMultimap.create();
 				mNextSym = HashMultimap.create();
@@ -157,7 +164,11 @@ public class LikelihoodRatioTester implements OperationTester {
 						mNextSym.put(nt.getSymbolAlphIndex(), nt);
 					}
 				}
-				lv.add(intTestSplit(in.getTarget(), mNextHist, mNextSym));
+				// LRT_FIX : Thesis: AND, Impl: OR => stop recursion
+				// In case of AND => if((in.getTails().size() < 2 * minData) before calculating new maps!
+				if (SimplePDRTALearner.bOp[2].eval((in.getTails().size() - mNextHist.size()) < minData, mNextHist.size() < minData)) {
+					lv.add(recTestSplit(in.getTarget(), mNextHist, mNextSym, cr));
+				}
 			}
 		}
 		return lv;

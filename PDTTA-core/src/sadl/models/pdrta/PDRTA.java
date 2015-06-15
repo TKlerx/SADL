@@ -12,6 +12,7 @@
 package sadl.models.pdrta;
 
 import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -29,6 +30,7 @@ import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Function;
 
 import org.apache.commons.math3.util.Pair;
 
@@ -124,71 +126,67 @@ public class PDRTA implements AutomatonModel, Serializable {
 
 	}
 
-	public double[] testSeqHisto(TimedTail tail) {
+	private Pair<TDoubleList, TDoubleList> testSeqHisto(TimedTail tail) {
 
-		final List<Double> vals = new ArrayList<>();
+		final TDoubleList symP = new TDoubleArrayList();
+		final TDoubleList timeP = new TDoubleArrayList();
+		double[] p;
 		TimedTail t = tail;
 		PDRTAState s = root;
 		while (t != null) {
 			if (t.getSymbolAlphIndex() < 0) {
-				return new double[] { -1.0 };
+				return Pair.create(new TDoubleArrayList(new double[] { -1.0 }), new TDoubleArrayList(0));
 			}
 			if (t.getHistBarIndex() < 0) {
-				return new double[] { -2.0 };
+				return Pair.create(new TDoubleArrayList(new double[] { -2.0 }), new TDoubleArrayList(0));
 			}
-			vals.add(s.getStat().getHistProb(t));
+			p = s.getStat().getHistProb(t);
+			symP.add(p[0]);
+			timeP.add(p[1]);
 			final Interval in = s.getInterval(t.getSymbolAlphIndex(), t.getTimeDelay());
 			s = in.getTarget();
 			t = t.getNextTail();
 			if (s == null) {
 				if (in.getBegin() == input.getMinTimeDelay() && in.getEnd() == input.getMaxTimeDelay()) {
-					return new double[] { -3.0 };
+					return Pair.create(new TDoubleArrayList(0), new TDoubleArrayList(new double[] { -2.0 }));
 				} else {
-					return new double[] { -4.0 };
+					return Pair.create(new TDoubleArrayList(0), new TDoubleArrayList(new double[] { -3.0 }));
 				}
 			}
 		}
-		vals.add(s.getStat().getTailEndProb());
+		symP.add(s.getStat().getTailEndProb());
 
-		final double[] res = new double[vals.size()];
-		for (int i = 0; i < res.length; i++) {
-			res[i] = vals.get(i);
-		}
-		return res;
+		return Pair.create(symP, timeP);
 	}
 
-	public double[] testSeqTrans(TimedTail tail) {
+	private TDoubleList testSeqTrans(TimedTail tail) {
 
-		final List<Double> vals = new ArrayList<>();
+		final TDoubleList transP = new TDoubleArrayList();
 		TimedTail t = tail;
 		PDRTAState s = root;
 		while (t != null) {
 			if (t.getSymbolAlphIndex() < 0) {
-				return new double[] { -1.0 };
+				return new TDoubleArrayList(new double[] { -1.0 });
 			}
 			if (t.getHistBarIndex() < 0) {
-				return new double[] { -2.0 };
+				return new TDoubleArrayList(new double[] { -2.0 });
 			}
 			final Interval in = s.getInterval(t.getSymbolAlphIndex(), t.getTimeDelay());
 			assert (in != null);
-			vals.add(s.getStat().getTransProb(t.getSymbolAlphIndex(), in));
+			transP.add(s.getStat().getTransProb(t.getSymbolAlphIndex(), in));
 			s = in.getTarget();
 			t = t.getNextTail();
 			if (s == null) {
 				if (in.getBegin() == input.getMinTimeDelay() && in.getEnd() == input.getMaxTimeDelay()) {
-					return new double[] { -3.0 };
+					return new TDoubleArrayList(new double[] { -3.0 });
 				} else {
-					return new double[] { -4.0 };
+					return new TDoubleArrayList(new double[] { -4.0 });
 				}
 			}
 		}
-		vals.add(s.getStat().getTailEndProb());
+		transP.add(s.getStat().getTailEndProb());
 
-		final double[] res = new double[vals.size()];
-		for (int i = 0; i < res.length; i++) {
-			res[i] = vals.get(i);
-		}
-		return res;
+		return transP;
 	}
 
 	public Collection<PDRTAState> getStates() {
@@ -602,8 +600,15 @@ public class PDRTA implements AutomatonModel, Serializable {
 
 	@Override
 	public Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord seq) {
-		// TODO Auto-generated method stub
-		return null;
+
+		final TimedTail t = input.toTestTailChain(seq);
+		return testSeqHisto(t);
+	}
+
+	public Pair<TDoubleList, TDoubleList> calculateProbsTrans(TimedWord seq) {
+
+		final TimedTail t = input.toTestTailChain(seq);
+		return Pair.create(testSeqTrans(t), null);
 	}
 
 	@Override
@@ -660,6 +665,15 @@ public class PDRTA implements AutomatonModel, Serializable {
 		for (final PDRTAState s : states.values()) {
 			s.cleanUp();
 		}
+	}
+
+	@Override
+	public List<Function<TimedWord, Pair<TDoubleList, TDoubleList>>> getAvailableCalcMethods() {
+
+		final List<Function<TimedWord, Pair<TDoubleList, TDoubleList>>> m = new ArrayList<>();
+		m.add(this::calculateProbabilities);
+		m.add(this::calculateProbsTrans);
+		return m;
 	}
 
 }

@@ -11,6 +11,11 @@
 
 package sadl.modellearner.rtiplus.tester;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.array.TIntArrayList;
+
 /**
  * 
  * @author Fabian Witter
@@ -18,19 +23,34 @@ package sadl.modellearner.rtiplus.tester;
  */
 public class LikelihoodValue {
 
-	protected double ratio;
-	protected int additionalParam;
+	protected TDoubleList ratios;
+	protected TIntList additionalParams;
 
 	public LikelihoodValue(double ratio, int additionalParam) {
 
-		this.ratio = ratio;
-		this.additionalParam = additionalParam;
+		this();
+		ratios.add(ratio);
+		additionalParams.add(additionalParam);
+	}
+
+	public LikelihoodValue() {
+
+		ratios = new TDoubleArrayList();
+		additionalParams = new TIntArrayList();
 	}
 
 	public void add(LikelihoodValue lv) {
 
-		this.ratio += lv.ratio;
-		this.additionalParam += lv.additionalParam;
+		ratios.addAll(lv.ratios);
+		additionalParams.addAll(lv.additionalParams);
+	}
+
+	public double getRatio() {
+		return ratios.sum();
+	}
+
+	public int getParam() {
+		return additionalParams.sum();
 	}
 
 }

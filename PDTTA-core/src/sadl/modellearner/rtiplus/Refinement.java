@@ -112,7 +112,7 @@ class Refinement implements Comparable<Refinement> {
 	void refine() {
 
 		if (type == OpType.MERGE) {
-			OperationUtil.merge(source, target, stateColoring, false, false);
+			OperationUtil.merge(source, target, stateColoring, false, false, null);
 		} else if (type == OpType.SPLIT) {
 			OperationUtil.split(source, symbolAlphIdx, time, stateColoring);
 		}

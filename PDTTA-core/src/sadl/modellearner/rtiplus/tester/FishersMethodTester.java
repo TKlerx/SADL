@@ -11,32 +11,50 @@
 
 package sadl.modellearner.rtiplus.tester;
 
-import sadl.modellearner.rtiplus.StateColoring;
 import sadl.models.pdrta.PDRTAState;
+import sadl.models.pdrta.StateStatistic;
 
 /**
  * 
  * @author Fabian Witter
  *
  */
-public class FishersMethodTester implements OperationTester {
+public class FishersMethodTester extends LikelihoodRatioTester {
+
+	private static final double MAX_P_VALUE = 1.0 - 0.1e-100;
+	private static final double MIN_P_VALUE = 0.1e-100;
+
+	public FishersMethodTester(boolean advancedPooling) {
+		super(advancedPooling);
+	}
 
 	@Override
 	public double testSplit(PDRTAState red, int symAlphIdx, int time) {
-		// TODO Auto-generated method stub
-		return 0;
+
+		final LikelihoodValue lv = intTestSplit(red, symAlphIdx, time, StateStatistic::calcFMRatio);
+		return applyFM(lv);
 	}
 
 	@Override
 	public double testMerge(PDRTAState red, PDRTAState blue) {
-		// TODO Auto-generated method stub
-		return 0;
+
+		final LikelihoodValue lv = intTestMerge(red, blue, StateStatistic::calcFMRatio);
+		return applyFM(lv);
 	}
 
-	@Override
-	public void setColoring(StateColoring sc) {
-		// TODO Auto-generated method stub
+	private double applyFM(LikelihoodValue lv) {
 
+		final LikelihoodValue lv2 = new LikelihoodValue();
+		for (int i = 0; i < lv.ratios.size(); i++) {
+			double z = compareToChiSquared(new LikelihoodValue(lv.ratios.get(i), lv.additionalParams.get(i)));
+			if (z < MIN_P_VALUE) {
+				z = MIN_P_VALUE;
+			} else if (z > MAX_P_VALUE) {
+				z = MAX_P_VALUE;
+			}
+			lv2.add(new LikelihoodValue(-2.0 * Math.log(z), 2));
+		}
+		return compareToChiSquared(lv2);
 	}
 
 }

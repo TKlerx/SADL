@@ -31,8 +31,8 @@ public class GreedyPDRTALearner extends SimplePDRTALearner {
 	private final int maxMergesToSearch = 10;
 	private final int maxSplitsToSearch = 10;
 
-	public GreedyPDRTALearner(float sig, String histBins, int testerType, int distrCheckType, RunMode runMode, String dir) {
-		super(sig, histBins, testerType, distrCheckType, runMode, dir);
+	public GreedyPDRTALearner(float sig, String histBins, OperationTesterType testerType, DistributionCheckType distrCheckType, String boolOps, String dir) {
+		super(sig, histBins, testerType, distrCheckType, boolOps, dir);
 	}
 
 	@Override
@@ -40,7 +40,7 @@ public class GreedyPDRTALearner extends SimplePDRTALearner {
 
 		System.out.println("RTI+: Building automaton from input sequences");
 
-		final boolean expand = distrCheckType >= 1;
+		final boolean expand = distrCheckType.compareTo(DistributionCheckType.ALL) > 0;
 		final PDRTAInput in = new PDRTAInput(trainingSequences, histBinsStr, expand);
 		final PDRTA a = new PDRTA(in);
 

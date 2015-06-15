@@ -20,6 +20,7 @@ import sadl.models.pdrta.Interval;
 import sadl.models.pdrta.PDRTA;
 import sadl.models.pdrta.PDRTAState;
 import sadl.models.pdrta.StateStatistic;
+import sadl.models.pdrta.StateStatistic.CalcRatio;
 import sadl.models.pdrta.TimedTail;
 
 /**
@@ -93,7 +94,7 @@ public class OperationUtil {
 	 * @return LikelihoodValue
 	 */
 	@SuppressWarnings("null")
-	public static LikelihoodValue merge(PDRTAState s1, PDRTAState s2, StateColoring sc, boolean test, boolean advancedPooling) {
+	public static LikelihoodValue merge(PDRTAState s1, PDRTAState s2, StateColoring sc, boolean test, boolean advancedPooling, CalcRatio cr) {
 
 		final PDRTA a = s1.getPDRTA();
 		assert (a == s2.getPDRTA());
@@ -102,9 +103,9 @@ public class OperationUtil {
 
 		LikelihoodValue lv = null;
 		if (test) {
-			lv = new LikelihoodValue(0.0, 0);
-			lv.add(StateStatistic.getLikelihoodRatioSym(s1, s2, advancedPooling));
-			lv.add(StateStatistic.getLikelihoodRatioTime(s1, s2, advancedPooling));
+			lv = new LikelihoodValue();
+			lv.add(StateStatistic.getLikelihoodRatioSym(s1, s2, advancedPooling, cr));
+			lv.add(StateStatistic.getLikelihoodRatioTime(s1, s2, advancedPooling, cr));
 		}
 
 		preMerge(s1, s2, sc);
@@ -126,17 +127,17 @@ public class OperationUtil {
 						if (test) {
 							out1 = in1.getTarget().getStat().getTotalOutEvents();
 							out2 = in1.getTarget().getStat().getTotalOutEvents();
-							// Abort recursion when s1 is in a subtree and not
-							// enough data is available for testing
-							if (sc.isRed(in1.getTarget()) || !(out1 < PDRTA.getMinData() && out2 < PDRTA.getMinData())) {
-								lv.add(merge(in1.getTarget(), in2.getTarget(), sc, test, advancedPooling));
+							// LRT_FIX : Thesis: AND, Impl: OR => stop recursion
+							// Abort recursion when s1 is in a subtree (not red) and not enough data is available for testing
+							// Attention: Verwer's implementation stops even if s1 is red and there can be further computations!
+							if (sc.isRed(in1.getTarget()) || !SimplePDRTALearner.bOp[2].eval(out1 < PDRTA.getMinData(), out2 < PDRTA.getMinData())) {
+								lv.add(merge(in1.getTarget(), in2.getTarget(), sc, test, advancedPooling, cr));
 							}
 						} else {
-							merge(in1.getTarget(), in2.getTarget(), sc, test, advancedPooling);
+							merge(in1.getTarget(), in2.getTarget(), sc, test, advancedPooling, cr);
 						}
 						in1.getTails().putAll(in2.getTails());
 					} else {
-						// LRT_FIX : calculation of LRT necessary?
 						// Move subtree of s2 to s1
 						assert (s1.getIntervals(i).containsKey(in2.getEnd()));
 						s1.getIntervals(i).put(in2.getEnd(), in2);
@@ -152,7 +153,7 @@ public class OperationUtil {
 		return lv;
 	}
 
-	static void split(PDRTAState s, int symAlphIdx, int time, StateColoring sc) {
+	public static void split(PDRTAState s, int symAlphIdx, int time, StateColoring sc) {
 
 		final PDRTA a = s.getPDRTA();
 

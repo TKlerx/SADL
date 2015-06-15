@@ -743,5 +743,4 @@ public class PDTTAold implements AutomatonModel, Serializable {
 		list.add(getFinalStateProbability(currentState));
 		return list;
 	}
-
 }
