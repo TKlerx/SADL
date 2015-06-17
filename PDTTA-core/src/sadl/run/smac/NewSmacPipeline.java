@@ -117,11 +117,14 @@ public class NewSmacPipeline implements Serializable {
 	@Parameter(names = "-debug")
 	private final boolean debug = false;
 
+	@Parameter(names = "-aggregateSublists", arity = 1)
+	private boolean aggregateSublists;
+
 	@Parameter(names = "-kdeKernelFunction")
 	KdeKernelFunction kdeKernelFunctionQualifier;
 	KernelFunction kdeKernelFunction;
 
-	@Parameter(names = "-recursiveMergeTest")
+	@Parameter(names = "-recursiveMergeTest", arity = 1)
 	private boolean recursiveMergeTest;
 	@Parameter(names = "-aggregatedTimeThreshold")
 	private double aggregatedTimeThreshold;
@@ -226,9 +229,9 @@ public class NewSmacPipeline implements Serializable {
 			// pdttaDetector = new PdttaOneClassSvmDetector(aggType, featureCreator, svmProbabilityEstimate, svmGamma, svmNu, svmCosts, svmKernelType, svmEps,
 			// svmDegree, scalingMethod);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_AGG_ONLY) {
-			pdttaDetector = new PdttaAggregatedThresholdDetector(aggType, aggregatedEventThreshold, aggregatedTimeThreshold);
+			pdttaDetector = new PdttaAggregatedThresholdDetector(aggType, aggregatedEventThreshold, aggregatedTimeThreshold, aggregateSublists);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_ALL) {
-			pdttaDetector = new PdttaFullThresholdDetector(aggType, aggregatedEventThreshold, aggregatedTimeThreshold, singleEventThreshold,
+			pdttaDetector = new PdttaFullThresholdDetector(aggType, aggregatedEventThreshold, aggregatedTimeThreshold, aggregateSublists, singleEventThreshold,
 					singleTimeThreshold);
 		} else if (detectorMethod == DetectorMethod.DBSCAN) {
 			// pdttaDetector = new PdttaDbScanDetector(aggType, featureCreator, dbscan_eps, dbscan_n, distanceMethod, scalingMethod);

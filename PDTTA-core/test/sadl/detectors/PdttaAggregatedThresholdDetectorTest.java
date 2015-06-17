@@ -19,7 +19,8 @@ public class PdttaAggregatedThresholdDetectorTest {
 	@Test
 	public void test() throws IOException, URISyntaxException {
 		final PdttaLearner learner = new PdttaLearner(0.05, false);
-		final PdttaAggregatedThresholdDetector pdttaDetector = new PdttaAggregatedThresholdDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY,-5,-8);
+		final PdttaAggregatedThresholdDetector pdttaDetector = new PdttaAggregatedThresholdDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, -5, -8,
+				false);
 		final PdttaAnomalyDetection detection = new PdttaAnomalyDetection(pdttaDetector, learner);
 		PdttaExperimentResult expected = new PdttaExperimentResult(467, 4340, 193, 0);
 		PdttaExperimentResult actual = detection.trainTest(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI()));

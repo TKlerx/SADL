@@ -12,6 +12,7 @@
 package sadl.detectors;
 
 import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -84,7 +85,24 @@ public abstract class PdttaDetector implements AnomalyDetector {
 		return result;
 	}
 
+	public Pair<TDoubleList, TDoubleList> computeAggregatedTrendLikelihood(TimedWord ts) {
+		final Pair<TDoubleList, TDoubleList> p = model.calculateProbabilities(ts);
+		return computeAggregatedTrendLikelihood(p.getKey(), p.getValue());
+	}
 
+	public Pair<TDoubleList, TDoubleList> computeAggregatedTrendLikelihood(TDoubleList eventLHs, TDoubleList timeLHs) {
+		final TDoubleList partialEventLHs = new TDoubleArrayList();
+		final TDoubleList partialTimeLHs = new TDoubleArrayList();
+		for (int i = 1; i <= eventLHs.size(); i++) {
+			final TDoubleList subList = eventLHs.subList(0, i);
+			partialEventLHs.add(aggregate(subList, aggType));
+		}
+		for (int i = 1; i <= timeLHs.size(); i++) {
+			final TDoubleList subList = timeLHs.subList(0, i);
+			partialTimeLHs.add(aggregate(subList, aggType));
+		}
+		return Pair.create(partialEventLHs, partialTimeLHs);
+	}
 
 	@Override
 	public boolean isAnomaly(TimedWord s) {

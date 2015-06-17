@@ -13,6 +13,7 @@ package sadl.detectors.threshold;
 
 import gnu.trove.list.TDoubleList;
 
+import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,19 +30,47 @@ public class PdttaAggregatedThresholdDetector extends PdttaDetector {
 
 	double aggregatedEventThreshold;
 	double aggregatedTimeThreshold;
+	boolean aggregateSublists;
 
-	public PdttaAggregatedThresholdDetector(ProbabilityAggregationMethod aggType, double aggregatedEventThreshold, double aggregatedTimeThreshold) {
+	public PdttaAggregatedThresholdDetector(ProbabilityAggregationMethod aggType, double aggregatedEventThreshold, double aggregatedTimeThreshold,
+			boolean aggregateSublists) {
 		super(aggType);
 		this.aggregatedEventThreshold = aggregatedEventThreshold;
 		this.aggregatedTimeThreshold = aggregatedTimeThreshold;
+		this.aggregateSublists = aggregateSublists;
 	}
 
 	public PdttaAggregatedThresholdDetector(double aggregatedEventThreshold, double aggregatedTimeThreshold) {
-		this(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, aggregatedEventThreshold, aggregatedTimeThreshold);
+		this(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, aggregatedEventThreshold, aggregatedTimeThreshold, false);
 	}
 
 	@Override
 	protected boolean decide(TDoubleList eventLikelihoods, TDoubleList timeLikelihoods) {
+		if(aggregateSublists){
+			final Pair<TDoubleList, TDoubleList> anomalyTrend = computeAggregatedTrendLikelihood(eventLikelihoods, timeLikelihoods);
+			final TDoubleList eventLHs = anomalyTrend.getKey();
+			final TDoubleList timeLHs = anomalyTrend.getValue();
+			double eventLh;
+			double timeLh;
+			for (int i = 0; i < eventLHs.size(); i++) {
+				eventLh = eventLHs.get(i);
+				if (eventLh <= aggregatedEventThreshold) {
+					return true;
+				}
+			}
+			for (int i = 0; i < timeLHs.size(); i++) {
+				timeLh = timeLHs.get(i);
+				if (timeLh <= aggregatedTimeThreshold) {
+					return true;
+				}
+			}
+			return false;
+		}else{
+			return myDecide(eventLikelihoods, timeLikelihoods);
+		}
+	}
+
+	private  boolean myDecide(TDoubleList eventLikelihoods, TDoubleList timeLikelihoods) {
 		final double normalizedEventThreshold = aggregatedEventThreshold;
 		final double normalizedTimeThreshold = aggregatedTimeThreshold;
 		// What happens if aggregate returns NaN?!
@@ -56,6 +85,6 @@ public class PdttaAggregatedThresholdDetector extends PdttaDetector {
 		} else {
 			return false;
 		}
-	}
 
+	}
 }
