@@ -183,28 +183,28 @@ public class NewSmacPipeline implements Serializable {
 		logger.info("Running Generic Pipeline with args" + Arrays.toString(args));
 		MasterSeed.setSeed(Long.parseLong(args[3]));
 
-		// try {
-		final PdttaExperimentResult result = sp.run();
-		final Path resultPath = Paths.get("result.csv");
-		if (!Files.exists(resultPath)) {
-			Files.createFile(resultPath);
-		}
-		final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		try {
+			final PdttaExperimentResult result = sp.run();
+			final Path resultPath = Paths.get("result.csv");
+			if (!Files.exists(resultPath)) {
+				Files.createFile(resultPath);
+			}
+			final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-		try (BufferedWriter bw = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8, StandardOpenOption.APPEND)) {
-			bw.append(df.format(new Date()));
-			bw.append(" ; ");
-			bw.append(Arrays.toString(args));
-			bw.append("; ");
-			bw.append(result.toCsvString());
-			bw.append('\n');
-		}
+			try (BufferedWriter bw = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8, StandardOpenOption.APPEND)) {
+				bw.append(df.format(new Date()));
+				bw.append(" ; ");
+				bw.append(Arrays.toString(args));
+				bw.append("; ");
+				bw.append(result.toCsvString());
+				bw.append('\n');
+			}
 
-		System.exit(0);
-		// } catch (Exception e) {
-		// logger.error("Unexpected exception with parameters" + Arrays.toString(args), e);
-		// throw e;
-		// }
+			System.exit(0);
+		} catch (final Exception e) {
+			logger.error("Unexpected exception with parameters" + Arrays.toString(args), e);
+			throw e;
+		}
 	}
 
 	FeatureCreator featureCreator;

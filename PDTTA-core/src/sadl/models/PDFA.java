@@ -156,7 +156,17 @@ public class PDFA implements AutomatonModel, Serializable {
 				}
 				final double tempSum = getTransitions(state, true).stream().mapToDouble(t -> t.getProbability()).sum();
 				if (!Precision.equals(tempSum, 1.0)) {
-					throw new IllegalStateException("Probabilities do not sum up to one, but instead to " + tempSum);
+					BigFraction preciseSum = BigFraction.ZERO;
+					for (final BigFraction f : probabilities) {
+						preciseSum = preciseSum.add(f.divide(fracSum));
+					}
+					if (!preciseSum.equals(BigFraction.ONE)) {
+						throw new IllegalStateException("Probabilities do not sum up to one, but instead to " + tempSum);
+					}else{
+						logger.warn(
+								"Probabilities do not sum up to one, but instead to {}. This is due to double underflows, but they sum up to one if using BigFraction. This small error will be ignored.",
+								tempSum);
+					}
 				}
 			}
 		}
