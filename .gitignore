@@ -32,7 +32,6 @@ bin
 /PDTTA-core/instances
 /PDTTA-core/build
 /PDTTA-core/swig
-/.project
 /.settings
 org.eclipse.m2e.core.prefs
 com.wdev91.eclipse.copyright.xml
