@@ -4,15 +4,15 @@ import jsat.distributions.empirical.kernelfunc.GaussKF;
 
 import org.apache.commons.lang3.Range;
 
-public class SplittedEvent {
+public class SplittedEvent implements Comparable<Double> {
 
 	protected Event event;
 	protected int subEventNumber;
 	protected Range<Double> intervallAnomaly;
 	protected Range<Double> intervallWarning;
 	protected double expectedValue;
-	protected double variance;
-	// TODO durch 2 teilen?
+	protected double variance; // TODO Interval <= <
+
 	private static double anomalyNormalPoint = pointWithIntegral(0.0001d);
 	private static double warningNormalPoint = pointWithIntegral(0.1d);
 
@@ -50,7 +50,7 @@ public class SplittedEvent {
 	@Override
 	public boolean equals(Object obj) {
 
-		if (!(obj instanceof SplittedEvent)) {
+		if (obj == null || !(obj instanceof SplittedEvent)) {
 			return false;
 		}
 
@@ -83,6 +83,8 @@ public class SplittedEvent {
 		double start = -normalFunc.cutOff();
 		double end = 0.0d;
 
+		p = p / 2.0;
+
 		do {
 
 			final double between = (start + end) / 2.0;
@@ -92,10 +94,31 @@ public class SplittedEvent {
 				start = between;
 			}
 
-			System.out.print("c ");
+			// System.out.print("c "); TODO
 
 		} while ((end - start) > 0.0000000001d);
 
 		return -(end + start) / 2.0;
+	}
+
+	@Override
+	public String toString() {
+
+		final StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.append(this.getSymbol());
+
+		return stringBuilder.toString(); // TODO
+	}
+
+	@Override
+	public int compareTo(Double time) {
+
+		if (time < intervallAnomaly.getMinimum()) {
+			return -1;
+		} else if (time > intervallAnomaly.getMaximum()) {
+			return 1;
+		}
+
+		return 0;
 	}
 }

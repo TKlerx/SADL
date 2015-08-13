@@ -1,12 +1,13 @@
 package sadl.models.PTA;
 
 import java.util.Arrays;
+import java.util.Iterator;
 
 import jsat.distributions.empirical.KernelDensityEstimatorDifferentiable;
 
 import org.apache.commons.lang3.Range;
 
-public class Event {
+public class Event implements Iterable<SplittedEvent> {
 
 	protected String symbol;
 	protected SplittedEvent[] splittedEvents;
@@ -26,10 +27,14 @@ public class Event {
 
 	public SplittedEvent getSplittedEventFromTime(double time) {
 
-		for (final SplittedEvent event : splittedEvents) {
-			if (event.inIntervall(time)) {
-				return event;
-			}
+		/*
+		 * for (final SplittedEvent event : splittedEvents) { // TODO logn n search? if (event.inIntervall(time)) { return event; } }
+		 */
+
+		final int index = Arrays.binarySearch(splittedEvents, time);
+
+		if (index >= 0) {
+			return splittedEvents[index];
 		}
 
 		return null;
@@ -48,13 +53,13 @@ public class Event {
 
 	private static double calculateExpectedValue(int fromIndex, int toIndex, double[] times) {
 
-		double deviation = 0.0d;
+		double expectedValue = 0.0d;
 
 		for (int i = fromIndex; i <= toIndex; i++) {
-			deviation = deviation + times[i];
+			expectedValue = expectedValue + times[i];
 		}
 
-		return (deviation / (toIndex - fromIndex + 1));
+		return (expectedValue / (toIndex - fromIndex + 1));
 	}
 
 	public static Event generateEvent(String symbol, double[] times){
@@ -90,6 +95,43 @@ public class Event {
 		events[events.length - 1] = new SplittedEvent(event, minPoints.length, expectedValue, variance, Range.between(minValue, Double.POSITIVE_INFINITY));
 
 		return event;
+	}
+
+	@Override
+	public Iterator<SplittedEvent> iterator() {
+
+		return new Iterator<SplittedEvent>() {
+			int i = 0;
+
+			@Override
+			public boolean hasNext() {
+
+				return i < splittedEvents.length;
+			}
+
+			@Override
+			public SplittedEvent next() {
+
+				return splittedEvents[i++];
+			}
+
+		};
+	}
+
+	@Override
+	public String toString() {
+
+		final StringBuilder stringBuilder = new StringBuilder();
+
+		stringBuilder.append("Event " + symbol + "(");
+
+		for (final SplittedEvent subEvent : this) {
+			stringBuilder.append(subEvent.toString());
+		}
+
+		stringBuilder.append(")");
+
+		return stringBuilder.toString();
 	}
 
 }

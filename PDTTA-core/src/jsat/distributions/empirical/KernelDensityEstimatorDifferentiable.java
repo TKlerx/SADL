@@ -59,7 +59,7 @@ public class KernelDensityEstimatorDifferentiable extends Distribution {
 
 	public Double[] getMinima() {
 
-		final List<Double> pointList = new LinkedList<Double>();
+		final List<Double> pointList = new LinkedList<>();
 
 		final double bandwidth = kernelDensity.getBandwith();
 
