@@ -13,6 +13,13 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>PDTTA-core</artifactId>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<license.inceptionYear>2013</license.inceptionYear>
+		<github.global.server>github</github.global.server>
+		<run.mainclass>sadl.run.Pipeline</run.mainclass>
+		<run.mainpackage>sadl.run.Pipeline</run.mainpackage>
+	</properties>
 	<licenses>
 		<license>
 			<name>gpl_v3</name>
@@ -36,6 +43,10 @@
 				<enabled>true</enabled>
 			</snapshots>
 		</repository>
+		 <repository>
+   			<id>edwardraff-repo</id>
+    		<url>http://www.edwardraff.com/maven-repo/</url>
+ 		 </repository>
 	</repositories>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
@@ -135,8 +146,8 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>sadl.run.smac.NewSmacPipeline</mainClass>
-							<packageName>sadl.run.smac</packageName>
+							<mainClass>${run.mainclass}</mainClass>
+							<packageName>s${run.mainpackage}</packageName>
 							<addClasspath>true</addClasspath>
 							<classpathPrefix>lib/</classpathPrefix>
 							<useUniqueVersions>false</useUniqueVersions>
@@ -304,9 +315,9 @@
 			<version>2.2</version>
 		</dependency>
 		<dependency>
-			<groupId>de.upb.timok</groupId>
+			<groupId>com.edwardraff</groupId>
 			<artifactId>JSAT</artifactId>
-			<version>0.0.2-SNAPSHOT</version>
+			<version>0.0.2</version>
 		</dependency>
 		<dependency>
 			<groupId>de.upb.timok</groupId>
@@ -336,11 +347,7 @@
 		</dependency>
 	</dependencies>
 	<name>PDTTA</name>
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<license.inceptionYear>2013</license.inceptionYear>
-		<github.global.server>github</github.global.server>
-	</properties>
+
 	<!-- <parent> <groupId>de.upb.timok</groupId> <artifactId>PDTTA</artifactId> 
 		<version>0.1</version> </parent> -->
 	<groupId>de.upb.timok</groupId>

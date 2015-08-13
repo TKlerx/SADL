@@ -58,6 +58,12 @@ public class PdttaAnomalyDetection {
 		this.learner = learner;
 	}
 
+	public PdttaAnomalyDetection(PdttaDetector pdttaDetector, Model model) {
+		super();
+		this.pdttaDetector = pdttaDetector;
+		this.learnedModel = model;
+	}
+
 	/**
 	 * 
 	 * @param dataFile

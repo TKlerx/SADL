@@ -184,14 +184,20 @@ public class NewSmacPipeline implements Serializable {
 		MasterSeed.setSeed(Long.parseLong(args[3]));
 
 		try {
+			boolean fileExisted = true;
 			final PdttaExperimentResult result = sp.run();
 			final Path resultPath = Paths.get("result.csv");
 			if (!Files.exists(resultPath)) {
 				Files.createFile(resultPath);
+				fileExisted = false;
 			}
 			final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 			try (BufferedWriter bw = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8, StandardOpenOption.APPEND)) {
+				if (!fileExisted) {
+					bw.append(PdttaExperimentResult.CsvHeader());
+					bw.append('\n');
+				}
 				bw.append(df.format(new Date()));
 				bw.append(" ; ");
 				bw.append(Arrays.toString(args));

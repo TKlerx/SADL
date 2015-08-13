@@ -11,626 +11,272 @@
 
 package sadl.run;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.Serializable;
-import java.util.Random;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
 
+import jsat.distributions.empirical.kernelfunc.BiweightKF;
+import jsat.distributions.empirical.kernelfunc.EpanechnikovKF;
+import jsat.distributions.empirical.kernelfunc.GaussKF;
+import jsat.distributions.empirical.kernelfunc.KernelFunction;
+import jsat.distributions.empirical.kernelfunc.TriweightKF;
+import jsat.distributions.empirical.kernelfunc.UniformKF;
+
+import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import sadl.anomalydetecion.PdttaAnomalyDetection;
+import sadl.constants.AnomalyInsertionType;
+import sadl.constants.DetectorMethod;
+import sadl.constants.DistanceMethod;
+import sadl.constants.FeatureCreatorMethod;
+import sadl.constants.KdeKernelFunction;
+import sadl.constants.MergeTest;
+import sadl.constants.ProbabilityAggregationMethod;
+import sadl.constants.ScalingMethod;
+import sadl.detectors.PdttaDetector;
+import sadl.detectors.PdttaVectorDetector;
+import sadl.detectors.featureCreators.FeatureCreator;
+import sadl.detectors.featureCreators.FullFeatureCreator;
+import sadl.detectors.featureCreators.MinimalFeatureCreator;
+import sadl.detectors.featureCreators.SmallFeatureCreator;
+import sadl.detectors.threshold.PdttaAggregatedThresholdDetector;
+import sadl.detectors.threshold.PdttaFullThresholdDetector;
+import sadl.experiments.PdttaExperimentResult;
+import sadl.input.TimedInput;
+import sadl.interfaces.Model;
+import sadl.interfaces.ModelLearner;
+import sadl.modellearner.PdttaLearner;
+import sadl.oneclassclassifier.LibSvmClassifier;
+import sadl.oneclassclassifier.clustering.DbScanClassifier;
+import sadl.utils.IoUtils;
+import sadl.utils.MasterSeed;
+import sadl.utils.Settings;
+
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
 
 /**
  * 
  * @author Timo Klerx
  *
  */
-@Deprecated
-@SuppressWarnings("unused")
 public class Pipeline implements Serializable {
+	private static final long serialVersionUID = 4962328747559099050L;
+
 	private static Logger logger = LoggerFactory.getLogger(Pipeline.class);
+	// TODO move this to experiment project
 
+	@Parameter(names = "-mergeTest")
+	MergeTest mergeTest = MergeTest.ALERGIA;
 
-	public static final String TIME_THRESHOLD = "timeThreshold";
-	public static final String EVENT_THRESHOLD = "eventThreshold";
-	public static final String ANOMALY_INSERTION_TYPE = "anomalyInsertionType";
-	public static final String AGGREGATION_TYPE = "aggType";
-	public static final String TEMP_FILE_PREFIX = "tempFilePrefix";
-	public static final String TIMED_INPUT_FILE = "timedInputFile";
-	public static final String JOB_NAME = "jobName";
-	public static final String MERGE_ALPHA = "mergeAlpha";
-	public static final String RECURSIVE_MERGE_TEST = "recursiveMergeTest";
-	public static final String MERGE_TEST = "mergeTest";
-	public static final String RESULT_FOLDER = "results";
+	@Parameter(names = "-detectorMethod", description = "the anomaly detector method")
+	DetectorMethod detectorMethod = DetectorMethod.SVM;
+
+	@Parameter(names = "-featureCreator")
+	FeatureCreatorMethod featureCreatorMethod = FeatureCreatorMethod.FULL_FEATURE_CREATOR;
+
+	@Parameter(names = "-scalingMethod")
+	ScalingMethod scalingMethod = ScalingMethod.NONE;
+
+	@Parameter(names = "-distanceMetric", description = "Which distance metric to use for DBSCAN")
+	DistanceMethod dbScanDistanceMethod = DistanceMethod.EUCLIDIAN;
+
+	@Parameter(names = "-mergeAlpha")
+	private double mergeAlpha;
+	@Parameter(names = "-dbScanEps")
+	private double dbscan_eps;
+	@Parameter(names = "-dbScanN")
+	private int dbscan_n;
+
+	@Parameter(names = "-smoothingPrior")
+	double smoothingPrior = 0;
+
+	@Parameter(names = "-mergeT0")
+	int mergeT0 = 3;
+
+	@Parameter(names = "-kdeBandwidth")
+	double kdeBandwidth;
+
+	@Parameter(names = "-debug")
+	private final boolean debug = false;
+
+	@Parameter(names = "-aggregateSublists", arity = 1)
+	private boolean aggregateSublists;
+
+	@Parameter(names = "-kdeKernelFunction")
+	KdeKernelFunction kdeKernelFunctionQualifier;
+	KernelFunction kdeKernelFunction;
+
+	@Parameter(names = "-recursiveMergeTest", arity = 1)
+	private boolean recursiveMergeTest;
+	@Parameter(names = "-aggregatedTimeThreshold")
+	private double aggregatedTimeThreshold;
+	@Parameter(names = "-aggregatedEventThreshold")
+	private double aggregatedEventThreshold;
+
+	@Parameter(names = "-singleEventThreshold")
+	private double singleEventThreshold;
+
+	@Parameter(names = "-singleTimeThreshold")
+	private double singleTimeThreshold;
+
+	@Parameter(names = "-probabilityAggregationMethod")
+	ProbabilityAggregationMethod aggType = ProbabilityAggregationMethod.NORMALIZED_MULTIPLY;
+	@Parameter(names = "-anomalyInsertionType")
+	AnomalyInsertionType anomalyInsertionType = AnomalyInsertionType.ALL;
+
+	@Parameter(names = "-svmCosts")
+	double svmCosts;
+
+	@Parameter(names = "-svmNu")
+	double svmNu;
+
+	@Parameter(names = "-svmGamma")
+	double svmGamma;
+
+	@Parameter(names = "-svmEps")
+	double svmEps;
+
+	@Parameter(names = "-svmKernel")
+	int svmKernelType;
+
+	@Parameter(names = "-svmDegree")
+	int svmDegree;
+
+	@Parameter(names = "-svmProbabilityEstimate")
+	int svmProbabilityEstimate;
+
+	@Parameter(names = "-seed")
+	long seed;
+
+	@Parameter(names = "-trainFile")
+	Path trainFile;
+	@Parameter(names = "-testFile")
+	Path testFile;
+	@Parameter(names = "-trainTestFile")
+	Path trainTestFile;
+
 	/**
-	 * 
+	 * @param args
+	 * @throws IOException
+	 * @throws InterruptedException
 	 */
-	private static final long serialVersionUID = -6230657726489919272L;
-	private static final double TEST_PERCENTAGE = 0.3;
-	private static final double TRAIN_PERCENTAGE = 0.7;
-	private static final double ANOMALY_PERCENTAGE = 0.1;
-	private static final double HUGE_TIME_CHANGE = 0.9;
-	private static final double SMALL_TIME_CHANGE = 0.1;
-	private final Random masterSeed = null;
+	public static void main(String[] args) throws IOException, InterruptedException {
+		final Pipeline sp = new Pipeline();
+		final JCommander jc = new JCommander(sp);
+		if (args.length != 1) {
+			logger.error("Please provide the following inputs: [configFile]");
+			jc.usage();
+			System.exit(1);
+		}
+		jc.parse(args);
+		MasterSeed.setSeed(sp.seed);
 
-	// /**
-	// * @param args
-	// * @throws IOException
-	// * @throws InterruptedException
-	// */
-	// public static void main(String[] args) throws IOException, InterruptedException {
-	// if (args.length == 1) {
-	// final Properties prop = new Properties();
-	// InputStream input = null;
-	//
-	// input = new FileInputStream(args[0]);
-	//
-	// // load a properties file
-	// prop.load(input);
-	//
-	// // get the property value and print it out
-	// final String jobName = prop.getProperty(JOB_NAME);
-	// final MergeTest mergeTest = MergeTest.valueOf(prop.getProperty(MERGE_TEST));
-	// final boolean recursiveMergeTest = Boolean.parseBoolean(prop.getProperty(RECURSIVE_MERGE_TEST));
-	// final double mergeAlpha = Double.parseDouble(prop.getProperty(MERGE_ALPHA));
-	// final String timedInputFile = prop.getProperty(TIMED_INPUT_FILE);
-	// final String tempFilePrefix = prop.getProperty(TEMP_FILE_PREFIX);
-	// final ProbabilityAggregationMethod aggType = ProbabilityAggregationMethod.valueOf(prop.getProperty(AGGREGATION_TYPE));
-	// final AnomalyInsertionType anomalyInsertionType = AnomalyInsertionType.valueOf(prop.getProperty(ANOMALY_INSERTION_TYPE));
-	// final double[] eventThresholds = parseDoubleArray(prop.getProperty(EVENT_THRESHOLD));
-	// double[] timeThresholds = null;
-	// if (prop.getProperty(TIME_THRESHOLD) == null) {
-	// timeThresholds = new double[] { Double.NaN };
-	// } else {
-	// timeThresholds = parseDoubleArray(prop.getProperty(TIME_THRESHOLD));
-	// }
-	// final String resultFolder = prop.getProperty(RESULT_FOLDER);
-	// final Pipeline p = new Pipeline();
-	// p.run(jobName, mergeTest, recursiveMergeTest, mergeAlpha, timedInputFile, tempFilePrefix, aggType, anomalyInsertionType, eventThresholds,
-	// timeThresholds, resultFolder);
-	// }
-	// // p.run("run_1_", MergeTest.ALERGIA, false, 0.05, "rti_input.txt", "treba_temp_", ProbabilityAggregationMethod.NORMALIZED_MULTIPLY,
-	// // AnomalyInsertionType.TYPE_TWO, 0.2, 0.0001);
-	// }
-	//
-	// private static double[] parseDoubleArray(String property) {
-	// final String[] split = property.split(",");
-	// final double[] result = new double[split.length];
-	// for (int i = 0; i < split.length; i++) {
-	// final String s = split[i];
-	// result[i] = Double.parseDouble(s.replaceAll("\\[|\\]", ""));
-	// }
-	// return result;
-	// }
-	//
-	// public List<PdttaExperimentResult> run(String jobName, MergeTest mergeTest, boolean recursiveMergeTest, double mergeAlpha, String timedInputFile,
-	// String tempFilePrefix, ProbabilityAggregationMethod aggType, AnomalyInsertionType anomalyInsertionType, double[] eventThresholds,
-	// double[] timeThresholds, String resultFolder) throws IOException, InterruptedException {
-	// masterSeed = new Random(serialVersionUID);
-	// treba.log1plus_init_wrapper();
-	// final String timedInputTrainFile = jobName + tempFilePrefix + "trainFile";
-	// final String timedInputTestFile = jobName + tempFilePrefix + "testFile";
-	// splitTrainTestFile(timedInputFile, timedInputTrainFile, timedInputTestFile, TRAIN_PERCENTAGE, TEST_PERCENTAGE, anomalyInsertionType,
-	// ANOMALY_PERCENTAGE, true);
-	// // parse timed sequences
-	// final List<TimedSequence> trainingTimedSequences = parseTimedSequences(timedInputTrainFile, false, false);
-	// // create treba input file
-	// final String trebaTrainSetFileString = jobName + tempFilePrefix + "train_set";
-	// createTrebaFile(trainingTimedSequences, trebaTrainSetFileString);
-	// // train the fsm and write the fsm to 'trebaAutomatonFile'
-	// final String trebaAutomatonFile = jobName + tempFilePrefix + "fsm.fsm";
-	// final double loglikelihood = trainFsm(trebaTrainSetFileString, mergeAlpha, mergeTest, recursiveMergeTest, trebaAutomatonFile);
-	// // compute paths through the automata for the training set and write to
-	// // 'trebaResultPathFile'
-	// final String trebaResultPathFile = jobName + tempFilePrefix + "train_likelihood";
-	// computeAutomatonPaths(trebaAutomatonFile, trebaTrainSetFileString, trebaResultPathFile);
-	// // parse the 'trebaResultPathFile'
-	// // Fill time interval buckets and fit PDFs for every bucket
-	// final Map<ZeroProbTransition, TDoubleList> timeValueBuckets = parseAutomatonPaths(trebaResultPathFile, trainingTimedSequences);
-	// // do the fitting
-	// final Map<ZeroProbTransition, Distribution> transitionDistributions = fit(timeValueBuckets);
-	// // compute likelihood on test set for automaton and for time PDFs
-	// final PDTTA automaton = new PDTTA(Paths.get(trebaAutomatonFile));
-	// automaton.setTransitionDistributions(transitionDistributions);
-	// final List<TimedSequence> testTimedSequences = parseTimedSequences(timedInputTestFile, false, true);
-	// if (anomalyInsertionType == AnomalyInsertionType.TYPE_TWO || anomalyInsertionType == AnomalyInsertionType.ALL) {
-	// for (int i = 0; i < testTimedSequences.size(); i++) {
-	// final TimedSequence ts = testTimedSequences.get(i);
-	// if (ts.getLabel() == ClassLabel.ANOMALY && ts.getAnomalyType() == AnomalyInsertionType.TYPE_TWO) {
-	// testTimedSequences.set(i, automaton.createAbnormalEventSequence(new Random(masterSeed.nextLong())));
-	// }
-	// }
-	// }
-	// final String trebaTestSetFileString = jobName + tempFilePrefix + "test_set";
-	// final String trebaTestResultPathFile = jobName + tempFilePrefix + "test_likelihood";
-	// createTrebaFile(testTimedSequences, trebaTestSetFileString);
-	//
-	// final List<PdttaExperimentResult> results = testPdtta(testTimedSequences, automaton, aggType, eventThresholds, timeThresholds);
-	// final Path resultFolderPath = Paths.get(resultFolder);
-	// if (!Files.exists(resultFolderPath)) {
-	// Files.createDirectory(resultFolderPath);
-	// }
-	// final BufferedWriter bw = Files.newBufferedWriter(resultFolderPath.resolve(jobName + "result.csv"), StandardCharsets.UTF_8);
-	// for (final PdttaExperimentResult result : results) {
-	//
-	// result.setLogLikelihood(loglikelihood);
-	// result.setAggType(aggType);
-	// result.setRecMergeTest(recursiveMergeTest);
-	// result.setMergeTest(mergeTest);
-	// result.setMergeAlpha(mergeAlpha);
-	// result.setAnomalyInsertionType(anomalyInsertionType);
-	// bw.write(result.toCsvString());
-	// bw.append('\n');
-	// }
-	// bw.close();
-	// IoUtils.deleteFiles(new String[] { timedInputTrainFile, timedInputTestFile, trebaTrainSetFileString, trebaAutomatonFile, trebaResultPathFile,
-	// trebaTestSetFileString, trebaTestResultPathFile });
-	// treba.log1plus_free_wrapper();
-	// return results;
-	// }
-	//
-	//
-	//
-	// private void splitTrainTestFile(String timedInputFile, String timedInputTrainFile, String timedInputTestFile, double trainPercentage,
-	// double testPercentage, AnomalyInsertionType anomalyInsertionType, double anomalyPercentage, boolean isRti) throws IOException {
-	// final LineNumberReader lnr = new LineNumberReader(new FileReader(timedInputFile));
-	// lnr.skip(Long.MAX_VALUE);
-	// int samples = lnr.getLineNumber();
-	// lnr.close();
-	// final int trainingSamples = (int) (samples * trainPercentage);
-	// final int testSamples = (int) (samples * testPercentage);
-	// final int anomalies = (int) (anomalyPercentage * testSamples);
-	// final int writtenTrainingSamples = 0;
-	// final int writtenTestSamples = 0;
-	// int insertedAnomalies = 0;
-	// final BufferedReader br = Files.newBufferedReader(Paths.get(timedInputFile), StandardCharsets.UTF_8);
-	// String line = null;
-	// final BufferedWriter trainWriter = Files.newBufferedWriter(Paths.get(timedInputTrainFile), StandardCharsets.UTF_8);
-	// final BufferedWriter testWriter = Files.newBufferedWriter(Paths.get(timedInputTestFile), StandardCharsets.UTF_8);
-	// final Random r = new Random(masterSeed.nextLong());
-	// final Random mutation = new Random(masterSeed.nextLong());
-	// boolean force = false;
-	// int lineIndex = 0;
-	// int linesLeft;
-	// int anomaliesToInsert;
-	// if (isRti) {
-	// br.readLine();
-	// samples--;
-	// }
-	// while ((line = br.readLine()) != null) {
-	// if (writtenTrainingSamples < trainingSamples && writtenTestSamples < testSamples) {
-	// // choose randomly according to train/test percentage
-	// if (r.nextDouble() > testPercentage) {
-	// // write to train
-	// writeSample(new TimedSequence(line, true, false).toTrebaString(), trainWriter);
-	// } else {
-	// // write to test
-	// insertedAnomalies = testAndWriteAnomaly(anomalyInsertionType, anomalies, insertedAnomalies, anomalyPercentage, line, testWriter, mutation,
-	// force);
-	// }
-	// } else if (writtenTrainingSamples >= trainingSamples) {
-	// insertedAnomalies = testAndWriteAnomaly(anomalyInsertionType, anomalies, insertedAnomalies, anomalyPercentage, line, testWriter, mutation,
-	// force);
-	// } else if (writtenTestSamples >= testSamples) {
-	// // only write trainSamples from now on
-	// writeSample(new TimedSequence(line, true, false).toTrebaString(), trainWriter);
-	// }
-	// lineIndex++;
-	// linesLeft = samples - lineIndex;
-	// anomaliesToInsert = anomalies - insertedAnomalies;
-	// if (linesLeft <= anomaliesToInsert) {
-	// force = true;
-	// }
-	// }
-	// br.close();
-	// trainWriter.close();
-	// testWriter.close();
-	// }
-	//
-	// private int testAndWriteAnomaly(AnomalyInsertionType anomalyInsertionType, int anomalies, int insertedAnomalies, double anomalyPercentage, String line,
-	// BufferedWriter testWriter, Random mutation, boolean force) throws IOException {
-	// final String newLine = line;
-	// TimedSequence ts = new TimedSequence(newLine, true, false);
-	// int insertionCount = 0;
-	// if (insertedAnomalies < anomalies && (force || mutation.nextDouble() < anomalyPercentage)) {
-	// ts = mutate(ts, anomalyInsertionType, mutation);
-	// insertionCount++;
-	// } else {
-	// ts.setLabel( ClassLabel.NORMAL);
-	// ts.setAnomalyType( AnomalyInsertionType.NONE);
-	// }
-	// writeSample(ts.toLabeledString(), testWriter);
-	// return insertedAnomalies + insertionCount;
-	// }
-	//
-	// int lastInsertionType = -1;
-	//
-	// private TimedSequence mutate(TimedSequence ts, AnomalyInsertionType anomalyInsertionType, Random mutation) throws IOException {
-	// if (anomalyInsertionType == AnomalyInsertionType.TYPE_ONE) {
-	// final int toDelete = mutation.nextInt(ts.getEvents().size());
-	// ts.remove(toDelete);
-	// ts.setLabel(ClassLabel.ANOMALY);
-	// ts.setAnomalyType( anomalyInsertionType);
-	// return ts;
-	// } else if (anomalyInsertionType == AnomalyInsertionType.TYPE_TWO) {
-	// // for this type of anomaly we need the fsm with distributions and
-	// // thus, we have to read the testset after the fsm is trained and
-	// // create the anomalies at that point
-	// ts.setLabel( ClassLabel.ANOMALY);
-	// ts.setAnomalyType( anomalyInsertionType);
-	// return ts;
-	// } else if (anomalyInsertionType == AnomalyInsertionType.TYPE_THREE) {
-	// final int changeIndex = mutation.nextInt(ts.getTimeValues().size());
-	// final TDoubleList timeValues = ts.getTimeValues();
-	// final double changePercent = HUGE_TIME_CHANGE;
-	// changeTimeValue(mutation, timeValues, changePercent, changeIndex);
-	// ts.setLabel( ClassLabel.ANOMALY);
-	// ts.setAnomalyType( anomalyInsertionType);
-	// return ts;
-	// } else if (anomalyInsertionType == AnomalyInsertionType.TYPE_FOUR) {
-	// final TDoubleList timeValues = ts.getTimeValues();
-	// final double changePercent = SMALL_TIME_CHANGE;
-	// for (int i = 0; i < timeValues.size(); i++) {
-	// changeTimeValue(mutation, timeValues, changePercent, i);
-	// }
-	// ts.setAnomalyType( anomalyInsertionType);
-	// ts.setLabel( ClassLabel.ANOMALY);
-	// return ts;
-	// } else if (anomalyInsertionType == AnomalyInsertionType.ALL) {
-	// lastInsertionType = (lastInsertionType + 1) % 4;
-	// if (lastInsertionType == 0) {
-	// return mutate(ts, AnomalyInsertionType.TYPE_ONE, mutation);
-	// } else if (lastInsertionType == 1) {
-	// return mutate(ts, AnomalyInsertionType.TYPE_TWO, mutation);
-	// } else if (lastInsertionType == 2) {
-	// return mutate(ts, AnomalyInsertionType.TYPE_THREE, mutation);
-	// } else if (lastInsertionType == 3) {
-	// return mutate(ts, AnomalyInsertionType.TYPE_FOUR, mutation);
-	// }
-	// }
-	// return null;
-	// }
-	//
-	// private void changeTimeValue(Random mutation, TDoubleList timeValues, double changePercent, int i) {
-	// double newValue = timeValues.get(i);
-	// if (mutation.nextBoolean()) {
-	// newValue = newValue + newValue * changePercent;
-	// } else {
-	// newValue = newValue - newValue * changePercent;
-	// }
-	// timeValues.set(i, newValue);
-	// }
-	//
-	// private void writeSample(String line, BufferedWriter writer) throws IOException {
-	// writer.write(line);
-	// writer.append('\n');
-	// }
-	//
-	// private List<PdttaExperimentResult> testPdtta(List<TimedSequence> testTimedSequences, PDTTA automaton, ProbabilityAggregationMethod aggType,
-	// double[] eventThresholds, double[] timeThresholds) throws IOException {
-	// final List<PdttaExperimentResult> result = new ArrayList<>();
-	//
-	// // this is not needed because treba and java likelihoods are the same
-	// // load treba automaton file
-	// // wfsa fsm = treba.wfsa_read_file(trebaAutomatonFile);
-	// // observations o = treba.observations_read(trebaTestSetFileString);
-	// // // compute ll via treba for loaded fsm
-	// // int obs_alphabet_size = treba.observations_alphabet_size(o);
-	// // if (o != null && fsm != null && fsm.getAlphabet_size() < obs_alphabet_size) {
-	// // System.err.printf("Error: the observations file has symbols outside the FSA alphabet.\n");
-	// // System.exit(1);
-	// // }
-	// // if (0 != trebaConstants.FORMAT_LOG2) {
-	// // treba.wfsa_to_log2(fsm);
-	// // }
-	// // treba.forward_fsm_to_file(fsm, o, trebaConstants.DECODE_FORWARD_PROB, trebaTestResultPathFile);
-	// // if (o != null) {
-	// // treba.observations_destroy(o);
-	// // }
-	// // if (fsm != null) {
-	// // treba.wfsa_destroy(fsm);
-	// // }
-	//
-	//
-	// // parse treba computed likelihoods
-	// // TDoubleList trebaLikelihoods =
-	// // parseLikelihoods(trebaTestResultPathFile);
-	// // compute ll via automaton traverse
-	// // TDoubleList javaLikelihoods =
-	// // automaton.computeEventsLikelihood(testTimedSequences);
-	// // java and treba likelihoods should be equal (and it seems as they are)
-	// // compute time probabilty for every transition taken
-	// final PdttaAggregatedThresholdDetector tester = new PdttaAggregatedThresholdDetector(aggType, -1, -1);
-	// tester.setModel(automaton);
-	// final List<double[]> testResult = tester.computeAggregatedLikelihoods(testTimedSequences);
-	// // compare with treshold and compute TP, TN, FP, FN
-	// final TObjectIntMap<DoublePair> tps = new TObjectIntHashMap<>();
-	// final TObjectIntMap<DoublePair> tns = new TObjectIntHashMap<>();
-	// final TObjectIntMap<DoublePair> fps = new TObjectIntHashMap<>();
-	// final TObjectIntMap<DoublePair> fns = new TObjectIntHashMap<>();
-	// // prec = tp/(tp +fp)
-	// // The precision is the ratio between correctly detected anomalies and
-	// // all detected anomalies
-	// // rec = tp/(tp+fn)
-	// // The recall is the ratio between detected anomalies and all anomalies
-	// for (int i = 0; i < testResult.size(); i++) {
-	// final double[] pair = testResult.get(i);
-	// for (final double eventThreshold : eventThresholds) {
-	// for (final double timeThreshold : timeThresholds) {
-	// final DoublePair dp = new DoublePair(eventThreshold, timeThreshold);
-	// double normalizedEventThreshold = eventThreshold;
-	// double normalizedTimeThreshold = timeThreshold;
-	// if (aggType == ProbabilityAggregationMethod.NORMALIZED_MULTIPLY) {
-	// normalizedEventThreshold = Math.log(eventThreshold) * testTimedSequences.get(i).getEvents().size();
-	// normalizedTimeThreshold = Math.log(timeThreshold) * testTimedSequences.get(i).getEvents().size();
-	// }
-	// boolean classifierSaysAnomaly = false;
-	// if (Double.isNaN(timeThreshold)) {
-	// if (pair[0] <= normalizedEventThreshold) {
-	// classifierSaysAnomaly = true;
-	// }
-	// } else {
-	// if (pair[0] <= normalizedEventThreshold || pair[1] <= normalizedTimeThreshold) {
-	// classifierSaysAnomaly = true;
-	// }
-	// }
-	// final TimedSequence testSequence = testTimedSequences.get(i);
-	// if (testSequence.getLabel() == ClassLabel.NORMAL) {
-	// if (!classifierSaysAnomaly) {
-	// tns.adjustOrPutValue(dp, 1, 1);
-	// } else {
-	// fps.adjustOrPutValue(dp, 1, 1);
-	// }
-	// }
-	// if (testSequence.getLabel() != ClassLabel.NORMAL) {
-	// if (classifierSaysAnomaly) {
-	// tps.adjustOrPutValue(dp, 1, 1);
-	// } else {
-	// fns.adjustOrPutValue(dp, 1, 1);
-	// }
-	// }
-	// }
-	// }
-	// // System.out.println("Event likelihood=" + pair[0] +
-	// // "; time likelihood=" + pair[1]);
-	// }
-	// for (final double eventThreshold : eventThresholds) {
-	// for (final double timeThreshold : timeThresholds) {
-	// final DoublePair dp = new DoublePair(eventThreshold, timeThreshold);
-	// final PdttaExperimentResult expResult = new PdttaExperimentResult(tps.get(dp), tns.get(dp), fps.get(dp), fns.get(dp));
-	// expResult.setEventThreshold(eventThreshold);
-	// expResult.setTimeThreshold(timeThreshold);
-	// result.add(expResult);
-	// }
-	// }
-	//
-	// return result;
-	//
-	// }
-	//
-	// class DoublePair {
-	// double d1;
-	// double d2;
-	//
-	// public DoublePair(double d1, double d2) {
-	// super();
-	// this.d1 = d1;
-	// this.d2 = d2;
-	// }
-	//
-	// public double getD1() {
-	// return d1;
-	// }
-	//
-	// public double getD2() {
-	// return d2;
-	// }
-	//
-	// @Override
-	// public int hashCode() {
-	// final int prime = 31;
-	// int result = 1;
-	// result = prime * result + getOuterType().hashCode();
-	// long temp;
-	// temp = Double.doubleToLongBits(d1);
-	// result = prime * result + (int) (temp ^ temp >>> 32);
-	// temp = Double.doubleToLongBits(d2);
-	// result = prime * result + (int) (temp ^ temp >>> 32);
-	// return result;
-	// }
-	//
-	// @Override
-	// public boolean equals(Object obj) {
-	// if (this == obj) {
-	// return true;
-	// }
-	// if (obj == null) {
-	// return false;
-	// }
-	// if (getClass() != obj.getClass()) {
-	// return false;
-	// }
-	// final DoublePair other = (DoublePair) obj;
-	// if (!getOuterType().equals(other.getOuterType())) {
-	// return false;
-	// }
-	// if (Double.doubleToLongBits(d1) != Double.doubleToLongBits(other.d1)) {
-	// return false;
-	// }
-	// if (Double.doubleToLongBits(d2) != Double.doubleToLongBits(other.d2)) {
-	// return false;
-	// }
-	// return true;
-	// }
-	//
-	// private Pipeline getOuterType() {
-	// return Pipeline.this;
-	// }
-	//
-	// }
-	//
-	// // private TDoubleList parseLikelihoods(String trebaTestResultPathFile) throws IOException {
-	// // TDoubleList result = new TDoubleArrayList();
-	// // BufferedReader br = Files.newBufferedReader(Paths.get(trebaTestResultPathFile), StandardCharsets.UTF_8);
-	// // String line = null;
-	// // while ((line = br.readLine()) != null) {
-	// // result.add(Double.parseDouble(line.split("\\s+")[0]));
-	// // }
-	// // br.close();
-	// // return result;
-	// // }
-	//
-	// private Map<ZeroProbTransition, Distribution> fit(Map<ZeroProbTransition, TDoubleList> timeValueBuckets) {
-	// final Map<ZeroProbTransition, Distribution> result = new HashMap<>();
-	// for (final ZeroProbTransition t : timeValueBuckets.keySet()) {
-	// result.put(t, fitDistribution(timeValueBuckets.get(t)));
-	// }
-	// return result;
-	// }
-	//
-	// @SuppressWarnings("boxing")
-	// private Distribution fitDistribution(TDoubleList transitionTimes) {
-	// final Vec v = new DenseVector(transitionTimes.toArray());
-	// final jsat.utils.Pair<Boolean, Double> sameValues = DistributionSearch.checkForDifferentValues(v);
-	// if (sameValues.getFirstItem()) {
-	// final Distribution d = new SingleValueDistribution(sameValues.getSecondItem());
-	// return d;
-	// } else {
-	// final KernelDensityEstimator kde = new KernelDensityEstimator(v);
-	// return kde;
-	// }
-	// }
-	//
-	// private Map<ZeroProbTransition, TDoubleList> parseAutomatonPaths(String trebaResultPathFile, List<TimedSequence> timedSequences) throws IOException {
-	// final Map<ZeroProbTransition, TDoubleList> result = new HashMap<>();
-	// final BufferedReader br = Files.newBufferedReader(Paths.get(trebaResultPathFile), StandardCharsets.UTF_8);
-	// String line = null;
-	// int rowIndex = 0;
-	// int currentState = -1;
-	// int followingState = -1;
-	// while ((line = br.readLine()) != null) {
-	// final String[] split = line.split("\\s+");
-	// final TDoubleList timeValues = timedSequences.get(rowIndex).getTimeValues();
-	// final TIntList eventValues = timedSequences.get(rowIndex).getEvents();
-	// if (split.length - 2 != timeValues.size()) {
-	// System.err.println("There should be one more state than there are time values (time values fill the gaps between the states\n"
-	// + Arrays.toString(split) + "\n" + timeValues);
-	// System.err.println("Error occured in line=" + rowIndex);
-	// break;
-	// }
-	// // first element is likelihood; not interested in that right now
-	// for (int i = 1; i < split.length - 1; i++) {
-	// currentState = Integer.parseInt(split[i]);
-	// followingState = Integer.parseInt(split[i + 1]);
-	// if (currentState == 394 && followingState == 394 && eventValues.get(i - 1) == 8) {
-	// // Debug stuff
-	// System.out.println("Found it");
-	// }
-	// addTimeValue(result, currentState, followingState, eventValues.get(i - 1), timeValues.get(i - 1));
-	// }
-	//
-	// rowIndex++;
-	// }
-	// if (rowIndex != timedSequences.size()) {
-	// System.err.println("rowCount and sequences length do not match (" + rowIndex + " / " + timedSequences.size() + ")");
-	// }
-	// br.close();
-	// return result;
-	// }
-	//
-	// private void addTimeValue(Map<ZeroProbTransition, TDoubleList> result, int currentState, int followingState, int event, double timeValue) {
-	// final ZeroProbTransition t = new ZeroProbTransition(currentState, followingState, event);
-	// final TDoubleList list = result.get(t);
-	// if (list == null) {
-	// final TDoubleList tempList = new TDoubleArrayList();
-	// tempList.add(timeValue);
-	// result.put(t, tempList);
-	// } else {
-	// list.add(timeValue);
-	// }
-	// }
-	//
-	// int fsmStateCount = -1;
-	//
-	// @SuppressWarnings("null")
-	// private void computeAutomatonPaths(String trebaAutomatonFile, String trebaTrainFileString, String trebaResultPathFile) {
-	// // treba.log1plus_taylor_init_wrapper();
-	// final observations o = treba.observations_read(trebaTrainFileString);
-	// final wfsa fsm = treba.wfsa_read_file(trebaAutomatonFile);
-	// final int obs_alphabet_size = treba.observations_alphabet_size(o);
-	// if (o != null && fsm != null && fsm.getAlphabet_size() < obs_alphabet_size) {
-	// System.err.printf("Error: the observations file has symbols outside the FSA alphabet.\n");
-	// System.exit(1);
-	// }
-	// if (trebaConstants.FORMAT_LOG2 != 0) {
-	// treba.wfsa_to_log2(fsm);
-	// }
-	// if (o == null) {
-	// logger.error("Error: the observations file could not be read:{}", trebaTrainFileString);
-	// System.exit(1);
-	// }
-	// if (fsm == null) {
-	// logger.error("Error: the fsm file could not be read:{}", trebaAutomatonFile);
-	// System.exit(1);
-	// }
-	// fsmStateCount = fsm.getNum_states();
-	// // write the visited states for each observation to the file (trebaResultPathFile)
-	// treba.forward_fsm_to_file(fsm, o, trebaConstants.DECODE_FORWARD_PROB, trebaResultPathFile);
-	// if (o != null) {
-	// treba.observations_destroy(o);
-	// }
-	// if (fsm != null) {
-	// treba.wfsa_destroy(fsm);
-	// // treba.log1plus_free_wrapper();
-	// }
-	// }
-	//
-	// private void createTrebaFile(List<TimedSequence> timedSequences, String trebaTrainFileString) throws IOException {
-	// final BufferedWriter bw = Files.newBufferedWriter(Paths.get(trebaTrainFileString), StandardCharsets.UTF_8);
-	// for (final TimedSequence ts : timedSequences) {
-	// bw.write(ts.getEventString());
-	// bw.append('\n');
-	// }
-	// bw.close();
-	// }
-	//
-	// private List<TimedSequence> parseTimedSequences(String timedInputTrainFile, boolean isRti, boolean containsClassLabels) throws IOException {
-	// final List<TimedSequence> result = Lists.newArrayList();
-	// final BufferedReader br = Files.newBufferedReader(Paths.get(timedInputTrainFile), StandardCharsets.UTF_8);
-	//
-	// String line = null;
-	// if (isRti) {
-	// // skip info with alphabet size
-	// br.readLine();
-	// }
-	// while ((line = br.readLine()) != null) {
-	// result.add(new TimedSequence(line, isRti, containsClassLabels));
-	// }
-	// return result;
-	// }
-	//
-	// public double trainFsm(String eventTrainFile, double g_merge_alpha, MergeTest mergeTest, boolean recursiveMerge, String fsmOutputFile) {
-	// int recursive_merge_test = 0;
-	// if (recursiveMerge) {
-	// recursive_merge_test = 1;
-	// }
-	//
-	// double ll;
-	// observations o = treba.observations_read(eventTrainFile);
-	// if (o == null) {
-	// System.err.println("Error reading observations file");
-	// System.exit(1);
-	// }
-	// o = treba.observations_sort(o);
-	// o = treba.observations_uniq(o);
-	// final wfsa fsm = treba.dffa_to_wfsa(treba.dffa_state_merge(o, g_merge_alpha, mergeTest.getAlgorithm(), recursive_merge_test));
-	// ll = treba.loglikelihood_all_observations_fsm(fsm, o);
-	// treba.wfsa_to_file(fsm, fsmOutputFile);
-	//
-	// if (fsm != null) {
-	// treba.wfsa_destroy(fsm);
-	// }
-	// if (o != null) {
-	// treba.observations_destroy(o);
-	// }
-	// return ll;
-	// }
+		try {
+			boolean fileExisted = true;
+			final PdttaExperimentResult result = sp.run();
+			final Path resultPath = Paths.get("result.csv");
+			if (!Files.exists(resultPath)) {
+				Files.createFile(resultPath);
+				fileExisted = false;
+			}
+			final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+			try (BufferedWriter bw = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8, StandardOpenOption.APPEND)) {
+				if (!fileExisted) {
+					bw.append(PdttaExperimentResult.CsvHeader());
+					bw.append('\n');
+				}
+				bw.append(df.format(new Date()));
+				bw.append(" ; ");
+				bw.append(Arrays.toString(args));
+				bw.append("; ");
+				bw.append(result.toCsvString());
+				bw.append('\n');
+			}
+
+			System.exit(0);
+		} catch (final Exception e) {
+			logger.error("Unexpected exception with parameters" + Arrays.toString(args), e);
+			throw e;
+		}
+	}
+
+	FeatureCreator featureCreator;
+	PdttaDetector pdttaDetector;
+
+	public PdttaExperimentResult run() throws IOException, InterruptedException {
+		if (debug) {
+			Settings.setDebug(debug);
+		}
+		if (featureCreatorMethod == FeatureCreatorMethod.FULL_FEATURE_CREATOR) {
+			featureCreator = new FullFeatureCreator();
+		} else if (featureCreatorMethod == FeatureCreatorMethod.SMALL_FEATURE_CREATOR) {
+			featureCreator = new SmallFeatureCreator();
+		} else if (featureCreatorMethod == FeatureCreatorMethod.MINIMAL_FEATURE_CREATOR) {
+			featureCreator = new MinimalFeatureCreator();
+		} else {
+			featureCreator = null;
+		}
+		if (detectorMethod == DetectorMethod.SVM) {
+			pdttaDetector = new PdttaVectorDetector(aggType, featureCreator, new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu, svmCosts,
+					svmKernelType, svmEps, svmDegree, scalingMethod));
+			// pdttaDetector = new PdttaOneClassSvmDetector(aggType, featureCreator, svmProbabilityEstimate, svmGamma, svmNu, svmCosts, svmKernelType, svmEps,
+			// svmDegree, scalingMethod);
+		} else if (detectorMethod == DetectorMethod.THRESHOLD_AGG_ONLY) {
+			pdttaDetector = new PdttaAggregatedThresholdDetector(aggType, aggregatedEventThreshold, aggregatedTimeThreshold, aggregateSublists);
+		} else if (detectorMethod == DetectorMethod.THRESHOLD_ALL) {
+			pdttaDetector = new PdttaFullThresholdDetector(aggType, aggregatedEventThreshold, aggregatedTimeThreshold, aggregateSublists, singleEventThreshold,
+					singleTimeThreshold);
+		} else if (detectorMethod == DetectorMethod.DBSCAN) {
+			// pdttaDetector = new PdttaDbScanDetector(aggType, featureCreator, dbscan_eps, dbscan_n, distanceMethod, scalingMethod);
+			pdttaDetector = new PdttaVectorDetector(aggType, featureCreator, new DbScanClassifier(dbscan_eps, dbscan_n, dbScanDistanceMethod, scalingMethod));
+		} else {
+			pdttaDetector = null;
+		}
+
+		if (kdeKernelFunctionQualifier == KdeKernelFunction.BIWEIGHT) {
+			kdeKernelFunction = BiweightKF.getInstance();
+		} else if (kdeKernelFunctionQualifier == KdeKernelFunction.EPANECHNIKOV) {
+			kdeKernelFunction = EpanechnikovKF.getInstance();
+		} else if (kdeKernelFunctionQualifier == KdeKernelFunction.GAUSS) {
+			kdeKernelFunction = GaussKF.getInstance();
+		} else if (kdeKernelFunctionQualifier == KdeKernelFunction.TRIWEIGHT) {
+			kdeKernelFunction = TriweightKF.getInstance();
+		} else if (kdeKernelFunctionQualifier == KdeKernelFunction.UNIFORM) {
+			kdeKernelFunction = UniformKF.getInstance();
+		} else if (kdeKernelFunctionQualifier == KdeKernelFunction.ESTIMATE) {
+			kdeKernelFunction = null;
+		}
+		final TimedInput trainInput;
+		final TimedInput testInput;
+		if (trainTestFile != null) {
+			final Pair<TimedInput, TimedInput> pair = IoUtils.readTrainTestFile(trainTestFile);
+			trainInput = pair.getKey();
+			testInput = pair.getValue();
+		} else {
+			trainInput = TimedInput.parse(trainFile);
+			testInput = TimedInput.parse(testFile);
+		}
+		final ModelLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0);
+		final Model model = learner.train(trainInput);
+		final PdttaAnomalyDetection detection = new PdttaAnomalyDetection(pdttaDetector, model);
+		final PdttaExperimentResult result = detection.test(testInput);
+		System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - result.getFMeasure()) + ", 0");
+		// IoUtils.xmlSerialize(automaton, Paths.get("pdtta.xml"));
+		// automaton = (PDTTA) IoUtils.xmlDeserialize(Paths.get("pdtta.xml"));
+		return result;
+	}
 
 }

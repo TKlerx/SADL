@@ -29,7 +29,7 @@ import org.apache.commons.math3.util.Precision;
  */
 public class MyDistributionSearch extends DistributionSearch
 {
-	private static Distribution[] possibleDistributionSet = new Distribution[]
+	private static ContinuousDistribution[] possibleDistributionSet = new ContinuousDistribution[]
 			{
 		new Normal(),
 		new LogNormal(), new Exponential(),
@@ -45,7 +45,7 @@ public class MyDistributionSearch extends DistributionSearch
 	 * @param v all the values from a sample
 	 * @return the distribution that provides the best fit to the data that this method could find.
 	 */
-	public static Distribution getBestDistribution(Vec v)
+	public static ContinuousDistribution getBestDistribution(Vec v)
 	{
 		return getBestDistribution(v, possibleDistributionSet);
 	}
@@ -61,7 +61,7 @@ public class MyDistributionSearch extends DistributionSearch
 	 * and greater then 1 means the KDE will always be used.
 	 * @return the distribution that provides the best fit to the data that this method could find.
 	 */
-	public static Distribution getBestDistribution(Vec v, double KDECutOff)
+	public static ContinuousDistribution getBestDistribution(Vec v, double KDECutOff)
 	{
 		return getBestDistribution(v, KDECutOff, possibleDistributionSet);
 	}
@@ -74,7 +74,7 @@ public class MyDistributionSearch extends DistributionSearch
 	 * @param possibleDistributions the array of distribution to try and fit to the data
 	 * @return the distribution that provides the best fit to the data that this method could find.
 	 */
-	public static Distribution getBestDistribution(Vec v, Distribution... possibleDistributions)
+	public static ContinuousDistribution getBestDistribution(Vec v, ContinuousDistribution... possibleDistributions)
 	{
 		return getBestDistribution(v, 0.0, possibleDistributions);
 	}
@@ -91,7 +91,7 @@ public class MyDistributionSearch extends DistributionSearch
 	 * @param possibleDistributions the array of distribution to try and fit to the data
 	 * @return  the distribution that provides the best fit to the data that this method could find.
 	 */
-	public static Distribution getBestDistribution(Vec v, double KDECutOff, Distribution... possibleDistributions)
+	public static ContinuousDistribution getBestDistribution(Vec v, double KDECutOff, ContinuousDistribution... possibleDistributions)
 	{
 		if(v.length() == 0) {
 			throw new ArithmeticException("Can not fit a distribution to an empty set");
@@ -102,7 +102,7 @@ public class MyDistributionSearch extends DistributionSearch
 		}
 		//Thread Safety, clone the possible distributions
 
-		final Distribution[] possDistCopy = new Distribution[possibleDistributions.length];
+		final ContinuousDistribution[] possDistCopy = new ContinuousDistribution[possibleDistributions.length];
 
 		for(int i = 0; i < possibleDistributions.length; i++) {
 			possDistCopy[i] = possibleDistributions[i].clone();
@@ -111,10 +111,10 @@ public class MyDistributionSearch extends DistributionSearch
 
 		final KSTest ksTest = new KSTest(v);
 
-		Distribution bestDist = null;
+		ContinuousDistribution bestDist = null;
 		double bestProb = 0;
 
-		for(final Distribution cd : possDistCopy)
+		for (final ContinuousDistribution cd : possDistCopy)
 		{
 			try
 			{
@@ -174,7 +174,7 @@ public class MyDistributionSearch extends DistributionSearch
 		if(!includeKDE){
 			return getBestDistribution(v);
 		}else{
-			final Distribution[] possibleDists = Arrays.copyOf(possibleDistributionSet, possibleDistributionSet.length+1);
+			final ContinuousDistribution[] possibleDists = Arrays.copyOf(possibleDistributionSet, possibleDistributionSet.length + 1);
 			possibleDists[possibleDists.length-1] = new MyKernelDensityEstimator(v);
 			return getBestDistribution(v,possibleDists);
 		}
