@@ -47,15 +47,16 @@ public class DataGenerator implements Serializable {
 	 * @param args
 	 * @throws IOException
 	 * @throws InterruptedException
+	 * @throws ClassNotFoundException
 	 */
-	public static void main(String[] args) throws IOException, InterruptedException {
+	public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException {
 		final DataGenerator sp = new DataGenerator();
 		sp.dataString = args[0];
 		logger.info("Running DataGenerator with args" + Arrays.toString(args));
 		sp.run();
 	}
 
-	private void run() throws IOException, InterruptedException {
+	private void run() throws IOException, InterruptedException, ClassNotFoundException {
 		try {
 			if (Files.notExists(outputDir)) {
 				Files.createDirectories(outputDir);
@@ -64,7 +65,7 @@ public class DataGenerator implements Serializable {
 			final TimedInput trainingTimedSequences = TimedInput.parseAlt(Paths.get(dataString), 1);
 			final TauPtaLearner learner = new TauPtaLearner();
 			final TauPTA pta = learner.train(trainingTimedSequences);
-			IoUtils.xmlSerialize(pta, outputDir.resolve(Paths.get("pta_normal.xml")));
+			IoUtils.serialize(pta, outputDir.resolve(Paths.get("pta_normal.ser")));
 			pta.toGraphvizFile(outputDir.resolve(Paths.get("pta_normal.dot")), false);
 			// try (BufferedWriter br = Files.newBufferedWriter(outputDir.resolve(Paths.get("normal_sequences")), StandardCharsets.UTF_8)) {
 			// logger.info("sampling normal sequences");
@@ -82,8 +83,8 @@ public class DataGenerator implements Serializable {
 					anomaly1.makeAbnormal(type);
 					try {
 						anomaly1.toGraphvizFile(outputDir.resolve(Paths.get("pta_abnormal_" + type.getTypeIndex() + ".dot")), false);
-						IoUtils.xmlSerialize(anomaly1, outputDir.resolve(Paths.get("pta_abnormal_" + type.getTypeIndex() + ".xml")));
-						final TauPTA des = (TauPTA) IoUtils.xmlDeserialize(outputDir.resolve(Paths.get("pta_abnormal_" + type.getTypeIndex() + ".xml")));
+						IoUtils.serialize(anomaly1, outputDir.resolve(Paths.get("pta_abnormal_" + type.getTypeIndex() + ".ser")));
+						final TauPTA des = (TauPTA) IoUtils.deserialize(outputDir.resolve(Paths.get("pta_abnormal_" + type.getTypeIndex() + ".ser")));
 						if (!anomaly1.equals(des)) {
 							throw new IllegalStateException();
 						}
@@ -100,15 +101,15 @@ public class DataGenerator implements Serializable {
 				}
 			}
 		} finally {
-				logger.info("Starting to dot PTAs");
-				final DirectoryStream<Path> ds = Files.newDirectoryStream(outputDir.resolve(Paths.get(".")), "*.dot");
-				for (final Path p : ds) {
-					if (System.getProperty("os.name").toLowerCase().contains("linux")) {
-						logger.info("dotting {}...", p);
-						Runtime.getRuntime().exec("dot -Tpdf -O " + p.toString());
-						Runtime.getRuntime().exec("dot -Tpng -O " + p.toString());
-						logger.info("dotted {}.", p);
-					}
+			logger.info("Starting to dot PTAs");
+			final DirectoryStream<Path> ds = Files.newDirectoryStream(outputDir.resolve(Paths.get(".")), "*.dot");
+			for (final Path p : ds) {
+				if (System.getProperty("os.name").toLowerCase().contains("linux")) {
+					logger.info("dotting {}...", p);
+					Runtime.getRuntime().exec("dot -Tpdf -O " + p.toString());
+					Runtime.getRuntime().exec("dot -Tpng -O " + p.toString());
+					logger.info("dotted {}.", p);
+				}
 			}
 		}
 

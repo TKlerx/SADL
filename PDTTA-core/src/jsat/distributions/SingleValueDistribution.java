@@ -26,7 +26,7 @@ import org.apache.commons.math3.util.Precision;
  * @author Timo Klerx
  *
  */
-public class SingleValueDistribution extends Distribution {
+public class SingleValueDistribution extends ContinuousDistribution {
 
 	/**
 	 * 
@@ -102,7 +102,7 @@ public class SingleValueDistribution extends Distribution {
 	}
 
 	@Override
-	public Distribution clone() {
+	public ContinuousDistribution clone() {
 		return new SingleValueDistribution(this.value);
 	}
 

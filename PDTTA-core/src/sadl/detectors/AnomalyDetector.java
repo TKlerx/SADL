@@ -11,8 +11,6 @@
 
 package sadl.detectors;
 
-import gnu.trove.list.TDoubleList;
-
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -26,10 +24,11 @@ import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
 import sadl.constants.ProbabilityAggregationMethod;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
-import sadl.interfaces.AnomalyDetector;
 import sadl.interfaces.Model;
 import sadl.models.PDTTA;
 import sadl.utils.Settings;
@@ -39,30 +38,29 @@ import sadl.utils.Settings;
  * @author Timo Klerx
  *
  */
-public abstract class PdttaDetector implements AnomalyDetector {
-	protected ProbabilityAggregationMethod aggType;
-	private static Logger logger = LoggerFactory.getLogger(PdttaDetector.class);
+public abstract class AnomalyDetector {
+	private static Logger logger = LoggerFactory.getLogger(AnomalyDetector.class);
 
-	PDTTA model;
-	@Override
+	protected ProbabilityAggregationMethod aggType;
+	Model model;
+
 	public boolean isAnomaly(Model newModel, TimedWord s) {
 		setModel(newModel);
 		return isAnomaly(s);
 	}
 
-	@Override
 	public boolean[] areAnomalies(Model newModel, TimedInput testSequences) {
 		setModel(newModel);
 		return areAnomalies(testSequences);
 
 	}
 
-	public PdttaDetector(ProbabilityAggregationMethod aggType) {
+	public AnomalyDetector(ProbabilityAggregationMethod aggType) {
 		super();
 		this.aggType = aggType;
 	}
 
-	public PdttaDetector(ProbabilityAggregationMethod aggType, PDTTA model) {
+	public AnomalyDetector(ProbabilityAggregationMethod aggType, PDTTA model) {
 		super();
 		this.aggType = aggType;
 		this.model = model;
@@ -84,9 +82,25 @@ public abstract class PdttaDetector implements AnomalyDetector {
 		return result;
 	}
 
+	public Pair<TDoubleList, TDoubleList> computeAggregatedTrendLikelihood(TimedWord ts) {
+		final Pair<TDoubleList, TDoubleList> p = model.calculateProbabilities(ts);
+		return computeAggregatedTrendLikelihood(p.getKey(), p.getValue());
+	}
 
+	public Pair<TDoubleList, TDoubleList> computeAggregatedTrendLikelihood(TDoubleList eventLHs, TDoubleList timeLHs) {
+		final TDoubleList partialEventLHs = new TDoubleArrayList();
+		final TDoubleList partialTimeLHs = new TDoubleArrayList();
+		for (int i = 1; i <= eventLHs.size(); i++) {
+			final TDoubleList subList = eventLHs.subList(0, i);
+			partialEventLHs.add(aggregate(subList, aggType));
+		}
+		for (int i = 1; i <= timeLHs.size(); i++) {
+			final TDoubleList subList = timeLHs.subList(0, i);
+			partialTimeLHs.add(aggregate(subList, aggType));
+		}
+		return Pair.create(partialEventLHs, partialTimeLHs);
+	}
 
-	@Override
 	public boolean isAnomaly(TimedWord s) {
 		final Pair<TDoubleList, TDoubleList> p = model.calculateProbabilities(s);
 		final TDoubleList eventLikelihoods = p.getKey();
@@ -103,7 +117,6 @@ public abstract class PdttaDetector implements AnomalyDetector {
 	 */
 	protected abstract boolean decide(TDoubleList eventLikelihoods, TDoubleList timeLikelihoods);
 
-	@Override
 	public boolean[] areAnomalies(TimedInput testSequences) {
 		if (Settings.isDebug()) {
 			final Path testLabelFile = Paths.get("testLabels.csv");
@@ -130,11 +143,10 @@ public abstract class PdttaDetector implements AnomalyDetector {
 		return result;
 	}
 
-	@Override
 	public void setModel(Model model) {
 		if (model instanceof PDTTA) {
 			logger.debug("Setting model to {}", model);
-			this.model = (PDTTA) model;
+			this.model = model;
 		} else {
 			throw new UnsupportedOperationException("This AnomalyDetector can only use PDTTAs for anomaly detection");
 		}

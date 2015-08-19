@@ -21,9 +21,9 @@ import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sadl.detectors.PdttaDetector;
+import sadl.detectors.AnomalyDetector;
 import sadl.evaluation.Evaluation;
-import sadl.experiments.PdttaExperimentResult;
+import sadl.experiments.ExperimentResult;
 import sadl.input.TimedInput;
 import sadl.interfaces.Model;
 import sadl.interfaces.ModelLearner;
@@ -31,18 +31,18 @@ import sadl.interfaces.TrainableDetector;
 import sadl.models.PDTTA;
 import sadl.utils.IoUtils;
 
-public class PdttaAnomalyDetection {
+public class AnomalyDetection {
 
 
-	private static Logger logger = LoggerFactory.getLogger(PdttaAnomalyDetection.class);
-	private final PdttaDetector pdttaDetector;
+	private static Logger logger = LoggerFactory.getLogger(AnomalyDetection.class);
+	private final AnomalyDetector anomalyDetector;
 	ModelLearner learner;
 	Model learnedModel;
-	PDTTA automaton;
+	Model automaton;
 
 
-	public PdttaDetector getPdttaDetector() {
-		return pdttaDetector;
+	public AnomalyDetector getPdttaDetector() {
+		return anomalyDetector;
 	}
 
 	public ModelLearner getLearner() {
@@ -52,10 +52,16 @@ public class PdttaAnomalyDetection {
 	public Model getLearnedModel() {
 		return learnedModel;
 	}
-	public PdttaAnomalyDetection(PdttaDetector pdttaDetector, ModelLearner learner) {
+	public AnomalyDetection(AnomalyDetector pdttaDetector, ModelLearner learner) {
 		super();
-		this.pdttaDetector = pdttaDetector;
+		this.anomalyDetector = pdttaDetector;
 		this.learner = learner;
+	}
+
+	public AnomalyDetection(AnomalyDetector anomalyDetector, Model model) {
+		super();
+		this.anomalyDetector = anomalyDetector;
+		this.learnedModel = model;
 	}
 
 	/**
@@ -65,7 +71,7 @@ public class PdttaAnomalyDetection {
 	 * @return the result of training with the train and testing on the test set
 	 * @throws IOException
 	 */
-	public PdttaExperimentResult trainTest(Path dataFile) throws IOException {
+	public ExperimentResult trainTest(Path dataFile) throws IOException {
 		checkFileExistance(dataFile);
 
 		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(dataFile);
@@ -73,7 +79,7 @@ public class PdttaAnomalyDetection {
 		return test(trainTest.getValue());
 	}
 
-	public PdttaExperimentResult trainTest(TimedInput train, TimedInput test) throws IOException {
+	public ExperimentResult trainTest(TimedInput train, TimedInput test) throws IOException {
 		train(train);
 		return test(test);
 	}
@@ -97,13 +103,13 @@ public class PdttaAnomalyDetection {
 	public Model train(TimedInput trainingInput) {
 		learnedModel = learner.train(trainingInput);
 		if (learnedModel instanceof PDTTA) {
-			automaton = (PDTTA) learnedModel;
+			automaton = learnedModel;
 		} else {
 			throw new NotImplementedException("This approach only works for PDTTA models");
 		}
-		if (pdttaDetector instanceof TrainableDetector) {
-			pdttaDetector.setModel(automaton);
-			((TrainableDetector) pdttaDetector).train(trainingInput);
+		if (anomalyDetector instanceof TrainableDetector) {
+			anomalyDetector.setModel(automaton);
+			((TrainableDetector) anomalyDetector).train(trainingInput);
 		}
 		trainingInput.clearWords();
 		return learnedModel;
@@ -116,7 +122,7 @@ public class PdttaAnomalyDetection {
 	 * @return the experiment result
 	 * @throws IOException
 	 */
-	public PdttaExperimentResult test(Path dataFile) throws IOException {
+	public ExperimentResult test(Path dataFile) throws IOException {
 		checkFileExistance(dataFile);
 		return test(TimedInput.parse(dataFile));
 	}
@@ -129,9 +135,9 @@ public class PdttaAnomalyDetection {
 		}
 	}
 
-	public PdttaExperimentResult test(TimedInput testInput) {
-		final Evaluation eval = new Evaluation(pdttaDetector, automaton);
-		final PdttaExperimentResult result = eval.evaluate(testInput);
+	public ExperimentResult test(TimedInput testInput) {
+		final Evaluation eval = new Evaluation(anomalyDetector, automaton);
+		final ExperimentResult result = eval.evaluate(testInput);
 		testInput.clearWords();
 		logger.info("F-Measure={}", result.getFMeasure());
 		return result;
@@ -144,7 +150,7 @@ public class PdttaAnomalyDetection {
 	 * @return the result of training with the train and testing on the test set
 	 * @throws IOException
 	 */
-	public PdttaExperimentResult trainTest(String dataFile) throws IOException {
+	public ExperimentResult trainTest(String dataFile) throws IOException {
 		return trainTest(Paths.get(dataFile));
 	}
 }

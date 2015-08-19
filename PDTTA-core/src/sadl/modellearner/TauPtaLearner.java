@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jsat.distributions.Distribution;
+import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.empirical.kernelfunc.KernelFunction;
 
 import org.apache.commons.lang3.SerializationUtils;
@@ -145,7 +145,7 @@ public class TauPtaLearner extends PdttaLearner {
 		}
 		logger.info("OmmitedSequenceCount={} out of {} sequences at a threshold of less than {} absolute occurences.", ommitedSequenceCount,
 				trainingSequences.size(), TauPTA.SEQUENCE_OMMIT_THRESHOLD * trainingSequences.size());
-		final Map<ZeroProbTransition, Distribution> distributions = fit(timeValueBuckets);
+		final Map<ZeroProbTransition, ContinuousDistribution> distributions = fit(timeValueBuckets);
 		newPta.setTransitionDistributions(distributions);
 		if (distributions.size() != newPta.getTransitionCount()) {
 			final List<Transition> missingDistributions = new ArrayList<>();

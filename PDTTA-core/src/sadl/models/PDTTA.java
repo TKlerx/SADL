@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.Distribution;
 
 import org.apache.commons.math3.util.Pair;
@@ -46,13 +47,13 @@ public class PDTTA extends PDFA {
 
 	transient private static Logger logger = LoggerFactory.getLogger(PDTTA.class);
 
-	Map<ZeroProbTransition, Distribution> transitionDistributions = null;
+	Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions = null;
 
-	public Map<ZeroProbTransition, Distribution> getTransitionDistributions() {
+	public Map<ZeroProbTransition, ContinuousDistribution> getTransitionDistributions() {
 		return transitionDistributions;
 	}
 
-	public void setTransitionDistributions(Map<ZeroProbTransition, Distribution> transitionDistributions) {
+	public void setTransitionDistributions(Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions) {
 		checkImmutable();
 		this.transitionDistributions = transitionDistributions;
 		checkAndRestoreConsistency();
@@ -60,7 +61,7 @@ public class PDTTA extends PDFA {
 
 	@Override
 	protected boolean restoreConsistency() {
-		return super.restoreConsistency() | deleteIrrelevantTransitions();
+		return deleteIrrelevantTransitions() | super.restoreConsistency();
 	}
 
 	@Override
@@ -109,7 +110,7 @@ public class PDTTA extends PDFA {
 		if (transition.isStopTraversingTransition()) {
 			super.changeTransitionProbability(transition, newProbability);
 		} else {
-			Distribution d = null;
+			ContinuousDistribution d = null;
 			d = removeTimedTransition(transition, bindTimeInformation);
 			final Transition t = new Transition(transition.getFromState(), transition.getToState(), transition.getSymbol(), newProbability);
 			transitions.add(t);
@@ -125,13 +126,13 @@ public class PDTTA extends PDFA {
 	protected PDTTA() {
 	}
 
-	public PDTTA(PDFA pdfa, Map<ZeroProbTransition, Distribution> transitionDistributions) throws IOException {
+	public PDTTA(PDFA pdfa, Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions) throws IOException {
 		super(pdfa);
 		this.transitionDistributions = transitionDistributions;
 		checkAndRestoreConsistency();
 	}
 
-	protected void bindTransitionDistribution(Transition newTransition, Distribution d) {
+	protected void bindTransitionDistribution(Transition newTransition, ContinuousDistribution d) {
 		checkImmutable();
 		if (transitionDistributions != null) {
 			transitionDistributions.put(newTransition.toZeroProbTransition(), d);
@@ -145,7 +146,7 @@ public class PDTTA extends PDFA {
 	 * 
 	 * @param t
 	 */
-	protected Distribution removeTimedTransition(Transition t) {
+	protected ContinuousDistribution removeTimedTransition(Transition t) {
 		return removeTimedTransition(t, true);
 	}
 
@@ -154,7 +155,7 @@ public class PDTTA extends PDFA {
 		return removeTimedTransition(t) != null;
 	}
 
-	public Distribution removeTimedTransition(Transition t, boolean removeTimeDistribution) {
+	public ContinuousDistribution removeTimedTransition(Transition t, boolean removeTimeDistribution) {
 		super.removeTransition(t);
 		if (removeTimeDistribution) {
 			if (transitionDistributions != null) {
@@ -222,10 +223,10 @@ public class PDTTA extends PDFA {
 				return false;
 			}
 		} else if (!transitionDistributions.equals(other.transitionDistributions)) {
-			final Set<Entry<ZeroProbTransition, Distribution>> e1 = transitionDistributions.entrySet();
-			final Set<Entry<ZeroProbTransition, Distribution>> e2 = other.transitionDistributions.entrySet();
+			final Set<Entry<ZeroProbTransition, ContinuousDistribution>> e1 = transitionDistributions.entrySet();
+			final Set<Entry<ZeroProbTransition, ContinuousDistribution>> e2 = other.transitionDistributions.entrySet();
 			int count = 0;
-			for (final Entry<ZeroProbTransition, Distribution> e : e1) {
+			for (final Entry<ZeroProbTransition, ContinuousDistribution> e : e1) {
 				if (!e2.contains(e)) {
 					logger.error("Entry {} not contained in e2", e);
 					final Distribution result = other.transitionDistributions.get(e.getKey());
@@ -238,7 +239,7 @@ public class PDTTA extends PDFA {
 				}
 			}
 			logger.error("");
-			for (final Entry<ZeroProbTransition, Distribution> e : e2) {
+			for (final Entry<ZeroProbTransition, ContinuousDistribution> e : e2) {
 				if (!e1.contains(e)) {
 					logger.error("Entry {} not contained in e1", e);
 					final Distribution result = transitionDistributions.get(e.getKey());
@@ -269,7 +270,7 @@ public class PDTTA extends PDFA {
 				list.add(0);
 				return list;
 			}
-			final Distribution d = getTransitionDistributions().get(t.toZeroProbTransition());
+			final ContinuousDistribution d = getTransitionDistributions().get(t.toZeroProbTransition());
 			if (d == null) {
 				// System.out.println("Found no time distribution for Transition "
 				// + t);

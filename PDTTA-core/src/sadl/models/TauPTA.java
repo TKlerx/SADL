@@ -38,6 +38,7 @@ import java.util.function.IntUnaryOperator;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
+import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.Distribution;
 import jsat.distributions.MyDistributionSearch;
 import jsat.distributions.SingleValueDistribution;
@@ -52,7 +53,7 @@ import org.slf4j.LoggerFactory;
 
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.ClassLabel;
-import sadl.detectors.PdttaDetector;
+import sadl.detectors.AnomalyDetector;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.structure.Transition;
@@ -209,7 +210,7 @@ public class TauPTA extends PDTTA {
 		}
 		logger.info("OmmitedSequenceCount={} out of {} sequences at a threshold of less than {} absolute occurences.", ommitedSequenceCount,
 				trainingSequences.size(), SEQUENCE_OMMIT_THRESHOLD * trainingSequences.size());
-		final Map<ZeroProbTransition, Distribution> distributions = fit(timeValueBuckets);
+		final Map<ZeroProbTransition, ContinuousDistribution> distributions = fit(timeValueBuckets);
 		setTransitionDistributions(distributions);
 		if (distributions.size() != getTransitionCount()) {
 			final List<Transition> missingDistributions = new ArrayList<>();
@@ -238,8 +239,8 @@ public class TauPTA extends PDTTA {
 		}
 	}
 
-	private Map<ZeroProbTransition, Distribution> fit(Map<ZeroProbTransition, TDoubleList> timeValueBuckets) {
-		final Map<ZeroProbTransition, Distribution> result = new HashMap<>();
+	private Map<ZeroProbTransition, ContinuousDistribution> fit(Map<ZeroProbTransition, TDoubleList> timeValueBuckets) {
+		final Map<ZeroProbTransition, ContinuousDistribution> result = new HashMap<>();
 		logger.debug("timevalueBuckets.size={}", timeValueBuckets.size());
 		for (final ZeroProbTransition t : timeValueBuckets.keySet()) {
 			result.put(t, fitDistribution(timeValueBuckets.get(t)));
@@ -248,11 +249,11 @@ public class TauPTA extends PDTTA {
 	}
 
 	@SuppressWarnings("boxing")
-	private Distribution fitDistribution(TDoubleList transitionTimes) {
+	private ContinuousDistribution fitDistribution(TDoubleList transitionTimes) {
 		final Vec v = new DenseVector(transitionTimes.toArray());
 		final jsat.utils.Pair<Boolean, Double> sameValues = MyDistributionSearch.checkForDifferentValues(v);
 		if (sameValues.getFirstItem()) {
-			final Distribution d = new SingleValueDistribution(sameValues.getSecondItem());
+			final ContinuousDistribution d = new SingleValueDistribution(sameValues.getSecondItem());
 			return d;
 		} else {
 			final MyKernelDensityEstimator kde = new MyKernelDensityEstimator(v);
@@ -376,7 +377,7 @@ public class TauPTA extends PDTTA {
 	private void changeAnomalyType(Transition t, @SuppressWarnings("hiding") AnomalyInsertionType anomalyType) {
 		if ((t.getAnomalyInsertionType() != anomalyType)) {
 			final Transition newTransition = addAbnormalTransition(t, anomalyType);
-			final Distribution d = removeTimedTransition(t);
+			final ContinuousDistribution d = removeTimedTransition(t);
 			bindTransitionDistribution(newTransition, d);
 		}
 	}
@@ -400,7 +401,7 @@ public class TauPTA extends PDTTA {
 			probabilities.add(probability);
 			currentState = t.getToState();
 		}
-		return PdttaDetector.aggregate(probabilities);
+		return AnomalyDetector.aggregate(probabilities);
 		// return product(probabilities);
 	}
 
@@ -443,7 +444,7 @@ public class TauPTA extends PDTTA {
 		}
 		final Transition chosenTransition = chooseRandomObject(possibleTransitions, r);
 		logger.debug("Chose transition {} for inserting an anomaly of type 3", chosenTransition);
-		final Distribution d = removeTimedTransition(chosenTransition);
+		final ContinuousDistribution d = removeTimedTransition(chosenTransition);
 		final Transition newTransition = addAbnormalTransition(chosenTransition.getFromState(), chosenTransition.getToState(), chosenTransition.getSymbol(),
 				chosenTransition.getProbability(), AnomalyInsertionType.TYPE_THREE);
 		bindTransitionDistribution(newTransition.toZeroProbTransition(), d);
@@ -519,7 +520,7 @@ public class TauPTA extends PDTTA {
 			} else {
 				final String chosenEvent = notOccuringEvents.get(r.nextInt(notOccuringEvents.size()));
 				logger.debug("Chose event {} from {}", chosenEvent, notOccuringEvents);
-				final Distribution d = removeTimedTransition(chosenTransition);
+				final ContinuousDistribution d = removeTimedTransition(chosenTransition);
 				final Transition newTransition = addAbnormalTransition(chosenTransition.getFromState(), chosenTransition.getToState(), chosenEvent,
 						chosenTransition.getProbability(), AnomalyInsertionType.TYPE_ONE);
 				bindTransitionDistribution(newTransition.toZeroProbTransition(), d);

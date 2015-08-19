@@ -252,4 +252,21 @@ public class TimedWord implements Serializable{
 		return true;
 	}
 
+	/**
+	 * Generates a subword of this word
+	 * 
+	 * @param newLength
+	 *            the length of the new subword
+	 * @return
+	 */
+	public TimedWord getSubWord(int newLength){
+		final List<String> newSymbols = new ArrayList<>();
+		final TIntList newTimeValues = new TIntArrayList();
+		for(int i = 0;i<newLength;i++){
+			newSymbols.add(getSymbol(i));
+			newTimeValues.add(getTimeValue(i));
+		}
+		return new TimedWord(newSymbols, newTimeValues, getLabel());
+	}
+
 }

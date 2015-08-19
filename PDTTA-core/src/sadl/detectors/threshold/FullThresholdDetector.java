@@ -19,13 +19,13 @@ import sadl.constants.ProbabilityAggregationMethod;
  * @author Timo Klerx
  *
  */
-public class PdttaFullThresholdDetector extends PdttaAggregatedThresholdDetector {
+public class FullThresholdDetector extends AggregatedThresholdDetector {
 	double singleEventThreshold;
 	double singleTimeThreshold;
 
-	public PdttaFullThresholdDetector(ProbabilityAggregationMethod aggType, double aggregatedEventThreshold, double aggregatedTimeThreshold,
-			double singleEventThreshold, double singleTimeThreshold) {
-		super(aggType, aggregatedEventThreshold, aggregatedTimeThreshold);
+	public FullThresholdDetector(ProbabilityAggregationMethod aggType, double aggregatedEventThreshold, double aggregatedTimeThreshold,
+			boolean aggregateSublists, double singleEventThreshold, double singleTimeThreshold) {
+		super(aggType, aggregatedEventThreshold, aggregatedTimeThreshold, aggregateSublists);
 		this.singleEventThreshold = singleEventThreshold;
 		this.singleTimeThreshold = singleTimeThreshold;
 	}

@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import jsat.distributions.Distribution;
+import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.MyDistributionSearch;
 import jsat.distributions.SingleValueDistribution;
 import jsat.distributions.empirical.MyKernelDensityEstimator;
@@ -95,7 +95,7 @@ public class PdttaLearner implements ModelLearner {
 		final PDFA pdfa = pdfaLearner.train(trainingSequences);
 		try {
 			final Map<ZeroProbTransition, TDoubleList> timeValueBuckets = fillTimeValueBuckets(pdfa, trainingSequences);
-			final Map<ZeroProbTransition, Distribution> transitionDistributions = fit(timeValueBuckets);
+			final Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions = fit(timeValueBuckets);
 			pdtta = new PDTTA(pdfa, transitionDistributions);
 			pdtta.setAlphabet(trainingSequences);
 			pdtta.makeImmutable();
@@ -138,8 +138,8 @@ public class PdttaLearner implements ModelLearner {
 		}
 	}
 
-	protected Map<ZeroProbTransition, Distribution> fit(Map<ZeroProbTransition, TDoubleList> timeValueBuckets) {
-		final Map<ZeroProbTransition, Distribution> result = new HashMap<>();
+	protected Map<ZeroProbTransition, ContinuousDistribution> fit(Map<ZeroProbTransition, TDoubleList> timeValueBuckets) {
+		final Map<ZeroProbTransition, ContinuousDistribution> result = new HashMap<>();
 		for (final ZeroProbTransition t : timeValueBuckets.keySet()) {
 			result.put(t, fitDistribution(timeValueBuckets.get(t)));
 		}
@@ -147,11 +147,11 @@ public class PdttaLearner implements ModelLearner {
 	}
 
 	@SuppressWarnings("boxing")
-	protected Distribution fitDistribution(TDoubleList transitionTimes) {
+	protected ContinuousDistribution fitDistribution(TDoubleList transitionTimes) {
 		final Vec v = new DenseVector(transitionTimes.toArray());
 		final jsat.utils.Pair<Boolean, Double> sameValues = MyDistributionSearch.checkForDifferentValues(v);
 		if (sameValues.getFirstItem()) {
-			final Distribution d = new SingleValueDistribution(sameValues.getSecondItem());
+			final ContinuousDistribution d = new SingleValueDistribution(sameValues.getSecondItem());
 			return d;
 		} else {
 			KernelFunction newKernelFunction = kdeKernelFunction;

@@ -24,7 +24,7 @@ import sadl.oneclassclassifier.clustering.DbScanClassifier;
  *
  */
 @Deprecated
-public class PdttaDbScanDetector extends PdttaVectorDetector implements TrainableDetector {
+public class PdttaDbScanDetector extends VectorDetector implements TrainableDetector {
 	/**
 	 * Use the PdttaVectorDetector constructor directly instead
 	 * 

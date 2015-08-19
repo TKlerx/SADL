@@ -19,9 +19,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
 
 import jsat.distributions.empirical.kernelfunc.BiweightKF;
 import jsat.distributions.empirical.kernelfunc.EpanechnikovKF;
@@ -29,12 +38,7 @@ import jsat.distributions.empirical.kernelfunc.GaussKF;
 import jsat.distributions.empirical.kernelfunc.KernelFunction;
 import jsat.distributions.empirical.kernelfunc.TriweightKF;
 import jsat.distributions.empirical.kernelfunc.UniformKF;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import sadl.anomalydetecion.PdttaAnomalyDetection;
-import sadl.constants.AnomalyInsertionType;
+import sadl.anomalydetecion.AnomalyDetection;
 import sadl.constants.DetectorMethod;
 import sadl.constants.DistanceMethod;
 import sadl.constants.FeatureCreatorMethod;
@@ -42,24 +46,21 @@ import sadl.constants.KdeKernelFunction;
 import sadl.constants.MergeTest;
 import sadl.constants.ProbabilityAggregationMethod;
 import sadl.constants.ScalingMethod;
-import sadl.detectors.PdttaDetector;
-import sadl.detectors.PdttaVectorDetector;
+import sadl.detectors.AnomalyDetector;
+import sadl.detectors.VectorDetector;
 import sadl.detectors.featureCreators.FeatureCreator;
 import sadl.detectors.featureCreators.FullFeatureCreator;
 import sadl.detectors.featureCreators.MinimalFeatureCreator;
 import sadl.detectors.featureCreators.SmallFeatureCreator;
-import sadl.detectors.threshold.PdttaAggregatedThresholdDetector;
-import sadl.detectors.threshold.PdttaFullThresholdDetector;
-import sadl.experiments.PdttaExperimentResult;
+import sadl.detectors.threshold.AggregatedThresholdDetector;
+import sadl.detectors.threshold.FullThresholdDetector;
+import sadl.experiments.ExperimentResult;
 import sadl.interfaces.ModelLearner;
 import sadl.modellearner.PdttaLearner;
 import sadl.oneclassclassifier.LibSvmClassifier;
 import sadl.oneclassclassifier.clustering.DbScanClassifier;
 import sadl.utils.MasterSeed;
 import sadl.utils.Settings;
-
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
 
 /**
  * 
@@ -72,7 +73,9 @@ public class NewSmacPipeline implements Serializable {
 	private static Logger logger = LoggerFactory.getLogger(NewSmacPipeline.class);
 	// TODO move this to experiment project
 
-	// just for parsing the one silly smac parameter
+	String dataString;
+
+	// should be empty. not used, but for parsing smac stuff
 	@Parameter()
 	private final List<String> rest = new ArrayList<>();
 
@@ -80,27 +83,18 @@ public class NewSmacPipeline implements Serializable {
 	@Parameter(names = "-1", hidden = true)
 	private Boolean bla;
 
+	@Parameter(names = "-debug")
+	private final boolean debug = false;
+
+	// PDTTA Parameters
 	@Parameter(names = "-mergeTest")
 	MergeTest mergeTest = MergeTest.ALERGIA;
 
-	@Parameter(names = "-detectorMethod", description = "the anomaly detector method")
-	DetectorMethod detectorMethod = DetectorMethod.SVM;
-
-	@Parameter(names = "-featureCreator")
-	FeatureCreatorMethod featureCreatorMethod = FeatureCreatorMethod.FULL_FEATURE_CREATOR;
-
-	@Parameter(names = "-scalingMethod")
-	ScalingMethod scalingMethod = ScalingMethod.NONE;
-
-	@Parameter(names = "-distanceMetric", description = "Which distance metric to use for DBSCAN")
-	DistanceMethod dbScanDistanceMethod = DistanceMethod.EUCLIDIAN;
-
 	@Parameter(names = "-mergeAlpha")
 	private double mergeAlpha;
-	@Parameter(names = "-dbScanEps")
-	private double dbscan_eps;
-	@Parameter(names = "-dbScanN")
-	private int dbscan_n;
+
+	@Parameter(names = "-recursiveMergeTest", arity = 1)
+	private boolean recursiveMergeTest;
 
 	@Parameter(names = "-smoothingPrior")
 	double smoothingPrior = 0;
@@ -111,17 +105,17 @@ public class NewSmacPipeline implements Serializable {
 	@Parameter(names = "-kdeBandwidth")
 	double kdeBandwidth;
 
-	@Parameter(names = "-debug")
-	private final boolean debug = false;
-
 	@Parameter(names = "-kdeKernelFunction")
 	KdeKernelFunction kdeKernelFunctionQualifier;
 	KernelFunction kdeKernelFunction;
 
-	@Parameter(names = "-recursiveMergeTest")
-	private boolean recursiveMergeTest;
+	// Detector parameters
+	@Parameter(names = "-aggregateSublists", arity = 1)
+	private final boolean aggregateSublists = false;
+
 	@Parameter(names = "-aggregatedTimeThreshold")
 	private double aggregatedTimeThreshold;
+
 	@Parameter(names = "-aggregatedEventThreshold")
 	private double aggregatedEventThreshold;
 
@@ -131,12 +125,8 @@ public class NewSmacPipeline implements Serializable {
 	@Parameter(names = "-singleTimeThreshold")
 	private double singleTimeThreshold;
 
-	String dataString;
-
 	@Parameter(names = "-probabilityAggregationMethod")
 	ProbabilityAggregationMethod aggType = ProbabilityAggregationMethod.NORMALIZED_MULTIPLY;
-	@Parameter(names = "-anomalyInsertionType")
-	AnomalyInsertionType anomalyInsertionType = AnomalyInsertionType.ALL;
 
 	@Parameter(names = "-svmCosts")
 	double svmCosts;
@@ -159,6 +149,24 @@ public class NewSmacPipeline implements Serializable {
 	@Parameter(names = "-svmProbabilityEstimate")
 	int svmProbabilityEstimate;
 
+	@Parameter(names = "-detectorMethod", description = "the anomaly detector method")
+	DetectorMethod detectorMethod = DetectorMethod.SVM;
+
+	@Parameter(names = "-featureCreator")
+	FeatureCreatorMethod featureCreatorMethod = FeatureCreatorMethod.FULL_FEATURE_CREATOR;
+
+	@Parameter(names = "-scalingMethod")
+	ScalingMethod scalingMethod = ScalingMethod.NONE;
+
+	@Parameter(names = "-distanceMetric", description = "Which distance metric to use for DBSCAN")
+	DistanceMethod dbScanDistanceMethod = DistanceMethod.EUCLIDIAN;
+
+	@Parameter(names = "-dbScanEps")
+	private double dbscan_eps;
+
+	@Parameter(names = "-dbScanN")
+	private int dbscan_n;
+
 	/**
 	 * @param args
 	 * @throws IOException
@@ -167,7 +175,6 @@ public class NewSmacPipeline implements Serializable {
 	public static void main(String[] args) throws IOException, InterruptedException {
 		final NewSmacPipeline sp = new NewSmacPipeline();
 		final JCommander jc = new JCommander(sp);
-		System.out.println(Arrays.toString(args));
 		if (args.length < 4) {
 			logger.error("Please provide the following inputs: [inputFile] 1 1 [Random Seed] [Parameter Arguments..]");
 			jc.usage();
@@ -178,28 +185,40 @@ public class NewSmacPipeline implements Serializable {
 		logger.info("Running Generic Pipeline with args" + Arrays.toString(args));
 		MasterSeed.setSeed(Long.parseLong(args[3]));
 
-		// try {
-		final PdttaExperimentResult result = sp.run();
-		final Path resultPath = Paths.get("result.csv");
-		if (!Files.exists(resultPath)) {
-			Files.createFile(resultPath);
-		}
-		try (BufferedWriter bw = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8, StandardOpenOption.APPEND)) {
-			bw.append(Arrays.toString(args) + "; " + result.toCsvString());
-			bw.append('\n');
-		}
+		try {
+			boolean fileExisted = true;
+			final ExperimentResult result = sp.run();
+			final Path resultPath = Paths.get("result.csv");
+			if (!Files.exists(resultPath)) {
+				Files.createFile(resultPath);
+				fileExisted = false;
+			}
+			final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-		System.exit(0);
-		// } catch (Exception e) {
-		// logger.error("Unexpected exception with parameters" + Arrays.toString(args), e);
-		// throw e;
-		// }
+			try (BufferedWriter bw = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8, StandardOpenOption.APPEND)) {
+				if (!fileExisted) {
+					bw.append(ExperimentResult.CsvHeader());
+					bw.append('\n');
+				}
+				bw.append(df.format(new Date()));
+				bw.append(" ; ");
+				bw.append(Arrays.toString(args));
+				bw.append("; ");
+				bw.append(result.toCsvString());
+				bw.append('\n');
+			}
+
+			System.exit(0);
+		} catch (final Exception e) {
+			logger.error("Unexpected exception with parameters" + Arrays.toString(args), e);
+			throw e;
+		}
 	}
 
 	FeatureCreator featureCreator;
-	PdttaDetector pdttaDetector;
+	AnomalyDetector anomalyDetector;
 
-	public PdttaExperimentResult run() throws IOException, InterruptedException {
+	public ExperimentResult run() throws IOException, InterruptedException {
 		if (debug) {
 			Settings.setDebug(debug);
 		}
@@ -213,20 +232,20 @@ public class NewSmacPipeline implements Serializable {
 			featureCreator = null;
 		}
 		if (detectorMethod == DetectorMethod.SVM) {
-			pdttaDetector = new PdttaVectorDetector(aggType, featureCreator, new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu, svmCosts,
+			anomalyDetector = new VectorDetector(aggType, featureCreator, new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu, svmCosts,
 					svmKernelType, svmEps, svmDegree, scalingMethod));
 			// pdttaDetector = new PdttaOneClassSvmDetector(aggType, featureCreator, svmProbabilityEstimate, svmGamma, svmNu, svmCosts, svmKernelType, svmEps,
 			// svmDegree, scalingMethod);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_AGG_ONLY) {
-			pdttaDetector = new PdttaAggregatedThresholdDetector(aggType, aggregatedEventThreshold, aggregatedTimeThreshold);
+			anomalyDetector = new AggregatedThresholdDetector(aggType, aggregatedEventThreshold, aggregatedTimeThreshold, aggregateSublists);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_ALL) {
-			pdttaDetector = new PdttaFullThresholdDetector(aggType, aggregatedEventThreshold, aggregatedTimeThreshold, singleEventThreshold,
+			anomalyDetector = new FullThresholdDetector(aggType, aggregatedEventThreshold, aggregatedTimeThreshold, aggregateSublists, singleEventThreshold,
 					singleTimeThreshold);
 		} else if (detectorMethod == DetectorMethod.DBSCAN) {
 			// pdttaDetector = new PdttaDbScanDetector(aggType, featureCreator, dbscan_eps, dbscan_n, distanceMethod, scalingMethod);
-			pdttaDetector = new PdttaVectorDetector(aggType, featureCreator, new DbScanClassifier(dbscan_eps, dbscan_n, dbScanDistanceMethod, scalingMethod));
+			anomalyDetector = new VectorDetector(aggType, featureCreator, new DbScanClassifier(dbscan_eps, dbscan_n, dbScanDistanceMethod, scalingMethod));
 		} else {
-			pdttaDetector = null;
+			anomalyDetector = null;
 		}
 
 		if (kdeKernelFunctionQualifier == KdeKernelFunction.BIWEIGHT) {
@@ -243,8 +262,8 @@ public class NewSmacPipeline implements Serializable {
 			kdeKernelFunction = null;
 		}
 		final ModelLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0);
-		final PdttaAnomalyDetection detection = new PdttaAnomalyDetection(pdttaDetector, learner);
-		final PdttaExperimentResult result = detection.trainTest(dataString);
+		final AnomalyDetection detection = new AnomalyDetection(anomalyDetector, learner);
+		final ExperimentResult result = detection.trainTest(dataString);
 		System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - result.getFMeasure()) + ", 0");
 		// IoUtils.xmlSerialize(automaton, Paths.get("pdtta.xml"));
 		// automaton = (PDTTA) IoUtils.xmlDeserialize(Paths.get("pdtta.xml"));

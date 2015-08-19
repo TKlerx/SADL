@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -155,7 +156,17 @@ public class PDFA implements AutomatonModel, Serializable {
 				}
 				final double tempSum = getTransitions(state, true).stream().mapToDouble(t -> t.getProbability()).sum();
 				if (!Precision.equals(tempSum, 1.0)) {
-					throw new IllegalStateException("Probabilities do not sum up to one, but instead to " + tempSum);
+					BigFraction preciseSum = BigFraction.ZERO;
+					for (final BigFraction f : probabilities) {
+						preciseSum = preciseSum.add(f.divide(fracSum));
+					}
+					if (!preciseSum.equals(BigFraction.ONE)) {
+						throw new IllegalStateException("Probabilities do not sum up to one, but instead to " + tempSum);
+					}else{
+						logger.warn(
+								"Probabilities do not sum up to one, but instead to {}. This is due to double underflows, but they sum up to one if using BigFraction. This small error will be ignored.",
+								tempSum);
+					}
 				}
 			}
 		}
@@ -265,7 +276,7 @@ public class PDFA implements AutomatonModel, Serializable {
 		}
 	}
 
-	public void toGraphvizFile(Path graphvizResult, boolean compressed) throws IOException {
+	public void toGraphvizFile(Path graphvizResult, boolean compressed, Map<String, String> idReplacement) throws IOException {
 		final BufferedWriter writer = Files.newBufferedWriter(graphvizResult, StandardCharsets.UTF_8);
 		writer.write("digraph G {\n");
 		// start states
@@ -303,7 +314,11 @@ public class PDFA implements AutomatonModel, Serializable {
 			writer.write(" -> ");
 			writer.write(Integer.toString(t.getToState()));
 			writer.write(" [label=<");
-			writer.write(t.getSymbol());
+			if (idReplacement != null && idReplacement.containsKey(t.getSymbol())) {
+				writer.write(idReplacement.get(t.getSymbol()));
+			} else {
+				writer.write(t.getSymbol());
+			}
 			if (t.getProbability() > 0) {
 				writer.write(" p=");
 				writer.write(Double.toString(Precision.round(t.getProbability(), 2)));
@@ -324,6 +339,10 @@ public class PDFA implements AutomatonModel, Serializable {
 		writer.write("}");
 		writer.close();
 
+	}
+
+	public void toGraphvizFile(Path graphvizResult, boolean compressed) throws IOException {
+		toGraphvizFile(graphvizResult, compressed, Collections.EMPTY_MAP);
 	}
 
 	public void addFinalState(int state, double probability) {
