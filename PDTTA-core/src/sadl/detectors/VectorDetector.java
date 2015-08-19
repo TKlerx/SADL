@@ -11,13 +11,12 @@
 
 package sadl.detectors;
 
-import gnu.trove.list.TDoubleList;
-
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.math3.util.Pair;
 
+import gnu.trove.list.TDoubleList;
 import sadl.constants.ProbabilityAggregationMethod;
 import sadl.detectors.featureCreators.FeatureCreator;
 import sadl.input.TimedInput;
@@ -43,6 +42,7 @@ public class VectorDetector extends AnomalyDetector implements TrainableDetector
 
 	@Override
 	protected boolean decide(TDoubleList eventLikelihoods, TDoubleList timeLikelihoods) {
+		// TODO also use aggregateSublists in VectorDetector
 		final double[] vector = fc.createFeatures(eventLikelihoods, timeLikelihoods, aggType);
 		return c.isOutlier(vector);
 	}

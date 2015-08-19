@@ -26,18 +26,19 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
+
 import jsat.distributions.empirical.kernelfunc.BiweightKF;
 import jsat.distributions.empirical.kernelfunc.EpanechnikovKF;
 import jsat.distributions.empirical.kernelfunc.GaussKF;
 import jsat.distributions.empirical.kernelfunc.KernelFunction;
 import jsat.distributions.empirical.kernelfunc.TriweightKF;
 import jsat.distributions.empirical.kernelfunc.UniformKF;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import sadl.anomalydetecion.AnomalyDetection;
-import sadl.constants.AnomalyInsertionType;
 import sadl.constants.DetectorMethod;
 import sadl.constants.DistanceMethod;
 import sadl.constants.FeatureCreatorMethod;
@@ -61,9 +62,6 @@ import sadl.oneclassclassifier.clustering.DbScanClassifier;
 import sadl.utils.MasterSeed;
 import sadl.utils.Settings;
 
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
-
 /**
  * 
  * @author Timo Klerx
@@ -75,7 +73,9 @@ public class NewSmacPipeline implements Serializable {
 	private static Logger logger = LoggerFactory.getLogger(NewSmacPipeline.class);
 	// TODO move this to experiment project
 
-	// just for parsing the one silly smac parameter
+	String dataString;
+
+	// should be empty. not used, but for parsing smac stuff
 	@Parameter()
 	private final List<String> rest = new ArrayList<>();
 
@@ -83,27 +83,18 @@ public class NewSmacPipeline implements Serializable {
 	@Parameter(names = "-1", hidden = true)
 	private Boolean bla;
 
+	@Parameter(names = "-debug")
+	private final boolean debug = false;
+
+	// PDTTA Parameters
 	@Parameter(names = "-mergeTest")
 	MergeTest mergeTest = MergeTest.ALERGIA;
 
-	@Parameter(names = "-detectorMethod", description = "the anomaly detector method")
-	DetectorMethod detectorMethod = DetectorMethod.SVM;
-
-	@Parameter(names = "-featureCreator")
-	FeatureCreatorMethod featureCreatorMethod = FeatureCreatorMethod.FULL_FEATURE_CREATOR;
-
-	@Parameter(names = "-scalingMethod")
-	ScalingMethod scalingMethod = ScalingMethod.NONE;
-
-	@Parameter(names = "-distanceMetric", description = "Which distance metric to use for DBSCAN")
-	DistanceMethod dbScanDistanceMethod = DistanceMethod.EUCLIDIAN;
-
 	@Parameter(names = "-mergeAlpha")
 	private double mergeAlpha;
-	@Parameter(names = "-dbScanEps")
-	private double dbscan_eps;
-	@Parameter(names = "-dbScanN")
-	private int dbscan_n;
+
+	@Parameter(names = "-recursiveMergeTest", arity = 1)
+	private boolean recursiveMergeTest;
 
 	@Parameter(names = "-smoothingPrior")
 	double smoothingPrior = 0;
@@ -114,20 +105,17 @@ public class NewSmacPipeline implements Serializable {
 	@Parameter(names = "-kdeBandwidth")
 	double kdeBandwidth;
 
-	@Parameter(names = "-debug")
-	private final boolean debug = false;
-
-	@Parameter(names = "-aggregateSublists", arity = 1)
-	private boolean aggregateSublists;
-
 	@Parameter(names = "-kdeKernelFunction")
 	KdeKernelFunction kdeKernelFunctionQualifier;
 	KernelFunction kdeKernelFunction;
 
-	@Parameter(names = "-recursiveMergeTest", arity = 1)
-	private boolean recursiveMergeTest;
+	// Detector parameters
+	@Parameter(names = "-aggregateSublists", arity = 1)
+	private final boolean aggregateSublists = false;
+
 	@Parameter(names = "-aggregatedTimeThreshold")
 	private double aggregatedTimeThreshold;
+
 	@Parameter(names = "-aggregatedEventThreshold")
 	private double aggregatedEventThreshold;
 
@@ -137,12 +125,8 @@ public class NewSmacPipeline implements Serializable {
 	@Parameter(names = "-singleTimeThreshold")
 	private double singleTimeThreshold;
 
-	String dataString;
-
 	@Parameter(names = "-probabilityAggregationMethod")
 	ProbabilityAggregationMethod aggType = ProbabilityAggregationMethod.NORMALIZED_MULTIPLY;
-	@Parameter(names = "-anomalyInsertionType")
-	AnomalyInsertionType anomalyInsertionType = AnomalyInsertionType.ALL;
 
 	@Parameter(names = "-svmCosts")
 	double svmCosts;
@@ -164,6 +148,24 @@ public class NewSmacPipeline implements Serializable {
 
 	@Parameter(names = "-svmProbabilityEstimate")
 	int svmProbabilityEstimate;
+
+	@Parameter(names = "-detectorMethod", description = "the anomaly detector method")
+	DetectorMethod detectorMethod = DetectorMethod.SVM;
+
+	@Parameter(names = "-featureCreator")
+	FeatureCreatorMethod featureCreatorMethod = FeatureCreatorMethod.FULL_FEATURE_CREATOR;
+
+	@Parameter(names = "-scalingMethod")
+	ScalingMethod scalingMethod = ScalingMethod.NONE;
+
+	@Parameter(names = "-distanceMetric", description = "Which distance metric to use for DBSCAN")
+	DistanceMethod dbScanDistanceMethod = DistanceMethod.EUCLIDIAN;
+
+	@Parameter(names = "-dbScanEps")
+	private double dbscan_eps;
+
+	@Parameter(names = "-dbScanN")
+	private int dbscan_n;
 
 	/**
 	 * @param args

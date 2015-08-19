@@ -11,12 +11,11 @@
 
 package sadl.detectors.threshold;
 
-import gnu.trove.list.TDoubleList;
-
 import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.trove.list.TDoubleList;
 import sadl.constants.ProbabilityAggregationMethod;
 import sadl.detectors.AnomalyDetector;
 
@@ -46,6 +45,7 @@ public class AggregatedThresholdDetector extends AnomalyDetector {
 
 	@Override
 	protected boolean decide(TDoubleList eventLikelihoods, TDoubleList timeLikelihoods) {
+		// TODO also use aggregateSublists in VectorDetector
 		if(aggregateSublists){
 			final Pair<TDoubleList, TDoubleList> anomalyTrend = computeAggregatedTrendLikelihood(eventLikelihoods, timeLikelihoods);
 			final TDoubleList eventLHs = anomalyTrend.getKey();
