@@ -11,9 +11,6 @@
 
 package sadl.models.pdrta;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.array.TDoubleArrayList;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -34,11 +31,13 @@ import java.util.function.Function;
 
 import org.apache.commons.math3.util.Pair;
 
+import com.google.common.collect.TreeMultimap;
+
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
 import sadl.input.TimedWord;
 import sadl.interfaces.AutomatonModel;
 import sadl.modellearner.rtiplus.StateColoring;
-
-import com.google.common.collect.TreeMultimap;
 
 /**
  * This class represents a Probabilistic Deterministic Real Time Automaton (PDRTA). It provides methods for training (Split and Merge) and for anomaly
@@ -106,15 +105,15 @@ public class PDRTA implements AutomatonModel, Serializable {
 				final Set<Entry<Integer, Interval>> ins = org.getIntervals(i).entrySet();
 				for (final Entry<Integer, Interval> eIn : ins) {
 					final Interval cIn = getState(org.getIndex()).getInterval(i, eIn.getKey());
-					assert (cIn.getBegin() == eIn.getValue().getBegin());
-					assert (cIn.getEnd() == eIn.getValue().getEnd());
-					assert (cIn.getTails().size() == eIn.getValue().getTails().size());
+					assert(cIn.getBegin() == eIn.getValue().getBegin());
+					assert(cIn.getEnd() == eIn.getValue().getEnd());
+					assert(cIn.getTails().size() == eIn.getValue().getTails().size());
 					if (eIn.getValue().getTarget() != null) {
-						assert (cIn.getTarget() == eIn.getValue().getTarget());
+						assert(cIn.getTarget() == eIn.getValue().getTarget());
 						cIn.setTarget(getState(eIn.getValue().getTarget().getIndex()));
-						assert (cIn.getTarget() != eIn.getValue().getTarget());
+						assert(cIn.getTarget() != eIn.getValue().getTarget());
 					} else {
-						assert (cIn.getTarget() == null);
+						assert(cIn.getTarget() == null);
 					}
 				}
 			}
@@ -122,7 +121,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 
 		root = getState(a.root.getIndex());
 
-		assert (states.size() == a.states.size());
+		assert(states.size() == a.states.size());
 
 	}
 
@@ -172,7 +171,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 				return new TDoubleArrayList(new double[] { -2.0 });
 			}
 			final Interval in = s.getInterval(t.getSymbolAlphIndex(), t.getTimeDelay());
-			assert (in != null);
+			assert(in != null);
 			transP.add(s.getStat().getTransProb(t.getSymbolAlphIndex(), in));
 			s = in.getTarget();
 			t = t.getNextTail();
@@ -204,11 +203,11 @@ public class PDRTA implements AutomatonModel, Serializable {
 					TimedTail t = eTail.getValue();
 					PDRTAState source = root, target;
 					while (t != null) {
-						assert (source.getInterval(t.getSymbolAlphIndex(), t.getTimeDelay()).getTails().containsValue(t));
+						assert(source.getInterval(t.getSymbolAlphIndex(), t.getTimeDelay()).getTails().containsValue(t));
 						target = source.getTarget(t);
 						if (target == null) {
 							throw new IllegalStateException("The tail (" + input.getSymbol(t.getSymbolAlphIndex()) + "," + t.getTimeDelay()
-									+ ") has no transition from state ((" + source.getIndex() + "))!");
+							+ ") has no transition from state ((" + source.getIndex() + "))!");
 						}
 						source = target;
 						t = t.getNextTail();
@@ -394,7 +393,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 			idx++;
 		}
 		final PDRTAState x1 = states.put(idx, s);
-		assert (x1 == null);
+		assert(x1 == null);
 		return idx;
 	}
 
@@ -463,10 +462,10 @@ public class PDRTA implements AutomatonModel, Serializable {
 				t = states.get(target);
 			}
 			Interval in = s.getInterval(input.getAlphIndex(sym), end);
-			assert (in != null);
-			assert (in.getTarget() == null);
-			assert (s.getStat().getTransProb(input.getAlphIndex(sym), in) == 0.0);
-			assert (in.contains(begin));
+			assert(in != null);
+			assert(in.getTarget() == null);
+			assert(s.getStat().getTransProb(input.getAlphIndex(sym), in) == 0.0);
+			assert(in.contains(begin));
 			Interval newIn;
 			if (end < in.getEnd()) {
 				newIn = in.split(end);
@@ -494,7 +493,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 	public void createSubTAPTA(PDRTAState s) {
 
 		for (int i = 0; i < input.getAlphSize(); i++) {
-			assert (s.getIntervals(i).size() == 1);
+			assert(s.getIntervals(i).size() == 1);
 			final Interval interval = s.getIntervals(i).lastEntry().getValue();
 			final Set<Entry<Integer, TimedTail>> tails = interval.getTails().entries();
 			if (!tails.isEmpty() && interval.getTarget() == null) {
@@ -506,7 +505,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 				Interval in = interval;
 				while (tail.getNextTail() != null) {
 					ts.addTail(tail);
-					assert (in.containsTail(tail));
+					assert(in.containsTail(tail));
 					tail = tail.getNextTail();
 					in = ts.getInterval(tail.getSymbolAlphIndex(), tail.getTimeDelay());
 					if (in.getTarget() == null) {
@@ -668,11 +667,11 @@ public class PDRTA implements AutomatonModel, Serializable {
 	}
 
 	@Override
-	public List<Function<TimedWord, Pair<TDoubleList, TDoubleList>>> getAvailableCalcMethods() {
+	public Map<String, Function<TimedWord, Pair<TDoubleList, TDoubleList>>> getAvailableCalcMethods() {
 
-		final List<Function<TimedWord, Pair<TDoubleList, TDoubleList>>> m = new ArrayList<>();
-		m.add(this::calculateProbabilities);
-		m.add(this::calculateProbsTrans);
+		final Map<String, Function<TimedWord, Pair<TDoubleList, TDoubleList>>> m = AutomatonModel.super.getAvailableCalcMethods();
+		m.put("histogramPobs", this::calculateProbabilities);
+		m.put("transitionProbs", this::calculateProbsTrans);
 		return m;
 	}
 

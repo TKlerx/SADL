@@ -11,9 +11,6 @@
 
 package sadl.models.pdrta;
 
-import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TIntArrayList;
-
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Serializable;
@@ -22,6 +19,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
 import sadl.constants.ClassLabel;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
@@ -61,7 +60,8 @@ public class PDRTAInput implements Serializable {
 		for (int i = 0; i < inp.size(); i++) {
 			tails.add(createTailChain(i, inp.get(i), extend));
 		}
-		inp.clearWords();
+		// TODO Decide what to do about TimedWords in memory
+		// inp.clearWords();
 	}
 
 	private TIntList loadTimeDelays(boolean expand) {

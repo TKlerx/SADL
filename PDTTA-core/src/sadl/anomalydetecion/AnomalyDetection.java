@@ -16,7 +16,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +27,6 @@ import sadl.input.TimedInput;
 import sadl.interfaces.Model;
 import sadl.interfaces.ModelLearner;
 import sadl.interfaces.TrainableDetector;
-import sadl.models.PDTTA;
 import sadl.utils.IoUtils;
 
 public class AnomalyDetection {
@@ -38,7 +36,6 @@ public class AnomalyDetection {
 	private final AnomalyDetector anomalyDetector;
 	ModelLearner learner;
 	Model learnedModel;
-	Model automaton;
 
 
 	public AnomalyDetector getPdttaDetector() {
@@ -75,8 +72,7 @@ public class AnomalyDetection {
 		checkFileExistance(dataFile);
 
 		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(dataFile);
-		train(trainTest.getKey());
-		return test(trainTest.getValue());
+		return trainTest(trainTest.getKey(), trainTest.getValue());
 	}
 
 	public ExperimentResult trainTest(TimedInput train, TimedInput test) throws IOException {
@@ -101,14 +97,10 @@ public class AnomalyDetection {
 	}
 
 	public Model train(TimedInput trainingInput) {
+
 		learnedModel = learner.train(trainingInput);
-		if (learnedModel instanceof PDTTA) {
-			automaton = learnedModel;
-		} else {
-			throw new NotImplementedException("This approach only works for PDTTA models");
-		}
 		if (anomalyDetector instanceof TrainableDetector) {
-			anomalyDetector.setModel(automaton);
+			anomalyDetector.setModel(learnedModel);
 			((TrainableDetector) anomalyDetector).train(trainingInput);
 		}
 		trainingInput.clearWords();
@@ -136,7 +128,8 @@ public class AnomalyDetection {
 	}
 
 	public ExperimentResult test(TimedInput testInput) {
-		final Evaluation eval = new Evaluation(anomalyDetector, automaton);
+
+		final Evaluation eval = new Evaluation(anomalyDetector, learnedModel);
 		final ExperimentResult result = eval.evaluate(testInput);
 		testInput.clearWords();
 		logger.info("F-Measure={}", result.getFMeasure());
