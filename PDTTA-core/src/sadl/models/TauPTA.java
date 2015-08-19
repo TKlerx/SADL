@@ -53,7 +53,7 @@ import org.slf4j.LoggerFactory;
 
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.ClassLabel;
-import sadl.detectors.PdttaDetector;
+import sadl.detectors.AnomalyDetector;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.structure.Transition;
@@ -401,7 +401,7 @@ public class TauPTA extends PDTTA {
 			probabilities.add(probability);
 			currentState = t.getToState();
 		}
-		return PdttaDetector.aggregate(probabilities);
+		return AnomalyDetector.aggregate(probabilities);
 		// return product(probabilities);
 	}
 

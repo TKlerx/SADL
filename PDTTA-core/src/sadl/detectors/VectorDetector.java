@@ -30,12 +30,12 @@ import sadl.oneclassclassifier.OneClassClassifier;
  * @author Timo Klerx
  *
  */
-public class PdttaVectorDetector extends PdttaDetector implements TrainableDetector {
+public class VectorDetector extends AnomalyDetector implements TrainableDetector {
 
 	OneClassClassifier c;
 	FeatureCreator fc;
 
-	public PdttaVectorDetector(ProbabilityAggregationMethod aggType, FeatureCreator fc, OneClassClassifier c) {
+	public VectorDetector(ProbabilityAggregationMethod aggType, FeatureCreator fc, OneClassClassifier c) {
 		super(aggType);
 		this.c = c;
 		this.fc = fc;

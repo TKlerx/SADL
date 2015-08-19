@@ -13,7 +13,7 @@ package sadl.detectors.featureCreators;
 
 import gnu.trove.list.TDoubleList;
 import sadl.constants.ProbabilityAggregationMethod;
-import sadl.detectors.PdttaDetector;
+import sadl.detectors.AnomalyDetector;
 
 public class MinimalFeatureCreator implements FeatureCreator {
 
@@ -25,8 +25,8 @@ public class MinimalFeatureCreator implements FeatureCreator {
 
 	@Override
 	public double[] createFeatures(TDoubleList eventLikelihoods, TDoubleList timeLikelihoods, ProbabilityAggregationMethod aggType) {
-		final double timeAgg = PdttaDetector.aggregate(timeLikelihoods, aggType);
-		final double eventAgg = PdttaDetector.aggregate(eventLikelihoods, aggType);
+		final double timeAgg = AnomalyDetector.aggregate(timeLikelihoods, aggType);
+		final double eventAgg = AnomalyDetector.aggregate(eventLikelihoods, aggType);
 		return new double[] { eventAgg, timeAgg };
 
 	}

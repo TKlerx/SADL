@@ -20,7 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import sadl.experiments.PdttaExperimentResult;
+import sadl.experiments.ExperimentResult;
 
 /**
  * 
@@ -35,7 +35,7 @@ public class ResultAggregator {
 		final Path resultFile = Paths.get(args[2]);
 		final DirectoryStream<Path> ds = Files.newDirectoryStream(resultFolder, "*." + fileType);
 		final BufferedWriter bw = Files.newBufferedWriter(resultFile, StandardCharsets.UTF_8);
-		bw.write(PdttaExperimentResult.CsvHeader());
+		bw.write(ExperimentResult.CsvHeader());
 		bw.append('\n');
 		String line = null;
 		for (final Path f : ds) {

@@ -35,7 +35,7 @@ import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sadl.anomalydetecion.PdttaAnomalyDetection;
+import sadl.anomalydetecion.AnomalyDetection;
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.DetectorMethod;
 import sadl.constants.DistanceMethod;
@@ -44,15 +44,15 @@ import sadl.constants.KdeKernelFunction;
 import sadl.constants.MergeTest;
 import sadl.constants.ProbabilityAggregationMethod;
 import sadl.constants.ScalingMethod;
-import sadl.detectors.PdttaDetector;
-import sadl.detectors.PdttaVectorDetector;
+import sadl.detectors.AnomalyDetector;
+import sadl.detectors.VectorDetector;
 import sadl.detectors.featureCreators.FeatureCreator;
 import sadl.detectors.featureCreators.FullFeatureCreator;
 import sadl.detectors.featureCreators.MinimalFeatureCreator;
 import sadl.detectors.featureCreators.SmallFeatureCreator;
-import sadl.detectors.threshold.PdttaAggregatedThresholdDetector;
-import sadl.detectors.threshold.PdttaFullThresholdDetector;
-import sadl.experiments.PdttaExperimentResult;
+import sadl.detectors.threshold.AggregatedThresholdDetector;
+import sadl.detectors.threshold.FullThresholdDetector;
+import sadl.experiments.ExperimentResult;
 import sadl.input.TimedInput;
 import sadl.interfaces.Model;
 import sadl.interfaces.ModelLearner;
@@ -185,7 +185,7 @@ public class Pipeline implements Serializable {
 
 		try {
 			boolean fileExisted = true;
-			final PdttaExperimentResult result = sp.run();
+			final ExperimentResult result = sp.run();
 			final Path resultPath = Paths.get("result.csv");
 			if (!Files.exists(resultPath)) {
 				Files.createFile(resultPath);
@@ -195,7 +195,7 @@ public class Pipeline implements Serializable {
 
 			try (BufferedWriter bw = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8, StandardOpenOption.APPEND)) {
 				if (!fileExisted) {
-					bw.append(PdttaExperimentResult.CsvHeader());
+					bw.append(ExperimentResult.CsvHeader());
 					bw.append('\n');
 				}
 				bw.append(df.format(new Date()));
@@ -214,9 +214,9 @@ public class Pipeline implements Serializable {
 	}
 
 	FeatureCreator featureCreator;
-	PdttaDetector pdttaDetector;
+	AnomalyDetector pdttaDetector;
 
-	public PdttaExperimentResult run() throws IOException, InterruptedException {
+	public ExperimentResult run() throws IOException, InterruptedException {
 		if (debug) {
 			Settings.setDebug(debug);
 		}
@@ -230,18 +230,18 @@ public class Pipeline implements Serializable {
 			featureCreator = null;
 		}
 		if (detectorMethod == DetectorMethod.SVM) {
-			pdttaDetector = new PdttaVectorDetector(aggType, featureCreator, new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu, svmCosts,
+			pdttaDetector = new VectorDetector(aggType, featureCreator, new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu, svmCosts,
 					svmKernelType, svmEps, svmDegree, scalingMethod));
 			// pdttaDetector = new PdttaOneClassSvmDetector(aggType, featureCreator, svmProbabilityEstimate, svmGamma, svmNu, svmCosts, svmKernelType, svmEps,
 			// svmDegree, scalingMethod);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_AGG_ONLY) {
-			pdttaDetector = new PdttaAggregatedThresholdDetector(aggType, aggregatedEventThreshold, aggregatedTimeThreshold, aggregateSublists);
+			pdttaDetector = new AggregatedThresholdDetector(aggType, aggregatedEventThreshold, aggregatedTimeThreshold, aggregateSublists);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_ALL) {
-			pdttaDetector = new PdttaFullThresholdDetector(aggType, aggregatedEventThreshold, aggregatedTimeThreshold, aggregateSublists, singleEventThreshold,
+			pdttaDetector = new FullThresholdDetector(aggType, aggregatedEventThreshold, aggregatedTimeThreshold, aggregateSublists, singleEventThreshold,
 					singleTimeThreshold);
 		} else if (detectorMethod == DetectorMethod.DBSCAN) {
 			// pdttaDetector = new PdttaDbScanDetector(aggType, featureCreator, dbscan_eps, dbscan_n, distanceMethod, scalingMethod);
-			pdttaDetector = new PdttaVectorDetector(aggType, featureCreator, new DbScanClassifier(dbscan_eps, dbscan_n, dbScanDistanceMethod, scalingMethod));
+			pdttaDetector = new VectorDetector(aggType, featureCreator, new DbScanClassifier(dbscan_eps, dbscan_n, dbScanDistanceMethod, scalingMethod));
 		} else {
 			pdttaDetector = null;
 		}
@@ -271,8 +271,8 @@ public class Pipeline implements Serializable {
 		}
 		final ModelLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0);
 		final Model model = learner.train(trainInput);
-		final PdttaAnomalyDetection detection = new PdttaAnomalyDetection(pdttaDetector, model);
-		final PdttaExperimentResult result = detection.test(testInput);
+		final AnomalyDetection detection = new AnomalyDetection(pdttaDetector, model);
+		final ExperimentResult result = detection.test(testInput);
 		System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - result.getFMeasure()) + ", 0");
 		// IoUtils.xmlSerialize(automaton, Paths.get("pdtta.xml"));
 		// automaton = (PDTTA) IoUtils.xmlDeserialize(Paths.get("pdtta.xml"));

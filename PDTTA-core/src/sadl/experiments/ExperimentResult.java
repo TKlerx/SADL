@@ -21,9 +21,9 @@ import sadl.constants.ProbabilityAggregationMethod;
  * @author Timo Klerx
  *
  */
-public class PdttaExperimentResult {
+public class ExperimentResult {
 
-	public PdttaExperimentResult(int truePositives, int trueNegatives, int falsePositives, int falseNegatives) {
+	public ExperimentResult(int truePositives, int trueNegatives, int falsePositives, int falseNegatives) {
 		super();
 		this.truePositives = truePositives;
 		this.trueNegatives = trueNegatives;
@@ -65,7 +65,7 @@ public class PdttaExperimentResult {
 	double eventThreshold;
 	ProbabilityAggregationMethod aggType;
 
-	public PdttaExperimentResult(double precision, double recall, double fMeasure, int truePositives, int trueNegatives,
+	public ExperimentResult(double precision, double recall, double fMeasure, int truePositives, int trueNegatives,
 			int falsePositives, int falseNegatives, boolean recMergeTest, double mergeAlpha, MergeTest mergeTest, double timeTreshold, double eventTreshold,
 			ProbabilityAggregationMethod aggType, AnomalyInsertionType anomalyInsertionType) {
 		this(truePositives, trueNegatives, falsePositives, falseNegatives);
@@ -196,7 +196,7 @@ public class PdttaExperimentResult {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		final PdttaExperimentResult other = (PdttaExperimentResult) obj;
+		final ExperimentResult other = (ExperimentResult) obj;
 		if (Double.doubleToLongBits(fMeasure) != Double.doubleToLongBits(other.fMeasure)) {
 			return false;
 		}

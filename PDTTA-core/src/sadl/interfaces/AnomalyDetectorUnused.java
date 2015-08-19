@@ -19,7 +19,8 @@ import sadl.input.TimedWord;
  * @author Timo Klerx
  *
  */
-public interface AnomalyDetector {
+@Deprecated
+public interface AnomalyDetectorUnused {
 	boolean isAnomaly(Model model, TimedWord s);
 
 	/**

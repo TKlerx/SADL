@@ -23,7 +23,7 @@ import sadl.oneclassclassifier.LibSvmClassifier;
  *
  */
 @Deprecated
-public class PdttaOneClassSvmDetector extends PdttaVectorDetector implements TrainableDetector {
+public class PdttaOneClassSvmDetector extends VectorDetector implements TrainableDetector {
 	/**
 	 * Use the PdttaVectorDetector constructor directly instead
 	 * 

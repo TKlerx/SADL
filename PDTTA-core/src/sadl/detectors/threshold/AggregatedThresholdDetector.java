@@ -18,21 +18,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sadl.constants.ProbabilityAggregationMethod;
-import sadl.detectors.PdttaDetector;
+import sadl.detectors.AnomalyDetector;
 
 /**
  * 
  * @author Timo Klerx
  *
  */
-public class PdttaAggregatedThresholdDetector extends PdttaDetector {
-	private static Logger logger = LoggerFactory.getLogger(PdttaAggregatedThresholdDetector.class);
+public class AggregatedThresholdDetector extends AnomalyDetector {
+	private static Logger logger = LoggerFactory.getLogger(AggregatedThresholdDetector.class);
 
 	double aggregatedEventThreshold;
 	double aggregatedTimeThreshold;
 	boolean aggregateSublists;
 
-	public PdttaAggregatedThresholdDetector(ProbabilityAggregationMethod aggType, double aggregatedEventThreshold, double aggregatedTimeThreshold,
+	public AggregatedThresholdDetector(ProbabilityAggregationMethod aggType, double aggregatedEventThreshold, double aggregatedTimeThreshold,
 			boolean aggregateSublists) {
 		super(aggType);
 		this.aggregatedEventThreshold = aggregatedEventThreshold;
@@ -40,7 +40,7 @@ public class PdttaAggregatedThresholdDetector extends PdttaDetector {
 		this.aggregateSublists = aggregateSublists;
 	}
 
-	public PdttaAggregatedThresholdDetector(double aggregatedEventThreshold, double aggregatedTimeThreshold) {
+	public AggregatedThresholdDetector(double aggregatedEventThreshold, double aggregatedTimeThreshold) {
 		this(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, aggregatedEventThreshold, aggregatedTimeThreshold, false);
 	}
 
