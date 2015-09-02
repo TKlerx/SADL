@@ -102,7 +102,7 @@ public class PDRTAInput implements Serializable {
 		if (histBins == null) {
 			err = true;
 		} else {
-			final String[] b = histBins.split("-");
+			final String[] b = histBins.split("-", -1);
 			if (b.length == 1) {
 				try {
 					final int numHistoBins = Integer.parseInt(b[0]);
@@ -111,11 +111,11 @@ public class PDRTAInput implements Serializable {
 					err = true;
 				}
 			} else {
-				if (!(b[0].equals("") || b[b.length - 1].equals(""))) {
+				if (!(b[0].equals("") || !b[b.length - 1].equals(""))) {
 					err = true;
 				} else {
 					histoBorders = new int[b.length - 2];
-					for (int i = 1; i < b.length - 1; i++) {
+					for (int i = 1; i < (b.length - 1); i++) {
 						try {
 							histoBorders[i - 1] = Integer.parseInt(b[i]);
 						} catch (final NumberFormatException e) {
@@ -132,6 +132,7 @@ public class PDRTAInput implements Serializable {
 
 	private void calcHistBorders(TIntList timePoints, int numHistoBins) {
 
+		timePoints.sort();
 		histoBorders = new int[numHistoBins - 1];
 		for (int i = 1; i < numHistoBins; i++) {
 			final double idx = ((double) i / (double) numHistoBins) * (timePoints.size() - 1);
