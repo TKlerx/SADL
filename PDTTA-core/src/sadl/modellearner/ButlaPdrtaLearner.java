@@ -1,21 +1,26 @@
 package sadl.modellearner;
 
+import gnu.trove.list.array.TIntArrayList;
+
 import java.rmi.UnexpectedException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import sadl.constants.ClassLabel;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.ModelLearner;
 import sadl.models.PTA.Event;
 import sadl.models.PTA.PTA;
-import sadl.models.pdrta.PDRTA;
+import sadl.models.pdrtaModified.PDRTAModified;
 
 public class ButlaPdrtaLearner implements ModelLearner {
 	/**
+	 * @throws Exception
 	 * 
 	 * 
 	 * 
@@ -23,15 +28,17 @@ public class ButlaPdrtaLearner implements ModelLearner {
 	 */
 
 	@Override
-	public PDRTA train(TimedInput TimedTrainingSequences) {
+	public PDRTAModified train(TimedInput TimedTrainingSequences) {
 
-		final Map<String, LinkedList<Double>> eventToTimelistMap = mapEventsToTimes(TimedTrainingSequences);
-		final Map<String, Event> eventsMap = generateSplittedEvents(eventToTimelistMap);
+		final HashMap<String, LinkedList<Double>> eventToTimelistMap = mapEventsToTimes(TimedTrainingSequences);
+		final HashMap<String, Event> eventsMap = generateSubEvents(eventToTimelistMap);
 
 		final PTA pta;
 
 		try {
 			pta = new PTA(eventsMap, TimedTrainingSequences);
+			pta.mergeCompatibleStates();
+			return pta.toPDRTA();
 		} catch (final UnexpectedException e) {
 			System.out.println(e.getMessage());
 			return null;
@@ -39,10 +46,6 @@ public class ButlaPdrtaLearner implements ModelLearner {
 			e.printStackTrace();
 			return null;
 		}
-
-		pta.mergeCompatibleStates();
-
-		return null;
 	}
 
 	/**
@@ -51,15 +54,16 @@ public class ButlaPdrtaLearner implements ModelLearner {
 	 *            Sequences of timed events.
 	 * @return
 	 */
-	public Map<String, LinkedList<Double>> mapEventsToTimes(TimedInput timedEventSequences) {
+	public HashMap<String, LinkedList<Double>> mapEventsToTimes(TimedInput timedEventSequences) {
 
-		final Map<String, LinkedList<Double>> eventTimesMap = new HashMap<>(timedEventSequences.getSymbols().length);
+		final HashMap<String, LinkedList<Double>> eventTimesMap = new HashMap<>(timedEventSequences.getSymbols().length);
 
 		for (final TimedWord word : timedEventSequences) {
 			for (int i = 0; i < word.length(); i++) {
 				final String event = word.getSymbol(i);
-				LinkedList<Double> timeList = eventTimesMap.get(event);
 				final double time = word.getTimeValue(i);
+
+				LinkedList<Double> timeList = eventTimesMap.get(event);
 
 				if (timeList == null) {
 					timeList = new LinkedList<>();
@@ -74,24 +78,37 @@ public class ButlaPdrtaLearner implements ModelLearner {
 
 	}
 
-	public void splitEventsInTimedSequences(TimedInput timedSequences) {
+	public TimedInput splitEventsInTimedSequences(TimedInput timedSequences) {
 
-		final Map<String, LinkedList<Double>> eventToTimelistMap = mapEventsToTimes(timedSequences);
-		final Map<String, Event> eventsMap = generateSplittedEvents(eventToTimelistMap);
+		final HashMap<String, LinkedList<Double>> eventToTimelistMap = mapEventsToTimes(timedSequences);
+		final HashMap<String, Event> eventsMap = generateSubEvents(eventToTimelistMap);
+
+		final LinkedList<TimedWord> words = new LinkedList<>();
 
 		for (final TimedWord word : timedSequences) {
+
+			final ArrayList<String> symbols = new ArrayList<>();
+			final TIntArrayList timeValues = new TIntArrayList();
+
 			for (int i = 0; i < word.length(); i++) {
 				final String eventSymbol = word.getSymbol(i);
 				final double time = word.getTimeValue(i);
-				eventsMap.get(eventSymbol).getSplittedEventFromTime(time).toString(); // TODO
+				final String subEventSymbol = eventsMap.get(eventSymbol).getSubEventByTime(time).getSymbol();
+
+				symbols.add(subEventSymbol);
+				timeValues.add((int) time);
 			}
+
+			words.add(new TimedWord(symbols, timeValues, ClassLabel.NORMAL));
 		}
+
+		return new TimedInput(words);
 	}
 
-	public Map<String, Event> generateSplittedEvents(Map<String, LinkedList<Double>> eventTimesMap) {
+	public HashMap<String, Event> generateSubEvents(Map<String, LinkedList<Double>> eventTimesMap) {
 
 		final Set<String> eventSymbolsSet = eventTimesMap.keySet();
-		final Map<String, Event> eventsMap = new HashMap<>(eventSymbolsSet.size());
+		final HashMap<String, Event> eventsMap = new HashMap<>(eventSymbolsSet.size());
 
 		for (final String eventSysbol : eventSymbolsSet) {
 			final List<Double> timeList = eventTimesMap.get(eventSysbol);

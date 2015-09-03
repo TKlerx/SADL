@@ -2,22 +2,24 @@ package sadl.models.PTA;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import jsat.distributions.empirical.KernelDensityEstimatorDifferentiable;
 
 import org.apache.commons.lang3.Range;
 
-public class Event implements Iterable<SplittedEvent> {
+public class Event implements Iterable<SubEvent> {
 
 	protected String symbol;
-	protected SplittedEvent[] splittedEvents;
+	protected TreeMap<Double, SubEvent> subEvents;
 	protected double[] times;
 
-	private Event(String symbol, double[] times, SplittedEvent[] splittedEvents) {
+	private Event(String symbol, double[] times, TreeMap<Double, SubEvent> subEvents) {
 
 		this.symbol = symbol;
 		this.times = times;
-		this.splittedEvents = splittedEvents;
+		this.subEvents = subEvents;
 	}
 
 	public String getSymbol() {
@@ -25,16 +27,18 @@ public class Event implements Iterable<SplittedEvent> {
 		return symbol;
 	}
 
-	public SplittedEvent getSplittedEventFromTime(double time) {
+	public SubEvent getSubEventByTime(double time) {
 
-		/*
-		 * for (final SplittedEvent event : splittedEvents) { // TODO logn n search? if (event.inIntervall(time)) { return event; } }
-		 */
+		final Entry<Double, SubEvent> subEventEntry = subEvents.floorEntry(time);
 
-		final int index = Arrays.binarySearch(splittedEvents, time);
+		if (subEventEntry == null) {
+			return null;
+		}
 
-		if (index >= 0) {
-			return splittedEvents[index];
+		final SubEvent subEvent = subEventEntry.getValue();
+
+		if (subEvent.isInBounds(time)) {
+			return subEvent;
 		}
 
 		return null;
@@ -68,7 +72,7 @@ public class Event implements Iterable<SplittedEvent> {
 
 		final KernelDensityEstimatorDifferentiable kernelDensity = new KernelDensityEstimatorDifferentiable(times);
 		final Double[] minPoints = kernelDensity.getMinima();
-		final SplittedEvent[] events = new SplittedEvent[minPoints.length + 1];
+		final TreeMap<Double, SubEvent> events = new TreeMap<>();
 
 		final Event event = new Event(symbol, times, events);
 
@@ -79,11 +83,11 @@ public class Event implements Iterable<SplittedEvent> {
 
 		for (int i = 0; i < minPoints.length; i++) {
 
-			final int maxIndex = Math.abs(Arrays.binarySearch(times, minPoints[i])) - 2;
+			final int maxIndex = Math.abs(Arrays.binarySearch(times, minPoints[i])) - 2; // TODO from index // check
 			final double expectedValue = calculateExpectedValue(minIndex, maxIndex, times);
 			final double variance = calculateVariance(minIndex, maxIndex, times, expectedValue);
 
-			events[i] = new SplittedEvent(event, i + 1, expectedValue, variance, Range.between(minValue, minPoints[i]));
+			events.put(minValue, new SubEvent(event, i + 1, expectedValue, variance, Range.between(minValue, minPoints[i])));
 			minValue = minPoints[i];
 			minIndex = maxIndex + 1;
 		}
@@ -92,27 +96,40 @@ public class Event implements Iterable<SplittedEvent> {
 		final double expectedValue = calculateExpectedValue(minIndex, maxIndex, times);
 		final double variance = calculateVariance(minIndex, maxIndex, times, expectedValue);
 
-		events[events.length - 1] = new SplittedEvent(event, minPoints.length, expectedValue, variance, Range.between(minValue, Double.POSITIVE_INFINITY));
+		events.put(minValue, new SubEvent(event, minPoints.length + 1, expectedValue, variance, Range.between(minValue, Double.POSITIVE_INFINITY)));
+
+		final Iterator<Entry<Double, SubEvent>> subEventsIterator = events.entrySet().iterator();
+		SubEvent currentSubEvent = subEventsIterator.next().getValue();
+
+		while (subEventsIterator.hasNext()){
+			final SubEvent nextSubEvent = subEventsIterator.next().getValue();
+
+			currentSubEvent.nextSubEvent = nextSubEvent;
+			nextSubEvent.previousSubEvent = currentSubEvent;
+			currentSubEvent = nextSubEvent;
+		}
+
+		System.out.println("Created event: " + event);
 
 		return event;
 	}
 
 	@Override
-	public Iterator<SplittedEvent> iterator() {
+	public Iterator<SubEvent> iterator() {
 
-		return new Iterator<SplittedEvent>() {
-			int i = 0;
+		return new Iterator<SubEvent>() {
+			Iterator<Entry<Double, SubEvent>> iterator = subEvents.entrySet().iterator();
 
 			@Override
 			public boolean hasNext() {
 
-				return i < splittedEvents.length;
+				return iterator.hasNext();
 			}
 
 			@Override
-			public SplittedEvent next() {
+			public SubEvent next() {
 
-				return splittedEvents[i++];
+				return iterator.next().getValue();
 			}
 
 		};
@@ -123,9 +140,9 @@ public class Event implements Iterable<SplittedEvent> {
 
 		final StringBuilder stringBuilder = new StringBuilder();
 
-		stringBuilder.append("Event " + symbol + "(");
+		stringBuilder.append(symbol + ":");
 
-		for (final SplittedEvent subEvent : this) {
+		for (final SubEvent subEvent : this) {
 			stringBuilder.append(subEvent.toString());
 		}
 

@@ -8,18 +8,15 @@ import jsat.utils.Pair;
 public class PTATransition {
 
 	protected int id;
-	protected SplittedEvent event;
+	protected SubEvent event;
 	protected PTAState source;
 	protected PTAState target;
 	protected int count;
 
 	private static int idCounter = 0;
 
-	public PTATransition(PTAState source, PTAState target, SplittedEvent event, int count) {
+	public PTATransition(PTAState source, PTAState target, SubEvent event, int count) {
 
-		/*
-		 * if (count <= 0) { throw new IllegalArgumentException("Count has to be > 0."); }
-		 */
 		this.id = idCounter++;
 		this.source = source;
 		this.target = target;
@@ -27,9 +24,13 @@ public class PTATransition {
 		this.count = count;
 	}
 
-	public void add() {
+	public void add() throws Exception {
 		final String eventSymbol = event.getSymbol();
-		source.outTransitions.put(eventSymbol, this);
+
+		if (source.outTransitions.put(eventSymbol, this) != null) {
+			throw new Exception("Transition adding: " + "outgoing transition already exists");
+		}
+
 		LinkedHashMap<Integer, PTATransition> transitions = target.inTransitions.get(eventSymbol);
 
 		if (transitions == null) {
@@ -37,13 +38,16 @@ public class PTATransition {
 			target.inTransitions.put(eventSymbol, transitions);
 		}
 
-		transitions.put(source.getId(), this);
+		if (transitions.put(source.getId(), this) != null) {
+			throw new Exception("Transition adding: " + "incoming transition already exists");
+		}
 	}
 
-	public void remove() {
+	public void remove() throws Exception {
 		final String eventSymbol = event.getSymbol();
-		source.outTransitions.remove(eventSymbol);
-		target.inTransitions.get(eventSymbol).remove(source.getId());
+		if (source.outTransitions.remove(eventSymbol) == null || target.inTransitions.get(eventSymbol).remove(source.getId()) == null) {
+			throw new Exception("Transition removing: " + "transition not exists");
+		}
 	}
 
 	public PTAState getSource() {
@@ -56,7 +60,7 @@ public class PTATransition {
 		return target;
 	}
 
-	public SplittedEvent getEvent() {
+	public SubEvent getEvent() {
 
 		return event;
 	}
@@ -76,29 +80,34 @@ public class PTATransition {
 		return source.getId() + "=(" + event + "," + count + ")=>" + target.getId();
 	}
 
-	public static void merge(PTATransition firstTransition, PTATransition secondTransition) {
+	public static void merge(PTATransition firstTransition, PTATransition secondTransition) throws Exception {
 		System.out.println("MergeTR begin: \t" + firstTransition + "\n \t\t" + secondTransition);
+
 		if (firstTransition == secondTransition) {
 			return;
 		}
-		firstTransition.incrementCount(secondTransition.getCount());
+		else if (firstTransition.getSource() != secondTransition.getSource()){
+			throw new Exception("transition merging: not same source state");
+		}
+
+		firstTransition.incrementCount(secondTransition.getCount()); // TODO states merge?
 		secondTransition.remove();
 		System.out.println("MergeTR after: \t" + firstTransition + "\n \t\t" + secondTransition);
 	}
 
-	public static void add(LinkedList<PTATransition> transitionsToAdd) {
+	public static void add(LinkedList<PTATransition> transitionsToAdd) throws Exception {
 		for (final PTATransition transition : transitionsToAdd) {
 			transition.add();
 		}
 	}
 
-	public static void remove(LinkedList<PTATransition> transitionsToRemove) {
+	public static void remove(LinkedList<PTATransition> transitionsToRemove) throws Exception {
 		for (final PTATransition transition : transitionsToRemove) {
 			transition.remove();
 		}
 	}
 
-	public static void merge(LinkedList<Pair<PTATransition, PTATransition>> transitionsToMerge) {
+	public static void merge(LinkedList<Pair<PTATransition, PTATransition>> transitionsToMerge) throws Exception {
 		for (final Pair<PTATransition, PTATransition> transitionPair : transitionsToMerge) {
 			PTATransition.merge(transitionPair.getFirstItem(), transitionPair.getSecondItem());
 		}

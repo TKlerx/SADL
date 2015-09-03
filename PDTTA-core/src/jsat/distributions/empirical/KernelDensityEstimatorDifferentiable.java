@@ -16,28 +16,31 @@ public class KernelDensityEstimatorDifferentiable extends Distribution {
 	protected Function kernelPdfFunction;
 	protected Function kernelDerivationFunction;
 
-	protected double accuracy = DEFAULT_MINSEARCH_ACCURACY;
+	protected double minSearchAccuracy = DEFAULT_MINSEARCH_ACCURACY;
 
-	public static final double DEFAULT_BANDWIDTH = 0.5d;
-	public static final double DEFAULT_MINSEARCH_ACCURACY = 0.0001d;
+	public static final double DEFAULT_BANDWIDTH = 200.0d;
+	public static final double DEFAULT_MINSEARCH_ACCURACY = 0.0000000001d;
+
+	// public static final double DEFAULT_INVERTED_INTKF_VALUES_ACCURACY = 0.0000001d;
 
 	public KernelDensityEstimatorDifferentiable(double[] dataPoints) {
 		this(new DenseVector(dataPoints));
 	}
 
 	public KernelDensityEstimatorDifferentiable(Vec dataPoints) {
-		this(dataPoints, DEFAULT_BANDWIDTH);
+		this(dataPoints, DEFAULT_BANDWIDTH, DEFAULT_MINSEARCH_ACCURACY);
 	}
 
-	public KernelDensityEstimatorDifferentiable(double[] dataPoints, double bandwidth) {
-		this(new DenseVector(dataPoints), bandwidth);
+	public KernelDensityEstimatorDifferentiable(double[] dataPoints, double bandwidth, double minSearchAccuracy) {
+		this(new DenseVector(dataPoints), bandwidth, minSearchAccuracy);
 	}
 
-	public KernelDensityEstimatorDifferentiable(Vec dataPoints, double bandwidth) {
+	public KernelDensityEstimatorDifferentiable(Vec dataPoints, double bandwidth, double minSearchAccuracy) {
 
 		kernelDensity = new KernelDensityEstimator(dataPoints, GaussKF.getInstance(), bandwidth);
 		kernelPdfFunction = Distribution.getFunctionPDF(kernelDensity);
 		kernelDerivationFunction = Distribution.getFunctionPDF(new KernelDensityEstimator(dataPoints, GaussKFDerivation.getInstance(), bandwidth));
+		this.minSearchAccuracy = minSearchAccuracy;
 	}
 
 	public double prime(double x) {
@@ -54,7 +57,7 @@ public class KernelDensityEstimatorDifferentiable extends Distribution {
 		if (Double.isNaN(accuracy)) {
 			throw new IllegalArgumentException();
 		}
-		this.accuracy = accuracy;
+		this.minSearchAccuracy = accuracy;
 	}
 
 	public Double[] getMinima() {
@@ -72,7 +75,7 @@ public class KernelDensityEstimatorDifferentiable extends Distribution {
 			final double newValue = kernelDerivationFunction.f(x);
 
 			if (lastValue < 0 && newValue > 0) {
-				pointList.add(GoldenSearch.minimize(accuracy, 100, lastX, x, 0, kernelPdfFunction, new double[1]));
+				pointList.add(GoldenSearch.minimize(minSearchAccuracy, 100, lastX, x, 0, kernelPdfFunction, new double[1]));
 			}
 
 			lastX = x;
