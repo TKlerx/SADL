@@ -308,11 +308,19 @@ public class PDRTA implements AutomatonModel, Serializable {
 	public String toString() {
 
 		final StringBuilder sb = new StringBuilder();
-		toString(sb, 0.0, false);
+		toDOTLang(sb);
 		return sb.toString();
 	}
 
-	public void toString(Appendable ap, double minP, boolean withInput) {
+	public void toDOTLang(Appendable ap) {
+		toDOTLang(ap, 0.0, false);
+	}
+
+	public void toDOTLang(Appendable ap, double minP, boolean withInput) {
+		toDOTLang(ap, minP, withInput, null);
+	}
+
+	public void toDOTLang(Appendable ap, double minP, boolean withInput, StateColoring sc) {
 
 		// Write transitions with high probability
 		final StringBuilder sb = new StringBuilder();
@@ -373,6 +381,13 @@ public class PDRTA implements AutomatonModel, Serializable {
 					ap.append(" [ xlabel = \"");
 					ap.append(Double.toString(s.getStat().getTailEndProb()));
 					ap.append("\"");
+					if (sc != null) {
+						if (sc.isRed(s)) {
+							ap.append(", fillcolor = \"#FFA9A9\"");
+						} else if (sc.isBlue(s)) {
+							ap.append(", fillcolor = \"#A9D1FF\"");
+						}
+					}
 					ap.append(" ];\n");
 				}
 			}

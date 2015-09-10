@@ -9,23 +9,18 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.run.smac;
+package sadl.run;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.Serializable;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,64 +42,43 @@ import sadl.detectors.featureCreators.SmallFeatureCreator;
 import sadl.detectors.threshold.AggregatedThresholdDetector;
 import sadl.detectors.threshold.FullThresholdDetector;
 import sadl.experiments.ExperimentResult;
-import sadl.interfaces.Model;
 import sadl.interfaces.ModelLearner;
-import sadl.modellearner.rtiplus.GreedyPDRTALearner;
-import sadl.modellearner.rtiplus.SimplePDRTALearner;
-import sadl.modellearner.rtiplus.SimplePDRTALearner.DistributionCheckType;
-import sadl.modellearner.rtiplus.SimplePDRTALearner.OperationTesterType;
-import sadl.models.pdrta.PDRTA;
 import sadl.oneclassclassifier.LibSvmClassifier;
 import sadl.oneclassclassifier.clustering.DbScanClassifier;
-import sadl.utils.MasterSeed;
-import sadl.utils.Settings;
+import sadl.run.factories.LearnerFactory;
+import sadl.run.factories.learn.RTIFactory;
 
-/**
- * 
- * @author Fabian Witter
- *
- */
-public class RTISmacPipeline implements Serializable {
-	private static final long serialVersionUID = 4962328747559099050L;
+public class SmacRun {
 
-	private static Logger logger = LoggerFactory.getLogger(RTISmacPipeline.class);
-	// TODO move this to experiment project
+	private enum QualityCriterion {
+		F_MEASURE, PRECISION, RECALL
+	}
 
-	String dataString;
+	private static final Logger logger = LoggerFactory.getLogger(SmacRun.class);
 
-	// should be empty. not used, but for parsing smac stuff
+	/*
+	 * ################### SMAC Params ###################
+	 */
+	// // should be empty. not used, but for parsing smac stuff
 	@Parameter()
-	private final List<String> rest = new ArrayList<>();
+	private final List<String> mainParams = new ArrayList<>();
 
 	// just for parsing the one silly smac parameter
 	@Parameter(names = "-1", hidden = true)
 	private Boolean bla;
 
-	@Parameter(names = "-debug")
-	boolean debug = false;
+	@Parameter(names = "-qualityCriterion")
+	QualityCriterion qCrit = QualityCriterion.F_MEASURE;
 
-	// RTI+ Parameters
-	@Parameter(names = "-sig", required = true, arity = 1)
-	private double sig;
+	// @ParametersDelegate
+	// private final TrainRun trainRun = new TrainRun(true);
+	//
+	// @ParametersDelegate
+	// private final TestRun testRun = new TestRun(true);
 
-	@Parameter(names = "-hist", required = true, arity = 1)
-	private String hist;
-
-	@Parameter(names = "-greedy", arity = 0)
-	boolean greedy = false;
-
-	@Parameter(names = "-em", arity = 1)
-	OperationTesterType tester = OperationTesterType.LRT;
-
-	@Parameter(names = "-ida", arity = 1)
-	DistributionCheckType distrCheck = DistributionCheckType.DISABLED;
-
-	@Parameter(names = "-bop", arity = 1)
-	String boolOps = "AAA";
-
-	@Parameter(names = "-steps", arity = 1)
-	String stepsDir = null;
-
+	/*
+	 * ################### Tester Params ###################
+	 */
 	// Detector parameters
 	@Parameter(names = "-aggregateSublists", arity = 1)
 	boolean aggregateSublists = false;
@@ -163,63 +137,23 @@ public class RTISmacPipeline implements Serializable {
 	@Parameter(names = "-dbScanN")
 	private int dbscan_n;
 
-	/**
-	 * @param args
-	 * @throws IOException
-	 * @throws InterruptedException
-	 */
-	public static void main(String[] args) throws IOException, InterruptedException {
 
-		final RTISmacPipeline sp = new RTISmacPipeline();
-		final JCommander jc = new JCommander(sp);
-		if (args.length < 4) {
-			logger.error("Please provide the following inputs: [inputFile] 1 1 [Random Seed] [Parameter Arguments..]");
-			jc.usage();
-			System.exit(1);
-		}
-		jc.setAcceptUnknownOptions(true);
-		jc.parse(args);
-		sp.dataString = args[0];
-		logger.info("Running Generic Pipeline with args" + Arrays.toString(args));
-		MasterSeed.setSeed(Long.parseLong(args[3]));
 
-		try {
-			boolean fileExisted = true;
-			final ExperimentResult result = sp.run();
-			final Path resultPath = Paths.get("result.csv");
-			if (!Files.exists(resultPath)) {
-				Files.createFile(resultPath);
-				fileExisted = false;
-			}
-			final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	@SuppressWarnings("null")
+	public void run(JCommander jc) {
 
-			try (BufferedWriter bw = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8, StandardOpenOption.APPEND)) {
-				if (!fileExisted) {
-					bw.append(ExperimentResult.CsvHeader());
-					bw.append('\n');
-				}
-				bw.append(df.format(new Date()));
-				bw.append(" ; ");
-				bw.append(Arrays.toString(args));
-				bw.append("; ");
-				bw.append(result.toCsvString());
-				bw.append('\n');
-			}
+		// TODO Try to use this again
+		// final Pair<TimedInput, TimedInput> inputs = IoUtils.readTrainTestFile(inputSeqs);
+		// trainRun.trainSeqs = inputs.getFirst();
+		// testRun.trainSeqs = inputs.getFirst();
+		// testRun.testSeqs = inputs.getSecond();
+		//
+		// final Model m = trainRun.run(jc);
+		// testRun.testModel = m;
+		// final ExperimentResult result = testRun.run();
 
-			System.exit(0);
-		} catch (final Exception e) {
-			logger.error("Unexpected exception with parameters" + Arrays.toString(args), e);
-			throw e;
-		}
-	}
-
-	FeatureCreator featureCreator;
-	AnomalyDetector anomalyDetector;
-
-	public ExperimentResult run() throws IOException, InterruptedException {
-		if (debug) {
-			Settings.setDebug(debug);
-		}
+		FeatureCreator featureCreator;
+		AnomalyDetector anomalyDetector;
 		if (featureCreatorMethod == FeatureCreatorMethod.FULL_FEATURE_CREATOR) {
 			featureCreator = new FullFeatureCreator();
 		} else if (featureCreatorMethod == FeatureCreatorMethod.SMALL_FEATURE_CREATOR) {
@@ -246,22 +180,79 @@ public class RTISmacPipeline implements Serializable {
 			anomalyDetector = null;
 		}
 
-
-		final ModelLearner learner;
-		if (!greedy) {
-			learner = new SimplePDRTALearner(sig, hist, tester, distrCheck, boolOps, stepsDir);
-		} else {
-			learner = new GreedyPDRTALearner(sig, hist, tester, distrCheck, boolOps, stepsDir);
-		}
+		final Pair<String, Path> params = extractAlgoAndInput();
+		final ModelLearner learner = getLearner(params.getLeft(), jc);
 		final AnomalyDetection detection = new AnomalyDetection(anomalyDetector, learner);
-		final Model m = detection.train(Paths.get(dataString));
-		final PDRTA p = (PDRTA) m;
-		System.out.println(p.toString());
-		// final ExperimentResult result = detection.trainTest(dataString);
-		// System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - result.getFMeasure()) + ", 0");
-		// IoUtils.xmlSerialize(automaton, Paths.get("pdtta.xml"));
-		// automaton = (PDTTA) IoUtils.xmlDeserialize(Paths.get("pdtta.xml"));
-		return null;
+		ExperimentResult result = null;
+		try {
+			result = detection.trainTest(params.getRight());
+		} catch (final IOException e) {
+			logger.error("Error when loading input from file!");
+			System.out.println("Result for SMAC: CRASHED, 0, 0, 0, 0");
+			System.exit(1);
+		}
+
+		// Can stay the same
+		double qVal = 0.0;
+		switch (qCrit) {
+		case F_MEASURE:
+			qVal = result.getFMeasure();
+			break;
+		case PRECISION:
+			qVal = result.getPrecision();
+			break;
+		case RECALL:
+			qVal = result.getRecall();
+			break;
+		default:
+			logger.error("Quality criterion not found!");
+			break;
+		}
+
+		logger.info(qCrit.name() + "={}", qVal);
+		System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - qVal) + ", 0");
+
+	}
+
+	private Pair<String, Path> extractAlgoAndInput() {
+
+		// TODO This method really is not nice!
+		final Set<String> algos = new HashSet<>(Arrays.asList("rti+"));
+
+		String algo = null;
+		Path input = null;
+		for (final String arg : mainParams) {
+			if (algos.contains(arg) && algo == null) {
+				algo = arg;
+			} else if (arg.contains("/") && input == null) {
+				input = Paths.get(arg);
+			}
+		}
+		return Pair.of(algo, input);
+	}
+
+	private ModelLearner getLearner(String algoName, JCommander jc) {
+
+		LearnerFactory lf = null;
+
+		switch (algoName) {
+		case "rti+":
+			lf = new RTIFactory();
+			break;
+			// TODO Add other learning algorithms
+		default:
+			logger.error("Wrong algo param!");
+			System.out.println("Result for SMAC: CRASHED, 0, 0, 0, 0");
+			System.exit(1);
+			break;
+		}
+
+		final JCommander subjc = new JCommander(lf);
+		subjc.parse(jc.getUnknownOptions().toArray(new String[0]));
+
+		@SuppressWarnings("null")
+		final ModelLearner ml = lf.create();
+		return ml;
 	}
 
 }
