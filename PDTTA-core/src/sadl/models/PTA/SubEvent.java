@@ -8,9 +8,9 @@ public class SubEvent {
 
 	protected Event event;
 	protected int subEventNumber;
-	protected Range<Double> anomalyIntervall;
-	protected Range<Double> warningIntervall;
-	protected Range<Double> maxIntervall;
+	protected Range<Double> anomalyInterval;
+	protected Range<Double> warningInterval;
+	protected Range<Double> maxInterval;
 	protected double expectedValue;
 	protected double variance;
 
@@ -20,7 +20,7 @@ public class SubEvent {
 	private static double anomalyNormalPoint = GaussKFInvertible.InvertedIntGaussKF(0.000001d, 0.0000001d);
 	private static double warningNormalPoint = GaussKFInvertible.InvertedIntGaussKF(0.1d, 0.0000001d);;
 
-	public SubEvent(Event event, int subEventNumber, double expectedValue, double variance, Range<Double> maxIntervall) {
+	public SubEvent(Event event, int subEventNumber, double expectedValue, double variance, Range<Double> maxInterval) {
 
 		this.event = event;
 		this.subEventNumber = subEventNumber;
@@ -28,12 +28,12 @@ public class SubEvent {
 		this.variance = variance;
 
 		final double differenceAnomaly = (anomalyNormalPoint * variance);
-		anomalyIntervall = Range.between(Math.max(0, expectedValue - differenceAnomaly), expectedValue + differenceAnomaly);
+		anomalyInterval = Range.between(Math.max(0, expectedValue - differenceAnomaly), expectedValue + differenceAnomaly);
 
 		final double differenceWarning = (warningNormalPoint * variance);
-		warningIntervall = Range.between(expectedValue - differenceWarning, expectedValue + differenceWarning);
+		warningInterval = Range.between(expectedValue - differenceWarning, expectedValue + differenceWarning);
 
-		this.maxIntervall = maxIntervall;
+		this.maxInterval = maxInterval;
 	}
 
 	public String getSymbol() {
@@ -42,10 +42,23 @@ public class SubEvent {
 	}
 
 	public boolean isAnomaly(double time) {
-		final double leftBound = anomalyIntervall.getMinimum();
-		final double rightBound = anomalyIntervall.getMaximum();
 
-		if (leftBound == time || (leftBound < time && time < rightBound)) {
+		double left;
+		final double right;
+
+		if (this.hasLeftCriticalArea()) {
+			left = this.getLeftBound();
+		} else {
+			left = this.anomalyInterval.getMinimum();
+		}
+
+		if (this.hasRightCriticalArea()) {
+			right = this.getRightBound();
+		} else {
+			right = this.anomalyInterval.getMaximum();
+		}
+
+		if (left == time || (left < time && time < right)) {
 			return false;
 		}
 
@@ -54,11 +67,19 @@ public class SubEvent {
 
 	public boolean isInCriticalArea(double time) {
 
-		if (this.isAnomaly(time) || isInBounds(time)) {
+		if (this.isAnomaly(time)) {
 			return false;
 		}
 
-		return true;
+		if (this.hasLeftCriticalArea() && time < this.getLeftBound()) {
+			return true;
+		}
+
+		if (this.hasRightCriticalArea() && this.getRightBound() >= time) {
+			return true;
+		}
+
+		return false;
 	}
 
 	public boolean isInBounds(double time) {
@@ -74,40 +95,67 @@ public class SubEvent {
 
 	public double getLeftBound() {
 
-		return Math.max(anomalyIntervall.getMinimum(), maxIntervall.getMinimum());
+		// return Math.max(anomalyIntervall.getMinimum(), maxIntervall.getMinimum());
+		return maxInterval.getMinimum();
 	}
 
 	public double getRightBound() {
-		return Math.min(anomalyIntervall.getMaximum(), maxIntervall.getMaximum());
+
+		// return Math.min(anomalyIntervall.getMaximum(), maxIntervall.getMaximum());
+		return maxInterval.getMaximum();
 	}
 
-	public double getLeftBoundInState(PTAState state) {
+	public double getLeftIntervalInState(PTAState state) {
 
 		if (this.hasLeftCriticalArea() && state.outTransitions.containsKey(this.getPreviousSubEvent().getSymbol())) {
 			return this.getLeftBound();
 		}
 
-		return this.anomalyIntervall.getMinimum();
+		return this.anomalyInterval.getMinimum();
 
 	}
 
-	public double getRightBoundInState(PTAState state) {
+	public double getLeftInterval() {
+
+		if (this.hasLeftCriticalArea()) {
+			return this.getLeftBound();
+		}
+
+		return this.anomalyInterval.getMinimum();
+
+	}
+
+	public double getRightIntervalInState(PTAState state) {
 
 		if (this.hasRightCriticalArea() && state.outTransitions.containsKey(this.getNextSubEvent().getSymbol())) {
 			return this.getRightBound();
 		}
 
-		return this.anomalyIntervall.getMaximum();
+		return this.anomalyInterval.getMaximum();
 	}
 
-	public Range<Double> getIntervallInState(PTAState state) {
+	public double getRightInterval() {
 
-		return Range.between(getLeftBoundInState(state), getRightBoundInState(state));
+		if (this.hasRightCriticalArea()) {
+			return this.getRightBound();
+		}
+
+		return this.anomalyInterval.getMaximum();
+	}
+
+	public Range<Double> getIntervalInState(PTAState state) {
+
+		return Range.between(getLeftIntervalInState(state), getRightIntervalInState(state));
+	}
+
+	public Range<Double> getInterval() {
+
+		return Range.between(getLeftInterval(), getRightInterval());
 	}
 
 	public boolean hasLeftCriticalArea() {
 
-		if (anomalyIntervall.getMinimum() < maxIntervall.getMinimum()) {
+		if (anomalyInterval.getMinimum() < maxInterval.getMinimum()) {
 			return true;
 		}
 
@@ -116,7 +164,7 @@ public class SubEvent {
 
 	public boolean hasRightCriticalArea() {
 
-		if (maxIntervall.getMaximum() < anomalyIntervall.getMaximum()) {
+		if (maxInterval.getMaximum() < anomalyInterval.getMaximum()) {
 			return true;
 		}
 
@@ -124,8 +172,8 @@ public class SubEvent {
 	}
 
 	public boolean hasWarning(double time) {
-		final double leftBound = warningIntervall.getMinimum();
-		final double rightBound = warningIntervall.getMaximum();
+		final double leftBound = warningInterval.getMinimum();
+		final double rightBound = warningInterval.getMaximum();
 
 		if (leftBound == time || (leftBound < time && time < rightBound)) {
 			return true;
@@ -146,6 +194,32 @@ public class SubEvent {
 
 	public Event getEvent() {
 		return this.event;
+	}
+
+	public double generateRandomTime(boolean allowAnomaly) {
+
+		final GaussKFInvertible func = GaussKFInvertible.getInstance();
+		double randomTime = 0.0d;
+		boolean condition;
+
+		do {
+
+			randomTime = func.getRandom(expectedValue, variance, 0.000001);
+
+			if (!allowAnomaly && this.isAnomaly(randomTime)) {
+				condition = false;
+			} else {
+				condition = true;
+			}
+
+		} while (randomTime <= 0.0d && !condition);
+
+		return randomTime;
+	}
+
+	public double calculateProbability(double time) {
+
+		return GaussKFInvertible.getInstance().k((time - expectedValue) / variance); // TODO check
 	}
 
 	@Override
@@ -181,8 +255,8 @@ public class SubEvent {
 	public String toString() {
 
 		final StringBuilder stringBuilder = new StringBuilder();
-		stringBuilder.append(this.getSymbol() + "[" + anomalyIntervall.getMinimum() + "[" + this.getLeftBound() + " " + this.getRightBound() + ")"
-				+ anomalyIntervall.getMaximum() + ")");
+		stringBuilder.append(this.getSymbol() + "[" + anomalyInterval.getMinimum() + "[" + this.getLeftBound() + " " + this.getRightBound() + ")"
+				+ anomalyInterval.getMaximum() + ")");
 
 		return stringBuilder.toString();
 	}

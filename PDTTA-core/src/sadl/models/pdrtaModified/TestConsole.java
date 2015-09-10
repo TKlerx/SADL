@@ -20,7 +20,7 @@ public class TestConsole {
 	public void start() throws IOException, URISyntaxException {
 
 		final TimedInput input = TimedInput.parse(Paths.get(this.getClass().getResource(fileName).toURI()));
-		final ButlaPdrtaLearner learner = new ButlaPdrtaLearner();
+		final ButlaPdrtaLearner learner = new ButlaPdrtaLearner(2.0d);
 		final PDRTAModified pdrta = learner.train(input);
 
 		if (pdrta == null) {

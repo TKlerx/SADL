@@ -18,8 +18,8 @@ public class KernelDensityEstimatorDifferentiable extends Distribution {
 
 	protected double minSearchAccuracy = DEFAULT_MINSEARCH_ACCURACY;
 
-	public static final double DEFAULT_BANDWIDTH = 200.0d;
-	public static final double DEFAULT_MINSEARCH_ACCURACY = 0.0000000001d;
+	public static final double DEFAULT_BANDWIDTH = 500.0d;
+	public static final double DEFAULT_MINSEARCH_ACCURACY = 50.0d;
 
 	// public static final double DEFAULT_INVERTED_INTKF_VALUES_ACCURACY = 0.0000001d;
 

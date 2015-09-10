@@ -15,28 +15,34 @@ import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.ModelLearner;
 import sadl.models.PTA.Event;
+import sadl.models.PTA.EventGenerator;
 import sadl.models.PTA.PTA;
 import sadl.models.pdrtaModified.PDRTAModified;
 
 public class ButlaPdrtaLearner implements ModelLearner {
-	/**
-	 * @throws Exception
-	 * 
-	 * 
-	 * 
-	 * 
-	 */
+
+	EventGenerator eventGenerator;
+
+	public ButlaPdrtaLearner(double bandwidth) {
+
+		this.eventGenerator = new EventGenerator(bandwidth);
+	}
 
 	@Override
 	public PDRTAModified train(TimedInput TimedTrainingSequences) {
 
+		System.out.println("Mapping.");
 		final HashMap<String, LinkedList<Double>> eventToTimelistMap = mapEventsToTimes(TimedTrainingSequences);
+
+		System.out.println("Events generating");
 		final HashMap<String, Event> eventsMap = generateSubEvents(eventToTimelistMap);
 
 		final PTA pta;
 
 		try {
+			System.out.println("PTA creation.");
 			pta = new PTA(eventsMap, TimedTrainingSequences);
+			System.out.println("Merging.");
 			pta.mergeCompatibleStates();
 			return pta.toPDRTA();
 		} catch (final UnexpectedException e) {
@@ -112,7 +118,7 @@ public class ButlaPdrtaLearner implements ModelLearner {
 
 		for (final String eventSysbol : eventSymbolsSet) {
 			final List<Double> timeList = eventTimesMap.get(eventSysbol);
-			eventsMap.put(eventSysbol, Event.generateEvent(eventSysbol, listToDoubleArray(timeList)));
+			eventsMap.put(eventSysbol, eventGenerator.generateEvent(eventSysbol, listToDoubleArray(timeList)));
 		}
 
 		return eventsMap;

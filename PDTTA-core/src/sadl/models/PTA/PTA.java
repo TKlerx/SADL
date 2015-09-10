@@ -1,5 +1,10 @@
 package sadl.models.PTA;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.rmi.UnexpectedException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,11 +24,18 @@ public class PTA {
 	protected PTAState root;
 	protected ArrayList<LinkedHashMap<Integer, PTAState>> tails = new ArrayList<>(50);
 	protected HashMap<String, Event> events;
+
+	protected LinkedList<PTAState> states;
+	protected LinkedList<PTATransition> transitions;
+
 	protected boolean statesMerged = false;
 
 	public PTA(HashMap<String, Event> events) {
 		this.root = new PTAState(this);
 		this.events = events;
+		this.states = new LinkedList<>();
+		this.transitions = new LinkedList<>();
+		states.add(root);
 	}
 
 	public PTA(HashMap<String, Event> events, TimedInput timedSequences) throws Exception {
@@ -47,7 +59,6 @@ public class PTA {
 
 		PTAState currentState = root;
 		boolean tailRemoved = false;
-
 		int i;
 
 		for (i = tails.size(); i < sequence.length(); i++) {
@@ -76,8 +87,12 @@ public class PTA {
 				tailRemoved = true;
 
 				final PTAState nextState = new PTAState(this);
-				new PTATransition(currentState, nextState, subEvent, 1).add();
+
+				final PTATransition newTransition = new PTATransition(currentState, nextState, subEvent, 1);
+				newTransition.add();
+
 				currentState = nextState;
+				states.add(currentState);
 
 				break;
 			}
@@ -102,9 +117,12 @@ public class PTA {
 			}
 
 			final PTAState nextState = new PTAState(this);
-			new PTATransition(currentState, nextState, subEvent, 1).add();
+
+			final PTATransition newTransition = new PTATransition(currentState, nextState, subEvent, 1);
+			newTransition.add();
 
 			currentState = nextState;
+			states.add(currentState);
 		}
 
 		if (tailRemoved) {
@@ -116,6 +134,10 @@ public class PTA {
 	public void mergeCompatibleStates() throws Exception {
 
 		// printTails();
+
+		long currentTime;
+		final long time1 = System.currentTimeMillis();
+		long time2 = 0;
 
 		final LinkedList<PTAState> mergedStates = new LinkedList<>();
 
@@ -139,6 +161,9 @@ public class PTA {
 					}
 
 					// System.out.println("START compatible: " + tailState + " " + state);
+
+					currentTime = System.currentTimeMillis();
+
 					if (tailState.compatibleWith(state)) {
 						// System.out.println("Merge: " + state + " " + tailState);
 						// PTAState.merge(state, tailState); // TODO check continue for2
@@ -147,6 +172,8 @@ public class PTA {
 						tailMerged = true;
 						break;
 					}
+
+					time2 += System.currentTimeMillis() - currentTime;
 				}
 
 				if (!tailMerged) {
@@ -160,9 +187,13 @@ public class PTA {
 
 			// printTails();
 
+			states = mergedStates;
+
 		}
 
 		statesMerged = true;
+		System.out.println(System.currentTimeMillis() - time2 - time1);
+		System.out.println(time2);
 	}
 
 	public PDRTAModified toPDRTA() {
@@ -199,12 +230,36 @@ public class PTA {
 					nextPDRTAState = states.get(nextPTAState.getId());
 				}
 
-				currentPDRTAState.addTransition(event, nextPDRTAState, event.getIntervallInState(currentPTAState), transition.getCount() / transitionsCount);
+				currentPDRTAState.addTransition(event, nextPDRTAState, event.getIntervalInState(currentPTAState), transition.getCount() / transitionsCount);
 			}
 
 		}
 
 		return new PDRTAModified(PDRTAroot, events);
+	}
+
+	public void toGraphvizFile(Path resultPath) throws IOException {
+		final BufferedWriter writer = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8);
+		writer.write("digraph G {\n");
+
+		// write states
+		for (final PTAState state : states) {
+			if (!state.removed) {
+				writer.write(Integer.toString(state.getId()));
+				writer.write(" [shape=circle, label=\"" + Integer.toString(state.getId()) + "\"]\n");
+			}
+		}
+
+		for (final PTATransition transition : transitions) {
+
+			if (!transition.removed) {
+
+				writer.write(Integer.toString(transition.getSource().getId()) + "->" + Integer.toString(transition.getTarget().getId()) + " [label=<"
+						+ transition.getEvent().getSymbol() + "(" + transition.getCount() + ")>;];\n");
+			}
+		}
+		writer.write("}");
+		writer.close();
 	}
 
 	public void printTails() {

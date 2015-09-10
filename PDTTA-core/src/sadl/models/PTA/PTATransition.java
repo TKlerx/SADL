@@ -3,8 +3,6 @@ package sadl.models.PTA;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 
-import jsat.utils.Pair;
-
 public class PTATransition {
 
 	protected int id;
@@ -12,6 +10,8 @@ public class PTATransition {
 	protected PTAState source;
 	protected PTAState target;
 	protected int count;
+
+	protected boolean removed = false;
 
 	private static int idCounter = 0;
 
@@ -32,6 +32,7 @@ public class PTATransition {
 		}
 
 		LinkedHashMap<Integer, PTATransition> transitions = target.inTransitions.get(eventSymbol);
+		target.pta.transitions.add(this);
 
 		if (transitions == null) {
 			transitions = new LinkedHashMap<>();
@@ -45,9 +46,11 @@ public class PTATransition {
 
 	public void remove() throws Exception {
 		final String eventSymbol = event.getSymbol();
-		if (source.outTransitions.remove(eventSymbol) == null || target.inTransitions.get(eventSymbol).remove(source.getId()) == null) {
+		if (removed || source.outTransitions.remove(eventSymbol) == null || target.inTransitions.get(eventSymbol).remove(source.getId()) == null) {
 			throw new Exception("Transition removing: " + "transition not exists");
 		}
+
+		removed = true;
 	}
 
 	public PTAState getSource() {
@@ -80,20 +83,16 @@ public class PTATransition {
 		return source.getId() + "=(" + event + "," + count + ")=>" + target.getId();
 	}
 
-	public static void merge(PTATransition firstTransition, PTATransition secondTransition) throws Exception {
-		System.out.println("MergeTR begin: \t" + firstTransition + "\n \t\t" + secondTransition);
-
-		if (firstTransition == secondTransition) {
-			return;
-		}
-		else if (firstTransition.getSource() != secondTransition.getSource()){
-			throw new Exception("transition merging: not same source state");
-		}
-
-		firstTransition.incrementCount(secondTransition.getCount()); // TODO states merge?
-		secondTransition.remove();
-		System.out.println("MergeTR after: \t" + firstTransition + "\n \t\t" + secondTransition);
-	}
+	/*
+	 * public static void merge(PTATransition firstTransition, PTATransition secondTransition) throws Exception { System.out.println("MergeTR begin: \t" +
+	 * firstTransition + "\n \t\t" + secondTransition);
+	 * 
+	 * if (firstTransition == secondTransition) { return; } else if (firstTransition.getSource() != secondTransition.getSource()){ throw new
+	 * Exception("transition merging: not same source state"); }
+	 * 
+	 * firstTransition.incrementCount(secondTransition.getCount()); // TODO states merge? secondTransition.remove(); System.out.println("MergeTR after: \t" +
+	 * firstTransition + "\n \t\t" + secondTransition); }
+	 */
 
 	public static void add(LinkedList<PTATransition> transitionsToAdd) throws Exception {
 		for (final PTATransition transition : transitionsToAdd) {
@@ -107,9 +106,8 @@ public class PTATransition {
 		}
 	}
 
-	public static void merge(LinkedList<Pair<PTATransition, PTATransition>> transitionsToMerge) throws Exception {
-		for (final Pair<PTATransition, PTATransition> transitionPair : transitionsToMerge) {
-			PTATransition.merge(transitionPair.getFirstItem(), transitionPair.getSecondItem());
-		}
-	}
+	/*
+	 * public static void merge(LinkedList<Pair<PTATransition, PTATransition>> transitionsToMerge) throws Exception { for (final Pair<PTATransition,
+	 * PTATransition> transitionPair : transitionsToMerge) { PTATransition.merge(transitionPair.getFirstItem(), transitionPair.getSecondItem()); } }
+	 */
 }

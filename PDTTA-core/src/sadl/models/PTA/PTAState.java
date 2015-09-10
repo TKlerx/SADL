@@ -12,7 +12,7 @@ public class PTAState implements Cloneable {
 	protected PTA pta;
 	protected LinkedHashMap<String, LinkedHashMap<Integer, PTATransition>> inTransitions = new LinkedHashMap<>();
 	protected LinkedHashMap<String, PTATransition> outTransitions = new LinkedHashMap<>();
-	protected static float a = 0.99f;
+	protected static float a = 0.80f;
 
 	protected PTAState mergedWith;
 	protected boolean removed = false;
@@ -128,12 +128,6 @@ public class PTAState implements Cloneable {
 				final int outTransitionCount1 = this.getOutTransitionsCount(eventSymbol);
 				final int outTransitionCount2 = state.getOutTransitionsCount(eventSymbol);
 
-				if (fractionDifferent(inTansitionCount1, inTansitionCount1 - outTransitionCount1, inTransitionCount2, inTransitionCount2 - outTransitionCount2,
-						a)) {
-					// System.out.println("Compatible END-false: " + stateV + " " + stateW);
-					return false;
-				}
-
 				if (outTransitionCount1 == 0 && outTransitionCount2 == 0) {
 					// return false;
 					continue;
@@ -143,6 +137,12 @@ public class PTAState implements Cloneable {
 					// System.out.println("Compatible END-false0: " + stateV + " " + stateW);
 					return false;
 				}// TODO check
+
+				if (fractionDifferent(inTansitionCount1, inTansitionCount1 - outTransitionCount1, inTransitionCount2, inTransitionCount2 - outTransitionCount2,
+						a)) {
+					// System.out.println("Compatible END-false: " + stateV + " " + stateW);
+					return false;
+				}
 
 
 				// TODO nullpointer
@@ -173,6 +173,11 @@ public class PTAState implements Cloneable {
 			return;
 		}
 
+		if (secondState.getId() == 1687) {
+			final int i = 0;
+			final int j = i;
+		}
+
 		/*
 		 * if (firstState.removed && secondState.removed) { throw new Exception(firstState + " and " + secondState + " is removed."); }
 		 * 
@@ -180,7 +185,7 @@ public class PTAState implements Cloneable {
 		 * " is removed."); }
 		 */
 
-		System.out.println("MergeST begin: \t" + firstState + "\n \t\t" + secondState);
+		// System.out.println("MergeST begin: \t" + firstState + "\n \t\t" + secondState);
 
 		LinkedList<PTATransition> transitionsToAdd = new LinkedList<>();
 		LinkedList<PTATransition> transitionsToRemove = new LinkedList<>();
@@ -249,10 +254,10 @@ public class PTAState implements Cloneable {
 		if (n0 == 0 && n1 == 0) {
 			return false;
 		} else if (n0 == 0 || n1 == 0) {
-			return false; // TODO correct?
+			return true; // TODO correct?
 		}
 
-		return Math.abs((f0 / n0) - (f1 / n1)) > (Math.sqrt(0.5 * Math.log(2 / a)) * (1 / Math.sqrt(n0) + 1 / Math.sqrt(n1)));
+		return Math.abs((f0 / n0) - (f1 / n1)) > (Math.sqrt(0.5 * Math.log(2 / a)) * ((1 / Math.sqrt(n0)) + (1 / Math.sqrt(n1))));
 
 	}
 
