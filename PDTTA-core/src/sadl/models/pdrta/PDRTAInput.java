@@ -49,16 +49,16 @@ public class PDRTAInput implements Serializable {
 		this.inp = inp;
 		final TIntList timePoints = loadTimeDelays(expand);
 		setHistBorders(timePoints, histBins);
-		init(true);
+		init();
 	}
 
-	private void init(boolean extend) {
+	private void init() {
 
 		checkBorders();
 		calcHistSizes();
 		tails = new ArrayList<>(inp.size());
 		for (int i = 0; i < inp.size(); i++) {
-			tails.add(createTailChain(i, inp.get(i), extend));
+			tails.add(createTailChain(i, inp.get(i)));
 		}
 		// TODO Decide what to do about TimedWords in memory
 		// inp.clearWords();
@@ -323,26 +323,29 @@ public class PDRTAInput implements Serializable {
 		return histoBorders;
 	}
 
-	private TimedTail createTailChain(int idxWord, TimedWord word, boolean extend) {
+	private TimedTail createTailChain(int idxWord, TimedWord word) {
 
-		final int start = extend ? -1 : 0;
+		// TODO Try to reuse this param check. Error when testing with trained tester, input not empty
+		// if (inp.isEmpty() || inp.get(idxWord).equals(word)) {
 
-		final int len = word.length();
-		String s = word.getSymbol(0);
-		int sIdx = getAlphIndex(s);
-		int tDel = word.getTimeValue(0);
-		int tDelIdx = getHistBarIdx(tDel);
-		final TimedTail tail = new TimedTail(s, sIdx, tDel, tDelIdx, idxWord, start, null);
+		String s = "startTail";
+		int sIdx = Integer.MIN_VALUE;
+		int tDel = sIdx;
+		int tDelIdx = sIdx;
+		final TimedTail startTail = new TimedTail(s, sIdx, tDel, tDelIdx, idxWord, Integer.MIN_VALUE, null);
 
-		TimedTail prevTail = tail;
-		for (int i = start + 1; i < len; i++) {
+		TimedTail prevTail = startTail;
+		for (int i = 0; i < word.length(); i++) {
 			s = word.getSymbol(i);
 			sIdx = getAlphIndex(s);
 			tDel = word.getTimeValue(i);
 			tDelIdx = getHistBarIdx(tDel);
 			prevTail = new TimedTail(s, sIdx, tDel, tDelIdx, idxWord, i, prevTail);
 		}
-		return tail;
+		return startTail;
+		// } else {
+		// throw new IllegalArgumentException("The given TimedWord must be part of the TimedInput");
+		// }
 	}
 
 	private int getHistBarIdx(int time) {
@@ -360,7 +363,7 @@ public class PDRTAInput implements Serializable {
 	}
 
 	TimedTail toTestTailChain(TimedWord word) {
-		return createTailChain(0, word, false);
+		return createTailChain(-1, word);
 	}
 
 	static PDRTAInput parse(List<String> data) {

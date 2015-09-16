@@ -95,21 +95,24 @@ public class PDRTAState implements Serializable {
 	 */
 	public void addTail(TimedTail tail) {
 
-		if (automaton.hasInput() && tail != null) {
-			stat.addToStats(tail);
-			tail = tail.getNextTail();
+		if (automaton.hasInput()) {
 			if (tail != null) {
-				final Interval in = getInterval(tail.getSymbolAlphIndex(), tail.getTimeDelay());
-				assert (in != null);
-				in.addTail(tail);
+				stat.addToStats(tail);
+				final TimedTail t = tail.getNextTail();
+				if (t != null) {
+					final Interval in = getInterval(t.getSymbolAlphIndex(), t.getTimeDelay());
+					assert (in != null);
+					in.addTail(t);
+				}
+			} else {
+				throw new IllegalArgumentException("The given TimedTail must not be null!");
 			}
 		} else {
-			throw new UnsupportedOperationException();
+			throw new IllegalStateException("This operation is only allowed in training phase!");
 		}
 	}
 
 	public PDRTAState getTarget(TimedTail tail) {
-
 		return getTarget(tail.getSymbolAlphIndex(), tail.getTimeDelay());
 	}
 
@@ -124,7 +127,6 @@ public class PDRTAState implements Serializable {
 	}
 
 	public double getProbabilityTrans(TimedTail tail) {
-
 		return getProbabilityTrans(tail.getSymbolAlphIndex(), tail.getTimeDelay());
 	}
 
@@ -139,7 +141,6 @@ public class PDRTAState implements Serializable {
 	}
 
 	public int getTotalOutEvents() {
-
 		return stat.getTotalOutEvents();
 	}
 
