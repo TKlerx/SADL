@@ -192,6 +192,7 @@ public class TestRun {
 				bw = Files.newBufferedWriter(resultOut);
 				bw.write(result.toCsvString());
 				bw.close();
+				System.out.println("F-Measure=" + result.getFMeasure());
 			} catch (final IOException e) {
 				logger.error("Error when storing the test result to file!", e);
 			}

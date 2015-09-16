@@ -11,11 +11,10 @@
 
 package sadl.detectors.featureCreators;
 
-import gnu.trove.list.TDoubleList;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.trove.list.TDoubleList;
 import sadl.constants.ProbabilityAggregationMethod;
 
 /**
@@ -34,7 +33,7 @@ public class FullFeatureCreator extends SmallFeatureCreator {
 		final double timeMean;
 		if (timeLikelihoods.size() == 0) {
 			// happens if the first state is the final state
-			timeMean = Double.NEGATIVE_INFINITY;
+			timeMean = Double.POSITIVE_INFINITY;
 		} else {
 			timeMean = timeLikelihoods.sum() / timeLikelihoods.size();
 		}

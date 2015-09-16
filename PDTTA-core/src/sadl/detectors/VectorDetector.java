@@ -43,6 +43,7 @@ public class VectorDetector extends AnomalyDetector implements TrainableDetector
 	@Override
 	protected boolean decide(TDoubleList eventLikelihoods, TDoubleList timeLikelihoods) {
 		// TODO also use aggregateSublists in VectorDetector
+		// then also train with sublists!
 		final double[] vector = fc.createFeatures(eventLikelihoods, timeLikelihoods, aggType);
 		return c.isOutlier(vector);
 	}

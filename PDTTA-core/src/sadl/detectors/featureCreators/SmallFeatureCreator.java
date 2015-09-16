@@ -31,8 +31,8 @@ public class SmallFeatureCreator extends MinimalFeatureCreator {
 		final double timeMin;
 		if (timeLikelihoods.size() == 0) {
 			// happens if the first state is the final state
-			timeMax = Double.NEGATIVE_INFINITY;
-			timeMin = Double.NEGATIVE_INFINITY;
+			timeMax = Double.POSITIVE_INFINITY;
+			timeMin = Double.POSITIVE_INFINITY;
 		} else {
 			timeMax = timeLikelihoods.max();
 			timeMin = timeLikelihoods.min();

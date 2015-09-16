@@ -11,7 +11,6 @@
 
 package sadl.run;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,9 +27,9 @@ import com.beust.jcommander.Parameters;
 import sadl.input.TimedInput;
 import sadl.interfaces.Model;
 import sadl.interfaces.ModelLearner;
-import sadl.models.pdrta.PDRTA;
 import sadl.run.factories.LearnerFactory;
 import sadl.run.factories.learn.RTIFactory;
+import sadl.utils.IoUtils;
 
 @Parameters(commandDescription = "Performs a training of a model from an input")
 public class TrainRun {
@@ -84,6 +83,7 @@ public class TrainRun {
 		if (!smacMode) {
 			try {
 				trainSeqs = TimedInput.parse(in);
+				// trainSeqs = IoUtils.readTrainTestFile(in).getFirst();
 			} catch (final IOException e) {
 				logger.error("Error when reading training sequences from file!", e);
 			}
@@ -94,10 +94,10 @@ public class TrainRun {
 		if (!smacMode) {
 			try {
 				Files.createDirectories(out.getParent());
-				final BufferedWriter bw = Files.newBufferedWriter(out);
-				((PDRTA) m).toDOTLang(bw);
+				// final BufferedWriter bw = Files.newBufferedWriter(out);
+				// ((PDRTA) m).toDOTLang(bw);
 				// TODO Fix train output
-				// IoUtils.serialize(m, out);
+				IoUtils.serialize(m, out);
 			} catch (final IOException e) {
 				logger.error("Error when storing model in file!", e);
 			}
