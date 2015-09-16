@@ -11,19 +11,6 @@
 
 package sadl.models;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TDoubleArrayList;
-import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.map.TIntIntMap;
-import gnu.trove.map.TObjectDoubleMap;
-import gnu.trove.map.TObjectIntMap;
-import gnu.trove.map.hash.TIntIntHashMap;
-import gnu.trove.map.hash.TObjectDoubleHashMap;
-import gnu.trove.map.hash.TObjectIntHashMap;
-import gnu.trove.set.TIntSet;
-import gnu.trove.set.hash.TIntHashSet;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,6 +25,23 @@ import java.util.function.IntUnaryOperator;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.SerializationUtils;
+import org.apache.commons.math3.util.Precision;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.map.TIntIntMap;
+import gnu.trove.map.TObjectDoubleMap;
+import gnu.trove.map.TObjectIntMap;
+import gnu.trove.map.hash.TIntIntHashMap;
+import gnu.trove.map.hash.TObjectDoubleHashMap;
+import gnu.trove.map.hash.TObjectIntHashMap;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
 import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.Distribution;
 import jsat.distributions.MyDistributionSearch;
@@ -45,12 +49,6 @@ import jsat.distributions.SingleValueDistribution;
 import jsat.distributions.empirical.MyKernelDensityEstimator;
 import jsat.linear.DenseVector;
 import jsat.linear.Vec;
-
-import org.apache.commons.lang3.SerializationUtils;
-import org.apache.commons.math3.util.Precision;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.ClassLabel;
 import sadl.detectors.AnomalyDetector;
@@ -453,7 +451,7 @@ public class TauPTA extends PDTTA {
 
 	private int addFinalStateProbability(List<Transition> possibleTransitions) {
 		if (possibleTransitions.size() == 0) {
-			logger.warn("Chose states which do not have . Inserting a time anomaly is not possible.Transitions:{}", possibleTransitions);
+			logger.warn("Chose states which do not have transitions. Inserting a stopping anomaly is not possible. Transitions:{}", possibleTransitions);
 			return -1;
 		}
 		// only add if there was no final state transition before
@@ -472,12 +470,18 @@ public class TauPTA extends PDTTA {
 		final TIntList states = getStates(height);
 		for (int i = 0; i < states.size(); i++) {
 			final int state = states.get(i);
-			final List<Transition> possibleTransitions = getTransitions(state, true);
-			if (!possibleTransitions.stream().anyMatch(t -> t.isStopTraversingTransition() && t.getProbability() > 0)) {
-				// just add one transition which contains the state
-				result.add(possibleTransitions.get(0));
+			if (state == PDTTA.START_STATE) {
+				logger.info("Won't insert a stopping anomaly for the root node");
+				continue;
 			} else {
-				logger.debug("Filtered the state {} that already has a final state", state);
+				final List<Transition> possibleTransitions = getTransitions(state, true);
+				// check whether there is no real stopping transition in the current state
+				if (!possibleTransitions.stream().anyMatch(t -> t.isStopTraversingTransition() && t.getProbability() > 0)) {
+					// just add one transition which contains the state
+					result.add(possibleTransitions.get(0));
+				} else {
+					logger.debug("Filtered the state {} that already has a final state", state);
+				}
 			}
 		}
 		if (result.size() == 0) {
