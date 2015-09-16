@@ -114,6 +114,11 @@ public class IoUtils {
 			}
 			testWriter.close();
 			ex.shutdown();
+			if (writeTrain) {
+				trainWriter.close();
+				ex.shutdownNow();
+				throw new IOException("The provided file " + trainTestFile + " does not contain the separator " + SmacDataGenerator.TRAIN_TEST_SEP);
+			}
 			final Pair<TimedInput, TimedInput> result = new Pair<>(trainWorker.get(), testWorker.get());
 			return result;
 		} catch (final IOException | InterruptedException | ExecutionException e) {
