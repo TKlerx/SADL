@@ -403,7 +403,6 @@ public class MyKernelDensityEstimator extends ContinuousDistribution
 				+ ", Xskew=" + Xskew + "]";
 	}
 
-
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -411,10 +410,6 @@ public class MyKernelDensityEstimator extends ContinuousDistribution
 		result = prime * result + Arrays.hashCode(X);
 		long temp;
 		temp = Double.doubleToLongBits(mean());
-		result = prime * result + (int) (temp ^ (temp >>> 32));
-		temp = Double.doubleToLongBits(skewness());
-		result = prime * result + (int) (temp ^ (temp >>> 32));
-		temp = Double.doubleToLongBits(variance());
 		result = prime * result + (int) (temp ^ (temp >>> 32));
 		temp = Double.doubleToLongBits(getBandwith());
 		result = prime * result + (int) (temp ^ (temp >>> 32));
@@ -448,9 +443,6 @@ public class MyKernelDensityEstimator extends ContinuousDistribution
 		if (Math.abs(Xvar - other.Xvar)>0.00000001) {
 			return false;
 		}
-		//if (Double.doubleToLongBits(Xskew) != Double.doubleToLongBits(other.Xskew)) {
-		//	return false;
-
 		if (Double.doubleToLongBits(h) != Double.doubleToLongBits(other.h)) {
 			return false;
 		}
