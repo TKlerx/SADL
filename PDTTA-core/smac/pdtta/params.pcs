@@ -29,9 +29,6 @@ singleEventThreshold | detectorMethod in {THRESHOLD_ALL}
 singleTimeThreshold [0.0,1.0] [0.00001]
 singleTimeThreshold | detectorMethod in {THRESHOLD_ALL}
 
-svmCosts [1,1000] [1]
-svmCosts | detectorMethod in {SVM}
-
 svmNu[0,1] [0.1]
 svmNu| detectorMethod in {SVM}
 

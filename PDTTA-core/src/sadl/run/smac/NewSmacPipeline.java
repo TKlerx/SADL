@@ -128,9 +128,6 @@ public class NewSmacPipeline implements Serializable {
 	@Parameter(names = "-probabilityAggregationMethod")
 	ProbabilityAggregationMethod aggType = ProbabilityAggregationMethod.NORMALIZED_MULTIPLY;
 
-	@Parameter(names = "-svmCosts")
-	double svmCosts;
-
 	@Parameter(names = "-svmNu")
 	double svmNu;
 
@@ -232,7 +229,8 @@ public class NewSmacPipeline implements Serializable {
 			featureCreator = null;
 		}
 		if (detectorMethod == DetectorMethod.SVM) {
-			anomalyDetector = new VectorDetector(aggType, featureCreator, new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu, svmCosts,
+			anomalyDetector = new VectorDetector(aggType, featureCreator,
+					new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu,
 					svmKernelType, svmEps, svmDegree, scalingMethod));
 			// pdttaDetector = new PdttaOneClassSvmDetector(aggType, featureCreator, svmProbabilityEstimate, svmGamma, svmNu, svmCosts, svmKernelType, svmEps,
 			// svmDegree, scalingMethod);

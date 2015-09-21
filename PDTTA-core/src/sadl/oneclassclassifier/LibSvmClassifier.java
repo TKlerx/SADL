@@ -13,6 +13,8 @@ package sadl.oneclassclassifier;
 
 import java.util.List;
 
+import org.apache.commons.math3.util.Precision;
+
 import libsvm.svm;
 import libsvm.svm_model;
 import libsvm.svm_node;
@@ -30,13 +32,12 @@ public class LibSvmClassifier extends NumericClassifier {
 	svm_model model;
 	svm_parameter param;
 
-	public LibSvmClassifier(int useProbability, double gamma, double nu, double costs, int kernelType, double eps, int degree, ScalingMethod scalingMethod) {
+	public LibSvmClassifier(int useProbability, double gamma, double nu, int kernelType, double eps, int degree, ScalingMethod scalingMethod) {
 		super(scalingMethod);
 		param = new svm_parameter();
 		param.probability = useProbability; // default 0
 		param.gamma = gamma;// 0.2;
 		param.nu = nu;// 0.01; // precision/recall variable
-		param.C = costs;// 1;
 		param.svm_type = svm_parameter.ONE_CLASS;
 		param.kernel_type = kernelType;// svm_parameter.RBF;
 		param.cache_size = 2000;
@@ -45,6 +46,9 @@ public class LibSvmClassifier extends NumericClassifier {
 	}
 
 	private svm_model svmTrain(final List<double[]> train) {
+		if (Precision.equals(param.gamma, 0)) {
+			param.gamma = ((double) 1) / train.get(0).length;
+		}
 		final svm_problem prob = new svm_problem();
 		final int dataCount = train.size();
 		prob.y = new double[dataCount];
