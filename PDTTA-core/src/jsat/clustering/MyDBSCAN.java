@@ -48,7 +48,7 @@ import jsat.utils.SystemInfo;
  * @author Edward Raff
  * @author Timo Klerx
  */
-public class MyDBSCAN extends ClustererBase {
+public class MyDBSCAN extends ClustererBase implements Cloneable {
 
 	private static final long serialVersionUID = 1627963360642560455L;
 	/**

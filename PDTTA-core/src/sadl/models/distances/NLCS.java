@@ -38,7 +38,7 @@ public class NLCS implements DistanceMeasure {
 
 		for (int i = 1; i <= fl; i++) {
 			for (int j = 1; j <= sl; j++) {
-				if (s1.getSymbol(i - 1) == s2.getSymbol(j - 1)) {
+				if (s1.getSymbol(i - 1).equals(s2.getSymbol(j - 1))) {
 					if ((i == 1) || (j == 1)) {
 						table[i][j] = 1;
 					} else {

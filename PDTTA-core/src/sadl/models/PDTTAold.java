@@ -357,7 +357,7 @@ public class PDTTAold implements AutomatonModel, Serializable {
 			result = getFinalTransition(currentState);
 		} else {
 			for (final Transition t : transitions) {
-				if (t.getFromState() == currentState && t.getSymbol() == event) {
+				if (t.getFromState() == currentState && t.getSymbol().equals(event)) {
 					if (result != null) {
 						logger.error("Found more than one transition for state " + currentState + " and event " + event);
 					}

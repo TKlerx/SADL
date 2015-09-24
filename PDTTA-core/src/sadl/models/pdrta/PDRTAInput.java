@@ -11,9 +11,6 @@
 
 package sadl.models.pdrta;
 
-import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TIntArrayList;
-
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Serializable;
@@ -22,6 +19,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.math3.util.Precision;
+
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
 import sadl.constants.ClassLabel;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
@@ -136,7 +137,7 @@ public class PDRTAInput implements Serializable {
 		for (int i = 1; i < numHistoBins; i++) {
 			final double idx = ((double) i / (double) numHistoBins) * (timePoints.size() - 1);
 			final double idxFloor = Math.floor(idx);
-			if (idx == idxFloor) {
+			if (Precision.equals(idx, idxFloor)) {
 				histoBorders[i - 1] = timePoints.get((int) idx);
 			} else {
 				final double vFloor = timePoints.get((int) idxFloor);
