@@ -96,11 +96,11 @@ public class MyDBSCAN extends ClustererBase {
 		this.stndDevs = toCopy.stndDevs;
 	}
 
-	public List<List<DataPoint>> cluster(DataSet dataSet, int minPts) {
+	public List<List<DataPoint>> cluster(DataSet<?> dataSet, int minPts) {
 		return createClusterListFromAssignmentArray(cluster(dataSet, minPts, (int[]) null), dataSet);
 	}
 
-	public int[] cluster(DataSet dataSet, int minPts, int[] designations) {
+	public int[] cluster(DataSet<?> dataSet, int minPts, int[] designations) {
 		final OnLineStatistics stats = new OnLineStatistics();
 		TrainableDistanceMetric.trainIfNeeded(dm, dataSet);
 		final VectorCollection<VecPaired<Vec, Integer>> vc = vecFactory.getVectorCollection(getVecIndexPairs(dataSet), dm);

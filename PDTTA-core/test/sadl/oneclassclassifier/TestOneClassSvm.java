@@ -61,8 +61,6 @@ public class TestOneClassSvm {
 		int rightAnswer = 0;
 		// final boolean[] wekaTrainResult = wekaSvm.areAnomalies(train);
 		// final boolean[] wekaTestResult = wekaSvm.areAnomalies(test);
-		final boolean[] libSvmTrainResult = libSvm.areAnomalies(train);
-		countAnomalies(libSvmTrainResult);
 		// final boolean[] libSvmTestResult = libSvm.areAnomalies(test);
 
 		final List<double[]> normalizedTest = norm.normalize(test);
@@ -165,19 +163,6 @@ public class TestOneClassSvm {
 		// if (!Arrays.equals(libSvmTrainResult, wekaTrainResult) || !Arrays.equals(libSvmTestResult, wekaTestResult)) {
 		// System.err.println("Weka and libsvm do not result in same output");
 		// }
-	}
-
-	private static void countAnomalies(boolean[] libSvmTrainResult) {
-		int anomalies = 0;
-		int normals = 0;
-		for (int i = 0; i < libSvmTrainResult.length; i++) {
-			if (libSvmTrainResult[i]) {
-				anomalies++;
-			} else {
-				normals++;
-			}
-		}
-		System.out.println("Normals=" + normals + "; Anomalies=" + anomalies);
 	}
 
 	public void createData() {

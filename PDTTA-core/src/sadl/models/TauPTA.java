@@ -502,7 +502,7 @@ public class TauPTA extends PDTTA {
 			logger.warn("Chose states on height {} which are leaf states. Inserting a anomalies is not possible.", height);
 		}
 		if (result.size() == 1) {
-			return Collections.EMPTY_LIST;
+			return Collections.emptyList();
 		}
 		return result;
 	}

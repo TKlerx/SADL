@@ -32,7 +32,6 @@ public class PdttaOneClassSvmDetector extends VectorDetector implements Trainabl
 	 * @param useProbability
 	 * @param gamma
 	 * @param nu
-	 * @param costs
 	 * @param kernelType
 	 * @param eps
 	 * @param degree
