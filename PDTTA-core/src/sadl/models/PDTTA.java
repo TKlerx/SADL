@@ -276,6 +276,7 @@ public class PDTTA extends PDFA {
 			} else {
 				// TODO use p values instead of PDFs here
 				// compute the p value with monte carlo integration
+				// use a parameter whether to use PDF values or probabilities
 				final double pdf = d.pdf(ts.getTimeValue(i));
 				if (pdf > 1) {
 					throw new IllegalStateException("the PDF value is > 1");
