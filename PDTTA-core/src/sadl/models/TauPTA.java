@@ -317,7 +317,7 @@ public class TauPTA extends PDTTA {
 			logger.debug("TransitionCount after inserting {} anomalies={}", anomalyType, getTransitionCount());
 		} else if (anomalyType == AnomalyInsertionType.TYPE_TWO) {
 			// label the k least probable paths as anomaly (every transition on the path is labeled as abnormal)
-			// TODO maybe remove these k least probable paths from the pta that is used for sampling normal data?!
+			// TODO remove these k least probable paths from the pta that is used for sampling normal data
 			insertSequentialAnomaly(this::insertAnomaly2);
 		} else if (anomalyType == AnomalyInsertionType.TYPE_THREE) {
 			// choose a random state on every height and modify its time probability drastically (the modification of the time values is only done when sampling
