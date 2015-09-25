@@ -191,6 +191,9 @@ public abstract class AnomalyDetector {
 		return result;
 	}
 
+	/**
+	 * Computes the product of the probabilities in log space. @param probabilities the probabilities @return the product of the probabilities in log space
+	 */
 	public static double aggregate(TDoubleList probabilities) {
 		return aggregate(probabilities, ProbabilityAggregationMethod.NORMALIZED_MULTIPLY);
 	}

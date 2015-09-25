@@ -352,7 +352,7 @@ public class TauPTA extends PDTTA {
 				return f.applyAsInt(s1.toString().compareTo(s2.toString()));
 			}
 		};
-		allSequences.stream().sorted(c).limit(SEQUENTIAL_ANOMALY_K).map(s -> labelWithAnomaly(s, getAnomalyType()));
+		allSequences.stream().sorted(c).limit(SEQUENTIAL_ANOMALY_K).map(s -> labelWithAnomaly(s, getAnomalyType())).collect(Collectors.toList());
 		logger.debug("Transitions.size()={}", transitions.size());
 		// allSequences.sort((t1, t2) -> Double.compare(sequenceProbabilities.get(t1), sequenceProbabilities.get(t2)));
 		// final List<UntimedSequence> abnormalSequences = function.apply(allSequences);
@@ -407,6 +407,7 @@ public class TauPTA extends PDTTA {
 			probabilities.add(probability);
 			currentState = t.getToState();
 		}
+		probabilities.add(getFinalStateProbability(currentState));
 		return AnomalyDetector.aggregate(probabilities);
 		// return product(probabilities);
 	}
@@ -510,6 +511,8 @@ public class TauPTA extends PDTTA {
 			logger.warn("Chose states on height {} which are leaf states. Inserting a anomalies is not possible.", height);
 		}
 		if (result.size() == 1) {
+			// return an empty list if there is only one transition that is leading to the next level in the tree
+			// there must always be a normal path, because o/w a path from this height on is always abnormal
 			return Collections.emptyList();
 		}
 		return result;
@@ -519,15 +522,15 @@ public class TauPTA extends PDTTA {
 		final TIntSet currentStates = new TIntHashSet(possibleTransitions.stream().mapToInt(t -> t.getFromState()).distinct().toArray());
 		while (currentStates.size() > 0) {
 			final Transition chosenTransition = chooseRandomObject(possibleTransitions, r);
-			final int chosenState = chosenTransition.getFromState();
-			final List<Transition> stateTransitions = possibleTransitions.stream().filter(t -> t.getFromState() == chosenState).collect(Collectors.toList());
+			final int chosenFromState = chosenTransition.getFromState();
+			final List<Transition> stateTransitions = possibleTransitions.stream().filter(t -> t.getFromState() == chosenFromState).collect(Collectors.toList());
 			final List<String> notOccuringEvents = new ArrayList<>(Arrays.asList(alphabet.getSymbols()));
 			for (final Transition t : stateTransitions) {
 				notOccuringEvents.remove(t.getSymbol());
 			}
 			if (notOccuringEvents.size() == 0 || stateTransitions.size() == 0) {
-				logger.warn("Not possible to change an event in state {}", chosenState);
-				currentStates.remove(chosenState);
+				logger.warn("Not possible to change an event in state {}", chosenFromState);
+				currentStates.remove(chosenFromState);
 				continue;
 			} else {
 				final String chosenEvent = notOccuringEvents.get(r.nextInt(notOccuringEvents.size()));
