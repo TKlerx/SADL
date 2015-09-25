@@ -28,15 +28,15 @@ import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
+
 import sadl.constants.AnomalyInsertionType;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.modellearner.TauPtaLearner;
 import sadl.models.TauPTA;
 import sadl.utils.MasterSeed;
-
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
 
 /**
  * 
@@ -109,7 +109,7 @@ public class SmacDataGenerator implements Serializable {
 					}
 					// PTAs of Type 2 and 4 always produce abnormal sequences
 					// it is possible to sample abnormal and normal sequences with abnormal ptas of the other types (1,3,5).
-					// but I don't know how the distribution is so to be fair, i sample all anomalies the same
+					// but I don't know how the distribution is, so to be fair, i sample all anomalies the same
 					for (int i = 0; i < TEST_SIZE; i++) {
 						if (r.nextDouble() < ANOMALY_PERCENTAGE) {
 							boolean wasAnormal = false;

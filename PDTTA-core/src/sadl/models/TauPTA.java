@@ -303,7 +303,8 @@ public class TauPTA extends PDTTA {
 
 	public void makeAbnormal(AnomalyInsertionType newAnomalyType) {
 		if (this.anomalyType != AnomalyInsertionType.NONE) {
-			logger.error("A TauPTA can only have one type of anomaly. This one already has AnomalyInsertionType {}, which should be overridden with {}",
+			logger.error(
+					"A TauPTA can only have one type of anomaly. This one already has AnomalyInsertionType {}, which should be overwritten with {}. The overwriting was not done!",
 					this.anomalyType, anomalyType);
 			return;
 		}
@@ -311,13 +312,19 @@ public class TauPTA extends PDTTA {
 		setAnomalyType(newAnomalyType);
 		if (anomalyType == AnomalyInsertionType.TYPE_ONE) {
 			logger.debug("TransitionCount before inserting {} anomalies={}", anomalyType, getTransitionCount());
+			// choose a random state on every height and modify the symbol of an outgoing transition of that state to another random symbol
 			insertPerLevelAnomaly(this::computeTransitionCandicatesType13, this::changeTransitionEvent);
 			logger.debug("TransitionCount after inserting {} anomalies={}", anomalyType, getTransitionCount());
 		} else if (anomalyType == AnomalyInsertionType.TYPE_TWO) {
+			// label the k least probable paths as anomaly (every transition on the path is labeled as abnormal)
 			insertSequentialAnomaly(this::insertAnomaly2);
 		} else if (anomalyType == AnomalyInsertionType.TYPE_THREE) {
+			// choose a random state on every height and modify its time probability drastically (the modification of the time values is only done when sampling
+			// them)
 			insertPerLevelAnomaly(this::computeTransitionCandicatesType13, this::changeTimeProbability);
 		} else if (anomalyType == AnomalyInsertionType.TYPE_FOUR) {
+			// choose the k most probable sequences and modify every time value for every transition on the path slightly (the modification of the time values
+			// is only done when sampling them)
 			insertSequentialAnomaly(this::insertAnomaly4);
 		} else if (anomalyType == AnomalyInsertionType.TYPE_FIVE) {
 			insertPerLevelAnomaly(this::computeTransitionCandicatesType5, this::addFinalStateProbability);
@@ -344,7 +351,7 @@ public class TauPTA extends PDTTA {
 				return f.applyAsInt(s1.toString().compareTo(s2.toString()));
 			}
 		};
-		allSequences.stream().sorted(c).limit(SEQUENTIAL_ANOMALY_K).map(s -> labelWithAnomaly(s, getAnomalyType())).collect(Collectors.toList());
+		allSequences.stream().sorted(c).limit(SEQUENTIAL_ANOMALY_K).map(s -> labelWithAnomaly(s, getAnomalyType()));
 		logger.debug("Transitions.size()={}", transitions.size());
 		// allSequences.sort((t1, t2) -> Double.compare(sequenceProbabilities.get(t1), sequenceProbabilities.get(t2)));
 		// final List<UntimedSequence> abnormalSequences = function.apply(allSequences);
