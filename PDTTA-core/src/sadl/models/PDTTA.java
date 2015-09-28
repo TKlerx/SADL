@@ -30,8 +30,10 @@ import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.Distribution;
 import sadl.constants.ClassLabel;
 import sadl.input.TimedWord;
+import sadl.interfaces.TauEstimator;
 import sadl.structure.Transition;
 import sadl.structure.ZeroProbTransition;
+import sadl.tau_estimation.IdentityEstimator;
 
 /**
  * A Probabilistic Deterministic Timed-Transition Automaton (PDTTA).
@@ -41,53 +43,40 @@ import sadl.structure.ZeroProbTransition;
  */
 public class PDTTA extends PDFA {
 
-	private static final long serialVersionUID = 3017416753740710943L;
+	private static final long serialVersionUID = -5394139607433634347L;
 
 	transient private static Logger logger = LoggerFactory.getLogger(PDTTA.class);
 
+
+	private TauEstimator tauEstimator;
 	Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions = null;
 
-	public Map<ZeroProbTransition, ContinuousDistribution> getTransitionDistributions() {
-		return transitionDistributions;
+	protected PDTTA() {
 	}
 
-	public void setTransitionDistributions(Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions) {
-		checkImmutable();
+	public PDTTA(PDFA pdfa, Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions, TauEstimator tauEstimation) throws IOException {
+		super(pdfa);
 		this.transitionDistributions = transitionDistributions;
+		this.tauEstimator = tauEstimation;
+		if (tauEstimator == null) {
+			tauEstimator = new IdentityEstimator();
+		}
 		checkAndRestoreConsistency();
 	}
 
-	@Override
-	protected boolean restoreConsistency() {
-		return deleteIrrelevantTransitions() | super.restoreConsistency();
+
+	protected void bindTransitionDistribution(Transition newTransition, ContinuousDistribution d) {
+		checkImmutable();
+		if (transitionDistributions != null) {
+			transitionDistributions.put(newTransition.toZeroProbTransition(), d);
+		} else {
+			logger.warn("Trying to add Distribution {} to non existing time transition distributions", d);
+		}
 	}
 
 	@Override
-	protected boolean isConsistent() {
-		if (getTransitionCount() != transitionDistributions.size()) {
-			logger.warn("transitions and transitionDistributions must be of same size! {}!={}", getTransitionCount(), transitionDistributions.size());
-			return false;
-		}
-		return super.isConsistent();
-	}
-
-	/**
-	 * 
-	 * @return true if irrelevant transitions were removed.
-	 */
-	private boolean deleteIrrelevantTransitions() {
-		logger.debug("There are {} many transitions before removing irrelevant ones", getTransitionCount());
-		// there may be more transitions than transitionDistributions
-		final boolean removedTransitions = transitions.removeIf(t -> !transitionDistributions.containsKey(t.toZeroProbTransition()));
-		if (removedTransitions) {
-			logger.info("Removed some unnecessary transitions");
-		}
-		if (getTransitionCount() != transitionDistributions.size()) {
-			logger.error("This should never happen because trainsitions.size() and transitionDistributions.size() should be equal now, but are not! {}!={}",
-					getTransitionCount(), transitionDistributions.size());
-		}
-		logger.debug("There are {} many transitions after removing irrelevant ones", getTransitionCount());
-		return removedTransitions;
+	public Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord s) {
+		return Pair.create(computeEventLikelihoods(s), computeTimeLikelihoods(s));
 	}
 
 	@Override
@@ -121,87 +110,47 @@ public class PDTTA extends PDFA {
 		}
 	}
 
-	protected PDTTA() {
-	}
-
-	public PDTTA(PDFA pdfa, Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions) throws IOException {
-		super(pdfa);
-		this.transitionDistributions = transitionDistributions;
-		checkAndRestoreConsistency();
-	}
-
-	protected void bindTransitionDistribution(Transition newTransition, ContinuousDistribution d) {
-		checkImmutable();
-		if (transitionDistributions != null) {
-			transitionDistributions.put(newTransition.toZeroProbTransition(), d);
-		} else {
-			logger.warn("Trying to add Distribution {} to non existing time transition distributions", d);
+	protected TDoubleList computeTimeLikelihoods(TimedWord ts) {
+		final TDoubleList list = new TDoubleArrayList();
+		int currentState = 0;
+		for (int i = 0; i < ts.length(); i++) {
+			final Transition t = getTransition(currentState, ts.getSymbol(i));
+			// DONE this is crap, isnt it? why not return an empty list or null iff there is no transition for the given sequence? or at least put a '0' in the
+			// last slot.
+			if (t == null) {
+				list.add(0);
+				return list;
+			}
+			final ContinuousDistribution d = getTransitionDistributions().get(t.toZeroProbTransition());
+			if (d == null) {
+				// System.out.println("Found no time distribution for Transition "
+				// + t);
+				list.add(0);
+			} else {
+				list.add(tauEstimator.estimateTau(d, ts.getTimeValue(i)));
+			}
+			currentState = t.getToState();
 		}
+		return list;
 	}
 
 	/**
-	 * CARE: The distribution to this transition is also removed.
 	 * 
-	 * @param t
+	 * @return true if irrelevant transitions were removed.
 	 */
-	protected ContinuousDistribution removeTimedTransition(Transition t) {
-		return removeTimedTransition(t, true);
-	}
-
-	@Override
-	protected boolean removeTransition(Transition t) {
-		return removeTimedTransition(t) != null;
-	}
-
-	public ContinuousDistribution removeTimedTransition(Transition t, boolean removeTimeDistribution) {
-		super.removeTransition(t);
-		if (removeTimeDistribution) {
-			if (transitionDistributions != null) {
-				return transitionDistributions.remove(t.toZeroProbTransition());
-			} else {
-				logger.warn("Trying to remove from non existing transition distributions and transition {}", t);
-				return null;
-			}
-		} else {
-			return null;
+	private boolean deleteIrrelevantTransitions() {
+		logger.debug("There are {} many transitions before removing irrelevant ones", getTransitionCount());
+		// there may be more transitions than transitionDistributions
+		final boolean removedTransitions = transitions.removeIf(t -> !transitionDistributions.containsKey(t.toZeroProbTransition()));
+		if (removedTransitions) {
+			logger.info("Removed some unnecessary transitions");
 		}
-	}
-
-	@Override
-	public TimedWord sampleSequence() {
-		int currentState = START_STATE;
-		final List<String> eventList = new ArrayList<>();
-		final TIntList timeList = new TIntArrayList();
-		boolean choseFinalState = false;
-		while (!choseFinalState) {
-			final Transition chosenTransition = chooseNextTransition(currentState);
-			if (chosenTransition.isStopTraversingTransition()) {
-				choseFinalState = true;
-			} else if (eventList.size() > MAX_SEQUENCE_LENGTH) {
-				throw new IllegalStateException("A sequence longer than " + MAX_SEQUENCE_LENGTH + " events should have been generated");
-			} else {
-				currentState = chosenTransition.getToState();
-				final Distribution d = transitionDistributions.get(chosenTransition.toZeroProbTransition());
-				if (d == null) {
-					// maybe this happens because the automaton is more general than the data. So not every possible path in the automaton is represented in
-					// the training data.
-					throw new IllegalStateException("This should never happen for transition " + chosenTransition);
-				}
-				final int timeValue = (int) d.sample(1, r)[0];
-				eventList.add(chosenTransition.getSymbol());
-				timeList.add(timeValue);
-			}
+		if (getTransitionCount() != transitionDistributions.size()) {
+			logger.error("This should never happen because trainsitions.size() and transitionDistributions.size() should be equal now, but are not! {}!={}",
+					getTransitionCount(), transitionDistributions.size());
 		}
-		// TODO add the capability to create abnormal sequences with a PDTTA
-		return new TimedWord(eventList, timeList, ClassLabel.NORMAL);
-	}
-
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = super.hashCode();
-		result = prime * result + ((transitionDistributions == null) ? 0 : transitionDistributions.hashCode());
-		return result;
+		logger.debug("There are {} many transitions after removing irrelevant ones", getTransitionCount());
+		return removedTransitions;
 	}
 
 	@Override
@@ -254,43 +203,104 @@ public class PDTTA extends PDFA {
 			}
 			return false;
 		}
+		if (tauEstimator == null) {
+			if (other.tauEstimator != null) {
+				return false;
+			}
+		} else if (!tauEstimator.equals(other.tauEstimator)) {
+			return false;
+		}
 		return true;
 	}
 
-	protected TDoubleList computeTimeLikelihoods(TimedWord ts) {
-		final TDoubleList list = new TDoubleArrayList();
-		int currentState = 0;
-		for (int i = 0; i < ts.length(); i++) {
-			final Transition t = getTransition(currentState, ts.getSymbol(i));
-			// DONE this is crap, isnt it? why not return an empty list or null iff there is no transition for the given sequence? or at least put a '0' in the
-			// last slot.
-			if (t == null) {
-				list.add(0);
-				return list;
-			}
-			final ContinuousDistribution d = getTransitionDistributions().get(t.toZeroProbTransition());
-			if (d == null) {
-				// System.out.println("Found no time distribution for Transition "
-				// + t);
-				list.add(0);
-			} else {
-				// TODO use p values instead of PDFs here
-				// compute the p value with monte carlo integration
-				// use a parameter whether to use PDF values or probabilities
-				final double pdf = d.pdf(ts.getTimeValue(i));
-				if (pdf > 1) {
-					throw new IllegalStateException("the PDF value is > 1");
-				}
-				list.add(pdf);
-			}
-			currentState = t.getToState();
-		}
-		return list;
+	public Map<ZeroProbTransition, ContinuousDistribution> getTransitionDistributions() {
+		return transitionDistributions;
 	}
 
 	@Override
-	public Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord s) {
-		return Pair.create(computeEventLikelihoods(s), computeTimeLikelihoods(s));
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((transitionDistributions == null) ? 0 : transitionDistributions.hashCode());
+		result = prime * result + ((tauEstimator == null) ? 0 : tauEstimator.hashCode());
+		return result;
+	}
+
+	@Override
+	protected boolean isConsistent() {
+		if (getTransitionCount() != transitionDistributions.size()) {
+			logger.warn("transitions and transitionDistributions must be of same size! {}!={}", getTransitionCount(), transitionDistributions.size());
+			return false;
+		}
+		return super.isConsistent();
+	}
+
+	/**
+	 * CARE: The distribution to this transition is also removed.
+	 * 
+	 * @param t
+	 */
+	protected ContinuousDistribution removeTimedTransition(Transition t) {
+		return removeTimedTransition(t, true);
+	}
+
+	public ContinuousDistribution removeTimedTransition(Transition t, boolean removeTimeDistribution) {
+		super.removeTransition(t);
+		if (removeTimeDistribution) {
+			if (transitionDistributions != null) {
+				return transitionDistributions.remove(t.toZeroProbTransition());
+			} else {
+				logger.warn("Trying to remove from non existing transition distributions and transition {}", t);
+				return null;
+			}
+		} else {
+			return null;
+		}
+	}
+
+	@Override
+	protected boolean removeTransition(Transition t) {
+		return removeTimedTransition(t) != null;
+	}
+
+	@Override
+	protected boolean restoreConsistency() {
+		return deleteIrrelevantTransitions() | super.restoreConsistency();
+	}
+
+	@Override
+	public TimedWord sampleSequence() {
+		int currentState = START_STATE;
+		final List<String> eventList = new ArrayList<>();
+		final TIntList timeList = new TIntArrayList();
+		boolean choseFinalState = false;
+		while (!choseFinalState) {
+			final Transition chosenTransition = chooseNextTransition(currentState);
+			if (chosenTransition.isStopTraversingTransition()) {
+				choseFinalState = true;
+			} else if (eventList.size() > MAX_SEQUENCE_LENGTH) {
+				throw new IllegalStateException("A sequence longer than " + MAX_SEQUENCE_LENGTH + " events should have been generated");
+			} else {
+				currentState = chosenTransition.getToState();
+				final Distribution d = transitionDistributions.get(chosenTransition.toZeroProbTransition());
+				if (d == null) {
+					// maybe this happens because the automaton is more general than the data. So not every possible path in the automaton is represented in
+					// the training data.
+					throw new IllegalStateException("This should never happen for transition " + chosenTransition);
+				}
+				final int timeValue = (int) d.sample(1, r)[0];
+				eventList.add(chosenTransition.getSymbol());
+				timeList.add(timeValue);
+			}
+		}
+		// TODO add the capability to create abnormal sequences with a PDTTA
+		return new TimedWord(eventList, timeList, ClassLabel.NORMAL);
+	}
+
+	public void setTransitionDistributions(Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions) {
+		checkImmutable();
+		this.transitionDistributions = transitionDistributions;
+		checkAndRestoreConsistency();
 	}
 
 }

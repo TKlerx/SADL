@@ -34,13 +34,13 @@ import jsat.utils.ProbailityMatch;
  */
 public class MyKernelDensityEstimator extends ContinuousDistribution
 {
+	private static final long serialVersionUID = -3928228439875019515L;
 	/*
 	 * README Implementation note: The values are stored in sorted order, which allows for fast evaluations. Instead of doing the full loop on each function
 	 * call, O(n) time, we know the bounds on the values that will effect results, so we can do 2 binary searches and then a loop. Though this is still
 	 * technically, O(n), its more accurately described as O(n * epsilon * log(n)) , where n * epsilon << n
 	 */
 
-	private static final long serialVersionUID = 7708020456632603947L;
 	/**
 	 * The various values
 	 */

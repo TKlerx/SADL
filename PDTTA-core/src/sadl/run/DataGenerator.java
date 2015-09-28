@@ -61,6 +61,14 @@ public class DataGenerator implements Serializable {
 			if (Files.notExists(outputDir)) {
 				Files.createDirectories(outputDir);
 			}
+			Files.walk(outputDir).filter(p -> !Files.isDirectory(p)).forEach(p -> {
+				try {
+					logger.info("Deleting file {}", p);
+					Files.delete(p);
+				} catch (final Exception e) {
+					e.printStackTrace();
+				}
+			});
 			// parse timed sequences
 			final TimedInput trainingTimedSequences = TimedInput.parseAlt(Paths.get(dataString), 1);
 			final TauPtaLearner learner = new TauPtaLearner();
@@ -74,7 +82,6 @@ public class DataGenerator implements Serializable {
 			// br.write('\n');
 			// }
 			// }
-			// for(final AnomalyInsertionType type : AnomalyInsertionType.values()){
 
 			for (final AnomalyInsertionType type : AnomalyInsertionType.values()) {
 				if (type != AnomalyInsertionType.NONE && type != AnomalyInsertionType.ALL) {
@@ -102,13 +109,14 @@ public class DataGenerator implements Serializable {
 			}
 		} finally {
 			logger.info("Starting to dot PTAs");
-			final DirectoryStream<Path> ds = Files.newDirectoryStream(outputDir.resolve(Paths.get(".")), "*.dot");
-			for (final Path p : ds) {
-				if (System.getProperty("os.name").toLowerCase().contains("linux")) {
-					logger.info("dotting {}...", p);
-					Runtime.getRuntime().exec("dot -Tpdf -O " + p.toString());
-					Runtime.getRuntime().exec("dot -Tpng -O " + p.toString());
-					logger.info("dotted {}.", p);
+			try (DirectoryStream<Path> ds = Files.newDirectoryStream(outputDir.resolve(Paths.get(".")), "*.dot")) {
+				for (final Path p : ds) {
+					if (System.getProperty("os.name").toLowerCase().contains("linux")) {
+						logger.info("dotting {}...", p);
+						Runtime.getRuntime().exec("dot -Tpdf -O " + p.toString());
+						Runtime.getRuntime().exec("dot -Tpng -O " + p.toString());
+						logger.info("dotted {}.", p);
+					}
 				}
 			}
 		}

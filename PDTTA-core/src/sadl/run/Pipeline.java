@@ -228,7 +228,7 @@ public class Pipeline implements Serializable {
 		if (detectorMethod == DetectorMethod.SVM) {
 			pdttaDetector = new VectorDetector(aggType, featureCreator,
 					new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu,
-					svmKernelType, svmEps, svmDegree, scalingMethod));
+							svmKernelType, svmEps, svmDegree, scalingMethod));
 			// pdttaDetector = new PdttaOneClassSvmDetector(aggType, featureCreator, svmProbabilityEstimate, svmGamma, svmNu, svmCosts, svmKernelType, svmEps,
 			// svmDegree, scalingMethod);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_AGG_ONLY) {
@@ -266,7 +266,8 @@ public class Pipeline implements Serializable {
 			trainInput = TimedInput.parse(trainFile);
 			testInput = TimedInput.parse(testFile);
 		}
-		final ModelLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0);
+		final ModelLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0,
+				null);
 		final Model model = learner.train(trainInput);
 		final AnomalyDetection detection = new AnomalyDetection(pdttaDetector, model);
 		final ExperimentResult result = detection.test(testInput);

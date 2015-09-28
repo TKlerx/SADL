@@ -26,6 +26,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.commons.lang3.time.DurationFormatUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +48,7 @@ import sadl.constants.KdeKernelFunction;
 import sadl.constants.MergeTest;
 import sadl.constants.ProbabilityAggregationMethod;
 import sadl.constants.ScalingMethod;
+import sadl.constants.TauEstimation;
 import sadl.detectors.AnomalyDetector;
 import sadl.detectors.VectorDetector;
 import sadl.detectors.featureCreators.FeatureCreator;
@@ -56,9 +59,12 @@ import sadl.detectors.threshold.AggregatedThresholdDetector;
 import sadl.detectors.threshold.FullThresholdDetector;
 import sadl.experiments.ExperimentResult;
 import sadl.interfaces.ModelLearner;
+import sadl.interfaces.TauEstimator;
 import sadl.modellearner.PdttaLearner;
 import sadl.oneclassclassifier.LibSvmClassifier;
 import sadl.oneclassclassifier.clustering.DbScanClassifier;
+import sadl.tau_estimation.IdentityEstimator;
+import sadl.tau_estimation.MonteCarloEstimator;
 import sadl.utils.MasterSeed;
 import sadl.utils.Settings;
 
@@ -164,6 +170,15 @@ public class NewSmacPipeline implements Serializable {
 	@Parameter(names = "-dbScanN")
 	private int dbscan_n;
 
+	@Parameter(names = "-tauEstimation")
+	TauEstimation tauEstimation = TauEstimation.DENSITY;
+
+	@Parameter(names = "-mcNumberOfSteps")
+	int mcNumberOfSteps = 1000;
+
+	@Parameter(names = "-mcPointsToStore")
+	int mcPointsToStore = 10000;
+
 	/**
 	 * @param args
 	 * @throws IOException
@@ -219,6 +234,8 @@ public class NewSmacPipeline implements Serializable {
 		if (debug) {
 			Settings.setDebug(debug);
 		}
+		final StopWatch sw = new StopWatch();
+		sw.start();
 		if (featureCreatorMethod == FeatureCreatorMethod.FULL_FEATURE_CREATOR) {
 			featureCreator = new FullFeatureCreator();
 		} else if (featureCreatorMethod == FeatureCreatorMethod.SMALL_FEATURE_CREATOR) {
@@ -231,7 +248,7 @@ public class NewSmacPipeline implements Serializable {
 		if (detectorMethod == DetectorMethod.SVM) {
 			anomalyDetector = new VectorDetector(aggType, featureCreator,
 					new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu,
-					svmKernelType, svmEps, svmDegree, scalingMethod));
+							svmKernelType, svmEps, svmDegree, scalingMethod));
 			// pdttaDetector = new PdttaOneClassSvmDetector(aggType, featureCreator, svmProbabilityEstimate, svmGamma, svmNu, svmCosts, svmKernelType, svmEps,
 			// svmDegree, scalingMethod);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_AGG_ONLY) {
@@ -259,12 +276,24 @@ public class NewSmacPipeline implements Serializable {
 		} else if (kdeKernelFunctionQualifier == KdeKernelFunction.ESTIMATE) {
 			kdeKernelFunction = null;
 		}
-		final ModelLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0);
+		TauEstimator tauEstimator;
+		if (tauEstimation == TauEstimation.DENSITY) {
+			tauEstimator = new IdentityEstimator();
+		} else if (tauEstimation == TauEstimation.MONTE_CARLO) {
+			tauEstimator = new MonteCarloEstimator(mcNumberOfSteps, mcPointsToStore);
+		} else {
+			tauEstimator = null;
+		}
+
+		final ModelLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0,
+				tauEstimator);
 		final AnomalyDetection detection = new AnomalyDetection(anomalyDetector, learner);
 		final ExperimentResult result = detection.trainTest(dataString);
 		System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - result.getFMeasure()) + ", 0");
 		// IoUtils.xmlSerialize(automaton, Paths.get("pdtta.xml"));
 		// automaton = (PDTTA) IoUtils.xmlDeserialize(Paths.get("pdtta.xml"));
+		sw.stop();
+		logger.info("The whole process took: {}", DurationFormatUtils.formatDurationHMS(sw.getTime()));
 		return result;
 	}
 

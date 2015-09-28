@@ -1,8 +1,10 @@
 package sadl.integration;
 
+import java.io.Serializable;
 import java.util.Comparator;
 
-public class MonteCarloPoint implements Comparable<MonteCarloPoint> {
+public class MonteCarloPoint implements Comparable<MonteCarloPoint>, Serializable {
+	private static final long serialVersionUID = -9038714832199550481L;
 	double x;
 	double pdfValue;
 	int sampleCount;
@@ -54,4 +56,42 @@ public class MonteCarloPoint implements Comparable<MonteCarloPoint> {
 	public int getSampleCount() {
 		return sampleCount;
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		long temp;
+		temp = Double.doubleToLongBits(pdfValue);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + sampleCount;
+		temp = Double.doubleToLongBits(x);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final MonteCarloPoint other = (MonteCarloPoint) obj;
+		if (Double.doubleToLongBits(pdfValue) != Double.doubleToLongBits(other.pdfValue)) {
+			return false;
+		}
+		if (sampleCount != other.sampleCount) {
+			return false;
+		}
+		if (Double.doubleToLongBits(x) != Double.doubleToLongBits(other.x)) {
+			return false;
+		}
+		return true;
+	}
+
 }

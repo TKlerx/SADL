@@ -4,6 +4,13 @@ detectorMethod {SVM,DBSCAN,THRESHOLD_ALL,THRESHOLD_AGG_ONLY} [SVM]
 kdeBandwidth [0,1000] [0]
 kdeKernelFunction {BIWEIGHT, EPANECHNIKOV, GAUSS, TRIWEIGHT, UNIFORM, ESTIMATE} [ESTIMATE]
 smoothingPrior [0,1] [0]
+tauEstimation {DENSITY,MONTE_CARLO} [MONTE_CARLO]
+
+mcNumberOfSteps [10,1000000] [1000]i
+mcNumberOfSteps | tauEstimation in {MONTE_CARLO}
+
+mcPointsToStore [10,1000000] [10000]i
+mcPointsToStore | tauEstimation in {MONTE_CARLO}
 
 recursiveMergeTest {true,false} [false]
 recursiveMergeTest | mergeTest in {ALERGIA,CHI_SQUARED, LR, EXACT_M,BINOMIAL,EXACT_B}

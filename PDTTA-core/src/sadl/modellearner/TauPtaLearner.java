@@ -11,24 +11,22 @@
 
 package sadl.modellearner;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.map.TIntIntMap;
-import gnu.trove.map.TObjectIntMap;
-import gnu.trove.map.hash.TIntIntHashMap;
-import gnu.trove.map.hash.TObjectIntHashMap;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jsat.distributions.ContinuousDistribution;
-import jsat.distributions.empirical.kernelfunc.KernelFunction;
-
 import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.map.TIntIntMap;
+import gnu.trove.map.TObjectIntMap;
+import gnu.trove.map.hash.TIntIntHashMap;
+import gnu.trove.map.hash.TObjectIntHashMap;
+import jsat.distributions.ContinuousDistribution;
+import jsat.distributions.empirical.kernelfunc.KernelFunction;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.models.TauPTA;
@@ -180,5 +178,6 @@ public class TauPtaLearner extends PdttaLearner {
 		// add final state count
 		finalStateCount.adjustOrPutValue(currentState, 1, 1);
 	}
+
 
 }

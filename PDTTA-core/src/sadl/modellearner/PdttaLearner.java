@@ -11,13 +11,15 @@
 
 package sadl.modellearner;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.array.TDoubleArrayList;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
 import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.MyDistributionSearch;
 import jsat.distributions.SingleValueDistribution;
@@ -25,14 +27,11 @@ import jsat.distributions.empirical.MyKernelDensityEstimator;
 import jsat.distributions.empirical.kernelfunc.KernelFunction;
 import jsat.linear.DenseVector;
 import jsat.linear.Vec;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import sadl.constants.MergeTest;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.ModelLearner;
+import sadl.interfaces.TauEstimator;
 import sadl.models.PDFA;
 import sadl.models.PDTTA;
 import sadl.structure.Transition;
@@ -48,25 +47,32 @@ public class PdttaLearner implements ModelLearner {
 	KernelFunction kdeKernelFunction;
 	double kdeBandwidth;
 	private final PdfaLearner pdfaLearner;
+	private final TauEstimator tauEstimatior;
 
 	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest) {
 		this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest), null, 0);
 	}
 
-	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth) {
-		this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest), kdeKernelFunction, kdeBandwidth);
+	public PdttaLearner(PdfaLearner pdfaLearner, KernelFunction kdeKernelFunction, double kdeBandwidth) {
+		this(pdfaLearner, kdeKernelFunction, kdeBandwidth, null);
 	}
 
-	public PdttaLearner(PdfaLearner pdfaLearner, KernelFunction kdeKernelFunction, double kdeBandwidth) {
+	public PdttaLearner(PdfaLearner pdfaLearner, KernelFunction kdeKernelFunction, double kdeBandwidth, TauEstimator tauEstimation) {
 		this.kdeKernelFunction = kdeKernelFunction;
 		this.kdeBandwidth = kdeBandwidth;
 		this.pdfaLearner = pdfaLearner;
+		this.tauEstimatior = tauEstimation;
+	}
+
+	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
+			TauEstimator tauEstimation) {
+		this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest, mergeTest), kdeKernelFunction, kdeBandwidth, tauEstimation);
 	}
 
 	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest) {
-		this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest, mergeTest), kdeKernelFunction, kdeBandwidth);
-
+		this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest, mergeTest), kdeKernelFunction, kdeBandwidth, null);
 	}
+
 	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
 			double smoothingPrior) {
 		this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest, mergeTest, smoothingPrior), kdeKernelFunction, kdeBandwidth);
@@ -74,8 +80,15 @@ public class PdttaLearner implements ModelLearner {
 	}
 
 	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
-			double smoothingPrior, int mergeT0) {
-		this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest, mergeTest, smoothingPrior, mergeT0), kdeKernelFunction, kdeBandwidth);
+			double smoothingPrior, TauEstimator tauEstimatior) {
+		this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest, mergeTest, smoothingPrior), kdeKernelFunction, kdeBandwidth, tauEstimatior);
+
+	}
+
+
+	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
+			double smoothingPrior, int mergeT0, TauEstimator tauEstimation) {
+		this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest, mergeTest, smoothingPrior, mergeT0), kdeKernelFunction, kdeBandwidth, tauEstimation);
 
 	}
 
@@ -94,9 +107,10 @@ public class PdttaLearner implements ModelLearner {
 		final PDTTA pdtta;
 		final PDFA pdfa = pdfaLearner.train(trainingSequences);
 		try {
+
 			final Map<ZeroProbTransition, TDoubleList> timeValueBuckets = fillTimeValueBuckets(pdfa, trainingSequences);
 			final Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions = fit(timeValueBuckets);
-			pdtta = new PDTTA(pdfa, transitionDistributions);
+			pdtta = new PDTTA(pdfa, transitionDistributions, tauEstimatior);
 			pdtta.setAlphabet(trainingSequences);
 			pdtta.makeImmutable();
 			return pdtta;

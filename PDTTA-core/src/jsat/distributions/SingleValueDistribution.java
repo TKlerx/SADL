@@ -16,10 +16,10 @@ package jsat.distributions;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.math3.util.Precision;
+
 import jsat.linear.Vec;
 import jsat.utils.Pair;
-
-import org.apache.commons.math3.util.Precision;
 
 /**
  * 
@@ -28,10 +28,7 @@ import org.apache.commons.math3.util.Precision;
  */
 public class SingleValueDistribution extends ContinuousDistribution {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 557528557730663203L;
+	private static final long serialVersionUID = -2496629406230963851L;
 	private double value;
 
 	public SingleValueDistribution(double value) {
@@ -60,6 +57,7 @@ public class SingleValueDistribution extends ContinuousDistribution {
 	public double invCdf(double p) {
 		return value;
 	}
+
 	@Override
 	public double min() {
 		return value;
@@ -69,8 +67,6 @@ public class SingleValueDistribution extends ContinuousDistribution {
 	public double max() {
 		return value;
 	}
-
-
 
 	@Override
 	public String getDescriptiveName() {
