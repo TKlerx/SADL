@@ -11,15 +11,6 @@
 
 package sadl.models;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TDoubleArrayList;
-import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.map.TIntDoubleMap;
-import gnu.trove.map.hash.TIntDoubleHashMap;
-import gnu.trove.set.TIntSet;
-import gnu.trove.set.hash.TIntHashSet;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -36,9 +27,6 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 
-import jsat.distributions.ContinuousDistribution;
-import jsat.distributions.Distribution;
-
 import org.apache.commons.math3.exception.MathArithmeticException;
 import org.apache.commons.math3.fraction.BigFraction;
 import org.apache.commons.math3.util.Pair;
@@ -46,6 +34,16 @@ import org.apache.commons.math3.util.Precision;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.map.TIntDoubleMap;
+import gnu.trove.map.hash.TIntDoubleHashMap;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
+import jsat.distributions.ContinuousDistribution;
+import jsat.distributions.Distribution;
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.ClassLabel;
 import sadl.input.TimedInput;
@@ -359,7 +357,7 @@ public class PDTTAold implements AutomatonModel, Serializable {
 			result = getFinalTransition(currentState);
 		} else {
 			for (final Transition t : transitions) {
-				if (t.getFromState() == currentState && t.getSymbol() == event) {
+				if (t.getFromState() == currentState && t.getSymbol().equals(event)) {
 					if (result != null) {
 						logger.error("Found more than one transition for state " + currentState + " and event " + event);
 					}
@@ -448,13 +446,13 @@ public class PDTTAold implements AutomatonModel, Serializable {
 	}
 
 	/**
-	 * Returns all outgoing probabilities from the given state
+	 * Returns all outgoing transitions from the given state
 	 * 
 	 * @param currentState
 	 *            the given state
 	 * @param includeStoppingTransition
 	 *            whether to include final transition probabilities
-	 * @return
+	 * @return the outgoing transitions
 	 */
 	protected List<Transition> getTransitions(int currentState, boolean includeStoppingTransition) {
 		final List<Transition> result = new ArrayList<>();

@@ -98,9 +98,6 @@ public class SmacRun {
 	@Parameter(names = "-probabilityAggregationMethod")
 	ProbabilityAggregationMethod aggType = ProbabilityAggregationMethod.NORMALIZED_MULTIPLY;
 
-	@Parameter(names = "-svmCosts")
-	double svmCosts;
-
 	@Parameter(names = "-svmNu")
 	double svmNu;
 
@@ -165,7 +162,7 @@ public class SmacRun {
 		}
 		if (detectorMethod == DetectorMethod.SVM) {
 			anomalyDetector = new VectorDetector(aggType, featureCreator,
-					new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu, svmCosts, svmKernelType, svmEps, svmDegree, scalingMethod));
+					new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu, svmKernelType, svmEps, svmDegree, scalingMethod));
 			// pdttaDetector = new PdttaOneClassSvmDetector(aggType, featureCreator, svmProbabilityEstimate, svmGamma, svmNu, svmCosts, svmKernelType, svmEps,
 			// svmDegree, scalingMethod);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_AGG_ONLY) {

@@ -11,19 +11,6 @@
 
 package sadl.models;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TDoubleArrayList;
-import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.map.TIntIntMap;
-import gnu.trove.map.TObjectDoubleMap;
-import gnu.trove.map.TObjectIntMap;
-import gnu.trove.map.hash.TIntIntHashMap;
-import gnu.trove.map.hash.TObjectDoubleHashMap;
-import gnu.trove.map.hash.TObjectIntHashMap;
-import gnu.trove.set.TIntSet;
-import gnu.trove.set.hash.TIntHashSet;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,6 +25,23 @@ import java.util.function.IntUnaryOperator;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.SerializationUtils;
+import org.apache.commons.math3.util.Precision;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.map.TIntIntMap;
+import gnu.trove.map.TObjectDoubleMap;
+import gnu.trove.map.TObjectIntMap;
+import gnu.trove.map.hash.TIntIntHashMap;
+import gnu.trove.map.hash.TObjectDoubleHashMap;
+import gnu.trove.map.hash.TObjectIntHashMap;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
 import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.Distribution;
 import jsat.distributions.MyDistributionSearch;
@@ -45,12 +49,6 @@ import jsat.distributions.SingleValueDistribution;
 import jsat.distributions.empirical.MyKernelDensityEstimator;
 import jsat.linear.DenseVector;
 import jsat.linear.Vec;
-
-import org.apache.commons.lang3.SerializationUtils;
-import org.apache.commons.math3.util.Precision;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.ClassLabel;
 import sadl.detectors.AnomalyDetector;
@@ -305,7 +303,8 @@ public class TauPTA extends PDTTA {
 
 	public void makeAbnormal(AnomalyInsertionType newAnomalyType) {
 		if (this.anomalyType != AnomalyInsertionType.NONE) {
-			logger.error("A TauPTA can only have one type of anomaly. This one already has AnomalyInsertionType {}, which should be overridden with {}",
+			logger.error(
+					"A TauPTA can only have one type of anomaly. This one already has AnomalyInsertionType {}, which should be overwritten with {}. The overwriting was not done!",
 					this.anomalyType, anomalyType);
 			return;
 		}
@@ -313,13 +312,20 @@ public class TauPTA extends PDTTA {
 		setAnomalyType(newAnomalyType);
 		if (anomalyType == AnomalyInsertionType.TYPE_ONE) {
 			logger.debug("TransitionCount before inserting {} anomalies={}", anomalyType, getTransitionCount());
+			// choose a random state on every height and modify the symbol of an outgoing transition of that state to another random symbol
 			insertPerLevelAnomaly(this::computeTransitionCandicatesType13, this::changeTransitionEvent);
 			logger.debug("TransitionCount after inserting {} anomalies={}", anomalyType, getTransitionCount());
 		} else if (anomalyType == AnomalyInsertionType.TYPE_TWO) {
+			// label the k least probable paths as anomaly (every transition on the path is labeled as abnormal)
+			// TODO remove these k least probable paths from the pta that is used for sampling normal data
 			insertSequentialAnomaly(this::insertAnomaly2);
 		} else if (anomalyType == AnomalyInsertionType.TYPE_THREE) {
+			// choose a random state on every height and modify its time probability drastically (the modification of the time values is only done when sampling
+			// them)
 			insertPerLevelAnomaly(this::computeTransitionCandicatesType13, this::changeTimeProbability);
 		} else if (anomalyType == AnomalyInsertionType.TYPE_FOUR) {
+			// choose the k most probable sequences and modify every time value for every transition on the path slightly (the modification of the time values
+			// is only done when sampling them)
 			insertSequentialAnomaly(this::insertAnomaly4);
 		} else if (anomalyType == AnomalyInsertionType.TYPE_FIVE) {
 			insertPerLevelAnomaly(this::computeTransitionCandicatesType5, this::addFinalStateProbability);
@@ -401,6 +407,7 @@ public class TauPTA extends PDTTA {
 			probabilities.add(probability);
 			currentState = t.getToState();
 		}
+		probabilities.add(getFinalStateProbability(currentState));
 		return AnomalyDetector.aggregate(probabilities);
 		// return product(probabilities);
 	}
@@ -453,7 +460,7 @@ public class TauPTA extends PDTTA {
 
 	private int addFinalStateProbability(List<Transition> possibleTransitions) {
 		if (possibleTransitions.size() == 0) {
-			logger.warn("Chose states which do not have . Inserting a time anomaly is not possible.Transitions:{}", possibleTransitions);
+			logger.warn("Chose states which do not have transitions. Inserting a stopping anomaly is not possible. Transitions:{}", possibleTransitions);
 			return -1;
 		}
 		// only add if there was no final state transition before
@@ -472,12 +479,18 @@ public class TauPTA extends PDTTA {
 		final TIntList states = getStates(height);
 		for (int i = 0; i < states.size(); i++) {
 			final int state = states.get(i);
-			final List<Transition> possibleTransitions = getTransitions(state, true);
-			if (!possibleTransitions.stream().anyMatch(t -> t.isStopTraversingTransition() && t.getProbability() > 0)) {
-				// just add one transition which contains the state
-				result.add(possibleTransitions.get(0));
+			if (state == PDTTA.START_STATE) {
+				logger.info("Won't insert a stopping anomaly for the root node");
+				continue;
 			} else {
-				logger.debug("Filtered the state {} that already has a final state", state);
+				final List<Transition> possibleTransitions = getTransitions(state, true);
+				// check whether there is no real stopping transition in the current state
+				if (!possibleTransitions.stream().anyMatch(t -> t.isStopTraversingTransition() && t.getProbability() > 0)) {
+					// just add one transition which contains the state
+					result.add(possibleTransitions.get(0));
+				} else {
+					logger.debug("Filtered the state {} that already has a final state", state);
+				}
 			}
 		}
 		if (result.size() == 0) {
@@ -498,7 +511,9 @@ public class TauPTA extends PDTTA {
 			logger.warn("Chose states on height {} which are leaf states. Inserting a anomalies is not possible.", height);
 		}
 		if (result.size() == 1) {
-			return Collections.EMPTY_LIST;
+			// return an empty list if there is only one transition that is leading to the next level in the tree
+			// there must always be a normal path, because o/w a path from this height on is always abnormal
+			return Collections.emptyList();
 		}
 		return result;
 	}
@@ -507,15 +522,15 @@ public class TauPTA extends PDTTA {
 		final TIntSet currentStates = new TIntHashSet(possibleTransitions.stream().mapToInt(t -> t.getFromState()).distinct().toArray());
 		while (currentStates.size() > 0) {
 			final Transition chosenTransition = chooseRandomObject(possibleTransitions, r);
-			final int chosenState = chosenTransition.getFromState();
-			final List<Transition> stateTransitions = possibleTransitions.stream().filter(t -> t.getFromState() == chosenState).collect(Collectors.toList());
+			final int chosenFromState = chosenTransition.getFromState();
+			final List<Transition> stateTransitions = possibleTransitions.stream().filter(t -> t.getFromState() == chosenFromState).collect(Collectors.toList());
 			final List<String> notOccuringEvents = new ArrayList<>(Arrays.asList(alphabet.getSymbols()));
 			for (final Transition t : stateTransitions) {
 				notOccuringEvents.remove(t.getSymbol());
 			}
 			if (notOccuringEvents.size() == 0 || stateTransitions.size() == 0) {
-				logger.warn("Not possible to change an event in state {}", chosenState);
-				currentStates.remove(chosenState);
+				logger.warn("Not possible to change an event in state {}", chosenFromState);
+				currentStates.remove(chosenFromState);
 				continue;
 			} else {
 				final String chosenEvent = notOccuringEvents.get(r.nextInt(notOccuringEvents.size()));

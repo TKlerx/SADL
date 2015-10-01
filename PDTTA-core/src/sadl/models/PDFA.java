@@ -11,13 +11,6 @@
 
 package sadl.models;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.array.TDoubleArrayList;
-import gnu.trove.map.TIntDoubleMap;
-import gnu.trove.map.hash.TIntDoubleHashMap;
-import gnu.trove.set.TIntSet;
-import gnu.trove.set.hash.TIntHashSet;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -40,6 +33,12 @@ import org.apache.commons.math3.util.Precision;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.map.TIntDoubleMap;
+import gnu.trove.map.hash.TIntDoubleHashMap;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.ClassLabel;
 import sadl.input.TimedInput;
@@ -196,29 +195,31 @@ public class PDFA implements AutomatonModel, Serializable {
 	}
 
 	public PDFA(Path trebaPath, TimedInput trainingSequences) throws IOException {
-		final BufferedReader inputReader = Files.newBufferedReader(trebaPath, StandardCharsets.UTF_8);
-		this.alphabet = trainingSequences;
-		String line = "";
-		// 172 172 3 0,013888888888888892
-		// from state ; to state ; symbol ; probability
-		while ((line = inputReader.readLine()) != null) {
-			final String[] lineSplit = line.split(" ");
-			if (lineSplit.length == 4) {
-				final int fromState = Integer.parseInt(lineSplit[0]);
-				final int toState = Integer.parseInt(lineSplit[1]);
-				final String symbol;
-				if(alphabet == null){
-					symbol = lineSplit[2];
-				}else{
-					symbol = trainingSequences.getSymbol(Integer.parseInt(lineSplit[2]));
+		try (BufferedReader inputReader = Files.newBufferedReader(trebaPath, StandardCharsets.UTF_8)) {
+			this.alphabet = trainingSequences;
+			String line = "";
+			// 172 172 3 0,013888888888888892
+			// from state ; to state ; symbol ; probability
+			while ((line = inputReader.readLine()) != null) {
+				final String[] lineSplit = line.split(" ");
+				if (lineSplit.length == 4) {
+					final int fromState = Integer.parseInt(lineSplit[0]);
+					final int toState = Integer.parseInt(lineSplit[1]);
+					final String symbol;
+					if(alphabet == null){
+						symbol = lineSplit[2];
+					}else{
+						symbol = trainingSequences.getSymbol(Integer.parseInt(lineSplit[2]));
+					}
+					final double probability = Double.parseDouble(lineSplit[3]);
+					addTransition(fromState, toState, symbol, probability);
+				} else if (lineSplit.length == 2) {
+					final int state = Integer.parseInt(lineSplit[0]);
+					final double finalProb = Double.parseDouble(lineSplit[1]);
+					addFinalState(state, finalProb);
 				}
-				final double probability = Double.parseDouble(lineSplit[3]);
-				addTransition(fromState, toState, symbol, probability);
-			} else if (lineSplit.length == 2) {
-				final int state = Integer.parseInt(lineSplit[0]);
-				final double finalProb = Double.parseDouble(lineSplit[1]);
-				addFinalState(state, finalProb);
 			}
+			inputReader.close();
 		}
 	}
 
@@ -277,72 +278,74 @@ public class PDFA implements AutomatonModel, Serializable {
 	}
 
 	public void toGraphvizFile(Path graphvizResult, boolean compressed, Map<String, String> idReplacement) throws IOException {
-		final BufferedWriter writer = Files.newBufferedWriter(graphvizResult, StandardCharsets.UTF_8);
-		writer.write("digraph G {\n");
-		// start states
-		writer.write("qi [shape = point ];");
-		// write states
-		for (final int state : finalStateProbabilities.keys()) {
-			writer.write(Integer.toString(state));
-			writer.write(" [shape=");
-			final boolean abnormal = getFinalTransition(state).isAbnormal();
-			final double finalProb = getFinalStateProbability(state);
-			if (finalProb > 0 || (compressed && finalProb > 0.01)) {
-				writer.write("double");
-			}
-			writer.write("circle");
-			if (abnormal) {
-				writer.write(", color=red");
-			}
-			if (finalProb > 0 || (compressed && finalProb > 0.01)) {
-				writer.write(", label=\"");
+		try (BufferedWriter writer = Files.newBufferedWriter(graphvizResult, StandardCharsets.UTF_8)) {
+			writer.write("digraph G {\n");
+			// start states
+			writer.write("qi [shape = point ];");
+			// write states
+			for (final int state : finalStateProbabilities.keys()) {
 				writer.write(Integer.toString(state));
-				writer.write("&#92;np= ");
-				writer.write(Double.toString(Precision.round(finalProb, 2)));
-				writer.write("\"");
+				writer.write(" [shape=");
+				final boolean abnormal = getFinalTransition(state).isAbnormal();
+				final double finalProb = getFinalStateProbability(state);
+				if (finalProb > 0 || (compressed && finalProb > 0.01)) {
+					writer.write("double");
+				}
+				writer.write("circle");
+				if (abnormal) {
+					writer.write(", color=red");
+				}
+				if (finalProb > 0 || (compressed && finalProb > 0.01)) {
+					writer.write(", label=\"");
+					writer.write(Integer.toString(state));
+					writer.write("&#92;np= ");
+					writer.write(Double.toString(Precision.round(finalProb, 2)));
+					writer.write("\"");
+				}
+				writer.write("];\n");
 			}
-			writer.write("];\n");
-		}
-		writer.write("qi -> 0;");
-		// write transitions
-		for (final Transition t : transitions) {
-			if (compressed && t.getProbability() <= 0.01) {
-				continue;
-			}
-			// 0 -> 0 [label=0.06];
-			writer.write(Integer.toString(t.getFromState()));
-			writer.write(" -> ");
-			writer.write(Integer.toString(t.getToState()));
-			writer.write(" [label=<");
-			if (idReplacement != null && idReplacement.containsKey(t.getSymbol())) {
-				writer.write(idReplacement.get(t.getSymbol()));
-			} else {
-				writer.write(t.getSymbol());
-			}
-			if (t.getProbability() > 0) {
-				writer.write(" p=");
-				writer.write(Double.toString(Precision.round(t.getProbability(), 2)));
-			}
-			if (t.isAbnormal()) {
-				writer.write("<BR/>");
-				writer.write("<FONT COLOR=\"red\">");
-				writer.write(Integer.toString(t.getAnomalyInsertionType().getTypeIndex()));
-				writer.write("</FONT>");
-			}
-			writer.write(">");
-			if (t.isAbnormal()) {
-				writer.write(" color=\"red\"");
-			}
-			writer.write(";];\n");
+			writer.write("qi -> 0;");
+			// write transitions
+			for (final Transition t : transitions) {
+				if (compressed && t.getProbability() <= 0.01) {
+					continue;
+				}
+				// 0 -> 0 [label=0.06];
+				writer.write(Integer.toString(t.getFromState()));
+				writer.write(" -> ");
+				writer.write(Integer.toString(t.getToState()));
+				writer.write(" [label=<");
+				if (idReplacement != null && idReplacement.containsKey(t.getSymbol())) {
+					writer.write(idReplacement.get(t.getSymbol()));
+				} else {
+					writer.write(t.getSymbol());
+				}
+				if (t.getProbability() > 0) {
+					writer.write(" p=");
+					writer.write(Double.toString(Precision.round(t.getProbability(), 2)));
+				}
+				if (t.isAbnormal()) {
+					writer.write("<BR/>");
+					writer.write("<FONT COLOR=\"red\">");
+					writer.write(Integer.toString(t.getAnomalyInsertionType().getTypeIndex()));
+					writer.write("</FONT>");
+				}
+				writer.write(">");
+				if (t.isAbnormal()) {
+					writer.write(" color=\"red\"");
+				}
+				writer.write(";];\n");
 
+			}
+			writer.write("}");
+			writer.flush();
+			writer.close();
 		}
-		writer.write("}");
-		writer.close();
 
 	}
 
 	public void toGraphvizFile(Path graphvizResult, boolean compressed) throws IOException {
-		toGraphvizFile(graphvizResult, compressed, Collections.EMPTY_MAP);
+		toGraphvizFile(graphvizResult, compressed, Collections.emptyMap());
 	}
 
 	public void addFinalState(int state, double probability) {

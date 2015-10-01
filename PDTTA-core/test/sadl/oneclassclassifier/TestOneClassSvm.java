@@ -18,6 +18,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.math3.util.Precision;
+
 import libsvm.svm;
 import libsvm.svm_model;
 import libsvm.svm_node;
@@ -41,7 +43,7 @@ public class TestOneClassSvm {
 		// feature should be at index 0
 		final TestOneClassSvm tester = new TestOneClassSvm();
 		// final WekaSvmClassifier wekaSvm = new WekaSvmClassifier(0, 0.2, 0.01, 1, 2, 0.001, 3, ScalingMethod.NORMALIZE);
-		final LibSvmClassifier libSvm = new LibSvmClassifier(0, 0.2, 0.01, 1, 2, 0.001, 3, ScalingMethod.NORMALIZE);
+		final LibSvmClassifier libSvm = new LibSvmClassifier(0, 0.2, 0.01, 2, 0.001, 3, ScalingMethod.NORMALIZE);
 		tester.createData();
 		// wekaSvm.train(train);
 		libSvm.train(train);
@@ -49,7 +51,7 @@ public class TestOneClassSvm {
 		final List<double[]> normalizedTrain = norm.train(train);
 		// List<double[]> normalizedTrain = train;
 
-		final svm_model model = tester.svmTrain(normalizedTrain, 0, 0.2, 0.01, 1, 2, 0.001, 3);
+		final svm_model model = tester.svmTrain(normalizedTrain, 0, 0.2, 0.01, 2, 0.001, 3);
 		System.out.println("testset");
 		int libSvmRightAnswer = 0;
 		int libSvmWrongAnswer = 0;
@@ -59,8 +61,6 @@ public class TestOneClassSvm {
 		int rightAnswer = 0;
 		// final boolean[] wekaTrainResult = wekaSvm.areAnomalies(train);
 		// final boolean[] wekaTestResult = wekaSvm.areAnomalies(test);
-		final boolean[] libSvmTrainResult = libSvm.areAnomalies(train);
-		countAnomalies(libSvmTrainResult);
 		// final boolean[] libSvmTestResult = libSvm.areAnomalies(test);
 
 		final List<double[]> normalizedTest = norm.normalize(test);
@@ -165,19 +165,6 @@ public class TestOneClassSvm {
 		// }
 	}
 
-	private static void countAnomalies(boolean[] libSvmTrainResult) {
-		int anomalies = 0;
-		int normals = 0;
-		for (int i = 0; i < libSvmTrainResult.length; i++) {
-			if (libSvmTrainResult[i]) {
-				anomalies++;
-			} else {
-				normals++;
-			}
-		}
-		System.out.println("Normals=" + normals + "; Anomalies=" + anomalies);
-	}
-
 	public void createData() {
 
 		for (int i = 0; i < TRAIN_SIZE; i++) {
@@ -192,7 +179,7 @@ public class TestOneClassSvm {
 	}
 
 	@SuppressWarnings("hiding")
-	private svm_model svmTrain(final List<double[]> train, int useProbability, double gamma, double nu, double costs, int kernelType, double eps, int degree) {
+	private svm_model svmTrain(final List<double[]> train, int useProbability, double gamma, double nu, int kernelType, double eps, int degree) {
 
 		final svm_problem prob = new svm_problem();
 		final int dataCount = train.size();
@@ -214,9 +201,11 @@ public class TestOneClassSvm {
 
 		final svm_parameter param = new svm_parameter();
 		param.probability = useProbability; // default 0
-		param.gamma = gamma;// 0.2;
+		if (!Precision.equals(gamma, 0))
+		{
+			param.gamma = gamma;// 0.2;
+		}
 		param.nu = nu;// 0.01; // precision/recall variable
-		param.C = costs;// 1;
 		param.svm_type = svm_parameter.ONE_CLASS;
 		param.kernel_type = kernelType;// svm_parameter.RBF;
 		param.cache_size = 2000;

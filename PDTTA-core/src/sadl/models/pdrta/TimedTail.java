@@ -11,12 +11,14 @@
 
 package sadl.models.pdrta;
 
+import java.io.Serializable;
+
 /**
  * 
  * @author Fabian Witter
  *
  */
-public class TimedTail implements Comparable<TimedTail> {
+public class TimedTail implements Comparable<TimedTail>, Serializable {
 
 	private final int wordIdx;
 	private final int tailIdx;

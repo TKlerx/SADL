@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -29,6 +28,8 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
 import sadl.input.TimedInput;
 import sadl.interfaces.Model;
 import sadl.interfaces.ModelLearner;
@@ -550,13 +551,13 @@ public class SimplePDRTALearner implements ModelLearner {
 		if (times.size() <= 2) {
 			return getToleranceFewSlots(in, minData);
 		}
-		final List<Double> diffs = new ArrayList<>(times.size() - 1);
+		final TDoubleList diffs = new TDoubleArrayList(times.size() - 1);
 		final Iterator<Integer> it = times.iterator();
 		if (it.hasNext()) {
 			int prev = it.next();
 			while (it.hasNext()) {
 				final int curr = it.next();
-				diffs.add((double) (curr - prev - 1));
+				diffs.add(curr - prev - 1);
 				prev = curr;
 			}
 		}
@@ -578,17 +579,17 @@ public class SimplePDRTALearner implements ModelLearner {
 		if (times.size() <= 2) {
 			return getToleranceFewSlots(in, minData);
 		}
-		final List<Double> diffs = new ArrayList<>(times.size() - 1);
+		final TDoubleList diffs = new TDoubleArrayList(times.size() - 1);
 		final Iterator<Integer> it = times.iterator();
 		if (it.hasNext()) {
 			int prev = it.next();
 			while (it.hasNext()) {
 				final int curr = it.next();
-				diffs.add((double) (curr - prev - 1));
+				diffs.add(curr - prev - 1);
 				prev = curr;
 			}
 		}
-		Collections.sort(diffs);
+		diffs.sort();
 		final double q1 = StatisticsUtil.calculateQ1(diffs, false);
 		final double q3 = StatisticsUtil.calculateQ3(diffs, false);
 		return (int) Math.floor(((q3 + (q3 - q1) * 1.5) / 2.0) + 1.0);

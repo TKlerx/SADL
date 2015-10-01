@@ -24,17 +24,19 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 
+import org.apache.commons.math3.util.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
+
 import jsat.distributions.empirical.kernelfunc.BiweightKF;
 import jsat.distributions.empirical.kernelfunc.EpanechnikovKF;
 import jsat.distributions.empirical.kernelfunc.GaussKF;
 import jsat.distributions.empirical.kernelfunc.KernelFunction;
 import jsat.distributions.empirical.kernelfunc.TriweightKF;
 import jsat.distributions.empirical.kernelfunc.UniformKF;
-
-import org.apache.commons.math3.util.Pair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import sadl.anomalydetecion.AnomalyDetection;
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.DetectorMethod;
@@ -62,9 +64,6 @@ import sadl.oneclassclassifier.clustering.DbScanClassifier;
 import sadl.utils.IoUtils;
 import sadl.utils.MasterSeed;
 import sadl.utils.Settings;
-
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
 
 /**
  * 
@@ -135,9 +134,6 @@ public class Pipeline implements Serializable {
 	ProbabilityAggregationMethod aggType = ProbabilityAggregationMethod.NORMALIZED_MULTIPLY;
 	@Parameter(names = "-anomalyInsertionType")
 	AnomalyInsertionType anomalyInsertionType = AnomalyInsertionType.ALL;
-
-	@Parameter(names = "-svmCosts")
-	double svmCosts;
 
 	@Parameter(names = "-svmNu")
 	double svmNu;
@@ -230,8 +226,9 @@ public class Pipeline implements Serializable {
 			featureCreator = null;
 		}
 		if (detectorMethod == DetectorMethod.SVM) {
-			pdttaDetector = new VectorDetector(aggType, featureCreator, new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu, svmCosts,
-					svmKernelType, svmEps, svmDegree, scalingMethod));
+			pdttaDetector = new VectorDetector(aggType, featureCreator,
+					new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu,
+							svmKernelType, svmEps, svmDegree, scalingMethod));
 			// pdttaDetector = new PdttaOneClassSvmDetector(aggType, featureCreator, svmProbabilityEstimate, svmGamma, svmNu, svmCosts, svmKernelType, svmEps,
 			// svmDegree, scalingMethod);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_AGG_ONLY) {
@@ -269,7 +266,8 @@ public class Pipeline implements Serializable {
 			trainInput = TimedInput.parse(trainFile);
 			testInput = TimedInput.parse(testFile);
 		}
-		final ModelLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0);
+		final ModelLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0,
+				null);
 		final Model model = learner.train(trainInput);
 		final AnomalyDetection detection = new AnomalyDetection(pdttaDetector, model);
 		final ExperimentResult result = detection.test(testInput);

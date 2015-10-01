@@ -32,15 +32,14 @@ public class PdttaOneClassSvmDetector extends VectorDetector implements Trainabl
 	 * @param useProbability
 	 * @param gamma
 	 * @param nu
-	 * @param costs
 	 * @param kernelType
 	 * @param eps
 	 * @param degree
 	 * @param scalingMethod
 	 */
-	public PdttaOneClassSvmDetector(ProbabilityAggregationMethod aggType, FeatureCreator fc, int useProbability, double gamma, double nu, double costs,
+	public PdttaOneClassSvmDetector(ProbabilityAggregationMethod aggType, FeatureCreator fc, int useProbability, double gamma, double nu,
 			int kernelType, double eps, int degree, ScalingMethod scalingMethod) {
-		super(aggType, fc, new LibSvmClassifier(useProbability, gamma, nu, costs, kernelType, eps, degree, scalingMethod));
+		super(aggType, fc, new LibSvmClassifier(useProbability, gamma, nu, kernelType, eps, degree, scalingMethod));
 	}
 
 }

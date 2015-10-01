@@ -90,23 +90,6 @@ public abstract class NumericClassifier implements OneClassClassifier {
 	}
 
 	@Override
-	public final boolean[] areAnomalies(List<double[]> testSamples) {
-		if (Settings.isDebug()) {
-			try {
-				IoUtils.writeToFile(testSamples, classificationTestFile);
-			} catch (final IOException e) {
-				logger.error("Unexpected exception", e);
-			}
-		}
-		final List<double[]> scaledSamples = scale(testSamples, false);
-		final boolean[] result = new boolean[scaledSamples.size()];
-		for (int i = 0; i < scaledSamples.size(); i++) {
-			result[i] = isOutlier(scaledSamples.get(i), true);
-		}
-		return result;
-	}
-
-	@Override
 	public final boolean isOutlier(double[] testSample) {
 		if (Settings.isDebug()) {
 			try {
