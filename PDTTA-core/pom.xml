@@ -17,8 +17,8 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<license.inceptionYear>2013</license.inceptionYear>
 		<github.global.server>github</github.global.server>
-		<run.mainclass>sadl.run.Pipeline</run.mainclass>
-		<run.mainpackage>sadl.run.Pipeline</run.mainpackage>
+		<run.mainclass>sadl.run.SADL</run.mainclass>
+		<run.mainpackage>sadl.run.SADL</run.mainpackage>
 	</properties>
 	<licenses>
 		<license>

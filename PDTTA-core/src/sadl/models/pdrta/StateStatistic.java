@@ -11,20 +11,19 @@
 
 package sadl.models.pdrta;
 
-import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.map.hash.TIntObjectHashMap;
-import gnu.trove.map.hash.TObjectDoubleHashMap;
-
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 
+import com.google.common.collect.Multimap;
+
+import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.map.hash.TIntObjectHashMap;
+import gnu.trove.map.hash.TObjectDoubleHashMap;
 import sadl.modellearner.rtiplus.SimplePDRTALearner;
 import sadl.modellearner.rtiplus.tester.LikelihoodValue;
-
-import com.google.common.collect.Multimap;
 
 /**
  * This class manages the time and symbol probabilities for a {@link PDRTAState} which are needed for calculating the Likelihood Ratio Test and anomaly
@@ -627,10 +626,11 @@ public class StateStatistic implements Serializable {
 		for (int i = 0; i < (pooled[0].size() - 1); i++) {
 			ratio += cr.calc(pooled[0].get(i), total1, pooled[1].get(i), total2);
 		}
+		// Minus 1 because sum of values is last item (not counting as parameter)
 		parameters = pooled[0].size() - 1;
 
 		// LRT_FIX : Thesis: parameters -1, Impl: parameters
-		parameters--;
+		// parameters--;
 
 		if (parameters >= 0) {
 			return new LikelihoodValue(ratio, parameters);
@@ -696,7 +696,7 @@ public class StateStatistic implements Serializable {
 		double top1 = v1 - expected1;
 		double top2 = v2 - expected2;
 
-		/* Yates correction for continuity */
+		// Yates correction for continuity
 		if (v1 < minData || v2 < minData) {
 			if (top1 < 0) {
 				top1 = -top1;
@@ -708,6 +708,7 @@ public class StateStatistic implements Serializable {
 			top2 -= 0.5;
 		}
 
+		// FIXME Check what happens if expected is 0 => Is NaN ok?
 		return ((top1 * top1) / expected1) + ((top2 * top2) / expected2);
 	}
 
@@ -845,17 +846,24 @@ public class StateStatistic implements Serializable {
 				addToMap(i, in, getTransProb(i, in));
 			}
 		}
-		symbolProbs = new double[symbolCount.length];
-		for (int i = 0; i < symbolCount.length; i++) {
-			symbolProbs[i] = (double) symbolCount[i] / (double) totalOutCount;
-		}
-		timeProbs = new double[histBarSizes.length];
-		for (int i = 0; i < histBarSizes.length; i++) {
-			timeProbs[i] = (double) timeCount[i] / (double) totalOutCount;
-		}
-		tailEndProb = getTailEndProb();
-		trainMode = false;
 
+		symbolProbs = new double[symbolCount.length];
+		timeProbs = new double[histBarSizes.length];
+		if (totalOutCount > 0) {
+			for (int i = 0; i < symbolCount.length; i++) {
+				symbolProbs[i] = (double) symbolCount[i] / (double) totalOutCount;
+			}
+			for (int i = 0; i < histBarSizes.length; i++) {
+				timeProbs[i] = (double) timeCount[i] / (double) totalOutCount;
+			}
+		} else {
+			Arrays.fill(symbolProbs, 0.0);
+			Arrays.fill(timeProbs, 0.0);
+		}
+
+		tailEndProb = getTailEndProb();
+
+		trainMode = false;
 		timeCount = null;
 		symbolCount = null;
 		totalOutCount = -1;

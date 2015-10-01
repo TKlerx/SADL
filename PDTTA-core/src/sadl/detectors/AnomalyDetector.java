@@ -144,20 +144,12 @@ public abstract class AnomalyDetector {
 	}
 
 	public void setModel(Model model) {
-		if (model instanceof PDTTA) {
-			logger.debug("Setting model to {}", model);
-			this.model = model;
-		} else {
-			throw new UnsupportedOperationException("This AnomalyDetector can only use PDTTAs for anomaly detection");
-		}
+		this.model = model;
 	}
-
-
-
 
 	public static double aggregate(TDoubleList list, ProbabilityAggregationMethod aggType) {
 		if (list.isEmpty()) {
-			return Double.NEGATIVE_INFINITY;
+			return Double.POSITIVE_INFINITY;
 		}
 		double result = -1;
 		if (aggType == ProbabilityAggregationMethod.MULTIPLY) {

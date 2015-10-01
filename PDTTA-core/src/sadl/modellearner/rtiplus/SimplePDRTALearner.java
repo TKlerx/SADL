@@ -389,7 +389,7 @@ public class SimplePDRTALearner implements ModelLearner {
 
 		final File f = new File(path);
 		final BufferedWriter bw = new BufferedWriter(new FileWriter(f));
-		a.toString(bw, 0.0, withInp);
+		a.toDOTLang(bw, 0.0, withInp);
 		bw.close();
 	}
 

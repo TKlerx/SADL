@@ -15,10 +15,10 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.PipedReader;
 import java.io.PipedWriter;
 import java.io.Reader;
@@ -148,8 +148,9 @@ public class IoUtils {
 	}
 
 	public static void serialize(Object o, Path path) throws IOException {
-		try (FileOutputStream fileOut = new FileOutputStream(path.toFile()); ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
+		try (OutputStream fileOut = Files.newOutputStream(path); ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
 			out.writeObject(o);
+			out.close();
 		}
 	}
 

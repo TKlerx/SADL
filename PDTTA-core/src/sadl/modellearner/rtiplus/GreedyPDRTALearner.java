@@ -14,12 +14,12 @@ package sadl.modellearner.rtiplus;
 import java.io.IOException;
 import java.util.NavigableSet;
 
+import com.google.common.collect.TreeMultimap;
+
 import sadl.input.TimedInput;
 import sadl.interfaces.Model;
 import sadl.models.pdrta.PDRTA;
 import sadl.models.pdrta.PDRTAInput;
-
-import com.google.common.collect.TreeMultimap;
 
 /**
  * 
@@ -31,7 +31,7 @@ public class GreedyPDRTALearner extends SimplePDRTALearner {
 	private final int maxMergesToSearch = 10;
 	private final int maxSplitsToSearch = 10;
 
-	public GreedyPDRTALearner(float sig, String histBins, OperationTesterType testerType, DistributionCheckType distrCheckType, String boolOps, String dir) {
+	public GreedyPDRTALearner(double sig, String histBins, OperationTesterType testerType, DistributionCheckType distrCheckType, String boolOps, String dir) {
 		super(sig, histBins, testerType, distrCheckType, boolOps, dir);
 	}
 
