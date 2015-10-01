@@ -20,8 +20,9 @@ import java.io.Serializable;
  */
 public class TimedTail implements Comparable<TimedTail>, Serializable {
 
-	private final int wordIdx;
-	private final int tailIdx;
+	private static final long serialVersionUID = 1358055456043720632L;
+
+	private final int wordIdx, tailIdx;
 
 	private final String symbol;
 	private final int timeDelay, symbolAlphIndex, histBarIndex;
@@ -59,6 +60,10 @@ public class TimedTail implements Comparable<TimedTail>, Serializable {
 		return symbolAlphIndex;
 	}
 
+	public String getSymbol() {
+		return symbol;
+	}
+
 	public int getHistBarIndex() {
 		return histBarIndex;
 	}
@@ -72,18 +77,43 @@ public class TimedTail implements Comparable<TimedTail>, Serializable {
 	}
 
 	@Override
-	public boolean equals(Object o) {
+	public int hashCode() {
 
-		if (o instanceof TimedTail) {
-			final TimedTail t = (TimedTail) o;
-			if (timeDelay == t.timeDelay && symbol == t.symbol && wordIdx == t.wordIdx && tailIdx == t.tailIdx) {
-				return true;
-			} else {
-				return false;
-			}
-		} else {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + symbolAlphIndex;
+		result = prime * result + tailIdx;
+		result = prime * result + timeDelay;
+		result = prime * result + wordIdx;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
 			return false;
 		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final TimedTail other = (TimedTail) obj;
+		if (symbolAlphIndex != other.symbolAlphIndex) {
+			return false;
+		}
+		if (tailIdx != other.tailIdx) {
+			return false;
+		}
+		if (timeDelay != other.timeDelay) {
+			return false;
+		}
+		if (wordIdx != other.wordIdx) {
+			return false;
+		}
+		return true;
 	}
 
 	@Override
@@ -94,9 +124,9 @@ public class TimedTail implements Comparable<TimedTail>, Serializable {
 		} else if (timeDelay < tail.timeDelay) {
 			return -1;
 		} else {
-			if (symbol.compareTo(tail.symbol) == 1) {
+			if (symbolAlphIndex > tail.symbolAlphIndex) {
 				return 1;
-			} else if (symbol.compareTo(tail.symbol) == -1) {
+			} else if (symbolAlphIndex < tail.symbolAlphIndex) {
 				return -1;
 			} else {
 				if (wordIdx > tail.wordIdx) {
