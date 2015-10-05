@@ -74,7 +74,7 @@ public abstract class NumericClassifier implements OneClassClassifier {
 					filter.setInputFormat(unscaledInstances);
 				}
 				final Instances scaledInstances = Filter.useFilter(unscaledInstances, filter);
-				final ArrayList<double[]> result = (ArrayList<double[]>) DatasetTransformationUtils.instancesToDoubles(scaledInstances, true);
+				final List<double[]> result = DatasetTransformationUtils.instancesToDoubles(scaledInstances, true);
 				return result;
 			} catch (final Exception e) {
 				logger.error("Unexpected exception", e);

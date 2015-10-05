@@ -115,6 +115,15 @@ public class NewSmacPipeline implements Serializable {
 	KdeKernelFunction kdeKernelFunctionQualifier;
 	KernelFunction kdeKernelFunction;
 
+	@Parameter(names = "-tauEstimation")
+	TauEstimation tauEstimation = TauEstimation.DENSITY;
+
+	@Parameter(names = "-mcNumberOfSteps")
+	int mcNumberOfSteps = 1000;
+
+	@Parameter(names = "-mcPointsToStore")
+	int mcPointsToStore = 10000;
+
 	// Detector parameters
 	@Parameter(names = "-aggregateSublists", arity = 1)
 	private final boolean aggregateSublists = false;
@@ -170,14 +179,7 @@ public class NewSmacPipeline implements Serializable {
 	@Parameter(names = "-dbScanN")
 	private int dbscan_n;
 
-	@Parameter(names = "-tauEstimation")
-	TauEstimation tauEstimation = TauEstimation.DENSITY;
 
-	@Parameter(names = "-mcNumberOfSteps")
-	int mcNumberOfSteps = 1000;
-
-	@Parameter(names = "-mcPointsToStore")
-	int mcPointsToStore = 10000;
 
 	/**
 	 * @param args

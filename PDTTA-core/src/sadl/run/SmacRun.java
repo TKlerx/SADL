@@ -16,9 +16,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -28,6 +28,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
 import sadl.anomalydetecion.AnomalyDetection;
+import sadl.constants.Algoname;
 import sadl.constants.DetectorMethod;
 import sadl.constants.DistanceMethod;
 import sadl.constants.FeatureCreatorMethod;
@@ -46,6 +47,7 @@ import sadl.interfaces.ModelLearner;
 import sadl.oneclassclassifier.LibSvmClassifier;
 import sadl.oneclassclassifier.clustering.DbScanClassifier;
 import sadl.run.factories.LearnerFactory;
+import sadl.run.factories.learn.PdttaFactory;
 import sadl.run.factories.learn.RTIFactory;
 
 public class SmacRun {
@@ -177,7 +179,7 @@ public class SmacRun {
 			anomalyDetector = null;
 		}
 
-		final Pair<String, Path> params = extractAlgoAndInput();
+		final Pair<Algoname, Path> params = extractAlgoAndInput();
 		final ModelLearner learner = getLearner(params.getLeft(), jc);
 		final AnomalyDetection detection = new AnomalyDetection(anomalyDetector, learner);
 		ExperimentResult result = null;
@@ -185,8 +187,7 @@ public class SmacRun {
 			result = detection.trainTest(params.getRight());
 		} catch (final IOException e) {
 			logger.error("Error when loading input from file!");
-			System.out.println("Result for SMAC: CRASHED, 0, 0, 0, 0");
-			System.exit(1);
+			smacErrorAbort();
 		}
 
 		// Can stay the same
@@ -211,45 +212,61 @@ public class SmacRun {
 
 	}
 
-	private Pair<String, Path> extractAlgoAndInput() {
+	private Pair<Algoname, Path> extractAlgoAndInput() {
 
-		// TODO This method really is not nice!
-		final Set<String> algos = new HashSet<>(Arrays.asList("rti+"));
+		final Set<String> algoNames = Arrays.stream(Algoname.values()).map(a -> a.name().toLowerCase()).collect(Collectors.toSet());
 
-		String algo = null;
+		Algoname algo = null;
 		Path input = null;
 		for (final String arg : mainParams) {
-			if (algos.contains(arg) && algo == null) {
-				algo = arg;
+			if (algoNames.contains(arg.toLowerCase()) && algo == null) {
+				namesLoop: for (final Algoname loopAlg : Algoname.values()) {
+					if (loopAlg.name().equalsIgnoreCase(arg)) {
+						algo = loopAlg;
+						break namesLoop;
+					}
+				}
 			} else if (arg.contains("/") && input == null) {
 				input = Paths.get(arg);
 			}
 		}
+		if (algo == null) {
+			logger.error("Algo not found for mainParams={}!", mainParams);
+			smacErrorAbort();
+		}
 		return Pair.of(algo, input);
 	}
 
-	private ModelLearner getLearner(String algoName, JCommander jc) {
+	private ModelLearner getLearner(Algoname algoName, JCommander jc) {
 
 		LearnerFactory lf = null;
 
 		switch (algoName) {
-		case "rti+":
+		case RTI:
 			lf = new RTIFactory();
+			break;
+		case PDTTA:
+			lf = new PdttaFactory();
 			break;
 			// TODO Add other learning algorithms
 		default:
-			logger.error("Wrong algo param!");
-			System.out.println("Result for SMAC: CRASHED, 0, 0, 0, 0");
-			System.exit(1);
+			logger.error("Unknown algo param {}!", algoName);
+			smacErrorAbort();
 			break;
 		}
 
 		final JCommander subjc = new JCommander(lf);
+		logger.debug("unknown options array for jcommander={}", Arrays.toString(jc.getUnknownOptions().toArray(new String[0])));
 		subjc.parse(jc.getUnknownOptions().toArray(new String[0]));
 
 		@SuppressWarnings("null")
 		final ModelLearner ml = lf.create();
 		return ml;
+	}
+
+	protected void smacErrorAbort() {
+		System.out.println("Result for SMAC: CRASHED, 0, 0, 0, 0");
+		System.exit(1);
 	}
 
 }

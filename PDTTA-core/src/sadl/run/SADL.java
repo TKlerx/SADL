@@ -48,6 +48,8 @@ public class SADL {
 			System.exit(1);
 		}
 
+		// FIXME parse MasterSeed
+
 		// final String[] reducedArgs = Arrays.copyOfRange(args, 1, args.length);
 
 		final SADL main = new SADL();

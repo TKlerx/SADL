@@ -11,12 +11,19 @@
 
 package sadl.run.factories;
 
+import com.beust.jcommander.JCommander;
+
 import sadl.interfaces.ModelLearner;
 
 public interface LearnerFactory {
 
 	@Deprecated
-	public ModelLearner create(String[] args);
+	public default ModelLearner create(String[] args) {
+		final JCommander jc = new JCommander(this);
+		jc.setAcceptUnknownOptions(true);
+		jc.parse(args);
+		return create();
+	}
 
 	public ModelLearner create();
 

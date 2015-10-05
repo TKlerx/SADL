@@ -11,7 +11,6 @@
 
 package sadl.run.factories.learn;
 
-import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
@@ -50,21 +49,6 @@ public class RTIFactory implements LearnerFactory {
 
 	@Parameter(names = "-steps", arity = 1)
 	String stepsDir = null;
-
-	@Override
-	public ModelLearner create(String[] args) {
-
-		final JCommander jc = new JCommander(this);
-		jc.setAcceptUnknownOptions(true);
-		jc.parse(args);
-		ModelLearner ml = null;
-		if (greedy) {
-			ml = new GreedyPDRTALearner(sig, hist, tester, distrCheck, boolOps, stepsDir);
-		} else {
-			ml = new SimplePDRTALearner(sig, hist, tester, distrCheck, boolOps, stepsDir);
-		}
-		return ml;
-	}
 
 	@Override
 	public ModelLearner create() {

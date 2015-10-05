@@ -9,10 +9,8 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.interfaces;
+package sadl.constants;
 
-import jsat.distributions.ContinuousDistribution;
-
-public interface TauEstimator {
-	public double estimateTau(ContinuousDistribution d, double timeValue);
+public enum Algoname {
+	RTI, PDTTA;
 }
