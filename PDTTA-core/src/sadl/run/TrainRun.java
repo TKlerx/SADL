@@ -93,11 +93,14 @@ public class TrainRun {
 
 		if (!smacMode) {
 			try {
-				Files.createDirectories(out.getParent());
-				// final BufferedWriter bw = Files.newBufferedWriter(out);
-				// ((PDRTA) m).toDOTLang(bw);
-				// TODO Fix train output
-				IoUtils.serialize(m, out);
+				final Path parent = out.getParent();
+				if (parent != null) {
+					Files.createDirectories(parent);
+					// final BufferedWriter bw = Files.newBufferedWriter(out);
+					// ((PDRTA) m).toDOTLang(bw);
+					// TODO Fix train output
+					IoUtils.serialize(m, out);
+				}
 			} catch (final IOException e) {
 				logger.error("Error when storing model in file!", e);
 			}

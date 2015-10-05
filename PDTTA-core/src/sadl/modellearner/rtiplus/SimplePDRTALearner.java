@@ -460,7 +460,7 @@ public class SimplePDRTALearner implements ModelLearner {
 		final NavigableMap<Integer, Collection<TimedTail>> tails = in.getTails().asMap();
 		final List<Integer> splits = new ArrayList<>();
 
-		if ((type.ordinal() - 1) % 2 == 1) {
+		if ((type.ordinal() - 1) % 2 != 0) {
 			// The types without border
 			final Iterator<Entry<Integer, Collection<TimedTail>>> it = tails.entrySet().iterator();
 			if (it.hasNext()) {
