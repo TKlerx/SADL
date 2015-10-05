@@ -173,6 +173,7 @@ public abstract class AnomalyDetector {
 				result += Math.log(list.get(i));
 			}
 			result /= list.size();
+			result = Math.exp(result);
 		} else if (aggType == ProbabilityAggregationMethod.NORMALIZED_MULTIPLY_UNSTABLE) {
 			result = 1;
 			for (int i = 0; i < list.size(); i++) {
