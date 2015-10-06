@@ -105,6 +105,10 @@ public abstract class AnomalyDetector {
 		final Pair<TDoubleList, TDoubleList> p = model.calculateProbabilities(s);
 		final TDoubleList eventLikelihoods = p.getKey();
 		final TDoubleList timeLikelihoods = p.getValue();
+		if (eventLikelihoods.size() < timeLikelihoods.size()) {
+			throw new IllegalStateException("There must be at least as many event likelihoods as time likelihoods, but there are not: "
+					+ eventLikelihoods.size() + " vs. " + timeLikelihoods.size());
+		}
 		return decide(eventLikelihoods, timeLikelihoods);
 	}
 

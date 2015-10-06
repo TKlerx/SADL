@@ -36,18 +36,19 @@ public class TrainValFileGenerator {
 		final Path inputFile = Paths.get("rti_input.txt");
 		final Random r = new Random();
 		final BufferedWriter[] writers = new BufferedWriter[10];
-		final BufferedReader br = Files.newBufferedReader(inputFile, StandardCharsets.UTF_8);
-		for(int i = 0;i<writers.length;i++){
-			writers[i]=Files.newBufferedWriter(outputPath.resolve("dataset_"+i+".txt"), StandardCharsets.UTF_8);
-		}
-		String line = "";
-		while((line = br.readLine())!=null){
-			final int index = r.nextInt(10);
-			writers[index].append(line);
-			writers[index].append('\n');
-		}
-		for(int i = 0;i<writers.length;i++){
-			writers[i].close();
+		try (BufferedReader br = Files.newBufferedReader(inputFile, StandardCharsets.UTF_8)) {
+			for(int i = 0;i<writers.length;i++){
+				writers[i]=Files.newBufferedWriter(outputPath.resolve("dataset_"+i+".txt"), StandardCharsets.UTF_8);
+			}
+			String line = "";
+			while((line = br.readLine())!=null){
+				final int index = r.nextInt(10);
+				writers[index].append(line);
+				writers[index].append('\n');
+			}
+			for(int i = 0;i<writers.length;i++){
+				writers[i].close();
+			}
 		}
 	}
 

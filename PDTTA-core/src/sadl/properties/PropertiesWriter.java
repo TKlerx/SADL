@@ -30,7 +30,6 @@ import sadl.constants.ProbabilityAggregationMethod;
  * @author Timo Klerx
  *
  */
-@SuppressWarnings("deprecation")
 public class PropertiesWriter {
 	public static final String TIME_THRESHOLD = "timeThreshold";
 	public static final String EVENT_THRESHOLD = "eventThreshold";
@@ -60,9 +59,10 @@ public class PropertiesWriter {
 				Files.createDirectory(configDir);
 			}
 			if (deleteOldFiles) {
-				final DirectoryStream<Path> dirStream = Files.newDirectoryStream(configDir, "*");
-				for (final Path p : dirStream) {
-					Files.delete(p);
+				try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(configDir, "*")) {
+					for (final Path p : dirStream) {
+						Files.delete(p);
+					}
 				}
 			}
 			int tempIndex = 0;

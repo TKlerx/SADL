@@ -13,7 +13,11 @@ package sadl.oneclassclassifier.clustering;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import jsat.DataSet;
+import jsat.SimpleDataSet;
 import jsat.classifiers.DataPoint;
 import jsat.clustering.MyDBSCAN;
 import jsat.linear.DenseVector;
@@ -22,10 +26,6 @@ import jsat.linear.VecPaired;
 import jsat.linear.distancemetrics.DistanceMetric;
 import jsat.linear.distancemetrics.EuclideanDistance;
 import jsat.linear.distancemetrics.ManhattanDistance;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import sadl.constants.DistanceMethod;
 import sadl.constants.ScalingMethod;
 import sadl.oneclassclassifier.NumericClassifier;
@@ -69,7 +69,7 @@ public class DbScanClassifier extends NumericClassifier {
 		// }
 
 		pointCats = new int[data.size()];
-		final DataSet dataSet = DatasetTransformationUtils.doublesToDataSet(data);
+		final DataSet<SimpleDataSet> dataSet = DatasetTransformationUtils.doublesToDataSet(data);
 		clusterResult = MyDBSCAN.createClusterListFromAssignmentArray(dbscan.cluster(dataSet, eps, n, pointCats), dataSet);
 		final int clusterCount = clusterResult.size();
 		logger.info("There are {} many clusters.", clusterCount);

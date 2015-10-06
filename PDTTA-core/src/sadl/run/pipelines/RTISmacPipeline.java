@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.run.smac;
+package sadl.run.pipelines;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -44,8 +44,6 @@ import sadl.detectors.featureCreators.FeatureCreator;
 import sadl.detectors.featureCreators.FullFeatureCreator;
 import sadl.detectors.featureCreators.MinimalFeatureCreator;
 import sadl.detectors.featureCreators.SmallFeatureCreator;
-import sadl.detectors.threshold.AggregatedThresholdDetector;
-import sadl.detectors.threshold.FullThresholdDetector;
 import sadl.experiments.ExperimentResult;
 import sadl.interfaces.Model;
 import sadl.interfaces.ModelLearner;
@@ -55,6 +53,8 @@ import sadl.modellearner.rtiplus.SimplePDRTALearner.DistributionCheckType;
 import sadl.modellearner.rtiplus.SimplePDRTALearner.OperationTesterType;
 import sadl.models.pdrta.PDRTA;
 import sadl.oneclassclassifier.LibSvmClassifier;
+import sadl.oneclassclassifier.OneClassClassifier;
+import sadl.oneclassclassifier.ThresholdClassifier;
 import sadl.oneclassclassifier.clustering.DbScanClassifier;
 import sadl.utils.MasterSeed;
 import sadl.utils.Settings;
@@ -64,6 +64,7 @@ import sadl.utils.Settings;
  * @author Fabian Witter
  *
  */
+@Deprecated
 public class RTISmacPipeline implements Serializable {
 	private static final long serialVersionUID = 4962328747559099050L;
 
@@ -160,13 +161,17 @@ public class RTISmacPipeline implements Serializable {
 	@Parameter(names = "-dbScanN")
 	private int dbscan_n;
 
+	private static final boolean abort = true;
+
 	/**
 	 * @param args
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException {
-
+		if (abort) {
+			throw new UnsupportedOperationException("This class is no longer supported! Use SADL main class with smac command");
+		}
 		final RTISmacPipeline sp = new RTISmacPipeline();
 		final JCommander jc = new JCommander(sp);
 		if (args.length < 4) {
@@ -212,6 +217,7 @@ public class RTISmacPipeline implements Serializable {
 
 	FeatureCreator featureCreator;
 	AnomalyDetector anomalyDetector;
+	OneClassClassifier classifier;
 
 	public ExperimentResult run() throws IOException, InterruptedException {
 		if (debug) {
@@ -227,22 +233,17 @@ public class RTISmacPipeline implements Serializable {
 			featureCreator = null;
 		}
 		if (detectorMethod == DetectorMethod.SVM) {
-			anomalyDetector = new VectorDetector(aggType, featureCreator,
-					new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu, svmKernelType, svmEps, svmDegree, scalingMethod));
-			// pdttaDetector = new PdttaOneClassSvmDetector(aggType, featureCreator, svmProbabilityEstimate, svmGamma, svmNu, svmCosts, svmKernelType, svmEps,
-			// svmDegree, scalingMethod);
+			classifier = new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu, svmKernelType, svmEps, svmDegree, scalingMethod);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_AGG_ONLY) {
-			anomalyDetector = new AggregatedThresholdDetector(aggType, aggregatedEventThreshold, aggregatedTimeThreshold, aggregateSublists);
+			classifier = new ThresholdClassifier(aggregatedEventThreshold, aggregatedTimeThreshold);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_ALL) {
-			anomalyDetector = new FullThresholdDetector(aggType, aggregatedEventThreshold, aggregatedTimeThreshold, aggregateSublists, singleEventThreshold,
-					singleTimeThreshold);
+			classifier = new ThresholdClassifier(aggregatedEventThreshold, aggregatedTimeThreshold, singleEventThreshold, singleTimeThreshold);
 		} else if (detectorMethod == DetectorMethod.DBSCAN) {
-			// pdttaDetector = new PdttaDbScanDetector(aggType, featureCreator, dbscan_eps, dbscan_n, distanceMethod, scalingMethod);
-			anomalyDetector = new VectorDetector(aggType, featureCreator, new DbScanClassifier(dbscan_eps, dbscan_n, dbScanDistanceMethod, scalingMethod));
+			classifier = new DbScanClassifier(dbscan_eps, dbscan_n, dbScanDistanceMethod, scalingMethod);
 		} else {
-			anomalyDetector = null;
+			classifier = null;
 		}
-
+		anomalyDetector = new VectorDetector(aggType, featureCreator, classifier);
 
 		final ModelLearner learner;
 		if (!greedy) {

@@ -11,9 +11,6 @@
 
 package sadl.input;
 
-import gnu.trove.map.TObjectIntMap;
-import gnu.trove.map.hash.TObjectIntHashMap;
-
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -31,6 +28,8 @@ import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.trove.map.TObjectIntMap;
+import gnu.trove.map.hash.TObjectIntHashMap;
 import sadl.constants.ClassLabel;
 
 /**
@@ -283,89 +282,89 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 			throws IOException {
 
 
-		final BufferedReader in = new BufferedReader(br);
+		try (BufferedReader in = new BufferedReader(br)) {
 
-		// Skip offset lines at the beginning of the file
-		int counter = 0;
-		while (counter < lineOffset) {
-			in.readLine();
-			counter++;
-		}
-
-		TimedWord word;
-		String symbol;
-		int timeDelay;
-		String line;
-		String[] splitWord;
-		String[] splitPair;
-		int lineCount = 0;
-		while ((line = in.readLine()) != null) {
-			if (line.isEmpty()) {
-				continue;
+			// Skip offset lines at the beginning of the file
+			int counter = 0;
+			while (counter < lineOffset) {
+				in.readLine();
+				counter++;
 			}
-			word = new TimedWord();
 
-			// Split and parse class label (if it exists)
-			splitWord = line.split(classSep, 2);
-			line = splitWord[0];
-			ClassLabel label;
-			if (splitWord.length == 2) {
-				switch (splitWord[1]) {
-				case "0":
-					label = ClassLabel.NORMAL;
-					break;
-				case "1":
-					label = ClassLabel.ANOMALY;
-					break;
-				default:
-					label = ClassLabel.NORMAL;
-					break;
+			TimedWord word;
+			String symbol;
+			int timeDelay;
+			String line;
+			String[] splitWord;
+			String[] splitPair;
+			int lineCount = 0;
+			while ((line = in.readLine()) != null) {
+				if (line.isEmpty()) {
+					continue;
 				}
-				word.setLabel(label);
-			}
+				word = new TimedWord();
 
-			// Remove sequence prefix
-			line = line.replaceAll(seqPrefix, "");
-
-			// Remove sequence postfix
-			line = line.replaceAll(seqPostfix, "");
-			if (!line.isEmpty()) {
-				// Parse sequence
-				splitWord = line.split(pairSep);
-				for (int i = 0; i < splitWord.length; i++) {
-					splitPair = splitWord[i].split(valueSep, 2);
-					if (splitPair.length < 2) {
-						final String errorMessage = "Pair \"" + splitWord[i] + "\" in line " + lineCount + " is in the wrong format. Separator \"" + valueSep
-								+ "\" not found!";
-						final IllegalArgumentException e = new IllegalArgumentException(errorMessage);
-						logger.error(errorMessage, e);
-						throw e;
+				// Split and parse class label (if it exists)
+				splitWord = line.split(classSep, 2);
+				line = splitWord[0];
+				ClassLabel label;
+				if (splitWord.length == 2) {
+					switch (splitWord[1]) {
+					case "0":
+						label = ClassLabel.NORMAL;
+						break;
+					case "1":
+						label = ClassLabel.ANOMALY;
+						break;
+					default:
+						label = ClassLabel.NORMAL;
+						break;
 					}
-					symbol = splitPair[0];
-					if (symbol.matches("\\W")) {
-						// Only characters, digits and underscores are allowed for
-						// event names ([a-zA-Z_0-9])
-						final String errorMessage = "Event name \"" + symbol + "\" in line " + lineCount + " contains forbidden characters. "
-								+ "Only [a-zA-Z_0-9] are allowed.";
-						final IllegalArgumentException e = new IllegalArgumentException(errorMessage);
-						logger.error(errorMessage, e);
-						throw e;
-					}
-					timeDelay = Integer.parseInt(splitPair[1].trim());
-					if (!alphabet.containsKey(symbol)) {
-						alphabet.put(symbol, alphabet.size());
-						alphabetRev.add(symbol);
-					}
-					// Use String in alphabet to avoid redundant event name
-					// instances in input
-					word.appendPair(alphabetRev.get(alphabet.get(symbol)), timeDelay);
+					word.setLabel(label);
 				}
+
+				// Remove sequence prefix
+				line = line.replaceAll(seqPrefix, "");
+
+				// Remove sequence postfix
+				line = line.replaceAll(seqPostfix, "");
+				if (!line.isEmpty()) {
+					// Parse sequence
+					splitWord = line.split(pairSep);
+					for (int i = 0; i < splitWord.length; i++) {
+						splitPair = splitWord[i].split(valueSep, 2);
+						if (splitPair.length < 2) {
+							final String errorMessage = "Pair \"" + splitWord[i] + "\" in line " + lineCount + " is in the wrong format. Separator \"" + valueSep
+									+ "\" not found!";
+							final IllegalArgumentException e = new IllegalArgumentException(errorMessage);
+							logger.error(errorMessage, e);
+							throw e;
+						}
+						symbol = splitPair[0];
+						if (symbol.matches("\\W")) {
+							// Only characters, digits and underscores are allowed for
+							// event names ([a-zA-Z_0-9])
+							final String errorMessage = "Event name \"" + symbol + "\" in line " + lineCount + " contains forbidden characters. "
+									+ "Only [a-zA-Z_0-9] are allowed.";
+							final IllegalArgumentException e = new IllegalArgumentException(errorMessage);
+							logger.error(errorMessage, e);
+							throw e;
+						}
+						timeDelay = Integer.parseInt(splitPair[1].trim());
+						if (!alphabet.containsKey(symbol)) {
+							alphabet.put(symbol, alphabet.size());
+							alphabetRev.add(symbol);
+						}
+						// Use String in alphabet to avoid redundant event name
+						// instances in input
+						word.appendPair(alphabetRev.get(alphabet.get(symbol)), timeDelay);
+					}
+				}
+				words.add(word);
+				lineCount++;
 			}
-			words.add(word);
-			lineCount++;
+			br.close();
 		}
-		br.close();
-		in.close();
 	}
 
 	/**

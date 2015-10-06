@@ -33,22 +33,22 @@ public class LibSvmBug {
 	 * @throws IOException
 	 */
 	public static void main(String[] args) throws IOException {
-		LibSvmBug bug = new LibSvmBug();
-		BufferedReader bw = Files.newBufferedReader(Paths.get("data.csv"), StandardCharsets.UTF_8);
-		String line = "";
-		List<double[]> trainingData = new ArrayList<>();
-		while ((line = bw.readLine()) != null) {
-			if (!line.isEmpty()) {
-				String[] split = line.split(",");
-				double[] row = new double[split.length];
-				for (int i = 0; i < split.length; i++) {
-					row[i] = Double.parseDouble(split[i]);
+		final LibSvmBug bug = new LibSvmBug();
+		try (BufferedReader bw = Files.newBufferedReader(Paths.get("data.csv"), StandardCharsets.UTF_8)) {
+			String line = "";
+			final List<double[]> trainingData = new ArrayList<>();
+			while ((line = bw.readLine()) != null) {
+				if (!line.isEmpty()) {
+					final String[] split = line.split(",");
+					final double[] row = new double[split.length];
+					for (int i = 0; i < split.length; i++) {
+						row[i] = Double.parseDouble(split[i]);
+					}
+					trainingData.add(row);
 				}
-				trainingData.add(row);
 			}
+			bug.train(trainingData);
 		}
-		bug.train(trainingData);
-
 	}
 
 	svm_model model;
@@ -73,30 +73,31 @@ public class LibSvmBug {
 
 	private svm_model svmTrain(final List<double[]> train) {
 		try (BufferedWriter bw = Files.newBufferedWriter(Paths.get("data.csv"), StandardCharsets.UTF_8)) {
-			for (double[] ds : train) {
+			for (final double[] ds : train) {
 				for (int i = 0; i < ds.length; i++) {
 
 					bw.append(Double.toString(ds[i]));
-					if (i < ds.length - 1)
+					if (i < ds.length - 1) {
 						bw.append(',');
+					}
 				}
 				bw.append('\n');
 			}
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			e.printStackTrace();
 		}
 
-		svm_problem prob = new svm_problem();
-		int dataCount = train.size();
+		final svm_problem prob = new svm_problem();
+		final int dataCount = train.size();
 		prob.y = new double[dataCount];
 		prob.l = dataCount;
 		prob.x = new svm_node[dataCount][];
 
 		for (int i = 0; i < dataCount; i++) {
-			double[] features = train.get(i);
+			final double[] features = train.get(i);
 			prob.x[i] = new svm_node[features.length - 1];
 			for (int j = 1; j < features.length; j++) {
-				svm_node node = new svm_node();
+				final svm_node node = new svm_node();
 				node.index = j;
 				node.value = features[j];
 				prob.x[i][j - 1] = node;
@@ -104,6 +105,7 @@ public class LibSvmBug {
 			prob.y[i] = +1;
 		}
 		@SuppressWarnings("hiding")
+		final
 		svm_model model = svm.svm_train(prob, param);
 
 		return model;
@@ -111,17 +113,17 @@ public class LibSvmBug {
 
 	public double evaluate(final double[] features, @SuppressWarnings("hiding") final svm_model model) {
 
-		svm_node[] nodes = new svm_node[features.length - 1];
+		final svm_node[] nodes = new svm_node[features.length - 1];
 		for (int i = 1; i < features.length; i++) {
-			svm_node node = new svm_node();
+			final svm_node node = new svm_node();
 			node.index = i;
 			node.value = features[i];
 
 			nodes[i - 1] = node;
 		}
 
-		int totalClasses = 2;
-		int[] labels = new int[totalClasses];
+		final int totalClasses = 2;
+		final int[] labels = new int[totalClasses];
 		svm.svm_get_labels(model, labels);
 		return svm.svm_predict(model, nodes);
 	}

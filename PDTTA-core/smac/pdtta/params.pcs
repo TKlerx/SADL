@@ -1,6 +1,6 @@
+#PDTTA parameters
 mergeAlpha [0,1] [0.05]
 mergeTest {ALERGIA,CHI_SQUARED, LR, EXACT_M,BINOMIAL,EXACT_B,MDI} [ALERGIA]
-detectorMethod {SVM,DBSCAN,THRESHOLD_ALL,THRESHOLD_AGG_ONLY} [SVM]
 kdeBandwidth [0,1000] [0]
 kdeKernelFunction {BIWEIGHT, EPANECHNIKOV, GAUSS, TRIWEIGHT, UNIFORM, ESTIMATE} [ESTIMATE]
 smoothingPrior [0,1] [0]
@@ -18,17 +18,23 @@ recursiveMergeTest | mergeTest in {ALERGIA,CHI_SQUARED, LR, EXACT_M,BINOMIAL,EXA
 mergeT0 [1,100] [3]i
 mergeT0 | mergeTest in {ALERGIA}
 
-featureCreator {FULL_FEATURE_CREATOR,SMALL_FEATURE_CREATOR} [FULL_FEATURE_CREATOR]
+#Detector parameters
+detectorMethod {SVM,DBSCAN,THRESHOLD_AGG_ONLY, THRESHOLD_ALL} [SVM]
+aggregateSublists {true,false} [false]
+
+featureCreator {FULL_FEATURE_CREATOR,SMALL_FEATURE_CREATOR,MINIMAL_FEATURE_CREATOR} [FULL_FEATURE_CREATOR]
 featureCreator | detectorMethod in {SVM,DBSCAN}
+{detectorMethod=THRESHOLD_AGG_ONLY,featureCreator=FULL_FEATURE_CREATOR}
+{detectorMethod=THRESHOLD_ALL,featureCreator=FULL_FEATURE_CREATOR}
 
 scalingMethod {NONE,NORMALIZE,STANDARDIZE} [NORMALIZE]
 scalingMethod | detectorMethod in {SVM,DBSCAN}
 
 aggregatedTimeThreshold [0,1] [0.0067]
-aggregatedTimeThreshold | detectorMethod in {THRESHOLD_ALL,THRESHOLD_AGG_ONLY}
+aggregatedTimeThreshold | detectorMethod in {THRESHOLD_AGG_ONLY,THRESHOLD_ALL }
 
 aggregatedEventThreshold [0,1] [0.00033]
-aggregatedEventThreshold | detectorMethod in {THRESHOLD_ALL,THRESHOLD_AGG_ONLY}
+aggregatedEventThreshold | detectorMethod in {THRESHOLD_AGG_ONLY,THRESHOLD_ALL}
 
 singleEventThreshold [0.0,1.0] [0.00001]
 singleEventThreshold | detectorMethod in {THRESHOLD_ALL}

@@ -20,6 +20,9 @@ import org.slf4j.LoggerFactory;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
+import sadl.run.commands.SmacRun;
+import sadl.run.commands.TestRun;
+import sadl.run.commands.TrainRun;
 import sadl.utils.Settings;
 
 /**

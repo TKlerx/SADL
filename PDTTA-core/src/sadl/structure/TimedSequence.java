@@ -11,11 +11,6 @@
 
 package sadl.structure;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TDoubleArrayList;
-import gnu.trove.list.array.TIntArrayList;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -27,6 +22,10 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.array.TIntArrayList;
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.ClassLabel;
 
@@ -201,18 +200,19 @@ public class TimedSequence {
 	 */
 	public static List<TimedSequence> parseTimedSequences(String timedInputTrainFile, boolean isRti, boolean containsClassLabels) throws IOException {
 		final List<TimedSequence> result = new ArrayList<>();
-		final BufferedReader br = Files.newBufferedReader(Paths.get(timedInputTrainFile), StandardCharsets.UTF_8);
+		try (BufferedReader br = Files.newBufferedReader(Paths.get(timedInputTrainFile), StandardCharsets.UTF_8)) {
 
-		String line = null;
-		if (isRti) {
-			// skip info with alphabet size
-			br.readLine();
-		}
-		while ((line = br.readLine()) != null) {
-			if (!line.trim().isEmpty()) {
-				result.add(new TimedSequence(line, isRti, containsClassLabels));
+			String line = null;
+			if (isRti) {
+				// skip info with alphabet size
+				br.readLine();
 			}
+			while ((line = br.readLine()) != null) {
+				if (!line.trim().isEmpty()) {
+					result.add(new TimedSequence(line, isRti, containsClassLabels));
+				}
+			}
+			return result;
 		}
-		return result;
 	}
 }

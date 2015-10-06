@@ -40,7 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sadl.input.TimedInput;
-import sadl.run.smac.SmacDataGenerator;
+import sadl.run.datagenerators.SmacDataGenerator;
 import weka.core.xml.XStream;
 
 /**
