@@ -22,6 +22,7 @@ import java.util.List;
  * 
  * @author Fabian Witter
  */
+@SuppressWarnings("all")
 public abstract class StatisticsUtilOld {
 
 	/**

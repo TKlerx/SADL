@@ -11,9 +11,6 @@
 
 package sadl.modellearner;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.array.TDoubleArrayList;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -26,6 +23,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
 import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.MyDistributionSearch;
 import jsat.distributions.SingleValueDistribution;
@@ -33,10 +35,6 @@ import jsat.distributions.empirical.MyKernelDensityEstimator;
 import jsat.distributions.empirical.kernelfunc.KernelFunction;
 import jsat.linear.DenseVector;
 import jsat.linear.Vec;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import sadl.constants.MergeTest;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
@@ -55,6 +53,7 @@ import treba.wfsa;
  * @author Timo Klerx
  *
  */
+@SuppressWarnings("all")
 public class PdttaLeanerOld implements ModelLearner {
 	double mergeAlpha;
 	MergeTest mergeTest = MergeTest.ALERGIA;

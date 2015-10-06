@@ -60,6 +60,7 @@ import sadl.utils.MasterSeed;
  * @author Timo Klerx
  *
  */
+@SuppressWarnings("all")
 public class PDTTAold implements AutomatonModel, Serializable {
 
 	protected static final int START_STATE = 0;
