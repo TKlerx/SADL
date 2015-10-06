@@ -53,7 +53,7 @@ import sadl.run.factories.learn.RTIFactory;
 public class SmacRun {
 
 	private enum QualityCriterion {
-		F_MEASURE, PRECISION, RECALL
+		F_MEASURE, PRECISION, RECALL, PHI_COEFFICIENT
 	}
 
 	private static final Logger logger = LoggerFactory.getLogger(SmacRun.class);
@@ -201,6 +201,9 @@ public class SmacRun {
 			break;
 		case RECALL:
 			qVal = result.getRecall();
+			break;
+		case PHI_COEFFICIENT:
+			qVal = result.getPhiCoefficient();
 			break;
 		default:
 			logger.error("Quality criterion not found!");
