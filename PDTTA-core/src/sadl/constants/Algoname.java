@@ -13,4 +13,13 @@ package sadl.constants;
 
 public enum Algoname {
 	RTI, PDTTA;
+
+	public static Algoname getAlgoname(String string) {
+		for (final Algoname loopAlg : Algoname.values()) {
+			if (loopAlg.name().equalsIgnoreCase(string)) {
+				return loopAlg;
+			}
+		}
+		return null;
+	}
 }

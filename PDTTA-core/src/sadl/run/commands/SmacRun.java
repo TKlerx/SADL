@@ -221,12 +221,7 @@ public class SmacRun {
 		Path input = null;
 		for (final String arg : mainParams) {
 			if (algoNames.contains(arg.toLowerCase()) && algo == null) {
-				namesLoop: for (final Algoname loopAlg : Algoname.values()) {
-					if (loopAlg.name().equalsIgnoreCase(arg)) {
-						algo = loopAlg;
-						break namesLoop;
-					}
-				}
+				algo = Algoname.getAlgoname(arg);
 			} else if (arg.contains("/") && input == null) {
 				input = Paths.get(arg);
 			}
