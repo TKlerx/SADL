@@ -9,22 +9,8 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.run.factories;
+package sadl.constants;
 
-import com.beust.jcommander.JCommander;
-
-import sadl.interfaces.ModelLearner;
-
-public interface LearnerFactory {
-
-	@Deprecated
-	public default ModelLearner create(String[] args) {
-		final JCommander jc = new JCommander(this);
-		jc.setAcceptUnknownOptions(true);
-		jc.parse(args);
-		return create();
-	}
-
-	public ModelLearner create();
-
+public enum Algoname {
+	RTI, PDTTA;
 }

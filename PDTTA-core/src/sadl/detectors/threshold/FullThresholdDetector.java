@@ -19,6 +19,7 @@ import sadl.constants.ProbabilityAggregationMethod;
  * @author Timo Klerx
  *
  */
+@Deprecated
 public class FullThresholdDetector extends AggregatedThresholdDetector {
 	double singleEventThreshold;
 	double singleTimeThreshold;
@@ -39,14 +40,14 @@ public class FullThresholdDetector extends AggregatedThresholdDetector {
 		double eventLikelihood;
 		for (int i = 0; i < eventLikelihoods.size(); i++) {
 			eventLikelihood = eventLikelihoods.get(i);
-			if (eventLikelihood < singleEventThreshold) {
+			if (eventLikelihood <= singleEventThreshold) {
 				return true;
 			}
 		}
 		double timeLikelihood;
 		for (int i = 0; i < timeLikelihoods.size(); i++) {
 			timeLikelihood = timeLikelihoods.get(i);
-			if (timeLikelihood < singleTimeThreshold) {
+			if (timeLikelihood <= singleTimeThreshold) {
 				return true;
 			}
 		}

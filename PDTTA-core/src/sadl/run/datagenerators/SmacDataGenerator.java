@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.run.smac;
+package sadl.run.datagenerators;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -27,9 +27,6 @@ import java.util.Random;
 import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
 
 import sadl.constants.AnomalyInsertionType;
 import sadl.input.TimedInput;
@@ -50,10 +47,6 @@ public class SmacDataGenerator implements Serializable {
 
 	private static final long serialVersionUID = -6230657726489919272L;
 
-	// just for parsing the one silly smac parameter
-	@Parameter()
-	private final List<String> rest = new ArrayList<>();
-
 	String dataString;
 
 	Path outputDir = Paths.get("output");
@@ -68,7 +61,6 @@ public class SmacDataGenerator implements Serializable {
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException {
 		final SmacDataGenerator sp = new SmacDataGenerator();
-		new JCommander(sp, args);
 		sp.dataString = args[0];
 		logger.info("Running {} with args={}", sp.getClass().getSimpleName(), Arrays.toString(args));
 		sp.run();
@@ -126,13 +118,13 @@ public class SmacDataGenerator implements Serializable {
 					final TimedInput trainset = new TimedInput(trainSequences);
 					final TimedInput testset = new TimedInput(testSequences);
 					final Path outputFile = outputDir.resolve(Paths.get(df.format(k) + "_smac_mix_type" + type.getTypeIndex() + ".txt"));
-					final BufferedWriter bw = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8);
-					trainset.toFile(bw, true);
-					bw.write('\n');
-					bw.write(TRAIN_TEST_SEP);
-					bw.write('\n');
-					testset.toFile(bw, true);
-					bw.close();
+					try (BufferedWriter bw = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
+						trainset.toFile(bw, true);
+						bw.write('\n');
+						bw.write(TRAIN_TEST_SEP);
+						bw.write('\n');
+						testset.toFile(bw, true);
+					}
 					logger.info("Wrote file #{} ({})", k, outputFile);
 					k++;
 				}

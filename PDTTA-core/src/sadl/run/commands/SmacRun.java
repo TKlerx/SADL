@@ -9,16 +9,16 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.run;
+package sadl.run.commands;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -28,6 +28,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
 import sadl.anomalydetecion.AnomalyDetection;
+import sadl.constants.Algoname;
 import sadl.constants.DetectorMethod;
 import sadl.constants.DistanceMethod;
 import sadl.constants.FeatureCreatorMethod;
@@ -39,19 +40,20 @@ import sadl.detectors.featureCreators.FeatureCreator;
 import sadl.detectors.featureCreators.FullFeatureCreator;
 import sadl.detectors.featureCreators.MinimalFeatureCreator;
 import sadl.detectors.featureCreators.SmallFeatureCreator;
-import sadl.detectors.threshold.AggregatedThresholdDetector;
-import sadl.detectors.threshold.FullThresholdDetector;
 import sadl.experiments.ExperimentResult;
 import sadl.interfaces.ModelLearner;
 import sadl.oneclassclassifier.LibSvmClassifier;
+import sadl.oneclassclassifier.OneClassClassifier;
+import sadl.oneclassclassifier.ThresholdClassifier;
 import sadl.oneclassclassifier.clustering.DbScanClassifier;
 import sadl.run.factories.LearnerFactory;
+import sadl.run.factories.learn.PdttaFactory;
 import sadl.run.factories.learn.RTIFactory;
 
 public class SmacRun {
 
 	private enum QualityCriterion {
-		F_MEASURE, PRECISION, RECALL
+		F_MEASURE, PRECISION, RECALL, PHI_COEFFICIENT
 	}
 
 	private static final Logger logger = LoggerFactory.getLogger(SmacRun.class);
@@ -134,6 +136,8 @@ public class SmacRun {
 	@Parameter(names = "-dbScanN")
 	private int dbscan_n;
 
+	private OneClassClassifier classifier;
+
 
 
 	@SuppressWarnings("null")
@@ -161,23 +165,19 @@ public class SmacRun {
 			featureCreator = null;
 		}
 		if (detectorMethod == DetectorMethod.SVM) {
-			anomalyDetector = new VectorDetector(aggType, featureCreator,
-					new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu, svmKernelType, svmEps, svmDegree, scalingMethod));
-			// pdttaDetector = new PdttaOneClassSvmDetector(aggType, featureCreator, svmProbabilityEstimate, svmGamma, svmNu, svmCosts, svmKernelType, svmEps,
-			// svmDegree, scalingMethod);
+			classifier = new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu, svmKernelType, svmEps, svmDegree, scalingMethod);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_AGG_ONLY) {
-			anomalyDetector = new AggregatedThresholdDetector(aggType, aggregatedEventThreshold, aggregatedTimeThreshold, aggregateSublists);
+			classifier = new ThresholdClassifier(aggregatedEventThreshold, aggregatedTimeThreshold);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_ALL) {
-			anomalyDetector = new FullThresholdDetector(aggType, aggregatedEventThreshold, aggregatedTimeThreshold, aggregateSublists, singleEventThreshold,
-					singleTimeThreshold);
+			classifier = new ThresholdClassifier(aggregatedEventThreshold, aggregatedTimeThreshold, singleEventThreshold, singleTimeThreshold);
 		} else if (detectorMethod == DetectorMethod.DBSCAN) {
-			// pdttaDetector = new PdttaDbScanDetector(aggType, featureCreator, dbscan_eps, dbscan_n, distanceMethod, scalingMethod);
-			anomalyDetector = new VectorDetector(aggType, featureCreator, new DbScanClassifier(dbscan_eps, dbscan_n, dbScanDistanceMethod, scalingMethod));
+			classifier = new DbScanClassifier(dbscan_eps, dbscan_n, dbScanDistanceMethod, scalingMethod);
 		} else {
-			anomalyDetector = null;
+			classifier = null;
 		}
+		anomalyDetector = new VectorDetector(aggType, featureCreator, classifier, aggregateSublists);
 
-		final Pair<String, Path> params = extractAlgoAndInput();
+		final Pair<Algoname, Path> params = extractAlgoAndInput();
 		final ModelLearner learner = getLearner(params.getLeft(), jc);
 		final AnomalyDetection detection = new AnomalyDetection(anomalyDetector, learner);
 		ExperimentResult result = null;
@@ -185,8 +185,7 @@ public class SmacRun {
 			result = detection.trainTest(params.getRight());
 		} catch (final IOException e) {
 			logger.error("Error when loading input from file!");
-			System.out.println("Result for SMAC: CRASHED, 0, 0, 0, 0");
-			System.exit(1);
+			smacErrorAbort();
 		}
 
 		// Can stay the same
@@ -201,6 +200,9 @@ public class SmacRun {
 		case RECALL:
 			qVal = result.getRecall();
 			break;
+		case PHI_COEFFICIENT:
+			qVal = result.getPhiCoefficient();
+			break;
 		default:
 			logger.error("Quality criterion not found!");
 			break;
@@ -211,45 +213,61 @@ public class SmacRun {
 
 	}
 
-	private Pair<String, Path> extractAlgoAndInput() {
+	private Pair<Algoname, Path> extractAlgoAndInput() {
 
-		// TODO This method really is not nice!
-		final Set<String> algos = new HashSet<>(Arrays.asList("rti+"));
+		final Set<String> algoNames = Arrays.stream(Algoname.values()).map(a -> a.name().toLowerCase()).collect(Collectors.toSet());
 
-		String algo = null;
+		Algoname algo = null;
 		Path input = null;
 		for (final String arg : mainParams) {
-			if (algos.contains(arg) && algo == null) {
-				algo = arg;
+			if (algoNames.contains(arg.toLowerCase()) && algo == null) {
+				namesLoop: for (final Algoname loopAlg : Algoname.values()) {
+					if (loopAlg.name().equalsIgnoreCase(arg)) {
+						algo = loopAlg;
+						break namesLoop;
+					}
+				}
 			} else if (arg.contains("/") && input == null) {
 				input = Paths.get(arg);
 			}
 		}
+		if (algo == null) {
+			logger.error("Algo not found for mainParams={}!", mainParams);
+			smacErrorAbort();
+		}
 		return Pair.of(algo, input);
 	}
 
-	private ModelLearner getLearner(String algoName, JCommander jc) {
+	private ModelLearner getLearner(Algoname algoName, JCommander jc) {
 
 		LearnerFactory lf = null;
 
 		switch (algoName) {
-		case "rti+":
+		case RTI:
 			lf = new RTIFactory();
+			break;
+		case PDTTA:
+			lf = new PdttaFactory();
 			break;
 			// TODO Add other learning algorithms
 		default:
-			logger.error("Wrong algo param!");
-			System.out.println("Result for SMAC: CRASHED, 0, 0, 0, 0");
-			System.exit(1);
+			logger.error("Unknown algo param {}!", algoName);
+			smacErrorAbort();
 			break;
 		}
 
 		final JCommander subjc = new JCommander(lf);
+		logger.debug("unknown options array for jcommander={}", Arrays.toString(jc.getUnknownOptions().toArray(new String[0])));
 		subjc.parse(jc.getUnknownOptions().toArray(new String[0]));
 
 		@SuppressWarnings("null")
 		final ModelLearner ml = lf.create();
 		return ml;
+	}
+
+	protected void smacErrorAbort() {
+		System.out.println("Result for SMAC: CRASHED, 0, 0, 0, 0");
+		System.exit(1);
 	}
 
 }

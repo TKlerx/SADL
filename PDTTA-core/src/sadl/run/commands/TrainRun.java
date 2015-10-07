@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.run;
+package sadl.run.commands;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -52,7 +52,7 @@ public class TrainRun {
 		this.smacMode = smacMode;
 	}
 
-	Model run(JCommander jc) {
+	public Model run(JCommander jc) {
 
 		LearnerFactory lf = null;
 

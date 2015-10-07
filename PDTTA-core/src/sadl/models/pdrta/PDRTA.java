@@ -62,28 +62,28 @@ public class PDRTA implements AutomatonModel, Serializable {
 		final TreeMultimap<Integer, String> stats = TreeMultimap.create();
 		final List<String> inputData = new ArrayList<>();
 
-		final BufferedReader br = new BufferedReader(new FileReader(file));
-		String line;
+		try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+			String line;
 
-		while ((line = br.readLine()) != null) {
-			if (line.matches("^// \\D.+")) {
-				inputData.add(line.substring(3));
-			} else if (line.matches("^// \\d.+")) {
-				line = line.substring(3);
-				final String start = line.split(" ", 2)[0];
-				final int idx = Integer.parseInt(start);
-				stats.put(idx, new String(line));
-			} else if (line.matches("^\\d.+")) {
-				final String start = line.split(" ", 2)[0];
-				final int idx = Integer.parseInt(start);
-				if (line.matches("^\\d+ \\[.+")) {
+			while ((line = br.readLine()) != null) {
+				if (line.matches("^// \\D.+")) {
+					inputData.add(line.substring(3));
+				} else if (line.matches("^// \\d.+")) {
+					line = line.substring(3);
+					final String start = line.split(" ", 2)[0];
+					final int idx = Integer.parseInt(start);
 					stats.put(idx, new String(line));
-				} else {
-					trans.put(idx, new String(line));
+				} else if (line.matches("^\\d.+")) {
+					final String start = line.split(" ", 2)[0];
+					final int idx = Integer.parseInt(start);
+					if (line.matches("^\\d+ \\[.+")) {
+						stats.put(idx, new String(line));
+					} else {
+						trans.put(idx, new String(line));
+					}
 				}
 			}
 		}
-		br.close();
 
 		final PDRTAInput in = PDRTAInput.parse(inputData);
 		return new PDRTA(trans, stats, in);

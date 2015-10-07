@@ -31,7 +31,6 @@ public class ExperimentResult {
 		this.falseNegatives = falseNegatives;
 		precision = (double) truePositives / (truePositives + falsePositives);
 		recall = (double) truePositives / (truePositives + falseNegatives);
-		fMeasure = 2 * precision * recall / (precision + recall);
 	}
 	double precision;
 	double recall;
@@ -91,10 +90,11 @@ public class ExperimentResult {
 	}
 
 	public double getFMeasure() {
-		if (Double.isNaN(fMeasure)) {
+		final double result = 2 * precision * recall / (precision + recall);
+		if (Double.isNaN(result)) {
 			return 0;
 		}
-		return fMeasure;
+		return result;
 	}
 
 	public int getTruePositives() {
@@ -201,6 +201,13 @@ public class ExperimentResult {
 			return false;
 		}
 		return true;
+	}
+
+	public double getPhiCoefficient() {
+		final double numerator = truePositives * trueNegatives - falsePositives * falseNegatives;
+		final double denominator = Math.sqrt(
+				(truePositives + falsePositives) * (truePositives + falseNegatives) * (trueNegatives + falsePositives) * (trueNegatives + falseNegatives));
+		return numerator / denominator;
 	}
 
 }

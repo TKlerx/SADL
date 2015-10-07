@@ -146,9 +146,9 @@ public class MyKernelDensityEstimator extends ContinuousDistribution
 		this.weights = Arrays.copyOf(weights, S.length());
 
 		// Probability is the X value, match is the weights - so that they can be sorted together.
-		final List<ProbailityMatch<Double>> sorter = new ArrayList<ProbailityMatch<Double>>(S.length());
+		final List<ProbailityMatch<Double>> sorter = new ArrayList<>(S.length());
 		for (int i = 0; i < S.length(); i++) {
-			sorter.add(new ProbailityMatch<Double>(S.get(i), weights[i]));
+			sorter.add(new ProbailityMatch<>(S.get(i), weights[i]));
 		}
 
 		Collections.sort(sorter);

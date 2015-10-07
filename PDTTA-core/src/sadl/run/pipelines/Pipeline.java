@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.run;
+package sadl.run.pipelines;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -70,6 +70,7 @@ import sadl.utils.Settings;
  * @author Timo Klerx
  *
  */
+@Deprecated
 public class Pipeline implements Serializable {
 	private static final long serialVersionUID = 4962328747559099050L;
 
@@ -163,12 +164,17 @@ public class Pipeline implements Serializable {
 	@Parameter(names = "-trainTestFile")
 	Path trainTestFile;
 
+	private static final boolean abort = true;
+
 	/**
 	 * @param args
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException {
+		if (abort) {
+			throw new UnsupportedOperationException("This class is no longer supported! Use SADL main class with smac command");
+		}
 		final Pipeline sp = new Pipeline();
 		final JCommander jc = new JCommander(sp);
 		if (args.length != 1) {

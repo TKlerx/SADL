@@ -24,6 +24,7 @@ import sadl.detectors.AnomalyDetector;
  * @author Timo Klerx
  *
  */
+@Deprecated
 public class AggregatedThresholdDetector extends AnomalyDetector {
 	private static Logger logger = LoggerFactory.getLogger(AggregatedThresholdDetector.class);
 

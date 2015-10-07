@@ -15,14 +15,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import jsat.DataSet;
 import jsat.SimpleDataSet;
 import jsat.classifiers.DataPoint;
 import jsat.linear.DenseVector;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instance;
@@ -100,13 +99,13 @@ public class DatasetTransformationUtils {
 		return result;
 	}
 
-	public static DataSet doublesToDataSet(List<double[]> doubleVectors) {
+	public static DataSet<SimpleDataSet> doublesToDataSet(List<double[]> doubleVectors) {
 		final List<DataPoint> dataPoints = new ArrayList<>(doubleVectors.size());
 		for (final double[] sample : doubleVectors) {
 			final DataPoint dp = new DataPoint(new DenseVector(sample));
 			dataPoints.add(dp);
 		}
-		final DataSet result = new SimpleDataSet(dataPoints);
+		final DataSet<SimpleDataSet> result = new SimpleDataSet(dataPoints);
 		return result;
 	}
 

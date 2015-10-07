@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.run.smac;
+package sadl.run.pipelines;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -26,48 +26,58 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.commons.lang3.time.DurationFormatUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
+import jsat.distributions.empirical.kernelfunc.BiweightKF;
+import jsat.distributions.empirical.kernelfunc.EpanechnikovKF;
+import jsat.distributions.empirical.kernelfunc.GaussKF;
+import jsat.distributions.empirical.kernelfunc.KernelFunction;
+import jsat.distributions.empirical.kernelfunc.TriweightKF;
+import jsat.distributions.empirical.kernelfunc.UniformKF;
 import sadl.anomalydetecion.AnomalyDetection;
 import sadl.constants.DetectorMethod;
 import sadl.constants.DistanceMethod;
 import sadl.constants.FeatureCreatorMethod;
+import sadl.constants.KdeKernelFunction;
+import sadl.constants.MergeTest;
 import sadl.constants.ProbabilityAggregationMethod;
 import sadl.constants.ScalingMethod;
+import sadl.constants.TauEstimation;
 import sadl.detectors.AnomalyDetector;
 import sadl.detectors.VectorDetector;
 import sadl.detectors.featureCreators.FeatureCreator;
 import sadl.detectors.featureCreators.FullFeatureCreator;
 import sadl.detectors.featureCreators.MinimalFeatureCreator;
 import sadl.detectors.featureCreators.SmallFeatureCreator;
-import sadl.detectors.threshold.AggregatedThresholdDetector;
-import sadl.detectors.threshold.FullThresholdDetector;
 import sadl.experiments.ExperimentResult;
-import sadl.interfaces.Model;
 import sadl.interfaces.ModelLearner;
-import sadl.modellearner.rtiplus.GreedyPDRTALearner;
-import sadl.modellearner.rtiplus.SimplePDRTALearner;
-import sadl.modellearner.rtiplus.SimplePDRTALearner.DistributionCheckType;
-import sadl.modellearner.rtiplus.SimplePDRTALearner.OperationTesterType;
-import sadl.models.pdrta.PDRTA;
+import sadl.interfaces.TauEstimator;
+import sadl.modellearner.PdttaLearner;
 import sadl.oneclassclassifier.LibSvmClassifier;
+import sadl.oneclassclassifier.OneClassClassifier;
+import sadl.oneclassclassifier.ThresholdClassifier;
 import sadl.oneclassclassifier.clustering.DbScanClassifier;
+import sadl.tau_estimation.IdentityEstimator;
+import sadl.tau_estimation.MonteCarloEstimator;
 import sadl.utils.MasterSeed;
 import sadl.utils.Settings;
 
 /**
  * 
- * @author Fabian Witter
+ * @author Timo Klerx
  *
  */
-public class RTISmacPipeline implements Serializable {
+@Deprecated
+public class NewSmacPipeline implements Serializable {
 	private static final long serialVersionUID = 4962328747559099050L;
 
-	private static Logger logger = LoggerFactory.getLogger(RTISmacPipeline.class);
+	private static Logger logger = LoggerFactory.getLogger(NewSmacPipeline.class);
 	// TODO move this to experiment project
 
 	String dataString;
@@ -81,33 +91,43 @@ public class RTISmacPipeline implements Serializable {
 	private Boolean bla;
 
 	@Parameter(names = "-debug")
-	boolean debug = false;
+	private final boolean debug = false;
 
-	// RTI+ Parameters
-	@Parameter(names = "-sig", required = true, arity = 1)
-	private double sig;
+	// PDTTA Parameters
+	@Parameter(names = "-mergeTest")
+	MergeTest mergeTest = MergeTest.ALERGIA;
 
-	@Parameter(names = "-hist", required = true, arity = 1)
-	private String hist;
+	@Parameter(names = "-mergeAlpha")
+	private double mergeAlpha;
 
-	@Parameter(names = "-greedy", arity = 0)
-	boolean greedy = false;
+	@Parameter(names = "-recursiveMergeTest", arity = 1)
+	private boolean recursiveMergeTest;
 
-	@Parameter(names = "-em", arity = 1)
-	OperationTesterType tester = OperationTesterType.LRT;
+	@Parameter(names = "-smoothingPrior")
+	double smoothingPrior = 0;
 
-	@Parameter(names = "-ida", arity = 1)
-	DistributionCheckType distrCheck = DistributionCheckType.DISABLED;
+	@Parameter(names = "-mergeT0")
+	int mergeT0 = 3;
 
-	@Parameter(names = "-bop", arity = 1)
-	String boolOps = "AAA";
+	@Parameter(names = "-kdeBandwidth")
+	double kdeBandwidth;
 
-	@Parameter(names = "-steps", arity = 1)
-	String stepsDir = null;
+	@Parameter(names = "-kdeKernelFunction")
+	KdeKernelFunction kdeKernelFunctionQualifier;
+	KernelFunction kdeKernelFunction;
+
+	@Parameter(names = "-tauEstimation")
+	TauEstimation tauEstimation = TauEstimation.DENSITY;
+
+	@Parameter(names = "-mcNumberOfSteps")
+	int mcNumberOfSteps = 1000;
+
+	@Parameter(names = "-mcPointsToStore")
+	int mcPointsToStore = 10000;
 
 	// Detector parameters
 	@Parameter(names = "-aggregateSublists", arity = 1)
-	boolean aggregateSublists = false;
+	private final boolean aggregateSublists = false;
 
 	@Parameter(names = "-aggregatedTimeThreshold")
 	private double aggregatedTimeThreshold;
@@ -160,21 +180,24 @@ public class RTISmacPipeline implements Serializable {
 	@Parameter(names = "-dbScanN")
 	private int dbscan_n;
 
+
+	private static final boolean abort = true;
 	/**
 	 * @param args
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException {
-
-		final RTISmacPipeline sp = new RTISmacPipeline();
+		if (abort) {
+			throw new UnsupportedOperationException("This class is no longer supported! Use SADL main class with smac command");
+		}
+		final NewSmacPipeline sp = new NewSmacPipeline();
 		final JCommander jc = new JCommander(sp);
 		if (args.length < 4) {
 			logger.error("Please provide the following inputs: [inputFile] 1 1 [Random Seed] [Parameter Arguments..]");
 			jc.usage();
 			System.exit(1);
 		}
-		jc.setAcceptUnknownOptions(true);
 		jc.parse(args);
 		sp.dataString = args[0];
 		logger.info("Running Generic Pipeline with args" + Arrays.toString(args));
@@ -213,10 +236,14 @@ public class RTISmacPipeline implements Serializable {
 	FeatureCreator featureCreator;
 	AnomalyDetector anomalyDetector;
 
+	private OneClassClassifier classifier;
+
 	public ExperimentResult run() throws IOException, InterruptedException {
 		if (debug) {
 			Settings.setDebug(debug);
 		}
+		final StopWatch sw = new StopWatch();
+		sw.start();
 		if (featureCreatorMethod == FeatureCreatorMethod.FULL_FEATURE_CREATOR) {
 			featureCreator = new FullFeatureCreator();
 		} else if (featureCreatorMethod == FeatureCreatorMethod.SMALL_FEATURE_CREATOR) {
@@ -227,38 +254,50 @@ public class RTISmacPipeline implements Serializable {
 			featureCreator = null;
 		}
 		if (detectorMethod == DetectorMethod.SVM) {
-			anomalyDetector = new VectorDetector(aggType, featureCreator,
-					new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu, svmKernelType, svmEps, svmDegree, scalingMethod));
-			// pdttaDetector = new PdttaOneClassSvmDetector(aggType, featureCreator, svmProbabilityEstimate, svmGamma, svmNu, svmCosts, svmKernelType, svmEps,
-			// svmDegree, scalingMethod);
+			classifier = new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu, svmKernelType, svmEps, svmDegree, scalingMethod);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_AGG_ONLY) {
-			anomalyDetector = new AggregatedThresholdDetector(aggType, aggregatedEventThreshold, aggregatedTimeThreshold, aggregateSublists);
+			classifier = new ThresholdClassifier(aggregatedEventThreshold, aggregatedTimeThreshold);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_ALL) {
-			anomalyDetector = new FullThresholdDetector(aggType, aggregatedEventThreshold, aggregatedTimeThreshold, aggregateSublists, singleEventThreshold,
-					singleTimeThreshold);
+			classifier = new ThresholdClassifier(aggregatedEventThreshold, aggregatedTimeThreshold, singleEventThreshold, singleTimeThreshold);
 		} else if (detectorMethod == DetectorMethod.DBSCAN) {
-			// pdttaDetector = new PdttaDbScanDetector(aggType, featureCreator, dbscan_eps, dbscan_n, distanceMethod, scalingMethod);
-			anomalyDetector = new VectorDetector(aggType, featureCreator, new DbScanClassifier(dbscan_eps, dbscan_n, dbScanDistanceMethod, scalingMethod));
+			classifier = new DbScanClassifier(dbscan_eps, dbscan_n, dbScanDistanceMethod, scalingMethod);
 		} else {
-			anomalyDetector = null;
+			classifier = null;
+		}
+		anomalyDetector = new VectorDetector(aggType, featureCreator, classifier);
+
+		if (kdeKernelFunctionQualifier == KdeKernelFunction.BIWEIGHT) {
+			kdeKernelFunction = BiweightKF.getInstance();
+		} else if (kdeKernelFunctionQualifier == KdeKernelFunction.EPANECHNIKOV) {
+			kdeKernelFunction = EpanechnikovKF.getInstance();
+		} else if (kdeKernelFunctionQualifier == KdeKernelFunction.GAUSS) {
+			kdeKernelFunction = GaussKF.getInstance();
+		} else if (kdeKernelFunctionQualifier == KdeKernelFunction.TRIWEIGHT) {
+			kdeKernelFunction = TriweightKF.getInstance();
+		} else if (kdeKernelFunctionQualifier == KdeKernelFunction.UNIFORM) {
+			kdeKernelFunction = UniformKF.getInstance();
+		} else if (kdeKernelFunctionQualifier == KdeKernelFunction.ESTIMATE) {
+			kdeKernelFunction = null;
+		}
+		TauEstimator tauEstimator;
+		if (tauEstimation == TauEstimation.DENSITY) {
+			tauEstimator = new IdentityEstimator();
+		} else if (tauEstimation == TauEstimation.MONTE_CARLO) {
+			tauEstimator = new MonteCarloEstimator(mcNumberOfSteps, mcPointsToStore);
+		} else {
+			tauEstimator = null;
 		}
 
-
-		final ModelLearner learner;
-		if (!greedy) {
-			learner = new SimplePDRTALearner(sig, hist, tester, distrCheck, boolOps, stepsDir);
-		} else {
-			learner = new GreedyPDRTALearner(sig, hist, tester, distrCheck, boolOps, stepsDir);
-		}
+		final ModelLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0,
+				tauEstimator);
 		final AnomalyDetection detection = new AnomalyDetection(anomalyDetector, learner);
-		final Model m = detection.train(Paths.get(dataString));
-		final PDRTA p = (PDRTA) m;
-		System.out.println(p.toString());
-		// final ExperimentResult result = detection.trainTest(dataString);
-		// System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - result.getFMeasure()) + ", 0");
+		final ExperimentResult result = detection.trainTest(dataString);
+		System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - result.getFMeasure()) + ", 0");
 		// IoUtils.xmlSerialize(automaton, Paths.get("pdtta.xml"));
 		// automaton = (PDTTA) IoUtils.xmlDeserialize(Paths.get("pdtta.xml"));
-		return null;
+		sw.stop();
+		logger.info("The whole process took: {}", DurationFormatUtils.formatDurationHMS(sw.getTime()));
+		return result;
 	}
 
 }

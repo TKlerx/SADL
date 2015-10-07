@@ -33,19 +33,38 @@ public class VectorDetector extends AnomalyDetector implements TrainableDetector
 
 	OneClassClassifier c;
 	FeatureCreator fc;
+	boolean aggSublists;
 
-	public VectorDetector(ProbabilityAggregationMethod aggType, FeatureCreator fc, OneClassClassifier c) {
+	public VectorDetector(ProbabilityAggregationMethod aggType, FeatureCreator featureCreator, OneClassClassifier classifier) {
+		this(aggType, featureCreator, classifier, false);
+	}
+
+	public VectorDetector(ProbabilityAggregationMethod aggType, FeatureCreator featureCreator, OneClassClassifier classifier, boolean aggregateSublists) {
 		super(aggType);
-		this.c = c;
-		this.fc = fc;
+		this.c = classifier;
+		this.fc = featureCreator;
+		this.aggSublists = aggregateSublists;
 	}
 
 	@Override
 	protected boolean decide(TDoubleList eventLikelihoods, TDoubleList timeLikelihoods) {
 		// TODO also use aggregateSublists in VectorDetector
 		// then also train with sublists!
-		final double[] vector = fc.createFeatures(eventLikelihoods, timeLikelihoods, aggType);
-		return c.isOutlier(vector);
+		if (aggSublists) {
+			// do sublists over timelikelihoods because the time list is shorter than the event list
+			for (int i = 1; i <= timeLikelihoods.size(); i++) {
+				final TDoubleList eventSubList = eventLikelihoods.subList(0, i);
+				final TDoubleList timeSubList = timeLikelihoods.subList(0, i);
+				final double[] vector = fc.createFeatures(eventSubList, timeSubList, aggType);
+				if (c.isOutlier(vector)) {
+					return true;
+				}
+			}
+			return false;
+		} else {
+			final double[] vector = fc.createFeatures(eventLikelihoods, timeLikelihoods, aggType);
+			return c.isOutlier(vector);
+		}
 	}
 
 	@Override
@@ -53,10 +72,19 @@ public class VectorDetector extends AnomalyDetector implements TrainableDetector
 		final List<double[]> trainingSet = new ArrayList<>(trainingInput.size());
 		for (final TimedWord s : trainingInput) {
 			final Pair<TDoubleList, TDoubleList> p = model.calculateProbabilities(s);
-			trainingSet.add(fc.createFeatures(p.getKey(), p.getValue(), aggType));
+			if (aggSublists) {
+				final TDoubleList eventLikelihoods = p.getKey();
+				final TDoubleList timeLikelihoods = p.getValue();
+				for (int i = 1; i <= timeLikelihoods.size(); i++) {
+					final TDoubleList eventSubList = eventLikelihoods.subList(0, i);
+					final TDoubleList timeSubList = timeLikelihoods.subList(0, i);
+					final double[] vector = fc.createFeatures(eventSubList, timeSubList, aggType);
+					trainingSet.add(vector);
+				}
+			} else {
+				trainingSet.add(fc.createFeatures(p.getKey(), p.getValue(), aggType));
+			}
 		}
 		c.train(trainingSet);
 	}
-
-
 }

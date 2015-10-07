@@ -388,9 +388,9 @@ public class SimplePDRTALearner implements ModelLearner {
 	private void write(PDRTA a, boolean withInp, String path) throws IOException {
 
 		final File f = new File(path);
-		final BufferedWriter bw = new BufferedWriter(new FileWriter(f));
-		a.toDOTLang(bw, 0.0, withInp);
-		bw.close();
+		try (BufferedWriter bw = new BufferedWriter(new FileWriter(f))) {
+			a.toDOTLang(bw, 0.0, withInp);
+		}
 	}
 
 	protected void persistFinalResult(PDRTA a) {

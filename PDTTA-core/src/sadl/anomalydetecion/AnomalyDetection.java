@@ -38,7 +38,7 @@ public class AnomalyDetection {
 	Model learnedModel;
 
 
-	public AnomalyDetector getPdttaDetector() {
+	public AnomalyDetector getAnomalyDetector() {
 		return anomalyDetector;
 	}
 
@@ -49,9 +49,9 @@ public class AnomalyDetection {
 	public Model getLearnedModel() {
 		return learnedModel;
 	}
-	public AnomalyDetection(AnomalyDetector pdttaDetector, ModelLearner learner) {
+	public AnomalyDetection(AnomalyDetector anomalyDetector, ModelLearner learner) {
 		super();
-		this.anomalyDetector = pdttaDetector;
+		this.anomalyDetector = anomalyDetector;
 		this.learner = learner;
 	}
 
