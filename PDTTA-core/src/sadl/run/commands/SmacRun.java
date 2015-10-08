@@ -53,7 +53,7 @@ import sadl.run.factories.learn.RTIFactory;
 public class SmacRun {
 
 	private enum QualityCriterion {
-		F_MEASURE, PRECISION, RECALL, PHI_COEFFICIENT
+		F_MEASURE, PRECISION, RECALL, ACCURACY, PHI_COEFFICIENT
 	}
 
 	private static final Logger logger = LoggerFactory.getLogger(SmacRun.class);
@@ -142,6 +142,7 @@ public class SmacRun {
 
 	@SuppressWarnings("null")
 	public void run(JCommander jc) {
+		logger.info("Starting new SmacRun with commands={}", jc.getUnknownOptions());
 
 		// TODO Try to use this again
 		// final Pair<TimedInput, TimedInput> inputs = IoUtils.readTrainTestFile(inputSeqs);
@@ -202,6 +203,9 @@ public class SmacRun {
 			break;
 		case PHI_COEFFICIENT:
 			qVal = result.getPhiCoefficient();
+			break;
+		case ACCURACY:
+			qVal = result.getAccuracy();
 			break;
 		default:
 			logger.error("Quality criterion not found!");

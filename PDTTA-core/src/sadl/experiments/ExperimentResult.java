@@ -210,4 +210,8 @@ public class ExperimentResult {
 		return numerator / denominator;
 	}
 
+	public double getAccuracy() {
+		return (double) truePositives + trueNegatives / (truePositives + trueNegatives + falsePositives + falseNegatives);
+	}
+
 }
