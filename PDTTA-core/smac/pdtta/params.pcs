@@ -20,10 +20,10 @@ mergeT0 | mergeTest in {ALERGIA}
 
 #Detector parameters
 detectorMethod {SVM,DBSCAN,THRESHOLD_AGG_ONLY, THRESHOLD_ALL} [SVM]
-aggregateSublists {true,false} [false]
+# Must be tested first!
+# aggregateSublists {true,false} [false] 
 
 featureCreator {FULL_FEATURE_CREATOR,SMALL_FEATURE_CREATOR,MINIMAL_FEATURE_CREATOR} [FULL_FEATURE_CREATOR]
-featureCreator | detectorMethod in {SVM,DBSCAN}
 {detectorMethod=THRESHOLD_AGG_ONLY,featureCreator=FULL_FEATURE_CREATOR}
 {detectorMethod=THRESHOLD_ALL,featureCreator=FULL_FEATURE_CREATOR}
 

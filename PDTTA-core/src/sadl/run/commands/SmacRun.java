@@ -143,6 +143,7 @@ public class SmacRun {
 	@SuppressWarnings("null")
 	public void run(JCommander jc) {
 		logger.info("Starting new SmacRun with commands={}", jc.getUnknownOptions());
+		// TODO log all quality metrics?! true pos, true neg, fp, fn, runtime, memory consuption (like in batchrunner with sigar) for every runs
 
 		// TODO Try to use this again
 		// final Pair<TimedInput, TimedInput> inputs = IoUtils.readTrainTestFile(inputSeqs);

@@ -49,16 +49,9 @@ public abstract class StatisticsUtilOld {
 	}
 
 	/**
-	 * 0: Minimum regular value<br>
-	 * 1: Q1<br>
-	 * 2: Median<br>
-	 * 3: Q3<br>
-	 * 4: Maximum regular value<br>
-	 * 5: Mean<br>
+	 * 0: Minimum regular value<br> 1: Q1<br> 2: Median<br> 3: Q3<br> 4: Maximum regular value<br> 5: Mean<br>
 	 * 
-	 * @param values
-	 * @param copyAndSort
-	 * @return
+	 * @param values @param copyAndSort @return bla
 	 */
 	public static double[] calculateBox(List<Double> values, boolean copyAndSort) {
 

@@ -180,7 +180,7 @@ public class PDFA implements AutomatonModel, Serializable {
 		} else {
 			final double adjusted = finalStateProbabilities.put(transition.getFromState(), newProbability);
 			if (Double.doubleToLongBits(adjusted) == Double.doubleToLongBits(finalStateProbabilities.getNoEntryValue())) {
-				logger.warn("Was not possible to adjust final state prob for transition {}", transition);
+				logger.warn("Was not possible to adjust final state prob for transition {} with new probability={}", transition, newProbability);
 			}
 		}
 	}
