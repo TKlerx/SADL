@@ -53,9 +53,17 @@ public class ThresholdClassifier implements OneClassClassifier {
 			final boolean singleResult = testSample[1] <= singleEventThreshold || testSample[4] <= singleTimeThreshold;
 			return aggResult || singleResult;
 		} else {
-			throw new IllegalStateException(
-					"Can only detect anomalies for feature creators minimal and small (vector has to have length 2 or 6), but this has length="
-							+ testSample.length);
+			String errorMessage = "";
+			if (testSample.length != 2 && testSample.length != 6) {
+				errorMessage =
+						"Can only detect anomalies for feature creators minimal and small (vector has to have length 2 or 6), but this has length="
+								+ testSample.length;
+			} else if (testSample.length == 2 && (!Double.isNaN(singleEventThreshold) || !Double.isNaN(singleTimeThreshold))) {
+				errorMessage = "Specified minimal feature creator but at the same time single event/time thresholds. This is not possible";
+			} else {
+				errorMessage = "The parameters of the ThresholdClassifier do not match as intended.";
+			}
+			throw new IllegalArgumentException(errorMessage);
 		}
 	}
 

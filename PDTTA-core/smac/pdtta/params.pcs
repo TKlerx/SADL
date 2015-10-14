@@ -23,18 +23,13 @@ detectorMethod {SVM,DBSCAN,THRESHOLD_AGG_ONLY, THRESHOLD_ALL} [SVM]
 # Must be tested first!
 # aggregateSublists {true,false} [false] 
 
-featureCreator {FULL_FEATURE_CREATOR,SMALL_FEATURE_CREATOR,MINIMAL_FEATURE_CREATOR} [FULL_FEATURE_CREATOR]
-{detectorMethod=THRESHOLD_AGG_ONLY,featureCreator=FULL_FEATURE_CREATOR}
-{detectorMethod=THRESHOLD_ALL,featureCreator=FULL_FEATURE_CREATOR}
 
-scalingMethod {NONE,NORMALIZE,STANDARDIZE} [NORMALIZE]
-scalingMethod | detectorMethod in {SVM,DBSCAN}
-
-aggregatedTimeThreshold [0,1] [0.0067]
-aggregatedTimeThreshold | detectorMethod in {THRESHOLD_AGG_ONLY,THRESHOLD_ALL }
-
+#Threshold parameters
 aggregatedEventThreshold [0,1] [0.00033]
 aggregatedEventThreshold | detectorMethod in {THRESHOLD_AGG_ONLY,THRESHOLD_ALL}
+
+aggregatedTimeThreshold [0,1] [0.0067]
+aggregatedTimeThreshold | detectorMethod in {THRESHOLD_AGG_ONLY,THRESHOLD_ALL}
 
 singleEventThreshold [0.0,1.0] [0.00001]
 singleEventThreshold | detectorMethod in {THRESHOLD_ALL}
@@ -42,6 +37,16 @@ singleEventThreshold | detectorMethod in {THRESHOLD_ALL}
 singleTimeThreshold [0.0,1.0] [0.00001]
 singleTimeThreshold | detectorMethod in {THRESHOLD_ALL}
 
+
+#vector detector parameters
+featureCreator {FULL_FEATURE_CREATOR,SMALL_FEATURE_CREATOR,MINIMAL_FEATURE_CREATOR} [FULL_FEATURE_CREATOR]
+featureCreator | detectorMethod in {SVM,DBSCAN}
+
+scalingMethod {NONE,NORMALIZE,STANDARDIZE} [NORMALIZE]
+scalingMethod | detectorMethod in {SVM,DBSCAN}
+
+
+#svm parameters
 svmNu[0,1] [0.1]
 svmNu| detectorMethod in {SVM}
 
@@ -60,9 +65,10 @@ svmDegree | detectorMethod in {SVM}
 svmProbabilityEstimate[0,1] [0]i
 svmProbabilityEstimate| detectorMethod in {SVM}
 
+
+#db scan paramters
 dbScanN[1,100] [5]i
 dbScanN | detectorMethod in {DBSCAN}
 
 dbScanEps[0,1] [0.05]
 dbScanEps | detectorMethod in {DBSCAN}
-
