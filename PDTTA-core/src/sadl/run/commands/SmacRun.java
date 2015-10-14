@@ -53,7 +53,7 @@ import sadl.run.factories.learn.RTIFactory;
 public class SmacRun {
 
 	private enum QualityCriterion {
-		F_MEASURE, PRECISION, RECALL, PHI_COEFFICIENT
+		F_MEASURE, PRECISION, RECALL, ACCURACY, PHI_COEFFICIENT
 	}
 
 	private static final Logger logger = LoggerFactory.getLogger(SmacRun.class);
@@ -119,10 +119,10 @@ public class SmacRun {
 	int svmProbabilityEstimate;
 
 	@Parameter(names = "-detectorMethod", description = "the anomaly detector method")
-	DetectorMethod detectorMethod = DetectorMethod.SVM;
+	DetectorMethod detectorMethod;
 
 	@Parameter(names = "-featureCreator")
-	FeatureCreatorMethod featureCreatorMethod = FeatureCreatorMethod.FULL_FEATURE_CREATOR;
+	FeatureCreatorMethod featureCreatorMethod;
 
 	@Parameter(names = "-scalingMethod")
 	ScalingMethod scalingMethod = ScalingMethod.NONE;
@@ -142,6 +142,8 @@ public class SmacRun {
 
 	@SuppressWarnings("null")
 	public void run(JCommander jc) {
+		logger.info("Starting new SmacRun with commands={}", jc.getUnknownOptions());
+		// TODO log all quality metrics?! true pos, true neg, fp, fn, runtime, memory consuption (like in batchrunner with sigar) for every runs
 
 		// TODO Try to use this again
 		// final Pair<TimedInput, TimedInput> inputs = IoUtils.readTrainTestFile(inputSeqs);
@@ -167,8 +169,20 @@ public class SmacRun {
 		if (detectorMethod == DetectorMethod.SVM) {
 			classifier = new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu, svmKernelType, svmEps, svmDegree, scalingMethod);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_AGG_ONLY) {
+			// only works with minimal feature creator
+			if (featureCreatorMethod != null && featureCreatorMethod != FeatureCreatorMethod.MINIMAL_FEATURE_CREATOR) {
+				throw new IllegalArgumentException(
+						"Please do only specify " + FeatureCreatorMethod.MINIMAL_FEATURE_CREATOR + " or no featureCreatorMethod for " + detectorMethod);
+			}
+			featureCreator = new MinimalFeatureCreator();
 			classifier = new ThresholdClassifier(aggregatedEventThreshold, aggregatedTimeThreshold);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_ALL) {
+			// only works with small feature creator
+			if (featureCreatorMethod != null && featureCreatorMethod != FeatureCreatorMethod.SMALL_FEATURE_CREATOR) {
+				throw new IllegalArgumentException(
+						"Please do only specify " + FeatureCreatorMethod.SMALL_FEATURE_CREATOR + " or no featureCreatorMethod for " + detectorMethod);
+			}
+			featureCreator = new SmallFeatureCreator();
 			classifier = new ThresholdClassifier(aggregatedEventThreshold, aggregatedTimeThreshold, singleEventThreshold, singleTimeThreshold);
 		} else if (detectorMethod == DetectorMethod.DBSCAN) {
 			classifier = new DbScanClassifier(dbscan_eps, dbscan_n, dbScanDistanceMethod, scalingMethod);
@@ -203,6 +217,9 @@ public class SmacRun {
 		case PHI_COEFFICIENT:
 			qVal = result.getPhiCoefficient();
 			break;
+		case ACCURACY:
+			qVal = result.getAccuracy();
+			break;
 		default:
 			logger.error("Quality criterion not found!");
 			break;
@@ -221,12 +238,7 @@ public class SmacRun {
 		Path input = null;
 		for (final String arg : mainParams) {
 			if (algoNames.contains(arg.toLowerCase()) && algo == null) {
-				namesLoop: for (final Algoname loopAlg : Algoname.values()) {
-					if (loopAlg.name().equalsIgnoreCase(arg)) {
-						algo = loopAlg;
-						break namesLoop;
-					}
-				}
+				algo = Algoname.getAlgoname(arg);
 			} else if (arg.contains("/") && input == null) {
 				input = Paths.get(arg);
 			}

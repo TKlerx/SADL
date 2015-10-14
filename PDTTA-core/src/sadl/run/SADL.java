@@ -45,51 +45,55 @@ public class SADL {
 	boolean debug = false;
 
 	public static void main(String[] args) {
+		try {
+			if (args.length < 1) {
+				logger.error("Not enough params!");
+				System.exit(1);
+			}
 
-		if (args.length < 1) {
-			logger.error("Not enough params!");
-			System.exit(1);
-		}
+			// FIXME parse MasterSeed
 
-		// FIXME parse MasterSeed
+			// final String[] reducedArgs = Arrays.copyOfRange(args, 1, args.length);
 
-		// final String[] reducedArgs = Arrays.copyOfRange(args, 1, args.length);
+			final SADL main = new SADL();
+			final JCommander jc = new JCommander(main);
+			jc.setAcceptUnknownOptions(true);
 
-		final SADL main = new SADL();
-		final JCommander jc = new JCommander(main);
-		jc.setAcceptUnknownOptions(true);
+			final TestRun testRun = new TestRun(false);
+			final TrainRun trainRun = new TrainRun(false);
+			final SmacRun smacRun = new SmacRun();
 
-		final TestRun testRun = new TestRun(false);
-		final TrainRun trainRun = new TrainRun(false);
-		final SmacRun smacRun = new SmacRun();
+			jc.addCommand(test, testRun);
+			jc.addCommand(train, trainRun);
+			jc.addCommand(smac, smacRun);
 
-		jc.addCommand(test, testRun);
-		jc.addCommand(train, trainRun);
-		jc.addCommand(smac, smacRun);
+			jc.parse(args);
 
-		jc.parse(args);
+			// TODO Debug param has to be in front of commands: JCommander specific
+			if (main.debug) {
+				Settings.setDebug(main.debug);
+			}
 
-		// TODO Debug param has to be in front of commands: JCommander specific
-		if (main.debug) {
-			Settings.setDebug(main.debug);
-		}
-
-		switch (jc.getParsedCommand()) {
-		case test:
-			testRun.run();
-			break;
-		case train:
-			trainRun.run(jc.getCommands().get(train));
-			break;
-		case smac:
-			smacRun.run(jc.getCommands().get(smac));
-			break;
-		default:
-			// TODO Print usage
-			logger.error("Wrong mode param!");
-			System.exit(1);
-			break;
-		}
+			switch (jc.getParsedCommand()) {
+			case test:
+				testRun.run();
+				break;
+			case train:
+				trainRun.run(jc.getCommands().get(train));
+				break;
+			case smac:
+				smacRun.run(jc.getCommands().get(smac));
+				break;
+			default:
+				// TODO Print usage
+				logger.error("Wrong mode param!");
+				System.exit(1);
+				break;
+			}
+		} catch (final Exception e) {
+				logger.error("Unexpected Exception!", e);
+				throw e;
+			}
 	}
 
 	private SADL() {

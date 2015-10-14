@@ -1,7 +1,7 @@
 paramfile = pdtta/params.pcs
 runObj = QUALITY
-cutoffTime = 3600
-wallclock-limit = 172800
+cutoffTime = 10000
+wallclock-limit = 432000
 deterministic = 1
 instance_file = pdtta/instances/train
 test_instance_file = pdtta/instances/test
