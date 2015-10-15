@@ -11,6 +11,7 @@
 
 package sadl.run.commands;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,6 +28,7 @@ import com.beust.jcommander.Parameters;
 import sadl.input.TimedInput;
 import sadl.interfaces.Model;
 import sadl.interfaces.ModelLearner;
+import sadl.models.pdrta.PDRTA;
 import sadl.run.factories.LearnerFactory;
 import sadl.run.factories.learn.RTIFactory;
 import sadl.utils.IoUtils;
@@ -96,9 +98,12 @@ public class TrainRun {
 				final Path parent = out.getParent();
 				if (parent != null) {
 					Files.createDirectories(parent);
-					// final BufferedWriter bw = Files.newBufferedWriter(out);
-					// ((PDRTA) m).toDOTLang(bw);
-					// TODO Fix train output
+					if (m instanceof PDRTA) {
+						// TODO Remove this some time
+						final Path out2 = Paths.get(out.toAbsolutePath().toString() + ".gv");
+						final BufferedWriter bw = Files.newBufferedWriter(out2);
+						((PDRTA) m).toDOTLang(bw);
+					}
 					IoUtils.serialize(m, out);
 				}
 			} catch (final IOException e) {

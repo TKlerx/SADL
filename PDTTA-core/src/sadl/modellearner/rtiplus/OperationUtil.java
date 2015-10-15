@@ -127,7 +127,7 @@ public class OperationUtil {
 						if (test) {
 							out1 = in1.getTarget().getStat().getTotalOutEvents();
 							out2 = in1.getTarget().getStat().getTotalOutEvents();
-							// LRT_FIX : Thesis: AND, Impl: OR => stop recursion
+							// LRT_FIX : Operator for calculation interruption (thesis: AND, impl: OR, own: AND) => stop recursion
 							// Abort recursion when s1 is in a subtree (not red) and not enough data is available for testing
 							// Attention: Verwer's implementation stops even if s1 is red and there can be further computations!
 							if (sc.isRed(in1.getTarget()) || !SimplePDRTALearner.bOp[2].eval(out1 < PDRTA.getMinData(), out2 < PDRTA.getMinData())) {

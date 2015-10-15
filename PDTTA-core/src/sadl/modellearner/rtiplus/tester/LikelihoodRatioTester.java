@@ -15,6 +15,9 @@ import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+
 import jsat.distributions.ChiSquared;
 import sadl.modellearner.rtiplus.OperationUtil;
 import sadl.modellearner.rtiplus.SimplePDRTALearner;
@@ -25,9 +28,6 @@ import sadl.models.pdrta.PDRTAState;
 import sadl.models.pdrta.StateStatistic;
 import sadl.models.pdrta.StateStatistic.CalcRatio;
 import sadl.models.pdrta.TimedTail;
-
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 
 /**
  * 
@@ -115,7 +115,7 @@ public class LikelihoodRatioTester implements OperationTester {
 		final PDRTA a = red.getPDRTA();
 		assert (a == blue.getPDRTA());
 
-		// LRT_FIX Deleted because of new && condition
+		// LRT_FIX : Deleted because of new && condition
 		// if (blue.getTotalOutEvents() < minData) {
 		// return -1.0;
 		// }
@@ -164,9 +164,9 @@ public class LikelihoodRatioTester implements OperationTester {
 						mNextSym.put(nt.getSymbolAlphIndex(), nt);
 					}
 				}
-				// LRT_FIX : Thesis: AND, Impl: OR => stop recursion
+				// LRT_FIX : Operator for calculation interruption (thesis: AND, impl: OR, own: AND) => stop recursion
 				// In case of AND => if((in.getTails().size() < 2 * minData) before calculating new maps!
-				if (SimplePDRTALearner.bOp[2].eval((in.getTails().size() - mNextHist.size()) < minData, mNextHist.size() < minData)) {
+				if (!SimplePDRTALearner.bOp[2].eval((in.getTails().size() - mNextHist.size()) < minData, mNextHist.size() < minData)) {
 					lv.add(recTestSplit(in.getTarget(), mNextHist, mNextSym, cr));
 				}
 			}

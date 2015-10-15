@@ -19,6 +19,7 @@ import sadl.modellearner.rtiplus.GreedyPDRTALearner;
 import sadl.modellearner.rtiplus.SimplePDRTALearner;
 import sadl.modellearner.rtiplus.SimplePDRTALearner.DistributionCheckType;
 import sadl.modellearner.rtiplus.SimplePDRTALearner.OperationTesterType;
+import sadl.modellearner.rtiplus.SimplePDRTALearner.SplitPosition;
 import sadl.run.factories.LearnerFactory;
 
 /**
@@ -44,6 +45,9 @@ public class RTIFactory implements LearnerFactory {
 	@Parameter(names = "-ida", arity = 1)
 	DistributionCheckType distrCheck = DistributionCheckType.DISABLED;
 
+	@Parameter(names = "-sp", arity = 1)
+	SplitPosition splitPos = SplitPosition.MIDDLE;
+
 	@Parameter(names = "-bop", arity = 1)
 	String boolOps = "AAA";
 
@@ -55,9 +59,9 @@ public class RTIFactory implements LearnerFactory {
 
 		ModelLearner ml = null;
 		if (greedy) {
-			ml = new GreedyPDRTALearner(sig, hist, tester, distrCheck, boolOps, stepsDir);
+			ml = new GreedyPDRTALearner(sig, hist, tester, distrCheck, splitPos, boolOps, stepsDir);
 		} else {
-			ml = new SimplePDRTALearner(sig, hist, tester, distrCheck, boolOps, stepsDir);
+			ml = new SimplePDRTALearner(sig, hist, tester, distrCheck, splitPos, boolOps, stepsDir);
 		}
 		return ml;
 	}

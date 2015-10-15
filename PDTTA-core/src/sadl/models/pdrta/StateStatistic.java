@@ -184,7 +184,7 @@ public class StateStatistic implements Serializable {
 			throw new UnsupportedOperationException();
 		}
 
-		// LRT_FIX : Thesis: AND, Impl: OR
+		// LRT_FIX : Operator for calculation interruption (thesis: AND, impl: OR, own: AND)
 		if (SimplePDRTALearner.bOp[2].eval(st1.totalOutCount < minData, st2.totalOutCount < minData)) {
 			return new LikelihoodValue();
 		} else {
@@ -212,7 +212,7 @@ public class StateStatistic implements Serializable {
 			throw new UnsupportedOperationException();
 		}
 
-		// LRT_FIX : Thesis: AND, Impl: OR
+		// LRT_FIX : Operator for calculation interruption (thesis: AND, impl: OR, own: AND)
 		if (SimplePDRTALearner.bOp[2].eval(st1.totalOutCount < minData, st2.totalOutCount < minData)) {
 			return new LikelihoodValue();
 		} else {
@@ -240,7 +240,7 @@ public class StateStatistic implements Serializable {
 			throw new UnsupportedOperationException();
 		}
 
-		// LRT_FIX : Thesis: AND, Impl: OR
+		// LRT_FIX : Operator for calculation interruption (thesis: AND, impl: OR, own: AND)
 		if (SimplePDRTALearner.bOp[2].eval((st.totalOutCount - mSym.size()) < minData, mSym.size() < minData)) {
 			return new LikelihoodValue();
 		}
@@ -275,7 +275,7 @@ public class StateStatistic implements Serializable {
 			throw new UnsupportedOperationException();
 		}
 
-		// LRT_FIX : Thesis: AND, Impl: OR
+		// LRT_FIX : Operator for calculation interruption (thesis: AND, impl: OR, own: AND)
 		if (SimplePDRTALearner.bOp[2].eval((st.totalOutCount - mHist.size()) < minData, mHist.size() < minData)) {
 			return new LikelihoodValue();
 		}
@@ -324,7 +324,7 @@ public class StateStatistic implements Serializable {
 		}
 		params--;
 
-		// LRT_FIX Check if params or count.length (example in paper says count.length)
+		// LRT_FIX : Check if params or count.length (example in paper says count.length)
 		if (params >= 0) {
 			return new LikelihoodValue(ratio, count.length - 1);
 		} else {
@@ -729,6 +729,7 @@ public class StateStatistic implements Serializable {
 		for (int i = 0; i < stat1.length; i++) {
 			sum1 += stat1[i];
 			sum2 += stat2[i];
+			// POOL_FIX : Operator for pooling (thesis: AND, impl: AND, own: AND)
 			if (SimplePDRTALearner.bOp[0].eval(stat1[i] < minData, stat2[i] < minData)) {
 				// Number of sequences is less than minData
 				if (advanced && !SimplePDRTALearner.bOp[0].eval(pooled1.get(iPool) < minData, pooled2.get(iPool) < minData)) {
@@ -749,7 +750,7 @@ public class StateStatistic implements Serializable {
 		}
 
 		// Discard small pools
-		// POOL_FIX : Thesis: missing, Impl: [LRT: OR, FM: AND]
+		// POOL_FIX : Operator for pool discarding (thesis: missing, impl: [LRT: OR, FM: AND], own: AND)
 		if (SimplePDRTALearner.bOp[1].eval(pooled1.get(iPool) < minData, pooled2.get(iPool) < minData)) {
 			sum1 -= pooled1.removeAt(iPool);
 			sum2 -= pooled2.removeAt(iPool);

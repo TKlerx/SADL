@@ -77,7 +77,7 @@ public class NaiveLikelihoodRatioTester implements OperationTester {
 		stateColoring = sc;
 	}
 
-	private LikelihoodValue calcLikelihood(PDRTA a) {
+	public static LikelihoodValue calcLikelihood(PDRTA a) {
 
 		final LikelihoodValue lv = new LikelihoodValue();
 		for (final PDRTAState s : a.getStates()) {

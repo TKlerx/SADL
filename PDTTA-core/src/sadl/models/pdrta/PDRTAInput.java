@@ -11,10 +11,7 @@
 
 package sadl.models.pdrta;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
 import java.io.Serializable;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,7 +20,6 @@ import org.apache.commons.math3.util.Precision;
 
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
-import sadl.constants.ClassLabel;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 
@@ -219,34 +215,6 @@ public class PDRTAInput implements Serializable {
 	 */
 	public int getAlphIndex(String s) {
 		return inp.getAlphIndex(s);
-	}
-
-	/**
-	 * Returns the {@link String} representation of the {@link PDRTAInput} in standard format with class labels.
-	 * 
-	 * @return The {@link String} representation of the {@link PDRTAInput}
-	 * @see TimedWord#toString(boolean)
-	 * @see TimedInput#parse(Path)
-	 */
-	@Override
-	public String toString() {
-		// TODO
-		return inp.toString();
-	}
-
-	/**
-	 * Writes the {@link String} representation of the {@link TimedInput} in standard format as it is required for parsing with {@link TimedInput#parse(Path)}.
-	 * 
-	 * @param bw
-	 *            The writer where to write the {@link String} representation
-	 * @param withClassLabel
-	 *            If {@code true} the {@link ClassLabel} will be appended at the end of each timed sequence
-	 * @see TimedWord#toString(boolean)
-	 * @see TimedInput#parse(Path)
-	 */
-	public void toFile(BufferedWriter bw, boolean withClassLabel) throws IOException {
-		// TODO
-		inp.toFile(bw, withClassLabel);
 	}
 
 	private void calcHistSizes() {

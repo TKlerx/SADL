@@ -12,12 +12,16 @@
 package sadl.modellearner.rtiplus;
 
 import java.io.IOException;
+import java.util.Map.Entry;
+import java.util.NavigableMap;
 import java.util.NavigableSet;
 
 import com.google.common.collect.TreeMultimap;
 
 import sadl.input.TimedInput;
 import sadl.interfaces.Model;
+import sadl.modellearner.rtiplus.boolop.OrOperator;
+import sadl.models.pdrta.Interval;
 import sadl.models.pdrta.PDRTA;
 import sadl.models.pdrta.PDRTAInput;
 
@@ -31,8 +35,9 @@ public class GreedyPDRTALearner extends SimplePDRTALearner {
 	private final int maxMergesToSearch = 10;
 	private final int maxSplitsToSearch = 10;
 
-	public GreedyPDRTALearner(double sig, String histBins, OperationTesterType testerType, DistributionCheckType distrCheckType, String boolOps, String dir) {
-		super(sig, histBins, testerType, distrCheckType, boolOps, dir);
+	public GreedyPDRTALearner(double sig, String histBins, OperationTesterType testerType, DistributionCheckType distrCheckType, SplitPosition splitPos,
+			String boolOps, String dir) {
+		super(sig, histBins, testerType, distrCheckType, splitPos, boolOps, dir);
 	}
 
 	@Override
@@ -57,7 +62,6 @@ public class GreedyPDRTALearner extends SimplePDRTALearner {
 		sc.setRed(a.getRoot());
 
 		tester.setColoring(sc);
-		;
 		greedyRTIplus(a, sc);
 		a.cleanUp();
 		persistFinalResult(a);
@@ -71,9 +75,12 @@ public class GreedyPDRTALearner extends SimplePDRTALearner {
 	@SuppressWarnings("null")
 	private void greedyRTIplus(PDRTA a, StateColoring sc) {
 
+		final boolean preExit = (bOp[2] instanceof OrOperator) && distrCheckType.equals(DistributionCheckType.DISABLED);
+		System.out.println("Pre-Exiting algorithm when number of tails falls below minData: " + preExit);
+
 		int counter = 0;
-		Transition t = getMostVisitedTrans(a, sc);
-		while (t != null) {
+		Transition t;
+		while ((t = getMostVisitedTrans(a, sc)) != null && !(preExit && t.in.getTails().size() >= PDRTA.getMinData())) {
 			if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
 				if (runMode.compareTo(RunMode.DEBUG_STEPS) >= 0) {
 					try {
@@ -87,6 +94,35 @@ public class GreedyPDRTALearner extends SimplePDRTALearner {
 				System.out.print("Testing splits...");
 			}
 			counter++;
+
+			if (!distrCheckType.equals(DistributionCheckType.DISABLED)) {
+				if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
+					System.out.print("Checking data distribution... ");
+				}
+				if (checkDistribution(t.source, t.symAlphIdx, distrCheckType, sc)) {
+					if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
+						System.out.print("#" + counter + " DO: Split interval due to IDA into:  ");
+						final NavigableMap<Integer, Interval> ins = t.source.getIntervals(t.symAlphIdx);
+						for (final Entry<Integer, Interval> eIn : ins.entrySet()) {
+							if (!eIn.getValue().isEmpty()) {
+								System.out.print(eIn.getValue().toString() + "  ");
+							}
+						}
+						System.out.println();
+					}
+					continue;
+				} else if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
+					System.out.println("No splits because of data distributuion were perfomed in:  " + t.in.toString());
+					if (bOp[2] instanceof OrOperator && t.in.getTails().size() < PDRTA.getMinData()) {
+						// Shortcut for skipping merges and splits when OR is selected
+						if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
+							System.out.println("#" + counter + " DO: Color state " + t.target.getIndex() + " red");
+						}
+						sc.setRed(t.target);
+						continue;
+					}
+				}
+			}
 
 			final NavigableSet<Refinement> splits = getSplitRefs(t, sc).descendingSet();
 			if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
@@ -116,9 +152,10 @@ public class GreedyPDRTALearner extends SimplePDRTALearner {
 				final Refinement cR = new Refinement(copy, r, cColoring);
 				cR.refine();
 				complete(copy, cColoring);
-				// TODO Use AIC
-				final int size = copy.getSize();
-				all.put((double) size, r);
+				// TODO Create algo param for selecting between AIC and size
+				// final double modelScore = copy.getSize();
+				final double modelScore = calcAIC(copy);
+				all.put(modelScore, r);
 				if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
 					pbp.inc();
 				}
@@ -143,9 +180,10 @@ public class GreedyPDRTALearner extends SimplePDRTALearner {
 				final Refinement cR = new Refinement(copy, r, cColoring);
 				cR.refine();
 				complete(copy, cColoring);
-				// TODO Use AIC
-				final int size = copy.getSize();
-				all.put((double) size, r);
+				// TODO Create algo param for selecting between AIC and size
+				// final double modelScore = copy.getSize();
+				final double modelScore = calcAIC(copy);
+				all.put(modelScore, r);
 				if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
 					pbp.inc();
 				}
@@ -171,7 +209,6 @@ public class GreedyPDRTALearner extends SimplePDRTALearner {
 			if (runMode.compareTo(RunMode.DEBUG) >= 0) {
 				a.checkConsistency();
 			}
-			t = getMostVisitedTrans(a, sc);
 		}
 
 		a.checkConsistency();
@@ -185,29 +222,5 @@ public class GreedyPDRTALearner extends SimplePDRTALearner {
 		}
 		persistFinalResult(a);
 	}
-
-	// TODO Implement AIC
-	// public double calcAIC(boolean def) {
-	//
-	// final double result = 0.0;
-	// final double defaultLog = Math.log(1.0 / ((double) (input.getNumHistogramBars() + input.getAlphSize())));
-	//
-	// final LikelihoodValue lv = getLikelihood();
-	//
-	// // TODO int params = ((input.getNumHistogramBars() - 1) *
-	// // TA->num_states()) + getSize();
-	//
-	// return 2.0 * ((double) lv.additionalParam - lv.ratio);
-	// }
-	//
-	// private LikelihoodValue getLikelihood() {
-	//
-	// final LikelihoodValue lv = new LikelihoodValue(0.0, 0);
-	// for (final TimedState s : states.values()) {
-	// lv.add(s.calculateLikelihoodPropSym());
-	// lv.add(s.calculateLikelihoodPropTime());
-	// }
-	// return lv;
-	// }
 
 }
