@@ -12,6 +12,7 @@
 package sadl.run;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -50,7 +51,6 @@ public class SADL {
 				logger.error("Not enough params!");
 				System.exit(1);
 			}
-
 			// FIXME parse MasterSeed
 
 			// final String[] reducedArgs = Arrays.copyOfRange(args, 1, args.length);
@@ -82,6 +82,7 @@ public class SADL {
 				trainRun.run(jc.getCommands().get(train));
 				break;
 			case smac:
+				logger.info("Starting SADL with params=" + Arrays.toString(args));
 				smacRun.run(jc.getCommands().get(smac));
 				break;
 			default:
@@ -91,9 +92,9 @@ public class SADL {
 				break;
 			}
 		} catch (final Exception e) {
-				logger.error("Unexpected Exception!", e);
-				throw e;
-			}
+			logger.error("Unexpected Exception!", e);
+			throw e;
+		}
 	}
 
 	private SADL() {
