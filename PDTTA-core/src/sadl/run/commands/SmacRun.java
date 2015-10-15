@@ -142,7 +142,7 @@ public class SmacRun {
 
 
 	@SuppressWarnings("null")
-	public void run(JCommander jc) {
+	public ExperimentResult run(JCommander jc) {
 		logger.info("Starting new SmacRun with commands={}", jc.getUnknownOptions());
 		// TODO log all quality metrics?! true pos, true neg, fp, fn, runtime, memory consuption (like in batchrunner with sigar) for every runs
 
@@ -230,7 +230,7 @@ public class SmacRun {
 
 		logger.info(qCrit.name() + "={}", qVal);
 		System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - qVal) + ", 0");
-
+		return result;
 	}
 
 	private Pair<Algoname, Path> extractAlgoAndInput() {
