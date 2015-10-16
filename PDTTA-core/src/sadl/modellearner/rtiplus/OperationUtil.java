@@ -15,6 +15,8 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import sadl.modellearner.rtiplus.tester.LikelihoodValue;
 import sadl.models.pdrta.Interval;
 import sadl.models.pdrta.PDRTA;
@@ -153,7 +155,7 @@ public class OperationUtil {
 		return lv;
 	}
 
-	public static void split(PDRTAState s, int symAlphIdx, int time, StateColoring sc) {
+	public static Pair<Interval, Interval> split(PDRTAState s, int symAlphIdx, int time, StateColoring sc) {
 
 		final PDRTA a = s.getPDRTA();
 
@@ -197,6 +199,8 @@ public class OperationUtil {
 				in.setTarget(null);
 			}
 		}
+
+		return Pair.of(newIn, in);
 	}
 
 }
