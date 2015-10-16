@@ -513,7 +513,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 		createSubTAPTA(root);
 	}
 
-	public void createSubTAPTA(PDRTAState s) {
+	public void createSubTAPTA_rec_new(PDRTAState s) {
 
 		for (int i = 0; i < input.getAlphSize(); i++) {
 			assert(s.getIntervals(i).size() == 1);
@@ -527,6 +527,34 @@ public class PDRTA implements AutomatonModel, Serializable {
 					target.addTail(e.getValue());
 				}
 				createSubTAPTA(target);
+			}
+		}
+	}
+
+	public void createSubTAPTA(PDRTAState s) {
+
+		for (int i = 0; i < input.getAlphSize(); i++) {
+			assert (s.getIntervals(i).size() == 1);
+			final Interval interval = s.getIntervals(i).lastEntry().getValue();
+			final Set<Entry<Integer, TimedTail>> tails = interval.getTails().entries();
+			if (!tails.isEmpty() && interval.getTarget() == null) {
+				interval.setTarget(new PDRTAState(this));
+			}
+			for (final Entry<Integer, TimedTail> e : tails) {
+				TimedTail tail = e.getValue();
+				PDRTAState ts = interval.getTarget();
+				Interval in = interval;
+				while (tail.getNextTail() != null) {
+					ts.addTail(tail);
+					assert (in.containsTail(tail));
+					tail = tail.getNextTail();
+					in = ts.getInterval(tail.getSymbolAlphIndex(), tail.getTimeDelay());
+					if (in.getTarget() == null) {
+						in.setTarget(new PDRTAState(this));
+					}
+					ts = in.getTarget();
+				}
+				ts.addTail(tail);
 			}
 
 		}

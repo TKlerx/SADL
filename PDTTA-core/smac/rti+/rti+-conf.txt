@@ -1,0 +1,11 @@
+paramfile = ./rti+/params.pcs
+runObj = QUALITY
+cutoffTime = 360000
+wallclock-limit = 1728000
+deterministic = 1
+instance_file = ./rti+/instances/train
+test_instance_file = ./rti+/instances/test
+instance-suffix = txt
+test-instance-suffix = txt
+algo = java -jar ./rti+/PDTTA-core-0.0.1-SNAPSHOT.jar smac rti
+num-test-instances = 10

@@ -25,9 +25,8 @@ class Refinement implements Comparable<Refinement> {
 		SPLIT, MERGE
 	}
 
-	private final PDRTA ta;
 	private final PDRTAState source;
-	private PDRTAState target;
+	private final PDRTAState target;
 	private final int symbolAlphIdx;
 	private final int time;
 	private OpType type;
@@ -35,6 +34,14 @@ class Refinement implements Comparable<Refinement> {
 
 	private final StateColoring stateColoring;
 
+	/**
+	 * For Merges
+	 * 
+	 * @param s
+	 * @param t
+	 * @param score
+	 * @param sc
+	 */
 	Refinement(PDRTAState s, PDRTAState t, double score, StateColoring sc) {
 
 		this(s, t, -1, -1, score, sc);
@@ -43,6 +50,15 @@ class Refinement implements Comparable<Refinement> {
 		type = OpType.MERGE;
 	}
 
+	/**
+	 * For Splits
+	 * 
+	 * @param s
+	 * @param alphIdx
+	 * @param t
+	 * @param score
+	 * @param sc
+	 */
 	Refinement(PDRTAState s, int alphIdx, int t, double score, StateColoring sc) {
 
 		this(s, null, alphIdx, t, score, sc);
@@ -55,7 +71,6 @@ class Refinement implements Comparable<Refinement> {
 
 		source = s;
 		target = t;
-		ta = s.getPDRTA();
 		score = sco;
 		symbolAlphIdx = alphIdx;
 		time = ti;
@@ -70,7 +85,6 @@ class Refinement implements Comparable<Refinement> {
 		} else {
 			target = null;
 		}
-		ta = a;
 		score = r.score;
 		type = r.type;
 		symbolAlphIdx = r.symbolAlphIdx;
@@ -85,7 +99,8 @@ class Refinement implements Comparable<Refinement> {
 		if (type == OpType.MERGE) {
 			s = "merge (" + source.getIndex() + ")>-<(" + target.getIndex() + ") to (" + source.getIndex() + ")";
 		} else if (type == OpType.SPLIT) {
-			s = "split ((" + source.getIndex() + "))---" + ta.getSymbol(symbolAlphIdx) + "-[" + source.getInterval(symbolAlphIdx, time).getBegin() + ","
+			s = "split ((" + source.getIndex() + "))---" + source.getPDRTA().getSymbol(symbolAlphIdx) + "-["
+					+ source.getInterval(symbolAlphIdx, time).getBegin() + ","
 					+ source.getInterval(symbolAlphIdx, time).getEnd() + "]---> @ " + time;
 			// if (LOG_LVL.compareTo(LogLvl.DEBUG_DEEP) >= 0) {
 			// s = s + "  Distr.: [";
@@ -119,41 +134,66 @@ class Refinement implements Comparable<Refinement> {
 	}
 
 	@Override
-	public boolean equals(Object o) {
+	public boolean equals(Object obj) {
 
-		if (!(o instanceof Refinement)) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
 			return false;
-		} else {
-			final Refinement r = (Refinement) o;
-			assert (ta.equals(r.ta));
-			if (score == r.score) {
-				if (type == OpType.SPLIT && r.type == OpType.SPLIT) {
-					assert (source.equals(r.source));
-					if (time == r.time && symbolAlphIdx == r.symbolAlphIdx) {
-						return true;
-					} else {
-						return false;
-					}
-				} else if (type == OpType.MERGE && r.type == OpType.MERGE) {
-					assert (target.equals(r.target));
-					if (source.getIndex() == r.source.getIndex()) {
-						return true;
-					} else {
-						return false;
-					}
-				} else {
-					return false;
-				}
-			} else {
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final Refinement other = (Refinement) obj;
+		if (Double.doubleToLongBits(score) != Double.doubleToLongBits(other.score)) {
+			return false;
+		}
+		if (source == null) {
+			if (other.source != null) {
 				return false;
 			}
+		} else if (!source.equals(other.source)) {
+			return false;
 		}
+		if (symbolAlphIdx != other.symbolAlphIdx) {
+			return false;
+		}
+		if (target == null) {
+			if (other.target != null) {
+				return false;
+			}
+		} else if (!target.equals(other.target)) {
+			return false;
+		}
+		if (time != other.time) {
+			return false;
+		}
+		if (type != other.type) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+
+		final int prime = 31;
+		int result = 1;
+		long temp;
+		temp = Double.doubleToLongBits(score);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + ((source == null) ? 0 : source.hashCode());
+		result = prime * result + symbolAlphIdx;
+		result = prime * result + ((target == null) ? 0 : target.hashCode());
+		result = prime * result + time;
+		result = prime * result + ((type == null) ? 0 : type.hashCode());
+		return result;
 	}
 
 	@Override
 	public int compareTo(Refinement r) {
 
-		assert (ta.equals(r.ta));
 		if (score > r.score) {
 			return 1;
 		} else if (score < r.score) {

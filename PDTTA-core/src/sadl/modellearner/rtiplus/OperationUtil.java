@@ -15,6 +15,8 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import sadl.modellearner.rtiplus.tester.LikelihoodValue;
 import sadl.models.pdrta.Interval;
 import sadl.models.pdrta.PDRTA;
@@ -127,7 +129,7 @@ public class OperationUtil {
 						if (test) {
 							out1 = in1.getTarget().getStat().getTotalOutEvents();
 							out2 = in1.getTarget().getStat().getTotalOutEvents();
-							// LRT_FIX : Thesis: AND, Impl: OR => stop recursion
+							// LRT_FIX : Operator for calculation interruption (thesis: AND, impl: OR, own: AND) => stop recursion
 							// Abort recursion when s1 is in a subtree (not red) and not enough data is available for testing
 							// Attention: Verwer's implementation stops even if s1 is red and there can be further computations!
 							if (sc.isRed(in1.getTarget()) || !SimplePDRTALearner.bOp[2].eval(out1 < PDRTA.getMinData(), out2 < PDRTA.getMinData())) {
@@ -153,7 +155,7 @@ public class OperationUtil {
 		return lv;
 	}
 
-	public static void split(PDRTAState s, int symAlphIdx, int time, StateColoring sc) {
+	public static Pair<Interval, Interval> split(PDRTAState s, int symAlphIdx, int time, StateColoring sc) {
 
 		final PDRTA a = s.getPDRTA();
 
@@ -197,6 +199,8 @@ public class OperationUtil {
 				in.setTarget(null);
 			}
 		}
+
+		return Pair.of(newIn, in);
 	}
 
 }

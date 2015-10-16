@@ -51,6 +51,7 @@ import sadl.modellearner.rtiplus.GreedyPDRTALearner;
 import sadl.modellearner.rtiplus.SimplePDRTALearner;
 import sadl.modellearner.rtiplus.SimplePDRTALearner.DistributionCheckType;
 import sadl.modellearner.rtiplus.SimplePDRTALearner.OperationTesterType;
+import sadl.modellearner.rtiplus.SimplePDRTALearner.SplitPosition;
 import sadl.models.pdrta.PDRTA;
 import sadl.oneclassclassifier.LibSvmClassifier;
 import sadl.oneclassclassifier.OneClassClassifier;
@@ -99,6 +100,9 @@ public class RTISmacPipeline implements Serializable {
 
 	@Parameter(names = "-ida", arity = 1)
 	DistributionCheckType distrCheck = DistributionCheckType.DISABLED;
+
+	@Parameter(names = "-sm", arity = 1)
+	SplitPosition splitPos = SplitPosition.MIDDLE;
 
 	@Parameter(names = "-bop", arity = 1)
 	String boolOps = "AAA";
@@ -247,9 +251,9 @@ public class RTISmacPipeline implements Serializable {
 
 		final ModelLearner learner;
 		if (!greedy) {
-			learner = new SimplePDRTALearner(sig, hist, tester, distrCheck, boolOps, stepsDir);
+			learner = new SimplePDRTALearner(sig, hist, tester, distrCheck, splitPos, boolOps, stepsDir);
 		} else {
-			learner = new GreedyPDRTALearner(sig, hist, tester, distrCheck, boolOps, stepsDir);
+			learner = new GreedyPDRTALearner(sig, hist, tester, distrCheck, splitPos, boolOps, stepsDir);
 		}
 		final AnomalyDetection detection = new AnomalyDetection(anomalyDetector, learner);
 		final Model m = detection.train(Paths.get(dataString));

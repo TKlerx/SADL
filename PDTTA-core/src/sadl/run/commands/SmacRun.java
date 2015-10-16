@@ -50,6 +50,7 @@ import sadl.oneclassclassifier.clustering.DbScanClassifier;
 import sadl.run.factories.LearnerFactory;
 import sadl.run.factories.learn.PdttaFactory;
 import sadl.run.factories.learn.RTIFactory;
+import sadl.utils.MasterSeed;
 
 public class SmacRun {
 
@@ -144,7 +145,7 @@ public class SmacRun {
 	@SuppressWarnings("null")
 	public ExperimentResult run(JCommander jc) {
 		logger.info("Starting new SmacRun with commands={}", jc.getUnknownOptions());
-		// TODO log all quality metrics?! true pos, true neg, fp, fn, runtime, memory consuption (like in batchrunner with sigar) for every runs
+		// TODO log all quality metrics?! true pos, true neg, fp, fn, runtime, memory consumption (like in batchrunner with sigar) for every runs
 
 		// TODO Try to use this again
 		// final Pair<TimedInput, TimedInput> inputs = IoUtils.readTrainTestFile(inputSeqs);
@@ -194,14 +195,14 @@ public class SmacRun {
 		}
 		anomalyDetector = new VectorDetector(aggType, featureCreator, classifier, aggregateSublists);
 
-		final Pair<Algoname, Path> params = extractAlgoAndInput();
-		final ModelLearner learner = getLearner(params.getLeft(), jc);
+		MasterSeed.setSeed(Long.parseLong(mainParams.get(4)));
+		final ModelLearner learner = getLearner(Algoname.getAlgoname(mainParams.get(0)), jc);
 		final AnomalyDetection detection = new AnomalyDetection(anomalyDetector, learner);
 		ExperimentResult result = null;
 		try {
-			result = detection.trainTest(params.getRight());
+			result = detection.trainTest(Paths.get(mainParams.get(1)));
 		} catch (final IOException e) {
-			logger.error("Error when loading input from file!");
+			logger.error("Error when loading input from file: " + e.getMessage());
 			smacErrorAbort();
 		}
 
@@ -233,6 +234,7 @@ public class SmacRun {
 		return result;
 	}
 
+	@Deprecated
 	private Pair<Algoname, Path> extractAlgoAndInput() {
 
 		final Set<String> algoNames = Arrays.stream(Algoname.values()).map(a -> a.name().toLowerCase()).collect(Collectors.toSet());
@@ -272,8 +274,9 @@ public class SmacRun {
 		}
 
 		final JCommander subjc = new JCommander(lf);
-		logger.debug("unknown options array for jcommander={}", Arrays.toString(jc.getUnknownOptions().toArray(new String[0])));
-		subjc.parse(jc.getUnknownOptions().toArray(new String[0]));
+		final String[] subOptions = jc.getUnknownOptions().toArray(new String[0]);
+		logger.debug("Unknown options array for jcommander={}", Arrays.toString(subOptions));
+		subjc.parse(subOptions);
 
 		@SuppressWarnings("null")
 		final ModelLearner ml = lf.create();
