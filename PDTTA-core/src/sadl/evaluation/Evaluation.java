@@ -38,10 +38,10 @@ public class Evaluation {
 		logger.info("Testing with {} sequences", testSet.size());
 		detector.setModel(model);
 		final boolean[] detectorResult = detector.areAnomalies(testSet);
-		int truePos = 0;
-		int trueNeg = 0;
-		int falsePos = 0;
-		int falseNeg = 0;
+		long truePos = 0;
+		long trueNeg = 0;
+		long falsePos = 0;
+		long falseNeg = 0;
 		// prec = tp/(tp +fp)
 		// The precision is the ratio between correctly detected anomalies and
 		// all detected anomalies

@@ -9,7 +9,7 @@ tauEstimation {DENSITY,MONTE_CARLO} [MONTE_CARLO]
 mcNumberOfSteps [10,100000] [1000]i
 mcNumberOfSteps | tauEstimation in {MONTE_CARLO}
 
-mcPointsToStore [10,100000] [10000]i
+mcPointsToStore [10,40000] [10000]i
 mcPointsToStore | tauEstimation in {MONTE_CARLO}
 
 recursiveMergeTest {true,false} [false]
@@ -39,7 +39,7 @@ singleTimeThreshold | detectorMethod in {THRESHOLD_ALL}
 
 
 #vector detector parameters
-featureCreator {FULL_FEATURE_CREATOR,SMALL_FEATURE_CREATOR,MINIMAL_FEATURE_CREATOR} [FULL_FEATURE_CREATOR]
+featureCreator {UBER,FULL,SMALL,MINIMAL} [FULL]
 featureCreator | detectorMethod in {SVM,DBSCAN}
 
 scalingMethod {NONE,NORMALIZE,STANDARDIZE} [NORMALIZE]

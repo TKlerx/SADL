@@ -11,7 +11,17 @@
 
 package sadl.run;
 
+import java.io.BufferedWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -20,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
+import sadl.experiments.ExperimentResult;
 import sadl.run.commands.SmacRun;
 import sadl.run.commands.TestRun;
 import sadl.run.commands.TrainRun;
@@ -44,13 +55,12 @@ public class SADL {
 	@Parameter(names = "-debug")
 	boolean debug = false;
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		try {
 			if (args.length < 1) {
 				logger.error("Not enough params!");
 				System.exit(1);
 			}
-
 			// FIXME parse MasterSeed
 
 			// final String[] reducedArgs = Arrays.copyOfRange(args, 1, args.length);
@@ -82,18 +92,44 @@ public class SADL {
 				trainRun.run(jc.getCommands().get(train));
 				break;
 			case smac:
-				smacRun.run(jc.getCommands().get(smac));
+				logger.info("Starting SMAC with params=" + Arrays.toString(args));
+				boolean fileExisted = true;
+				final ExperimentResult result = smacRun.run(jc.getCommands().get(smac));
+				final Path resultPath = Paths.get("result.csv");
+				if (!Files.exists(resultPath)) {
+					Files.createFile(resultPath);
+					fileExisted = false;
+				}
+				final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+				try (BufferedWriter bw = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8, StandardOpenOption.APPEND)) {
+					if (!fileExisted) {
+						bw.append("time");
+						bw.append(" ; ");
+						bw.append("arg array");
+						bw.append(" ; ");
+						bw.append(ExperimentResult.CsvHeader());
+						bw.append('\n');
+					}
+					bw.append(df.format(new Date()));
+					bw.append(" ; ");
+					bw.append(Arrays.toString(args));
+					bw.append("; ");
+					bw.append(result.toCsvString());
+					bw.append('\n');
+				}
 				break;
 			default:
 				// TODO Print usage
+				jc.usage();
 				logger.error("Wrong mode param!");
 				System.exit(1);
 				break;
 			}
 		} catch (final Exception e) {
-				logger.error("Unexpected Exception!", e);
-				throw e;
-			}
+			logger.error("Unexpected exception with parameters" + Arrays.toString(args), e);
+			throw e;
+		}
 	}
 
 	private SADL() {

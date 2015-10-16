@@ -84,7 +84,7 @@ public class Pipeline implements Serializable {
 	DetectorMethod detectorMethod = DetectorMethod.SVM;
 
 	@Parameter(names = "-featureCreator")
-	FeatureCreatorMethod featureCreatorMethod = FeatureCreatorMethod.FULL_FEATURE_CREATOR;
+	FeatureCreatorMethod featureCreatorMethod = FeatureCreatorMethod.FULL;
 
 	@Parameter(names = "-scalingMethod")
 	ScalingMethod scalingMethod = ScalingMethod.NONE;
@@ -222,11 +222,11 @@ public class Pipeline implements Serializable {
 		if (debug) {
 			Settings.setDebug(debug);
 		}
-		if (featureCreatorMethod == FeatureCreatorMethod.FULL_FEATURE_CREATOR) {
+		if (featureCreatorMethod == FeatureCreatorMethod.FULL) {
 			featureCreator = new FullFeatureCreator();
-		} else if (featureCreatorMethod == FeatureCreatorMethod.SMALL_FEATURE_CREATOR) {
+		} else if (featureCreatorMethod == FeatureCreatorMethod.SMALL) {
 			featureCreator = new SmallFeatureCreator();
-		} else if (featureCreatorMethod == FeatureCreatorMethod.MINIMAL_FEATURE_CREATOR) {
+		} else if (featureCreatorMethod == FeatureCreatorMethod.MINIMAL) {
 			featureCreator = new MinimalFeatureCreator();
 		} else {
 			featureCreator = null;

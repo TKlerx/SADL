@@ -11,11 +11,6 @@
 
 package sadl.experiments;
 
-import sadl.constants.AnomalyInsertionType;
-import sadl.constants.MergeTest;
-import sadl.constants.ProbabilityAggregationMethod;
-
-
 /**
  * 
  * @author Timo Klerx
@@ -23,165 +18,84 @@ import sadl.constants.ProbabilityAggregationMethod;
  */
 public class ExperimentResult {
 
-	public ExperimentResult(int truePositives, int trueNegatives, int falsePositives, int falseNegatives) {
+	public ExperimentResult(long truePositives, long trueNegatives, long falsePositives, long falseNegatives) {
 		super();
 		this.truePositives = truePositives;
 		this.trueNegatives = trueNegatives;
 		this.falsePositives = falsePositives;
 		this.falseNegatives = falseNegatives;
-		precision = (double) truePositives / (truePositives + falsePositives);
-		recall = (double) truePositives / (truePositives + falseNegatives);
-	}
-	double precision;
-	double recall;
-	double fMeasure;
-	int truePositives;
-	int trueNegatives;
-	int falsePositives;
-	int falseNegatives;
-	boolean recMergeTest;
-	double mergeAlpha;
-	AnomalyInsertionType anomalyInsertionType;
-
-	public AnomalyInsertionType getAnomalyInsertionType() {
-		return anomalyInsertionType;
 	}
 
-	public void setAnomalyInsertionType(AnomalyInsertionType anomalyInsertionType) {
-		this.anomalyInsertionType = anomalyInsertionType;
-	}
+	long truePositives;
+	long trueNegatives;
+	long falsePositives;
+	long falseNegatives;
 
-
-	@Override
-	public String toString() {
-		return "PdttaExperimentResult [precision=" + precision + ", recall=" + recall + ", fMeasure=" + fMeasure
-				+ ", truePositives=" + truePositives + ", trueNegatives=" + trueNegatives + ", falsePositives=" + falsePositives + ", falseNegatives="
-				+ falseNegatives + ", recMergeTest=" + recMergeTest + ", mergeAlpha=" + mergeAlpha + ", anomalyInsertionType=" + anomalyInsertionType
-				+ ", mergeTest=" + mergeTest + ", timeTreshold=" + timeThreshold + ", eventTreshold=" + eventThreshold + ", aggType=" + aggType + "]";
-	}
-	MergeTest mergeTest;
-	double timeThreshold;
-	double eventThreshold;
-	ProbabilityAggregationMethod aggType;
-
-	public ExperimentResult(double precision, double recall, double fMeasure, int truePositives, int trueNegatives,
-			int falsePositives, int falseNegatives, boolean recMergeTest, double mergeAlpha, MergeTest mergeTest, double timeTreshold, double eventTreshold,
-			ProbabilityAggregationMethod aggType, AnomalyInsertionType anomalyInsertionType) {
-		this(truePositives, trueNegatives, falsePositives, falseNegatives);
-		this.precision = precision;
-		this.recall = recall;
-		this.fMeasure = fMeasure;
-		this.recMergeTest = recMergeTest;
-		this.mergeAlpha = mergeAlpha;
-		this.mergeTest = mergeTest;
-		this.timeThreshold = timeTreshold;
-		this.eventThreshold = eventTreshold;
-		this.aggType = aggType;
-		this.anomalyInsertionType = anomalyInsertionType;
-	}
 
 
 	public double getPrecision() {
-		return precision;
+		return truePositives / (double) (truePositives + falsePositives);
 	}
 
 	public double getRecall() {
-		return recall;
+		return truePositives / (double) (truePositives + falseNegatives);
 	}
 
 	public double getFMeasure() {
-		final double result = 2 * precision * recall / (precision + recall);
+		final double result = 2 * getPrecision() * getRecall() / (getPrecision() + getRecall());
 		if (Double.isNaN(result)) {
 			return 0;
 		}
 		return result;
 	}
 
-	public int getTruePositives() {
+	public long getTruePositives() {
 		return truePositives;
 	}
 
-	public int getTrueNegatives() {
+	public long getTrueNegatives() {
 		return trueNegatives;
 	}
 
-	public int getFalsePositives() {
+	public long getFalsePositives() {
 		return falsePositives;
 	}
 
-	public int getFalseNegatives() {
+	public long getFalseNegatives() {
 		return falseNegatives;
-	}
-
-	public boolean isRecMergeTest() {
-		return recMergeTest;
-	}
-
-	public double getMergeAlpha() {
-		return mergeAlpha;
-	}
-
-	public MergeTest getMergeTest() {
-		return mergeTest;
-	}
-
-	public double getTimeTreshold() {
-		return timeThreshold;
-	}
-
-	public double getEventTreshold() {
-		return eventThreshold;
-	}
-
-	public ProbabilityAggregationMethod getAggType() {
-		return aggType;
-	}
-
-	public void setRecMergeTest(boolean recMergeTest) {
-		this.recMergeTest = recMergeTest;
-	}
-
-	public void setMergeAlpha(double mergeAlpha) {
-		this.mergeAlpha = mergeAlpha;
-	}
-
-	public void setMergeTest(MergeTest mergeTest) {
-		this.mergeTest = mergeTest;
-	}
-
-	public void setTimeThreshold(double timeThreshold) {
-		this.timeThreshold = timeThreshold;
-	}
-
-	public void setEventThreshold(double eventThreshold) {
-		this.eventThreshold = eventThreshold;
-	}
-
-	public void setAggType(ProbabilityAggregationMethod aggType) {
-		this.aggType = aggType;
 	}
 
 	static String separator = ";";
 
 	public static String CsvHeader() {
-		return "precision" + separator + "recall" + separator + "fMeasure" + separator + "truePositives" + separator
-				+ "trueNegatives" + separator + "falsePositives" + separator + "falseNegatives" + separator + "recMergeTest" + separator + "mergeAlpha"
-				+ separator + "anomalyInsertionType" + separator + "mergeTest" + separator + "timeTreshold" + separator + "eventTreshold" + separator
-				+ "aggType";
+		return "truePositives" + separator + "falsePositives" + separator + "trueNegatives" + separator + "falseNegatives" + separator + "precision" + separator
+				+ "recall" + separator + "accuracy" + separator + "FMeasure" + separator + "PhiCoefficient";
 	}
 	public String toCsvString() {
-		return precision + separator + recall + separator + fMeasure + separator + truePositives + separator + trueNegatives
-				+ separator + falsePositives + separator + falseNegatives + separator + recMergeTest + separator + mergeAlpha + separator
-				+ anomalyInsertionType + separator + mergeTest + separator + timeThreshold + separator + eventThreshold + separator + aggType;
+		return truePositives + separator + falsePositives + separator + trueNegatives + separator + falseNegatives + separator + getPrecision() + separator
+				+ getRecall() + separator + getAccuracy() + separator + getFMeasure() + separator + getPhiCoefficient();
 	}
+
+	public double getPhiCoefficient() {
+		final double numerator = (truePositives * trueNegatives) - (falsePositives * falseNegatives);
+		final double denominator = Math.sqrt(
+				(truePositives + falsePositives) * (truePositives + falseNegatives) * (trueNegatives + falsePositives) * (trueNegatives + falseNegatives));
+		return numerator / denominator;
+	}
+
+	public double getAccuracy() {
+		return (truePositives + trueNegatives) / (double) (truePositives + trueNegatives + falsePositives + falseNegatives);
+	}
+
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		long temp;
-		temp = Double.doubleToLongBits(fMeasure);
-		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + (int) (falseNegatives ^ (falseNegatives >>> 32));
+		result = prime * result + (int) (falsePositives ^ (falsePositives >>> 32));
+		result = prime * result + (int) (trueNegatives ^ (trueNegatives >>> 32));
+		result = prime * result + (int) (truePositives ^ (truePositives >>> 32));
 		return result;
 	}
 
@@ -197,21 +111,25 @@ public class ExperimentResult {
 			return false;
 		}
 		final ExperimentResult other = (ExperimentResult) obj;
-		if (Double.doubleToLongBits(fMeasure) != Double.doubleToLongBits(other.fMeasure)) {
+		if (falseNegatives != other.falseNegatives) {
+			return false;
+		}
+		if (falsePositives != other.falsePositives) {
+			return false;
+		}
+		if (trueNegatives != other.trueNegatives) {
+			return false;
+		}
+		if (truePositives != other.truePositives) {
 			return false;
 		}
 		return true;
 	}
 
-	public double getPhiCoefficient() {
-		final double numerator = truePositives * trueNegatives - falsePositives * falseNegatives;
-		final double denominator = Math.sqrt(
-				(truePositives + falsePositives) * (truePositives + falseNegatives) * (trueNegatives + falsePositives) * (trueNegatives + falseNegatives));
-		return numerator / denominator;
-	}
-
-	public double getAccuracy() {
-		return (double) truePositives + trueNegatives / (truePositives + trueNegatives + falsePositives + falseNegatives);
+	@Override
+	public String toString() {
+		return "ExperimentResult [truePositives=" + truePositives + ", trueNegatives=" + trueNegatives + ", falsePositives=" + falsePositives
+				+ ", falseNegatives=" + falseNegatives + "]";
 	}
 
 }

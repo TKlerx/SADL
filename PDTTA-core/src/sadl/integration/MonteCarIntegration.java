@@ -88,7 +88,7 @@ public class MonteCarIntegration implements Serializable {
 			integral2[i] = mcp;
 			i++;
 		}
-		Arrays.sort(integral2, new MonteCarloPointComparator());
+		Arrays.parallelSort(integral2, new MonteCarloPointComparator());
 		// Collections.sort(integral2);
 		// integral2.sort((m1, m2) -> Double.compare(m1.getX(), m2.getX()));
 

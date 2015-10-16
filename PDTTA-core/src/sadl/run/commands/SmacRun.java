@@ -40,6 +40,7 @@ import sadl.detectors.featureCreators.FeatureCreator;
 import sadl.detectors.featureCreators.FullFeatureCreator;
 import sadl.detectors.featureCreators.MinimalFeatureCreator;
 import sadl.detectors.featureCreators.SmallFeatureCreator;
+import sadl.detectors.featureCreators.UberFeatureCreator;
 import sadl.experiments.ExperimentResult;
 import sadl.interfaces.ModelLearner;
 import sadl.oneclassclassifier.LibSvmClassifier;
@@ -142,7 +143,7 @@ public class SmacRun {
 
 
 	@SuppressWarnings("null")
-	public void run(JCommander jc) {
+	public ExperimentResult run(JCommander jc) {
 		logger.info("Starting new SmacRun with commands={}", jc.getUnknownOptions());
 		// TODO log all quality metrics?! true pos, true neg, fp, fn, runtime, memory consumption (like in batchrunner with sigar) for every runs
 
@@ -158,12 +159,14 @@ public class SmacRun {
 
 		FeatureCreator featureCreator;
 		AnomalyDetector anomalyDetector;
-		if (featureCreatorMethod == FeatureCreatorMethod.FULL_FEATURE_CREATOR) {
+		if (featureCreatorMethod == FeatureCreatorMethod.FULL) {
 			featureCreator = new FullFeatureCreator();
-		} else if (featureCreatorMethod == FeatureCreatorMethod.SMALL_FEATURE_CREATOR) {
+		} else if (featureCreatorMethod == FeatureCreatorMethod.SMALL) {
 			featureCreator = new SmallFeatureCreator();
-		} else if (featureCreatorMethod == FeatureCreatorMethod.MINIMAL_FEATURE_CREATOR) {
+		} else if (featureCreatorMethod == FeatureCreatorMethod.MINIMAL) {
 			featureCreator = new MinimalFeatureCreator();
+		} else if (featureCreatorMethod == FeatureCreatorMethod.UBER) {
+			featureCreator = new UberFeatureCreator();
 		} else {
 			featureCreator = null;
 		}
@@ -171,17 +174,17 @@ public class SmacRun {
 			classifier = new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu, svmKernelType, svmEps, svmDegree, scalingMethod);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_AGG_ONLY) {
 			// only works with minimal feature creator
-			if (featureCreatorMethod != null && featureCreatorMethod != FeatureCreatorMethod.MINIMAL_FEATURE_CREATOR) {
+			if (featureCreatorMethod != null && featureCreatorMethod != FeatureCreatorMethod.MINIMAL) {
 				throw new IllegalArgumentException(
-						"Please do only specify " + FeatureCreatorMethod.MINIMAL_FEATURE_CREATOR + " or no featureCreatorMethod for " + detectorMethod);
+						"Please do only specify " + FeatureCreatorMethod.MINIMAL + " or no featureCreatorMethod for " + detectorMethod);
 			}
 			featureCreator = new MinimalFeatureCreator();
 			classifier = new ThresholdClassifier(aggregatedEventThreshold, aggregatedTimeThreshold);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_ALL) {
 			// only works with small feature creator
-			if (featureCreatorMethod != null && featureCreatorMethod != FeatureCreatorMethod.SMALL_FEATURE_CREATOR) {
+			if (featureCreatorMethod != null && featureCreatorMethod != FeatureCreatorMethod.SMALL) {
 				throw new IllegalArgumentException(
-						"Please do only specify " + FeatureCreatorMethod.SMALL_FEATURE_CREATOR + " or no featureCreatorMethod for " + detectorMethod);
+						"Please do only specify " + FeatureCreatorMethod.SMALL + " or no featureCreatorMethod for " + detectorMethod);
 			}
 			featureCreator = new SmallFeatureCreator();
 			classifier = new ThresholdClassifier(aggregatedEventThreshold, aggregatedTimeThreshold, singleEventThreshold, singleTimeThreshold);
@@ -228,7 +231,7 @@ public class SmacRun {
 
 		logger.info(qCrit.name() + "={}", qVal);
 		System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - qVal) + ", 0");
-
+		return result;
 	}
 
 	@Deprecated
