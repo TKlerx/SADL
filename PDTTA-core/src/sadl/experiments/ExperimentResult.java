@@ -86,4 +86,48 @@ public class ExperimentResult {
 		return (double) truePositives + trueNegatives / (truePositives + trueNegatives + falsePositives + falseNegatives);
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + falseNegatives;
+		result = prime * result + falsePositives;
+		result = prime * result + trueNegatives;
+		result = prime * result + truePositives;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final ExperimentResult other = (ExperimentResult) obj;
+		if (falseNegatives != other.falseNegatives) {
+			return false;
+		}
+		if (falsePositives != other.falsePositives) {
+			return false;
+		}
+		if (trueNegatives != other.trueNegatives) {
+			return false;
+		}
+		if (truePositives != other.truePositives) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public String toString() {
+		return "ExperimentResult [truePositives=" + truePositives + ", trueNegatives=" + trueNegatives + ", falsePositives=" + falsePositives
+				+ ", falseNegatives=" + falseNegatives + "]";
+	}
+
 }

@@ -9,7 +9,7 @@ tauEstimation {DENSITY,MONTE_CARLO} [MONTE_CARLO]
 mcNumberOfSteps [10,100000] [1000]i
 mcNumberOfSteps | tauEstimation in {MONTE_CARLO}
 
-mcPointsToStore [10,100000] [10000]i
+mcPointsToStore [10,40000] [10000]i
 mcPointsToStore | tauEstimation in {MONTE_CARLO}
 
 recursiveMergeTest {true,false} [false]
