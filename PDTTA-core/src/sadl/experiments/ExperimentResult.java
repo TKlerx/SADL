@@ -18,26 +18,27 @@ package sadl.experiments;
  */
 public class ExperimentResult {
 
-	public ExperimentResult(int truePositives, int trueNegatives, int falsePositives, int falseNegatives) {
+	public ExperimentResult(long truePositives, long trueNegatives, long falsePositives, long falseNegatives) {
 		super();
 		this.truePositives = truePositives;
 		this.trueNegatives = trueNegatives;
 		this.falsePositives = falsePositives;
 		this.falseNegatives = falseNegatives;
 	}
-	int truePositives;
-	int trueNegatives;
-	int falsePositives;
-	int falseNegatives;
+
+	long truePositives;
+	long trueNegatives;
+	long falsePositives;
+	long falseNegatives;
 
 
 
 	public double getPrecision() {
-		return truePositives / ((double) truePositives + falsePositives);
+		return truePositives / (double) (truePositives + falsePositives);
 	}
 
 	public double getRecall() {
-		return truePositives / ((double) truePositives + falseNegatives);
+		return truePositives / (double) (truePositives + falseNegatives);
 	}
 
 	public double getFMeasure() {
@@ -48,19 +49,19 @@ public class ExperimentResult {
 		return result;
 	}
 
-	public int getTruePositives() {
+	public long getTruePositives() {
 		return truePositives;
 	}
 
-	public int getTrueNegatives() {
+	public long getTrueNegatives() {
 		return trueNegatives;
 	}
 
-	public int getFalsePositives() {
+	public long getFalsePositives() {
 		return falsePositives;
 	}
 
-	public int getFalseNegatives() {
+	public long getFalseNegatives() {
 		return falseNegatives;
 	}
 
@@ -76,25 +77,25 @@ public class ExperimentResult {
 	}
 
 	public double getPhiCoefficient() {
-		final double numerator = ((double) truePositives * trueNegatives) - ((double) falsePositives * falseNegatives);
-		final double toSquare = ((double) truePositives + falsePositives) * (truePositives + falseNegatives) * (trueNegatives + falsePositives)
-				* (trueNegatives + falseNegatives);
-		final double denominator = Math.sqrt(toSquare);
+		final double numerator = (truePositives * trueNegatives) - (falsePositives * falseNegatives);
+		final double denominator = Math.sqrt(
+				(truePositives + falsePositives) * (truePositives + falseNegatives) * (trueNegatives + falsePositives) * (trueNegatives + falseNegatives));
 		return numerator / denominator;
 	}
 
 	public double getAccuracy() {
-		return ((double) truePositives + trueNegatives) / ((double) truePositives + trueNegatives + falsePositives + falseNegatives);
+		return (truePositives + trueNegatives) / (double) (truePositives + trueNegatives + falsePositives + falseNegatives);
 	}
+
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + falseNegatives;
-		result = prime * result + falsePositives;
-		result = prime * result + trueNegatives;
-		result = prime * result + truePositives;
+		result = prime * result + (int) (falseNegatives ^ (falseNegatives >>> 32));
+		result = prime * result + (int) (falsePositives ^ (falsePositives >>> 32));
+		result = prime * result + (int) (trueNegatives ^ (trueNegatives >>> 32));
+		result = prime * result + (int) (truePositives ^ (truePositives >>> 32));
 		return result;
 	}
 
