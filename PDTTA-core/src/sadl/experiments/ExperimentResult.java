@@ -33,11 +33,11 @@ public class ExperimentResult {
 
 
 	public double getPrecision() {
-		return (double) truePositives / (truePositives + falsePositives);
+		return truePositives / ((double) truePositives + falsePositives);
 	}
 
 	public double getRecall() {
-		return (double) truePositives / (truePositives + falseNegatives);
+		return truePositives / ((double) truePositives + falseNegatives);
 	}
 
 	public double getFMeasure() {
@@ -76,14 +76,15 @@ public class ExperimentResult {
 	}
 
 	public double getPhiCoefficient() {
-		final double numerator = truePositives * trueNegatives - falsePositives * falseNegatives;
-		final double denominator = Math.sqrt(
-				(truePositives + falsePositives) * (truePositives + falseNegatives) * (trueNegatives + falsePositives) * (trueNegatives + falseNegatives));
+		final double numerator = ((double) truePositives * trueNegatives) - ((double) falsePositives * falseNegatives);
+		final double toSquare = ((double) truePositives + falsePositives) * (truePositives + falseNegatives) * (trueNegatives + falsePositives)
+				* (trueNegatives + falseNegatives);
+		final double denominator = Math.sqrt(toSquare);
 		return numerator / denominator;
 	}
 
 	public double getAccuracy() {
-		return (double) truePositives + trueNegatives / (truePositives + trueNegatives + falsePositives + falseNegatives);
+		return ((double) truePositives + trueNegatives) / ((double) truePositives + trueNegatives + falsePositives + falseNegatives);
 	}
 
 	@Override
