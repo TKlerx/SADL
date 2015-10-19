@@ -37,6 +37,7 @@ public class UberFeatureCreator extends FullFeatureCreator {
 		result.add(eventDiffs.min());
 		result.add(eventDiffs.max());
 
+		// TODO what happens if timeLikelihoods is empty or just contains one value?
 		result.add(timeStat.getStandardDeviation());
 		result.add(timeLikelihoods.size());
 		result.add(timeDiffs.min());
