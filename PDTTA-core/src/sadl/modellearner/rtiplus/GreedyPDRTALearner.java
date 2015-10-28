@@ -60,10 +60,12 @@ public class GreedyPDRTALearner extends SimplePDRTALearner {
 		tester.setColoring(sc);
 		mainModel = a;
 		greedyRTIplus(a, sc);
-		a.cleanUp();
 
 		logger.info("Final PDRTA contains {} states and {} transitions", a.getNumStates(), a.getSize());
-		logger.info("Trained PDRTA with quality: Likelihood={} and AIC={}", NaiveLikelihoodRatioTester.calcLikelihood(a), calcAIC(a));
+		logger.info("Trained PDRTA with quality: Likelihood={} and AIC={}", Math.exp(NaiveLikelihoodRatioTester.calcLikelihood(a).getRatio()), calcAIC(a));
+
+		a.cleanUp();
+
 		logger.info("Time: {}", getDuration(startTime, System.currentTimeMillis()));
 		logger.info("END");
 
