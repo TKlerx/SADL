@@ -15,11 +15,16 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import jsat.distributions.ContinuousDistribution;
 import sadl.integration.MonteCarIntegration;
 import sadl.interfaces.TauEstimator;
 
 public class MonteCarloEstimator implements TauEstimator, Serializable {
+	private static Logger logger = LoggerFactory.getLogger(MonteCarloEstimator.class);
+
 	private static final long serialVersionUID = -4398919127157832777L;
 	Map<ContinuousDistribution, MonteCarIntegration> mcs = new HashMap<>();
 	int pointsToStore, numberOfSteps;
@@ -37,6 +42,7 @@ public class MonteCarloEstimator implements TauEstimator, Serializable {
 			mc = new MonteCarIntegration(pointsToStore);
 			mc.preprocess(d, numberOfSteps);
 			mcs.put(d, mc);
+			logger.debug("Preprocessed {} Monte Carlo Intervals.", mcs.size());
 		}
 		final double result = mc.integrate(d.pdf(timeValue));
 		return result;

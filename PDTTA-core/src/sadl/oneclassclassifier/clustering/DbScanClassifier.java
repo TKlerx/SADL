@@ -90,6 +90,7 @@ public class DbScanClassifier extends NumericClassifier {
 
 	@Override
 	protected boolean isOutlierScaled(double[] testSample) {
+		// TODO do not use eps here, because it we must use a real threshold for testing and not the eps boundary that we used for training
 		final List<? extends VecPaired<VecPaired<Vec, Integer>, Double>> neighbours = dbscan.getLastVectorCollection().search(new DenseVector(testSample), eps);
 		// check whether one of the points is a core point!
 		for (final VecPaired<VecPaired<Vec, Integer>, Double> vecPaired : neighbours) {
@@ -114,9 +115,12 @@ public class DbScanClassifier extends NumericClassifier {
 			final int dataSetIndex = vecPaired.getVector().getPair();
 			if (pointCats[dataSetIndex] != MyDBSCAN.NOISE) {
 				nonNoisePoints++;
+				if (nonNoisePoints >= n) {
+					return true;
+				}
 			}
 		}
-		return nonNoisePoints >= n;
+		return false;
 	}
 
 	@Override
