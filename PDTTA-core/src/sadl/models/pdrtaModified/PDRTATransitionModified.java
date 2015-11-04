@@ -8,14 +8,18 @@ public class PDRTATransitionModified {
 
 	protected SubEvent event;
 	protected PDRTAStateModified target;
-	protected Range<Double> intervall;
+	protected Range<Double> interval;
 	protected double propability;
 
 	PDRTATransitionModified(SubEvent event, PDRTAStateModified target, Range<Double> intervall, double probability) {
 		this.event = event;
 		this.target = target;
-		this.intervall = intervall;
+		this.interval = intervall;
 		this.propability = probability;
+
+		if (event == null || target == null || intervall == null || Double.isNaN(probability)) {
+			throw new IllegalArgumentException();
+		}
 	}
 
 	public SubEvent getEvent() {
@@ -33,15 +37,11 @@ public class PDRTATransitionModified {
 		return propability;
 	}
 
-	public boolean inIntervall(double value) {
-		final double min = intervall.getMinimum();
-		final double max = intervall.getMaximum();
+	public boolean inInterval(double value) {
+		final double min = interval.getMinimum();
+		final double max = interval.getMaximum();
 
-		if (min == value) {
-			return true;
-		}
-
-		if (min < value && value < max) {
+		if (min == value || (min < value && value < max)) {
 			return true;
 		}
 
@@ -51,6 +51,6 @@ public class PDRTATransitionModified {
 	@Override
 	public String toString() {
 
-		return event.getSymbol() + "[" + intervall.getMinimum() + "," + intervall.getMaximum() + ")=>" + target.id;
+		return event.getSymbol() + "[" + interval.getMinimum() + "," + interval.getMaximum() + ")=>" + target.id;
 	}
 }

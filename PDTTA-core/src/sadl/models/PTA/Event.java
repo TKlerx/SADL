@@ -2,6 +2,7 @@ package sadl.models.PTA;
 
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.TreeMap;
 
 public class Event implements Iterable<SubEvent> {
@@ -13,7 +14,7 @@ public class Event implements Iterable<SubEvent> {
 	Event(String symbol, double[] times, TreeMap<Double, SubEvent> subEvents) {
 
 		this.symbol = symbol;
-		this.times = times;
+		this.times = times; // TODO remove?
 		this.subEvents = subEvents;
 	}
 
@@ -39,6 +40,11 @@ public class Event implements Iterable<SubEvent> {
 		return null;
 	}
 
+	public SubEvent getRandomSubEvent() {
+
+		final Random random = new Random();
+		return (SubEvent) subEvents.values().toArray()[random.nextInt(subEvents.size())];
+	}
 
 
 	@Override

@@ -5,45 +5,64 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.rmi.UnexpectedException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
-import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
+import sadl.interfaces.CompatibilityChecker;
 import sadl.models.pdrtaModified.PDRTAModified;
 import sadl.models.pdrtaModified.PDRTAStateModified;
 
 public class PTA {
 
 	protected PTAState root;
-	protected ArrayList<LinkedHashMap<Integer, PTAState>> tails = new ArrayList<>(50);
+	protected LinkedHashMap<Integer, PTAState> tails = new LinkedHashMap<>();
 	protected HashMap<String, Event> events;
 
-	protected LinkedList<PTAState> states;
-	protected LinkedList<PTATransition> transitions;
+	protected LinkedList<PTAState> states = new LinkedList<>();
+	protected LinkedList<PTATransition> transitions = new LinkedList<>();
 
 	protected boolean statesMerged = false;
 
 	public PTA(HashMap<String, Event> events) {
-		this.root = new PTAState(this);
 		this.events = events;
-		this.states = new LinkedList<>();
-		this.transitions = new LinkedList<>();
+		this.root = new PTAState("", null, this);
 		states.add(root);
+		tails.put(root.getId(), root);
 	}
 
-	public PTA(HashMap<String, Event> events, TimedInput timedSequences) throws Exception {
+	public PTA(HashMap<String, Event> events, TimedInput timedSequences) {
 		this(events);
 		this.addSequences(timedSequences);
 	}
 
-	public void addSequences(TimedInput timedSequences) throws Exception {
+	public Map<String, Event> getEventsMap() {
+		return events;
+	}
+
+	public HashMap<String, Event> getEvents() {
+
+		return events;
+	}
+
+	// TODO getTransitions
+
+	public LinkedHashMap<Integer, PTAState> getTails() {
+
+		return tails;
+	}
+
+	public LinkedList<PTAState> getStates() {
+
+		return states;
+	}
+
+	public void addSequences(TimedInput timedSequences) {
 
 		if (timedSequences == null) {
 			return;
@@ -55,38 +74,30 @@ public class PTA {
 
 	}
 
-	public void addSequence(TimedWord sequence) throws Exception {
+	public void addSequence(TimedWord sequence) {
 
 		PTAState currentState = root;
-		boolean tailRemoved = false;
+		boolean addTail = false;
+
 		int i;
-
-		for (i = tails.size(); i < sequence.length(); i++) {
-			tails.add(new LinkedHashMap<Integer, PTAState>());
-		}
-
 		for (i = 0; i < sequence.length(); i++) {
-			final String symbol = sequence.getSymbol(i);
+			final String eventSymbol = sequence.getSymbol(i);
 			final double time = sequence.getTimeValue(i);
-			final Event event = events.get(symbol);
+			final Event event = events.get(eventSymbol);
 
 			if (event == null){
-				throw new UnexpectedException("Event " + symbol + " not exists in sequence: " + sequence.toString());
+				throw new IllegalArgumentException("Event " + eventSymbol + " not exists: " + sequence.toString());
 			}
 
 			final SubEvent subEvent = event.getSubEventByTime(time);
 
-			if (subEvent == null) {
-				throw new UnexpectedException("Subevent " + symbol + " with time " + time + " not exists in sequence: " + sequence.toString());
-			}
-
 			final PTATransition transition = currentState.getTransition(subEvent.getSymbol());
 
 			if (transition == null){
-				tails.get(i).remove(currentState.id); // TODO remove?
-				tailRemoved = true;
+				tails.remove(currentState.id);
+				addTail = true;
 
-				final PTAState nextState = new PTAState(this);
+				final PTAState nextState = new PTAState(currentState.getWord() + eventSymbol, currentState, this);
 
 				final PTATransition newTransition = new PTATransition(currentState, nextState, subEvent, 1);
 				newTransition.add();
@@ -102,140 +113,112 @@ public class PTA {
 		}
 
 		for (i = i + 1; i < sequence.length(); i++) {
-			final String symbol = sequence.getSymbol(i);
+			final String eventSymbol = sequence.getSymbol(i);
 			final double time = sequence.getTimeValue(i);
-			final Event event = events.get(symbol);
+			final Event event = events.get(eventSymbol);
 
 			if (event == null){
-				throw new UnexpectedException("Event " + symbol + " not exists. Sequence: " + sequence.toString());
+				throw new IllegalArgumentException("Event " + eventSymbol + " not exists: " + sequence.toString());
 			}
 
 			final SubEvent subEvent = event.getSubEventByTime(time);
 
-			if (subEvent == null) {
-				throw new UnexpectedException("Subevent " + symbol + " with time " + time + " not exists. Sequence: " + sequence.toString());
-			}
-
-			final PTAState nextState = new PTAState(this);
+			final PTAState nextState = new PTAState(currentState.getWord() + eventSymbol, currentState, this);
 
 			final PTATransition newTransition = new PTATransition(currentState, nextState, subEvent, 1);
+			// newTransition.addTimeValue(time);
 			newTransition.add();
 
 			currentState = nextState;
 			states.add(currentState);
 		}
 
-		if (tailRemoved) {
-			tails.get(sequence.length() - 1).put(currentState.getId(), currentState);
+		if (addTail) {
+			tails.put(currentState.getId(), currentState);
 		}
 
 	}
 
-	public void mergeCompatibleStates() throws Exception {
-
-		// printTails();
-
-		long currentTime;
-		final long time1 = System.currentTimeMillis();
-		long time2 = 0;
+	public void mergeStatesBottomUp(CompatibilityChecker checker) {
 
 		final LinkedList<PTAState> mergedStates = new LinkedList<>();
 
-		for (int i = tails.size() - 1; i > 0; i--) {
-			final LinkedHashMap<Integer, PTAState> longestTails = tails.remove(i);
+		final int i = 0;
 
-			for (final PTAState tailState : longestTails.values()) {
+		while (!tails.isEmpty()) {
+			// printTails();
 
-				boolean tailMerged = false;
+			final LinkedHashMap<Integer, PTAState> nextTails = new LinkedHashMap<>(tails.size());
 
-				final PTAState father = tailState.inTransitions.values().iterator().next().values().iterator().next().getSource();
-				tails.get(i - 1).put(father.getId(), father); // TODO vater
+			for (final PTAState tailState : tails.values()) {
 
-				final Iterator<PTAState> mergedStatesIterator = mergedStates.iterator();
-				while (mergedStatesIterator.hasNext()) {
+				if (tailState.isRemoved()) {
+					continue;
+				}
+
+				final PTAState fatherState = tailState.getFatherState();
+				if (fatherState != root && !fatherState.isMarked()) {
+					nextTails.putIfAbsent(fatherState.getId(), fatherState);
+				}
+
+				for (final ListIterator<PTAState> mergedStatesIterator = mergedStates.listIterator(); mergedStatesIterator.hasNext();) {
 					final PTAState state = mergedStatesIterator.next();
 
-					if (state.removed) {
+					if (state.isRemoved()) {
 						mergedStatesIterator.remove();
 						continue;
 					}
 
-					// System.out.println("START compatible: " + tailState + " " + state);
-
-					currentTime = System.currentTimeMillis();
-
-					if (tailState.compatibleWith(state)) {
-						// System.out.println("Merge: " + state + " " + tailState);
-						// PTAState.merge(state, tailState); // TODO check continue for2
-						PTAState.merge(tailState, state);
-						// System.out.println("Merged: " + state);
-						tailMerged = true;
+					if (checker.compatible(state, tailState)) {
+						PTAState.merge(state, tailState);
 						break;
 					}
-
-					time2 += System.currentTimeMillis() - currentTime;
 				}
 
-				if (!tailMerged) {
-					// System.out.println("Worked off: " + tailState);
-					mergedStates.add(tailState); // TODO in loop?
+				if (!tailState.isRemoved()) {
+					tailState.mark();
+					mergedStates.add(tailState);
 				}
-
-				// printWorkedOff(mergedStates);
-				// printTails();
 			}
 
-			// printTails();
+			tails = nextTails;
 
-			states = mergedStates;
+			/*
+			 * try { this.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\output-merged" + i++ + ".gv")); } catch (final IOException e) {
+			 * 
+			 * e.printStackTrace(); }
+			 */
 
 		}
 
+		states = mergedStates;
+		states.add(root);
 		statesMerged = true;
-		System.out.println(System.currentTimeMillis() - time2 - time1);
-		System.out.println(time2);
+		cleanUp();
 	}
 
 	public PDRTAModified toPDRTA() {
 
-		final LinkedList<PTAState> nextPTAStatesList = new LinkedList<>();
-		final LinkedList<PDRTAStateModified> nextPDRTAStatesList = new LinkedList<>();
+		final HashMap<Integer, PDRTAStateModified> pdrtaStates = new HashMap<>();
 
-		final HashMap<Integer, PDRTAStateModified> states = new HashMap<>();
-
-		final PDRTAStateModified PDRTAroot = new PDRTAStateModified(root.getId(), root.getEndProbability());
-
-		nextPTAStatesList.addLast(root);
-		nextPDRTAStatesList.addLast(PDRTAroot);
-
-		while (!nextPTAStatesList.isEmpty()) {
-			final PTAState currentPTAState = nextPTAStatesList.pollFirst();
-			final PDRTAStateModified currentPDRTAState = nextPDRTAStatesList.pollFirst();
-
-			final int transitionsCount = currentPTAState.getOutTransitionsCount();
-
-			for (final PTATransition transition : currentPTAState.outTransitions.values()) {
-				final PTAState nextPTAState = transition.getTarget();
-				final PDRTAStateModified nextPDRTAState;
-				final SubEvent event = transition.getEvent();
-
-				if (!nextPTAState.checked) {
-					nextPDRTAState = new PDRTAStateModified(nextPTAState.getId(), nextPTAState.getEndProbability());
-
-					nextPTAStatesList.addLast(nextPTAState);
-					nextPDRTAStatesList.addLast(nextPDRTAState);
-					states.put(nextPTAState.getId(), nextPDRTAState);
-					nextPTAState.checked = true;
-				} else {
-					nextPDRTAState = states.get(nextPTAState.getId());
-				}
-
-				currentPDRTAState.addTransition(event, nextPDRTAState, event.getIntervalInState(currentPTAState), transition.getCount() / transitionsCount);
-			}
-
+		for (final PTAState ptaState : states) {
+			final int stateId = ptaState.getId();
+			pdrtaStates.put(stateId, new PDRTAStateModified(stateId, ptaState.getEndProbability()));
 		}
 
-		return new PDRTAModified(PDRTAroot, events);
+		for (final PTAState ptaState : states) {
+			final PDRTAStateModified pdrtaStateSource = pdrtaStates.get(ptaState.getId());
+			final int outTransitionsCount = ptaState.getOutTransitionsCount();
+
+			for (final PTATransition transition : ptaState.outTransitions.values()) {
+				final PDRTAStateModified pdrtaStateTarget = pdrtaStates.get(transition.getTarget().getId());
+				final SubEvent event = transition.getEvent();
+
+				pdrtaStateSource.addTransition(event, pdrtaStateTarget, event.getIntervalInState(ptaState), transition.getCount() / outTransitionsCount);
+			}
+		}
+
+		return new PDRTAModified(pdrtaStates.get(root.getId()), pdrtaStates, events);
 	}
 
 	public void toGraphvizFile(Path resultPath) throws IOException {
@@ -244,16 +227,20 @@ public class PTA {
 
 		// write states
 		for (final PTAState state : states) {
-			if (!state.removed) {
+			if (!state.isRemoved()) {
 				writer.write(Integer.toString(state.getId()));
-				writer.write(" [shape=circle, label=\"" + Integer.toString(state.getId()) + "\"]\n");
+				writer.write(" [shape=circle, label=\"" + Integer.toString(state.getId()) + "\"");
+
+				if (tails.containsKey(state.getId())) {
+					writer.write(", color=red");
+				}
+
+				writer.write("]\n");
 			}
 		}
 
 		for (final PTATransition transition : transitions) {
-
 			if (!transition.removed) {
-
 				writer.write(Integer.toString(transition.getSource().getId()) + "->" + Integer.toString(transition.getTarget().getId()) + " [label=<"
 						+ transition.getEvent().getSymbol() + "(" + transition.getCount() + ")>;];\n");
 			}
@@ -264,32 +251,10 @@ public class PTA {
 
 	public void printTails() {
 
-		for (int i = tails.size() - 1; i > 0; i--) {
-			final LinkedHashMap<Integer, PTAState> longestTails = tails.get(i);
-
-			System.out.print(i + ": ");
-
-			for (final PTAState state : longestTails.values()) {
-				System.out.println("\t" + state);
-			}
-
-			System.out.println();
+		for (final PTAState state : tails.values()) {
+			System.out.println("\t" + state);
 		}
 
-	}
-
-	int i = 0;
-
-	public void printWorkedOff(List<PTAState> list) {
-
-		System.out.print(i++ + "List: ");
-
-		for (final PTAState state : list) {
-			// System.out.print(state + " ");
-			break;
-		}
-
-		System.out.println("");
 	}
 
 	public boolean statesMerged() {
@@ -297,8 +262,32 @@ public class PTA {
 		return this.statesMerged;
 	}
 
-	public Map<String, Event> getEventsMap() {
-		return events;
+	private void cleanUp(){
+
+		for (final Iterator<PTAState> statesIterator = states.iterator(); statesIterator.hasNext();) {
+			final PTAState state = statesIterator.next();
+
+			if (state.isRemoved()) {
+				statesIterator.remove();
+			}
+		}
+
+		for (final Iterator<PTAState> statesIterator = tails.values().iterator(); statesIterator.hasNext();) {
+			final PTAState state = statesIterator.next();
+
+			if (state.isRemoved()) {
+				statesIterator.remove();
+			}
+		}
+
+		for (final Iterator<PTATransition> transitionsIterator = transitions.iterator(); transitionsIterator.hasNext();) {
+			final PTATransition transition = transitionsIterator.next();
+
+			if (transition.isRemoved()) {
+				transitionsIterator.remove();
+			}
+		}
+
 	}
 
 }

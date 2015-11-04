@@ -1,6 +1,7 @@
 package sadl.models.PTA;
 
-import jsat.distributions.empirical.GaussKFInvertible;
+import jsat.distributions.Normal;
+import jsat.distributions.empirical.NormalRandomized;
 
 import org.apache.commons.lang3.Range;
 
@@ -10,30 +11,37 @@ public class SubEvent {
 	protected int subEventNumber;
 	protected Range<Double> anomalyInterval;
 	protected Range<Double> warningInterval;
-	protected Range<Double> maxInterval;
+	protected Range<Double> boundInterval;
 	protected double expectedValue;
-	protected double variance;
+	protected double deviation;
+
+	protected NormalRandomized normalFunction;
 
 	protected SubEvent previousSubEvent;
 	protected SubEvent nextSubEvent;
 
-	private static double anomalyNormalPoint = GaussKFInvertible.InvertedIntGaussKF(0.000001d, 0.0000001d);
-	private static double warningNormalPoint = GaussKFInvertible.InvertedIntGaussKF(0.1d, 0.0000001d);;
+	private static Normal standardNormalFunction = new Normal();
+	private static double anomalyNormalPoint = standardNormalFunction.invCdf(0.00001d);
+	private static double warningNormalPoint = standardNormalFunction.invCdf(0.01d);
 
-	public SubEvent(Event event, int subEventNumber, double expectedValue, double variance, Range<Double> maxInterval) {
+	public SubEvent(Event event, int subEventNumber, double expectedValue, double deviation, Range<Double> boundInterval) {
 
 		this.event = event;
 		this.subEventNumber = subEventNumber;
 		this.expectedValue = expectedValue;
-		this.variance = variance;
+		this.deviation = deviation;
 
-		final double differenceAnomaly = (anomalyNormalPoint * variance);
+		if (deviation > 0){
+			normalFunction = new NormalRandomized(expectedValue, deviation);
+		}
+
+		final double differenceAnomaly = Math.abs(anomalyNormalPoint * deviation);
 		anomalyInterval = Range.between(Math.max(0, expectedValue - differenceAnomaly), expectedValue + differenceAnomaly);
 
-		final double differenceWarning = (warningNormalPoint * variance);
-		warningInterval = Range.between(expectedValue - differenceWarning, expectedValue + differenceWarning);
+		final double differenceWarning = Math.abs(warningNormalPoint * deviation);
+		warningInterval = Range.between(Math.max(0, expectedValue - differenceWarning), expectedValue + differenceWarning);
 
-		this.maxInterval = maxInterval;
+		this.boundInterval = boundInterval;
 	}
 
 	public String getSymbol() {
@@ -71,10 +79,22 @@ public class SubEvent {
 			return false;
 		}
 
+		if (isInLeftCriticalArea(time) || isInRightCriticalArea(time)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	public boolean isInLeftCriticalArea(double time) {
 		if (this.hasLeftCriticalArea() && time < this.getLeftBound()) {
 			return true;
 		}
 
+		return false;
+	}
+
+	public boolean isInRightCriticalArea(double time) {
 		if (this.hasRightCriticalArea() && this.getRightBound() >= time) {
 			return true;
 		}
@@ -95,14 +115,12 @@ public class SubEvent {
 
 	public double getLeftBound() {
 
-		// return Math.max(anomalyIntervall.getMinimum(), maxIntervall.getMinimum());
-		return maxInterval.getMinimum();
+		return boundInterval.getMinimum();
 	}
 
 	public double getRightBound() {
 
-		// return Math.min(anomalyIntervall.getMaximum(), maxIntervall.getMaximum());
-		return maxInterval.getMaximum();
+		return boundInterval.getMaximum();
 	}
 
 	public double getLeftIntervalInState(PTAState state) {
@@ -155,7 +173,7 @@ public class SubEvent {
 
 	public boolean hasLeftCriticalArea() {
 
-		if (anomalyInterval.getMinimum() < maxInterval.getMinimum()) {
+		if (anomalyInterval.getMinimum() < boundInterval.getMinimum()) {
 			return true;
 		}
 
@@ -164,7 +182,7 @@ public class SubEvent {
 
 	public boolean hasRightCriticalArea() {
 
-		if (maxInterval.getMaximum() < anomalyInterval.getMaximum()) {
+		if (boundInterval.getMaximum() < anomalyInterval.getMaximum()) {
 			return true;
 		}
 
@@ -198,28 +216,43 @@ public class SubEvent {
 
 	public double generateRandomTime(boolean allowAnomaly) {
 
-		final GaussKFInvertible func = GaussKFInvertible.getInstance();
+		if (deviation == 0){
+			return expectedValue;
+		}
+
 		double randomTime = 0.0d;
-		boolean condition;
+		final boolean condition;
 
 		do {
 
-			randomTime = func.getRandom(expectedValue, variance, 0.000001);
+			randomTime = normalFunction.getRandomPoint();
 
-			if (!allowAnomaly && this.isAnomaly(randomTime)) {
-				condition = false;
-			} else {
-				condition = true;
+			if (randomTime >= 0.0d && !allowAnomaly && this.isAnomaly(randomTime)) {
+				return randomTime; //TODO check
 			}
 
-		} while (randomTime <= 0.0d && !condition);
+		} while (true);
 
-		return randomTime;
 	}
 
 	public double calculateProbability(double time) {
 
-		return GaussKFInvertible.getInstance().k((time - expectedValue) / variance); // TODO check
+		if (deviation == 0.0d){
+			if (time == expectedValue){
+				return 1.0d;
+			}
+			else{
+				return 0.0d;
+			}
+		}
+
+		final double probability = normalFunction.cdf(time);
+
+		if (probability > 0.5d){
+			return (1 - probability) * 2.0d;
+		}
+
+		return probability * 2.0d;
 	}
 
 	@Override
@@ -239,7 +272,7 @@ public class SubEvent {
 			throw new IllegalArgumentException("p is not between 0 and 1.");
 		}
 
-		anomalyNormalPoint = GaussKFInvertible.InvertedIntGaussKF(p / 2, 0.0000001d);
+		anomalyNormalPoint = standardNormalFunction.invCdf(p / 2.0d);
 	}
 
 	public static void setWarningProbability(double p) {
@@ -248,7 +281,7 @@ public class SubEvent {
 			throw new IllegalArgumentException("p is not between 0 and 1.");
 		}
 
-		warningNormalPoint = GaussKFInvertible.InvertedIntGaussKF(p / 2, 0.0000001d);
+		warningNormalPoint = standardNormalFunction.invCdf(p / 2.0d);
 	}
 
 	@Override

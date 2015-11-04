@@ -26,10 +26,9 @@ public class PDRTAStateModified {
 
 	public PDRTAStateModified getNextState(String eventSymbol, double time) {
 
-		// final TreeMap<Double, PDRTATransitionModified> eventTransitions = transitions.get(eventSymbol);
 		final PDRTATransitionModified transition = this.getTransition(eventSymbol, time);
 
-		if (transition != null && transition.inIntervall(time)) {
+		if (transition != null && transition.inInterval(time)) {
 			return transition.getTarget();
 		}
 
@@ -55,13 +54,46 @@ public class PDRTAStateModified {
 			return null;
 		}
 
-		return transitionEntry.getValue();
+		final PDRTATransitionModified transition = transitionEntry.getValue();
+
+		if (transition.inInterval(time)) {
+			return transition;
+		}
+
+		return null;
 	}
 
-	public PDRTATransitionModified getRandomTransition() throws Exception {
+	public PDRTATransitionModified getProbablyTransition(String eventSymbol, double time) {
+
+		PDRTATransitionModified probablyTransition = getTransition(eventSymbol, time);
+
+		if (probablyTransition == null) {
+			final TreeMap<Double, PDRTATransitionModified> eventTransitions = transitions.get(eventSymbol);
+
+			if (eventTransitions == null) {
+				return null;
+			}
+
+			double maxProbability = 0.0;
+
+			for (final PDRTATransitionModified transition : eventTransitions.values()){
+
+				final double probability = transition.getEvent().calculateProbability(time);
+
+				if (probability > maxProbability) {
+					maxProbability = probability;
+					probablyTransition = transition;
+				}
+			}
+		}
+
+		return probablyTransition;
+	}
+
+	public PDRTATransitionModified getRandomTransition() {
 
 		if (sumProbability < 1.0d) {
-			throw new Exception("Probability not 1.0");
+			throw new IllegalStateException("Probability not 1.0");
 		}
 
 		final double random = new Random().nextDouble();
@@ -73,13 +105,13 @@ public class PDRTAStateModified {
 		final Entry<Double, PDRTATransitionModified> transitionEntry = transitionsProbability.floorEntry(random);
 
 		if (transitionEntry == null) {
-			throw new Exception("No transition selected(" + random + ")" + this);
+			throw new IllegalStateException("No transition selected(" + random + ")" + this);
 		}
 
 		final PDRTATransitionModified transition = transitionEntry.getValue();
 
 		if (transitionEntry.getKey() + transition.getPropability() < random) {
-			throw new Exception("No transition selected.");
+			throw new IllegalStateException("No transition selected.");
 		}
 
 		return transition;

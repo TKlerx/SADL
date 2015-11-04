@@ -16,30 +16,38 @@ public class KernelDensityEstimatorDifferentiable extends Distribution {
 	protected Function kernelPdfFunction;
 	protected Function kernelDerivationFunction;
 
-	protected double minSearchAccuracy = DEFAULT_MINSEARCH_ACCURACY;
+	protected double minSearchAccuracy;
+	protected double minSearchStep;
 
-	public static final double DEFAULT_BANDWIDTH = 500.0d;
-	public static final double DEFAULT_MINSEARCH_ACCURACY = 50.0d;
-
-	// public static final double DEFAULT_INVERTED_INTKF_VALUES_ACCURACY = 0.0000001d;
+	public static final double DEFAULT_BANDWIDTH = 0.6d;
+	public static final double DEFAULT_MIN_SEARCH_ACCURACY = 0.00001d;
 
 	public KernelDensityEstimatorDifferentiable(double[] dataPoints) {
-		this(new DenseVector(dataPoints));
+		this(new DenseVector(dataPoints), DEFAULT_BANDWIDTH, DEFAULT_BANDWIDTH / 4.0, DEFAULT_MIN_SEARCH_ACCURACY);
 	}
 
 	public KernelDensityEstimatorDifferentiable(Vec dataPoints) {
-		this(dataPoints, DEFAULT_BANDWIDTH, DEFAULT_MINSEARCH_ACCURACY);
+		this(dataPoints, DEFAULT_BANDWIDTH, DEFAULT_BANDWIDTH / 4.0, DEFAULT_MIN_SEARCH_ACCURACY);
 	}
 
-	public KernelDensityEstimatorDifferentiable(double[] dataPoints, double bandwidth, double minSearchAccuracy) {
-		this(new DenseVector(dataPoints), bandwidth, minSearchAccuracy);
+	public KernelDensityEstimatorDifferentiable(double[] dataPoints, double bandwidth) {
+		this(new DenseVector(dataPoints), bandwidth, bandwidth / 4.0, DEFAULT_MIN_SEARCH_ACCURACY);
 	}
 
-	public KernelDensityEstimatorDifferentiable(Vec dataPoints, double bandwidth, double minSearchAccuracy) {
+	public KernelDensityEstimatorDifferentiable(Vec dataPoints, double bandwidth) {
+		this(dataPoints, bandwidth, bandwidth / 4.0, DEFAULT_MIN_SEARCH_ACCURACY);
+	}
+
+	public KernelDensityEstimatorDifferentiable(double[] dataPoints, double bandwidth, double minSearchStep, double minSearchAccuracy) {
+		this(new DenseVector(dataPoints), bandwidth, minSearchStep, minSearchAccuracy);
+	}
+
+	public KernelDensityEstimatorDifferentiable(Vec dataPoints, double bandwidth, double minSearchStep, double minSearchAccuracy) {
 
 		kernelDensity = new KernelDensityEstimator(dataPoints, GaussKF.getInstance(), bandwidth);
 		kernelPdfFunction = Distribution.getFunctionPDF(kernelDensity);
 		kernelDerivationFunction = Distribution.getFunctionPDF(new KernelDensityEstimator(dataPoints, GaussKFDerivation.getInstance(), bandwidth));
+		this.minSearchStep = minSearchStep;
 		this.minSearchAccuracy = minSearchAccuracy;
 	}
 
@@ -71,7 +79,7 @@ public class KernelDensityEstimatorDifferentiable extends Distribution {
 
 		final double endX = kernelDensity.max() - bandwidth;
 
-		for (double x = lastX + bandwidth; x < endX; x = x + bandwidth) {
+		for (double x = lastX + minSearchStep; x < endX; x = x + minSearchStep) {
 			final double newValue = kernelDerivationFunction.f(x);
 
 			if (lastValue < 0 && newValue > 0) {
