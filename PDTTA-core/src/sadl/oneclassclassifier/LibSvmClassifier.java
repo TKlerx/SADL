@@ -39,7 +39,7 @@ public class LibSvmClassifier extends NumericClassifier {
 		param.gamma = gamma;// 0.2;
 		param.nu = nu;// 0.01; // precision/recall variable
 		param.svm_type = svm_parameter.ONE_CLASS;
-		param.kernel_type = kernelType;// svm_parameter.RBF;
+		param.kernel_type = kernelType;// svm_parameter.RBF=2;
 		param.cache_size = 2000;
 		param.eps = eps;// 0.001;
 		param.degree = degree; // 3
