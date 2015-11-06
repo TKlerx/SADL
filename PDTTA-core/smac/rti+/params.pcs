@@ -1,6 +1,6 @@
 #RTI+ parameters
-sig [0,1] [0.05]
-hist [1,100] [4]i
+sig [0,1] [0.5]
+hist [1,100] [15]i
 em {LRT, LRT_ADV, NAIVE_LRT, FM, FM_ADV} [LRT]
 ida {DISABLED, ALL_BORDER, ALL, MAD_BORDER, MAD, OUTLIER_BORDER, OUTLIER} [DISABLED]
 sp {LEFT, MIDDLE, RIGHT} [MIDDLE]
@@ -58,7 +58,7 @@ svmProbabilityEstimate[0,1] [0]i
 svmProbabilityEstimate| detectorMethod in {SVM}
 
 
-#db scan paramters
+#db scan parameters
 dbScanN[1,100] [5]i
 dbScanN | detectorMethod in {DBSCAN}
 
