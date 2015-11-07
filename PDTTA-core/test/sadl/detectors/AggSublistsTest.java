@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.apache.commons.math3.util.Pair;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -18,9 +19,11 @@ import sadl.detectors.featureCreators.MinimalFeatureCreator;
 import sadl.detectors.featureCreators.SmallFeatureCreator;
 import sadl.detectors.featureCreators.UberFeatureCreator;
 import sadl.experiments.ExperimentResult;
+import sadl.input.TimedInput;
 import sadl.modellearner.PdttaLearner;
 import sadl.oneclassclassifier.LibSvmClassifier;
 import sadl.oneclassclassifier.ThresholdClassifier;
+import sadl.utils.IoUtils;
 
 public class AggSublistsTest {
 
@@ -43,6 +46,7 @@ public class AggSublistsTest {
 	@Test
 	public void test() {
 		try{
+			// TODO write test for DB SCAN classifier
 			final PdttaLearner learner = new PdttaLearner(0.05, false);
 
 			final MinimalFeatureCreator featureCreator = new MinimalFeatureCreator();
@@ -65,22 +69,31 @@ public class AggSublistsTest {
 			final AnomalyDetection detection4 = new AnomalyDetection(detector4, learner);
 
 
-			final ExperimentResult expected = new ExperimentResult(467, 4340, 193, 0);
 			final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
-			// final ExperimentResult actual = detection.trainTest(p);
-			// final ExperimentResult actual2 = detection2.trainTest(p);
-			// final ExperimentResult actual3 = detection3.trainTest(p);
-			final ExperimentResult actual4 = detection4.trainTest(p);
+			Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
+			inputSets.getKey().decreaseSamples(0.2);
+			final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
+			final ExperimentResult expected = new ExperimentResult(467, 4138, 395, 0);
+			assertEquals(expected, actual);
 
-			// assertEquals(expected, actual);
-			final ExperimentResult expected2 = new ExperimentResult(467, 2642, 1891, 0);
-			// assertEquals(expected2, actual2);
+			inputSets = IoUtils.readTrainTestFile(p);
+			inputSets.getKey().decreaseSamples(0.2);
+			final ExperimentResult actual2 = detection2.trainTest(inputSets.getKey(), inputSets.getValue());
+			final ExperimentResult expected2 = new ExperimentResult(467, 2518, 2015, 0);
+			assertEquals(expected2, actual2);
 
-			final ExperimentResult expected3 = new ExperimentResult(467, 572, 3961, 0);
-			// assertEquals(expected3, actual3);
+			inputSets = IoUtils.readTrainTestFile(p);
+			inputSets.getKey().decreaseSamples(0.2);
+			final ExperimentResult actual3 = detection3.trainTest(inputSets.getKey(), inputSets.getValue());
+			final ExperimentResult expected3 = new ExperimentResult(467, 0, 4533, 0);
+			assertEquals(expected3, actual3);
 
-			final ExperimentResult expected4 = new ExperimentResult(467, 572, 3961, 0);
+			inputSets = IoUtils.readTrainTestFile(p);
+			inputSets.getKey().decreaseSamples(0.2);
+			final ExperimentResult actual4 = detection4.trainTest(inputSets.getKey(), inputSets.getValue());
+			final ExperimentResult expected4 = new ExperimentResult(467, 0, 4533, 0);
 			assertEquals(expected4, actual4);
+
 		} catch (final Exception e) {
 			e.printStackTrace();
 		}

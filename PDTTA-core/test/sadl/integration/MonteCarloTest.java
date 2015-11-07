@@ -2,6 +2,8 @@ package sadl.integration;
 
 import static org.junit.Assert.assertEquals;
 
+import org.apache.commons.lang3.time.DurationFormatUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Test;
 
 import jsat.distributions.ContinuousDistribution;
@@ -12,8 +14,10 @@ public class MonteCarloTest {
 
 	@Test
 	public void testGaussian() {
+		final StopWatch sw = new StopWatch();
+		sw.start();
 		final Normal n = new Normal(0,1);
-		final MonteCarIntegration mc = new MonteCarIntegration(100000);
+		final MonteCarloIntegration mc = new MonteCarloIntegration(100000);
 		mc.preprocess(n, 1000, -20, 20);
 		System.out.println("mc.integrate(0.02)=" + mc.integrate(n.pdf(-2)));
 		assertEquals(0.04605, mc.integrate(n.pdf(-2)), 0.005);
@@ -26,12 +30,16 @@ public class MonteCarloTest {
 			assertEquals("Error while comparing for d=" + d, mc.integrate(n.pdf(d)), negIntegral, 0.00001);
 			assertEquals("Error while comparing for d=" + d, n.cdf(d) * 2, negIntegral, 0.005);
 		}
+		sw.stop();
+		System.out.println("Gaussian integration took " + DurationFormatUtils.formatDurationHMS(sw.getTime()));
 	}
 
 	@Test
 	public void testSingleValue() {
+		final StopWatch sw = new StopWatch();
+		sw.start();
 		final ContinuousDistribution d = new SingleValueDistribution(0);
-		final MonteCarIntegration mc = new MonteCarIntegration(100000);
+		final MonteCarloIntegration mc = new MonteCarloIntegration(100000);
 		mc.preprocess(d, 1000, -20, 20);
 		System.out.println("\nmc.integrate(0)=" + mc.integrate(d.pdf(-2)));
 		assertEquals(0, mc.integrate(d.pdf(-2)), 0.005);
@@ -43,7 +51,7 @@ public class MonteCarloTest {
 		assertEquals(0, mc.integrate(d.pdf(1)), 0.005);
 
 		final ContinuousDistribution d2 = new SingleValueDistribution(1);
-		final MonteCarIntegration mc2 = new MonteCarIntegration(100000);
+		final MonteCarloIntegration mc2 = new MonteCarloIntegration(100000);
 		mc2.preprocess(d2, 1000, -20, 20);
 		System.out.println("\nmc.integrate(0)=" + mc2.integrate(d2.pdf(-2)));
 		assertEquals(0, mc2.integrate(d2.pdf(-2)), 0.005);
@@ -53,6 +61,8 @@ public class MonteCarloTest {
 
 		System.out.println("mc.integrate(0)=" + mc2.integrate(d2.pdf(0)));
 		assertEquals(0, mc2.integrate(d2.pdf(0)), 0.005);
+		sw.stop();
+		System.out.println("Single value integration took " + DurationFormatUtils.formatDurationHMS(sw.getTime()));
 	}
 
 }

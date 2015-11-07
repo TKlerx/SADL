@@ -47,7 +47,7 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 
 	private final TObjectIntMap<String> alphabet = new TObjectIntHashMap<>();
 	private final List<String> alphabetRev = new ArrayList<>();
-	private final List<TimedWord> words = new ArrayList<>();
+	private List<TimedWord> words = new ArrayList<>();
 
 	private static final String[] parseSymbols = new String[] { "^\\(", "\\)$", "\\)\\s+\\(", "\\s*,\\s*", "\\s*:\\s*" };
 	private static final String[] parseSymbolsAlt = new String[] { "^\\d+ ", "$", "\\s{2}", "\\s", "\\s*:\\s*" };
@@ -589,6 +589,10 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 			return false;
 		}
 		return true;
+	}
+
+	public void decreaseSamples(double d) {
+		words = words.subList(0, (int) (words.size() * d));
 	}
 
 }
