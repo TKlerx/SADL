@@ -212,10 +212,13 @@ public class SimplePDRTALearner implements ModelLearner {
 		tester.setColoring(sc);
 		mainModel = a;
 		complete(a, sc);
-		a.cleanUp();
 
 		logger.info("Final PDRTA contains {} states and {} transitions", a.getNumStates(), a.getSize());
-		logger.info("Trained PDRTA with quality: Likelihood={} and AIC={}", NaiveLikelihoodRatioTester.calcLikelihood(a), calcAIC(a));
+		// TODO Check why Likelihood is 0.0 here
+		logger.info("Trained PDRTA with quality: Likelihood={} and AIC={}", Math.exp(NaiveLikelihoodRatioTester.calcLikelihood(a).getRatio()), calcAIC(a));
+
+		a.cleanUp();
+
 		logger.info("Time: {}", getDuration(startTime, System.currentTimeMillis()));
 		logger.info("END");
 
@@ -603,7 +606,7 @@ public class SimplePDRTALearner implements ModelLearner {
 		}
 		final double median = StatisticsUtil.calculateMedian(diffs, true);
 		final double mad = StatisticsUtil.calculateMAD(diffs, median);
-		return (int) Math.floor(((median + 2.5 * mad) / 2.0) + 1.0);
+		return (int) Math.ceil(((median + 2.5 * mad) / 2.0));
 	}
 
 	/**
@@ -632,7 +635,7 @@ public class SimplePDRTALearner implements ModelLearner {
 		diffs.sort();
 		final double q1 = StatisticsUtil.calculateQ1(diffs, false);
 		final double q3 = StatisticsUtil.calculateQ3(diffs, false);
-		return (int) Math.floor(((q3 + (q3 - q1) * 1.5) / 2.0) + 1.0);
+		return (int) Math.ceil(((q3 + (q3 - q1) * 1.5) / 2.0));
 	}
 
 	/**
@@ -651,7 +654,7 @@ public class SimplePDRTALearner implements ModelLearner {
 		if (slots == 1) {
 			final int size = tails.firstEntry().getValue().size();
 			if (size < (minData / 2.0)) {
-				return (int) Math.floor((in.getEnd() - in.getBegin() + 1) * 0.05 + 1.0);
+				return (int) Math.ceil((in.getEnd() - in.getBegin() + 1) * 0.05);
 			} else {
 				return 0;
 			}
@@ -662,11 +665,11 @@ public class SimplePDRTALearner implements ModelLearner {
 			final int s2 = tails.get(t2).size();
 			final double perc = (double) (t2 - t1 - 1) / (double) (in.getEnd() - in.getBegin() - 1);
 			if (s1 >= minData && s2 >= minData && perc >= 0.2) {
-				return (int) Math.floor((in.getEnd() - in.getBegin() + 1) * 0.05 + 1.0);
+				return (int) Math.ceil((in.getEnd() - in.getBegin() + 1) * 0.05);
 			} else if ((s1 >= minData || s2 >= minData) && perc >= 0.2) {
-				return (int) Math.floor((in.getEnd() - in.getBegin() + 1) * 0.075 + 1.0);
+				return (int) Math.ceil((in.getEnd() - in.getBegin() + 1) * 0.075);
 			} else {
-				return (int) Math.floor((t2 - t1 - 1) / 2.0 + 1.0);
+				return (int) Math.ceil((t2 - t1 - 1) / 2.0);
 			}
 		}
 	}

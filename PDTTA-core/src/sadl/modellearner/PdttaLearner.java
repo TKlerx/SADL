@@ -113,6 +113,7 @@ public class PdttaLearner implements ModelLearner {
 			pdtta = new PDTTA(pdfa, transitionDistributions, tauEstimatior);
 			pdtta.setAlphabet(trainingSequences);
 			pdtta.makeImmutable();
+			logger.info("Learned PDTTA.");
 			return pdtta;
 		} catch (final IOException e) {
 			logger.error("An unexpected error occured", e);

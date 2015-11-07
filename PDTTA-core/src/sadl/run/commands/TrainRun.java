@@ -101,8 +101,9 @@ public class TrainRun {
 					if (m instanceof PDRTA) {
 						// TODO Remove this some time
 						final Path out2 = Paths.get(out.toAbsolutePath().toString() + ".gv");
-						final BufferedWriter bw = Files.newBufferedWriter(out2);
-						((PDRTA) m).toDOTLang(bw);
+						try (final BufferedWriter bw = Files.newBufferedWriter(out2)) {
+							((PDRTA) m).toDOTLang(bw);
+						}
 					}
 					IoUtils.serialize(m, out);
 				}

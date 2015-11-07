@@ -87,6 +87,7 @@ public class TrebaPdfaLearner implements PdfaLearner {
 		try {
 			createTrebaFile(trainingSequences, trebaTrainSetFile);
 			final Path trebaAutomaton = createUniqueFile(Paths.get(tempFilePrefix + "fsm.fsm"));
+			logger.info("Starting to learn PDFA with treba...");
 			final double loglikelihood = trainFsm(trebaTrainSetFile, trebaAutomaton);
 			logger.debug("learned event automaton has loglikelihood of {}", loglikelihood);
 			// compute paths through the automata for the training set and write to
@@ -101,6 +102,7 @@ public class TrebaPdfaLearner implements PdfaLearner {
 				logger.debug("temp dir: {}", tempDir);
 			}
 			treba.log1plus_free_wrapper();
+			logger.info("Learned PDFA with treba.");
 			return pdfa;
 		} catch (final IOException e) {
 			logger.error("An unexpected error occured", e);

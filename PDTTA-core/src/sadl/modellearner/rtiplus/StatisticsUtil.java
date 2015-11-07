@@ -156,9 +156,9 @@ public abstract class StatisticsUtil {
 					result = values.get(start);
 				}
 			} else {
-				final Number value1 = values.get(start + ((count / 2) - 1));
-				final Number value2 = values.get(start + (count / 2));
-				result = (value1.doubleValue() + value2.doubleValue()) / 2.0;
+				final double value1 = values.get(start + ((count / 2) - 1));
+				final double value2 = values.get(start + (count / 2));
+				result = (value1 + value2) / 2.0;
 			}
 		}
 		return result;
