@@ -112,8 +112,19 @@ public abstract class NumericClassifier implements OneClassClassifier {
 		return isOutlierScaled(toEvaluate);
 	}
 
+	/**
+	 * Checks whether the provided test sample is an outlier. The test sample are already scaled.
+	 * 
+	 * @param scaledTestSample
+	 * @return
+	 */
 	protected abstract boolean isOutlierScaled(double[] scaledTestSample);
 
+	/**
+	 * Trains a model with the provided training samples. The training samples are already scaled.
+	 * 
+	 * @param scaledTrainSamples
+	 */
 	protected abstract void trainModelScaled(List<double[]> scaledTrainSamples);
 
 	@Override

@@ -17,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import jsat.DataSet;
-import jsat.SimpleDataSet;
 import jsat.classifiers.DataPoint;
 import jsat.clustering.MyDBSCAN;
 import jsat.linear.DenseVector;
@@ -37,6 +36,7 @@ import sadl.utils.DatasetTransformationUtils;
  *
  */
 public class DbScanClassifier extends NumericClassifier {
+	// TODO write unit test for this
 	private static Logger logger = LoggerFactory.getLogger(DbScanClassifier.class);
 	DistanceMetric dm;
 	MyDBSCAN dbscan;
@@ -69,7 +69,7 @@ public class DbScanClassifier extends NumericClassifier {
 		// }
 
 		pointCats = new int[data.size()];
-		final DataSet<SimpleDataSet> dataSet = DatasetTransformationUtils.doublesToDataSet(data);
+		final DataSet<?> dataSet = DatasetTransformationUtils.doublesToDataSet(data);
 		clusterResult = MyDBSCAN.createClusterListFromAssignmentArray(dbscan.cluster(dataSet, eps, n, pointCats), dataSet);
 		final int clusterCount = clusterResult.size();
 		logger.info("There are {} many clusters.", clusterCount);
