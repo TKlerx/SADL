@@ -1,11 +1,12 @@
 package sadl.models.PTA;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
-import java.util.List;
 
 import jsat.utils.Pair;
+import sadl.constants.EventsCreationStrategy;
 
 public class PTAState implements Cloneable {
 
@@ -122,7 +123,7 @@ public class PTAState implements Cloneable {
 		final int outTransitionsCount = this.getOutTransitionsCount();
 		final int endCount = inTransitionsCount - outTransitionsCount;
 
-		if (endCount == 0) {
+		if (endCount <= 0) {
 			return 0.0d;
 		} else if (outTransitionsCount == 0) {
 			return 1.0d;
@@ -150,7 +151,7 @@ public class PTAState implements Cloneable {
 		marked = true;
 	}
 
-	public static void merge(PTAState firstState, PTAState secondState) {
+	public static void merge(PTAState firstState, PTAState secondState, EventsCreationStrategy strategy) {
 
 		if (firstState.isRemoved()) {
 			firstState = firstState.isMergedWith();
@@ -202,8 +203,46 @@ public class PTAState implements Cloneable {
 		PTATransition.remove(transitionsToRemove);
 		PTATransition.add(transitionsToAdd);
 		secondState.mergedWith = firstState;
-		PTAState.merge(statesToMerge);
+		PTAState.merge(statesToMerge, strategy);
 
+		if (strategy == EventsCreationStrategy.SplitEventsIsolateCriticalAreasMergeInProcess) {
+			firstState.removeCriticalTransitions();
+		}
+	}
+
+	public void removeCriticalTransitions(){
+
+		final LinkedList<PTATransition> transitionsToRemove = new LinkedList<>();
+		final LinkedList<Pair<PTAState,PTAState>> statesToMerge = new LinkedList<>();
+
+		for (final PTATransition transition : outTransitions.values()) {
+			final SubEvent event = transition.getEvent();
+			if (event instanceof SubEventCriticalArea) {
+				final SubEventCriticalArea criticalEvent = (SubEventCriticalArea) event;
+
+				if (transition.getCount() > criticalEvent.getAlmostSurelyCount()) {
+
+					final SubEvent leftEvent = criticalEvent.getPreviousSubEvent();
+					final SubEvent rightEvent = criticalEvent.getNextSubEvent();
+					final PTATransition leftEventTransition = outTransitions.get(leftEvent.getSymbol());
+					final PTATransition rightEventTransition = outTransitions.get(rightEvent.getSymbol());
+
+					if (leftEventTransition == null) {
+						if (rightEventTransition != null) {
+							transitionsToRemove.add(transition);
+							statesToMerge.add(new Pair<>(rightEventTransition.target, transition.target));
+						}
+					} else if (rightEventTransition == null) {
+						transitionsToRemove.add(transition);
+						statesToMerge.add(new Pair<>(leftEventTransition.target, transition.target));
+					}
+				}
+
+			}
+		}
+
+		PTATransition.remove(transitionsToRemove);
+		PTAState.merge(statesToMerge, EventsCreationStrategy.SplitEventsIsolateCriticalAreasMergeInProcess);
 	}
 
 	public int getId() {
@@ -222,9 +261,9 @@ public class PTAState implements Cloneable {
 
 
 
-	public static void merge(List<Pair<PTAState, PTAState>> statesToMerge) {
+	public static void merge(Collection<Pair<PTAState, PTAState>> statesToMerge, EventsCreationStrategy strategy) {
 		for (final Pair<PTAState, PTAState> statePair : statesToMerge) {
-			PTAState.merge(statePair.getFirstItem(), statePair.getSecondItem());
+			PTAState.merge(statePair.getFirstItem(), statePair.getSecondItem(), strategy);
 		}
 	}
 

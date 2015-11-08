@@ -11,15 +11,23 @@ public class PDRTATransitionModified {
 	protected Range<Double> interval;
 	protected double propability;
 
-	PDRTATransitionModified(SubEvent event, PDRTAStateModified target, Range<Double> intervall, double probability) {
+	PDRTATransitionModified(SubEvent event, PDRTAStateModified target, Range<Double> interval, double probability) {
+
+		if (event == null) {
+			throw new IllegalArgumentException("Event is empty");
+		} else if (target == null) {
+			throw new IllegalArgumentException("Target is empty");
+		} else if (interval == null) {
+			throw new IllegalArgumentException("Interval is empty");
+		} else if (Double.isNaN(probability) || probability < 0.0d || probability > 1.0d) {
+			throw new IllegalArgumentException("Probability wrong parameter: " + probability);
+		}
+
 		this.event = event;
 		this.target = target;
-		this.interval = intervall;
+		this.interval = interval;
 		this.propability = probability;
 
-		if (event == null || target == null || intervall == null || Double.isNaN(probability)) {
-			throw new IllegalArgumentException();
-		}
 	}
 
 	public SubEvent getEvent() {

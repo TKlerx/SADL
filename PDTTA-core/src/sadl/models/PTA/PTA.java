@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -12,6 +13,7 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Map;
 
+import sadl.constants.EventsCreationStrategy;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.CompatibilityChecker;
@@ -139,11 +141,11 @@ public class PTA {
 
 	}
 
-	public void mergeStatesBottomUp(CompatibilityChecker checker) {
+	public void mergeStatesBottomUp(CompatibilityChecker checker, EventsCreationStrategy strategy) {
 
 		final LinkedList<PTAState> mergedStates = new LinkedList<>();
 
-		final int i = 0;
+		int i = 0;
 
 		while (!tails.isEmpty()) {
 			// printTails();
@@ -152,13 +154,13 @@ public class PTA {
 
 			for (final PTAState tailState : tails.values()) {
 
-				if (tailState.isRemoved()) {
-					continue;
+				final PTAState fatherState = tailState.getFatherState();
+				if (fatherState != root && !fatherState.isMarked() && !fatherState.isRemoved()) {
+					nextTails.putIfAbsent(fatherState.getId(), fatherState);
 				}
 
-				final PTAState fatherState = tailState.getFatherState();
-				if (fatherState != root && !fatherState.isMarked()) {
-					nextTails.putIfAbsent(fatherState.getId(), fatherState);
+				if (tailState.isRemoved()) {
+					continue;
 				}
 
 				for (final ListIterator<PTAState> mergedStatesIterator = mergedStates.listIterator(); mergedStatesIterator.hasNext();) {
@@ -170,7 +172,7 @@ public class PTA {
 					}
 
 					if (checker.compatible(state, tailState)) {
-						PTAState.merge(state, tailState);
+						PTAState.merge(state, tailState, strategy);
 						break;
 					}
 				}
@@ -183,18 +185,54 @@ public class PTA {
 
 			tails = nextTails;
 
-			/*
-			 * try { this.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\output-merged" + i++ + ".gv")); } catch (final IOException e) {
-			 * 
-			 * e.printStackTrace(); }
-			 */
+
+			try {
+				this.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\test-merged" + i++ + ".gv"));
+			}
+			catch (final IOException e) {
+				e.printStackTrace();
+			}
+
+			states = mergedStates;
+			statesMerged = true;
 
 		}
 
-		states = mergedStates;
 		states.add(root);
-		statesMerged = true;
 		cleanUp();
+	}
+
+	public void mergeStatesTopDown(CompatibilityChecker checker, EventsCreationStrategy strategy) {
+
+		final LinkedList<PTAState> mergedStates = new LinkedList<>();
+		final LinkedHashMap<Integer, PTAState> heads = new LinkedHashMap<>(1);
+		heads.put(root.getId(), root);
+
+		while (!heads.isEmpty()) {
+			final LinkedHashMap<Integer, PTAState> nextHeads = new LinkedHashMap<>(heads.size() * events.size());
+
+			for (final PTAState head : heads.values()) {
+				for (final PTAState state : mergedStates) {
+					if (checker.compatible(state, head)) {
+						PTAState.merge(state, head, strategy);
+					} else {
+						head.mark();
+						for (final PTATransition transition : head.outTransitions.values()) {
+							nextHeads.put(head.getId(), head);
+						}
+					}
+				}
+			}
+
+		}
+
+	}
+
+	public void mergeTransitionsInCriticalAreas() {
+
+		for (final PTAState state : states) {
+			state.removeCriticalTransitions();
+		}
 	}
 
 	public PDRTAModified toPDRTA() {
@@ -222,6 +260,11 @@ public class PTA {
 	}
 
 	public void toGraphvizFile(Path resultPath) throws IOException {
+
+		if (true) {
+			return;
+		}
+
 		final BufferedWriter writer = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8);
 		writer.write("digraph G {\n");
 

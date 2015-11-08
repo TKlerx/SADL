@@ -16,12 +16,17 @@ public class PDRTAStateModified {
 	protected HashMap<String, TreeMap<Double, PDRTATransitionModified>> transitions = new HashMap<>();
 	protected TreeMap<Double, PDRTATransitionModified> transitionsProbability = new TreeMap<>();
 
-	protected double sumProbability = 0.0d;
+	protected double sumProbabilities = 0.0d;
 
 	public PDRTAStateModified(int id, double endProbability) {
+
+		if (Double.isNaN(endProbability) || endProbability < 0.0d || endProbability > 1.0d) {
+			throw new IllegalArgumentException("Wrong parameter endProbability: " + endProbability);
+		}
+
 		this.id = id;
 		this.endProbability = endProbability;
-		this.sumProbability = endProbability;
+		this.sumProbabilities = endProbability;
 	}
 
 	public PDRTAStateModified getNextState(String eventSymbol, double time) {
@@ -63,7 +68,7 @@ public class PDRTAStateModified {
 		return null;
 	}
 
-	public PDRTATransitionModified getProbablyTransition(String eventSymbol, double time) {
+	public PDRTATransitionModified getMostProbablyTransition(String eventSymbol, double time) {
 
 		PDRTATransitionModified probablyTransition = getTransition(eventSymbol, time);
 
@@ -92,7 +97,7 @@ public class PDRTAStateModified {
 
 	public PDRTATransitionModified getRandomTransition() {
 
-		if (sumProbability < 1.0d) {
+		if (sumProbabilities < 1.0d) {
 			throw new IllegalStateException("Probability not 1.0");
 		}
 
@@ -130,8 +135,12 @@ public class PDRTAStateModified {
 		}
 
 		eventTransitions.put(interval.getMinimum(), transition);
-		transitionsProbability.put(sumProbability, transition);
-		sumProbability += probability;
+		transitionsProbability.put(sumProbabilities, transition);
+		sumProbabilities += probability;
+
+		if (sumProbabilities > 1.0d) {
+			throw new IllegalStateException("Sum of probabilities > 1.0");
+		}
 	}
 
 	public boolean isFinalState() {

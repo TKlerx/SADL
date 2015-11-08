@@ -2,7 +2,6 @@ package sadl.modellearner;
 
 import gnu.trove.list.array.TIntArrayList;
 
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -11,6 +10,10 @@ import java.util.Map;
 import java.util.Set;
 
 import sadl.constants.ClassLabel;
+import sadl.constants.EventsCreationStrategy;
+import sadl.constants.KDEFormelVariant;
+import sadl.constants.MergeStrategy;
+import sadl.constants.TransitionsType;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.CompatibilityChecker;
@@ -26,11 +29,30 @@ public class ButlaPdrtaLearner implements ModelLearner, CompatibilityChecker {
 
 	EventGenerator eventGenerator;
 	double a;
+	TransitionsType transitionsToCheck;
+	MergeStrategy mergeStrategy;
+	EventsCreationStrategy splittingStrategy;
 
-	public ButlaPdrtaLearner(double bandwidth, double a) {
+	public ButlaPdrtaLearner(double bandwidth, double a, TransitionsType check, double anomalyProbability, double warningProbability,
+			MergeStrategy mergeStrategy, EventsCreationStrategy splittingStrategy, KDEFormelVariant formelVariant) {
 
-		this.eventGenerator = new EventGenerator(bandwidth);
+		if (Double.isNaN(a) || a >= 1.0d || a <= 0.0d) {
+			throw new IllegalArgumentException("a has to be between 0.0 and 1.0 excluded.");
+		}
+
+		if (Double.isNaN(anomalyProbability) || anomalyProbability >= 1.0d || anomalyProbability <= 0.0d) {
+			throw new IllegalArgumentException("Wrong parameter: anomalyProbability.");
+		}
+
+		if (Double.isNaN(warningProbability) || warningProbability < anomalyProbability) {
+			throw new IllegalArgumentException("Wrong parameter: warningProbability.");
+		}
+
+		this.eventGenerator = new EventGenerator(bandwidth, anomalyProbability, warningProbability, formelVariant);
 		this.a = a;
+		this.transitionsToCheck = check;
+		this.mergeStrategy = mergeStrategy;
+		this.splittingStrategy = splittingStrategy;
 	}
 
 	@Override
@@ -42,8 +64,17 @@ public class ButlaPdrtaLearner implements ModelLearner, CompatibilityChecker {
 		try {
 			final PTA pta = new PTA(eventsMap, TimedTrainingSequences);
 			// pta.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\output.gv"));
-			pta.mergeStatesBottomUp(this);
-			pta.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\in-out.gv"));
+			if (mergeStrategy == MergeStrategy.TopDown) {
+				pta.mergeStatesTopDown(this, splittingStrategy);
+			} else if (mergeStrategy == MergeStrategy.BottonUp) {
+				pta.mergeStatesBottomUp(this, splittingStrategy);
+			}
+
+			if (splittingStrategy == EventsCreationStrategy.SplitEventsIsolateCriticalAreasMergeAfter) {
+				pta.mergeTransitionsInCriticalAreas();
+			}
+
+			// pta.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\in-out.gv"));
 			return pta.toPDRTA();
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -115,7 +146,15 @@ public class ButlaPdrtaLearner implements ModelLearner, CompatibilityChecker {
 
 		for (final String eventSysbol : eventSymbolsSet) {
 			final List<Double> timeList = eventTimesMap.get(eventSysbol);
-			eventsMap.put(eventSysbol, eventGenerator.generateSplittedEvent(eventSysbol, listToDoubleArray(timeList)));
+
+			if (splittingStrategy == EventsCreationStrategy.SplitEvents) {
+				eventsMap.put(eventSysbol, eventGenerator.generateSplittedEvent(eventSysbol, listToDoubleArray(timeList)));
+			} else if (splittingStrategy == EventsCreationStrategy.DontSplitEvents) {
+				eventsMap.put(eventSysbol, eventGenerator.generateNotSplittedEvent(eventSysbol, listToDoubleArray(timeList)));
+			} else if (splittingStrategy == EventsCreationStrategy.SplitEventsIsolateCriticalAreasMergeInProcess
+					|| splittingStrategy == EventsCreationStrategy.SplitEventsIsolateCriticalAreasMergeAfter) {
+				eventsMap.put(eventSysbol, eventGenerator.generateSplittedEventWithIsolatedCriticalArea(eventSysbol, listToDoubleArray(timeList)));
+			}
 		}
 
 		return eventsMap;
@@ -162,13 +201,15 @@ public class ButlaPdrtaLearner implements ModelLearner, CompatibilityChecker {
 				final int outTransitionEventCountV = stateV.getOutTransitionsCount(eventSymbol);
 				final int outTransitionEventCountW = stateW.getOutTransitionsCount(eventSymbol);
 
-				if (fractionDifferent(inTransitionCountV, inTransitionEventCountV, inTransitionCountW, inTransitionEventCountW)) {
+				if ((transitionsToCheck == TransitionsType.Incoming || transitionsToCheck == TransitionsType.Both)
+						&& fractionDifferent(inTransitionCountV, inTransitionEventCountV, inTransitionCountW, inTransitionEventCountW)) {
 					return false;
 				}
 
-				/*
-				 * if (fractionDifferent(inTransitionCountV, outTransitionEventCountV, inTransitionCountW, outTransitionEventCountW)) { return false; }
-				 */
+				if ((transitionsToCheck == TransitionsType.Outgoing || transitionsToCheck == TransitionsType.Both)
+						&& fractionDifferent(inTransitionCountV, outTransitionEventCountV, inTransitionCountW, outTransitionEventCountW)) {
+					return false;
+				}
 
 				final PTAState nextV = stateV.getNextState(eventSymbol);
 				final PTAState nextW = stateW.getNextState(eventSymbol);
@@ -191,10 +232,8 @@ public class ButlaPdrtaLearner implements ModelLearner, CompatibilityChecker {
 	}
 
 	public boolean fractionDifferent(int n0, int f0, int n1, int f1) {
-		// System.out.println(Math.abs(((double) f0 / n0) - ((double) f1 / n1)) + " "
-		// + (Math.sqrt(0.5 * Math.log(2.0 / a)) * ((1.0 / Math.sqrt(n0)) + (1.0 / Math.sqrt(n1)))));
-		return Math.abs(((double) f0 / n0) - ((double) f1 / n1)) > (Math.sqrt(0.5 * Math.log(2.0 / a)) * ((1.0 / Math.sqrt(n0)) + (1.0 / Math.sqrt(n1))));
 
+		return Math.abs(((double) f0 / n0) - ((double) f1 / n1)) > (Math.sqrt(0.5 * Math.log(2.0 / a)) * ((1.0 / Math.sqrt(n0)) + (1.0 / Math.sqrt(n1))));
 	}
 
 	private double[] listToDoubleArray(List<Double> list) {

@@ -20,10 +20,11 @@ import sadl.constants.ClassLabel;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.AutomatonModel;
+import sadl.interfaces.Model;
 import sadl.models.PTA.Event;
 import sadl.models.PTA.SubEvent;
 
-public class PDRTAModified implements AutomatonModel {
+public class PDRTAModified implements AutomatonModel, Model {
 
 	PDRTAStateModified root;
 	HashMap<Integer, PDRTAStateModified> states;
@@ -41,7 +42,7 @@ public class PDRTAModified implements AutomatonModel {
 			final String eventSymbol = s.getSymbol(i);
 			final double time = s.getTimeValue(i);
 
-			final PDRTATransitionModified currentTransition = currentState.getProbablyTransition(eventSymbol, time);
+			final PDRTATransitionModified currentTransition = currentState.getMostProbablyTransition(eventSymbol, time);
 
 			if (currentTransition == null) {
 				probabilities1.add(0.0);
@@ -80,7 +81,7 @@ public class PDRTAModified implements AutomatonModel {
 
 	}
 
-	public TimedInput generateAnomalySequenses(int eventAnomaliesCount, int count) {
+	public TimedInput generateAnomalySequences(int eventAnomaliesCount, int count) {
 
 		final LinkedList<TimedWord> words = new LinkedList<>();
 

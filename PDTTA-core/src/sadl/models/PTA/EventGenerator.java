@@ -5,25 +5,36 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-import jsat.distributions.empirical.KernelDensityEstimatorDifferentiable;
+import jsat.distributions.Normal;
+import jsat.distributions.empirical.KernelDensityEstimatorButla;
 
 import org.apache.commons.lang3.Range;
+
+import sadl.constants.KDEFormelVariant;
 
 public class EventGenerator {
 
 	protected double bandwidth;
+	protected double anomalyNormalPoint;
+	protected double warningNormalPoint;
+	protected KDEFormelVariant formel;
 
-	public EventGenerator(double bandwidth) {
+	public EventGenerator(double bandwidth, double anomalyProbability, double warningProbability, KDEFormelVariant formel) {
 
 		this.bandwidth = bandwidth;
+
+		final Normal standardNormalFunction = new Normal();
+		anomalyNormalPoint = standardNormalFunction.invCdf(anomalyProbability);
+		warningNormalPoint = standardNormalFunction.invCdf(warningProbability);
+		this.formel = formel;
 	}
 
 	public Event generateSplittedEvent(String symbol, double[] times) {
 
 		Arrays.sort(times);
 
-		final KernelDensityEstimatorDifferentiable kernelDensity = new KernelDensityEstimatorDifferentiable(times, bandwidth);
-		final Double[] minPoints = kernelDensity.getMinima();
+		final KernelDensityEstimatorButla kde = new KernelDensityEstimatorButla(times, formel);
+		final Double[] minPoints = kde.getMinima();
 		final TreeMap<Double, SubEvent> events = new TreeMap<>();
 
 		final Event event = new Event(symbol, times, events);
@@ -35,18 +46,29 @@ public class EventGenerator {
 
 			final int maxIndex = Math.abs(Arrays.binarySearch(times, minPoints[i])) - 2; // TODO from index // check
 			final double expectedValue = calculateExpectedValue(minIndex, maxIndex, times);
-			final double variance = calculateDeviation(minIndex, maxIndex, times, expectedValue);
+			final double deviation = calculateDeviation(minIndex, maxIndex, times, expectedValue);
 
-			events.put(minValue, new SubEvent(event, i + 1, expectedValue, variance, Range.between(minValue, minPoints[i])));
+			final double differenceAnomaly = Math.abs(anomalyNormalPoint * deviation);
+			final Range<Double> anomalyInterval = Range.between(Math.max(0, expectedValue - differenceAnomaly), expectedValue + differenceAnomaly);
+			final double differenceWarning = Math.abs(warningNormalPoint * deviation);
+			final Range<Double> warningInterval = Range.between(Math.max(0, expectedValue - differenceWarning), expectedValue + differenceWarning);
+
+			events.put(minValue, new SubEvent(event, i + 1, expectedValue, deviation, Range.between(minValue, minPoints[i]), anomalyInterval, warningInterval));
 			minValue = minPoints[i];
 			minIndex = maxIndex + 1;
 		}
 
 		final int maxIndex = times.length - 1;
 		final double expectedValue = calculateExpectedValue(minIndex, maxIndex, times);
-		final double variance = calculateDeviation(minIndex, maxIndex, times, expectedValue);
+		final double deviation = calculateDeviation(minIndex, maxIndex, times, expectedValue);
 
-		events.put(minValue, new SubEvent(event, minPoints.length + 1, expectedValue, variance, Range.between(minValue, Double.POSITIVE_INFINITY)));
+		final double differenceAnomaly = Math.abs(anomalyNormalPoint * deviation);
+		final Range<Double> anomalyInterval = Range.between(Math.max(0, expectedValue - differenceAnomaly), expectedValue + differenceAnomaly);
+		final double differenceWarning = Math.abs(warningNormalPoint * deviation);
+		final Range<Double> warningInterval = Range.between(Math.max(0, expectedValue - differenceWarning), expectedValue + differenceWarning);
+
+		events.put(minValue, new SubEvent(event, minPoints.length + 1, expectedValue, deviation, Range.between(minValue, Double.POSITIVE_INFINITY),
+				anomalyInterval, warningInterval));
 
 		final Iterator<Entry<Double, SubEvent>> subEventsIterator = events.entrySet().iterator();
 		SubEvent currentSubEvent = subEventsIterator.next().getValue();
@@ -71,9 +93,21 @@ public class EventGenerator {
 
 		Arrays.sort(times);
 		final double expectedValue = calculateExpectedValue(0, times.length - 1, times);
-		final double variance = calculateDeviation(0, times.length - 1, times, expectedValue);
-		events.put(0.0, new SubEvent(event, 1, expectedValue, variance, Range.between(0.0, Double.POSITIVE_INFINITY)));
+		final double deviation = calculateDeviation(0, times.length - 1, times, expectedValue);
 
+		final double differenceAnomaly = Math.abs(anomalyNormalPoint * deviation);
+		final Range<Double> anomalyInterval = Range.between(Math.max(0, expectedValue - differenceAnomaly), expectedValue + differenceAnomaly);
+		final double differenceWarning = Math.abs(warningNormalPoint * deviation);
+		final Range<Double> warningInterval = Range.between(Math.max(0, expectedValue - differenceWarning), expectedValue + differenceWarning);
+
+		events.put(0.0, new SubEvent(event, 1, expectedValue, deviation, Range.between(0.0, Double.POSITIVE_INFINITY), anomalyInterval, warningInterval));
+
+		return event;
+	}
+
+	public Event generateSplittedEventWithIsolatedCriticalArea(String symbol, double[] times) {
+
+		final Event event = generateNotSplittedEvent(symbol, times);
 		return event;
 	}
 
@@ -98,4 +132,5 @@ public class EventGenerator {
 
 		return (expectedValue / (toIndex - fromIndex + 1));
 	}
+
 }

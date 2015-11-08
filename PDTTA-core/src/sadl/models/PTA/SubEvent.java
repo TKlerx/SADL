@@ -24,7 +24,8 @@ public class SubEvent {
 	private static double anomalyNormalPoint = standardNormalFunction.invCdf(0.00001d);
 	private static double warningNormalPoint = standardNormalFunction.invCdf(0.01d);
 
-	public SubEvent(Event event, int subEventNumber, double expectedValue, double deviation, Range<Double> boundInterval) {
+	public SubEvent(Event event, int subEventNumber, double expectedValue, double deviation, Range<Double> boundInterval, Range<Double> anomalyInterval,
+			Range<Double> warningInterval) {
 
 		this.event = event;
 		this.subEventNumber = subEventNumber;
@@ -35,13 +36,9 @@ public class SubEvent {
 			normalFunction = new NormalRandomized(expectedValue, deviation);
 		}
 
-		final double differenceAnomaly = Math.abs(anomalyNormalPoint * deviation);
-		anomalyInterval = Range.between(Math.max(0, expectedValue - differenceAnomaly), expectedValue + differenceAnomaly);
-
-		final double differenceWarning = Math.abs(warningNormalPoint * deviation);
-		warningInterval = Range.between(Math.max(0, expectedValue - differenceWarning), expectedValue + differenceWarning);
-
 		this.boundInterval = boundInterval;
+		this.anomalyInterval = anomalyInterval;
+		this.warningInterval = warningInterval;
 	}
 
 	public String getSymbol() {
@@ -227,7 +224,7 @@ public class SubEvent {
 
 			randomTime = normalFunction.getRandomPoint();
 
-			if (randomTime >= 0.0d && !allowAnomaly && this.isAnomaly(randomTime)) {
+			if (randomTime >= 0.0d && !allowAnomaly && !this.isAnomaly(randomTime)) {
 				return randomTime; //TODO check
 			}
 
