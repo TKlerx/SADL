@@ -1,6 +1,5 @@
 package sadl.models.PTA;
 
-import jsat.distributions.Normal;
 import jsat.distributions.empirical.NormalRandomized;
 
 import org.apache.commons.lang3.Range;
@@ -8,7 +7,7 @@ import org.apache.commons.lang3.Range;
 public class SubEvent {
 
 	protected Event event;
-	protected int subEventNumber;
+	protected float subEventNumber;
 	protected Range<Double> anomalyInterval;
 	protected Range<Double> warningInterval;
 	protected Range<Double> boundInterval;
@@ -20,11 +19,7 @@ public class SubEvent {
 	protected SubEvent previousSubEvent;
 	protected SubEvent nextSubEvent;
 
-	private static Normal standardNormalFunction = new Normal();
-	private static double anomalyNormalPoint = standardNormalFunction.invCdf(0.00001d);
-	private static double warningNormalPoint = standardNormalFunction.invCdf(0.01d);
-
-	public SubEvent(Event event, int subEventNumber, double expectedValue, double deviation, Range<Double> boundInterval, Range<Double> anomalyInterval,
+	public SubEvent(Event event, float subEventNumber, double expectedValue, double deviation, Range<Double> boundInterval, Range<Double> anomalyInterval,
 			Range<Double> warningInterval) {
 
 		this.event = event;
@@ -110,6 +105,21 @@ public class SubEvent {
 		return false;
 	}
 
+	public float getNumber() {
+
+		return subEventNumber;
+	}
+
+	public double getExpectedValue() {
+
+		return expectedValue;
+	}
+
+	public double getDeviation() {
+
+		return deviation;
+	}
+
 	public double getLeftBound() {
 
 		return boundInterval.getMinimum();
@@ -118,6 +128,16 @@ public class SubEvent {
 	public double getRightBound() {
 
 		return boundInterval.getMaximum();
+	}
+
+	public double getLeftAnomalyBound() {
+
+		return anomalyInterval.getMinimum();
+	}
+
+	public double getRightAnomalyBound() {
+
+		return anomalyInterval.getMaximum();
 	}
 
 	public double getLeftIntervalInState(PTAState state) {
@@ -252,6 +272,24 @@ public class SubEvent {
 		return probability * 2.0d;
 	}
 
+	public void isolateCriticalAreas() {
+		final double newMin = Math.max(boundInterval.getMinimum(), anomalyInterval.getMinimum());
+		final double newMax = Math.min(boundInterval.getMaximum(), anomalyInterval.getMaximum());
+		anomalyInterval = Range.between(newMin, newMax);
+	}
+
+	public void isolateLeftCriticalArea() {
+		final double newMin = Math.max(boundInterval.getMinimum(), anomalyInterval.getMinimum());
+		final double newMax = anomalyInterval.getMaximum();
+		anomalyInterval = Range.between(newMin, newMax);
+	}
+
+	public void isolateRightCriticalArea() {
+		final double newMin = anomalyInterval.getMinimum();
+		final double newMax = Math.min(boundInterval.getMaximum(), anomalyInterval.getMaximum());
+		anomalyInterval = Range.between(newMin, newMax);
+	}
+
 	@Override
 	public boolean equals(Object obj) {
 
@@ -261,24 +299,6 @@ public class SubEvent {
 
 		final SubEvent e = (SubEvent) obj;
 		return e.getSymbol().equals(this.getSymbol());
-	}
-
-	public static void setAnomalyProbability(double p) {
-
-		if (p <= 0.0 || p >= 1.0) {
-			throw new IllegalArgumentException("p is not between 0 and 1.");
-		}
-
-		anomalyNormalPoint = standardNormalFunction.invCdf(p / 2.0d);
-	}
-
-	public static void setWarningProbability(double p) {
-
-		if (p <= 0.0 || p >= 1.0) {
-			throw new IllegalArgumentException("p is not between 0 and 1.");
-		}
-
-		warningNormalPoint = standardNormalFunction.invCdf(p / 2.0d);
 	}
 
 	@Override

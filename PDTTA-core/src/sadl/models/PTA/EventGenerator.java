@@ -107,7 +107,25 @@ public class EventGenerator {
 
 	public Event generateSplittedEventWithIsolatedCriticalArea(String symbol, double[] times) {
 
-		final Event event = generateNotSplittedEvent(symbol, times);
+		final Event event = generateSplittedEvent(symbol, times);
+
+		for (final SubEvent subEvent : event) {
+			if (subEvent.hasRightCriticalArea()) {
+
+				final Range<Double> interval = Range.between(subEvent.getRightBound(), subEvent.getRightAnomalyBound());
+				final SubEvent criticalArea = new SubEvent(event, subEvent.getNumber() + 0.5f, subEvent.getExpectedValue(), subEvent.getDeviation(), interval,
+						interval, interval);
+				final SubEvent nextSubEvent = subEvent.nextSubEvent;
+				subEvent.isolateRightCriticalArea();
+				nextSubEvent.isolateLeftCriticalArea();
+				subEvent.nextSubEvent = criticalArea;
+				nextSubEvent.previousSubEvent = criticalArea;
+				criticalArea.previousSubEvent = subEvent;
+				criticalArea.nextSubEvent = nextSubEvent;
+			}
+
+		}
+
 		return event;
 	}
 
