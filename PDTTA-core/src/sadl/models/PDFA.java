@@ -11,13 +11,6 @@
 
 package sadl.models;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.array.TDoubleArrayList;
-import gnu.trove.map.TIntDoubleMap;
-import gnu.trove.map.hash.TIntDoubleHashMap;
-import gnu.trove.set.TIntSet;
-import gnu.trove.set.hash.TIntHashSet;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -29,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -39,6 +33,12 @@ import org.apache.commons.math3.util.Precision;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.map.TIntDoubleMap;
+import gnu.trove.map.hash.TIntDoubleHashMap;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.ClassLabel;
 import sadl.input.TimedInput;
@@ -61,7 +61,6 @@ public class PDFA implements AutomatonModel, Serializable {
 
 	public static final int START_STATE = 0;
 
-
 	transient private static Logger logger = LoggerFactory.getLogger(PDFA.class);
 	// TODO maybe change Set<Transition> transitions to Map<State,Set<Transition>>
 	protected Random r = MasterSeed.nextRandom();
@@ -75,10 +74,13 @@ public class PDFA implements AutomatonModel, Serializable {
 
 	protected boolean immutable = false;
 
+	protected void makeMutable() {
+		immutable = false;
+	}
+
 	public void makeImmutable() {
 		immutable = true;
 	}
-
 
 	public boolean isImmutable() {
 		return immutable;
@@ -155,7 +157,17 @@ public class PDFA implements AutomatonModel, Serializable {
 				}
 				final double tempSum = getTransitions(state, true).stream().mapToDouble(t -> t.getProbability()).sum();
 				if (!Precision.equals(tempSum, 1.0)) {
-					throw new IllegalStateException("Probabilities do not sum up to one, but instead to " + tempSum);
+					BigFraction preciseSum = BigFraction.ZERO;
+					for (final BigFraction f : probabilities) {
+						preciseSum = preciseSum.add(f.divide(fracSum));
+					}
+					if (!preciseSum.equals(BigFraction.ONE)) {
+						throw new IllegalStateException("Probabilities do not sum up to one, but instead to " + tempSum);
+					} else {
+						logger.warn(
+								"Probabilities do not sum up to one, but instead to {}. This is due to double underflows, but they sum up to one if using BigFraction. This small error will be ignored.",
+								tempSum);
+					}
 				}
 			}
 		}
@@ -170,7 +182,7 @@ public class PDFA implements AutomatonModel, Serializable {
 		} else {
 			final double adjusted = finalStateProbabilities.put(transition.getFromState(), newProbability);
 			if (Double.doubleToLongBits(adjusted) == Double.doubleToLongBits(finalStateProbabilities.getNoEntryValue())) {
-				logger.warn("Was not possible to adjust final state prob for transition {}", transition);
+				logger.warn("Was not possible to adjust final state prob for transition {} with new probability={}", transition, newProbability);
 			}
 		}
 	}
@@ -185,29 +197,31 @@ public class PDFA implements AutomatonModel, Serializable {
 	}
 
 	public PDFA(Path trebaPath, TimedInput trainingSequences) throws IOException {
-		final BufferedReader inputReader = Files.newBufferedReader(trebaPath, StandardCharsets.UTF_8);
-		this.alphabet = trainingSequences;
-		String line = "";
-		// 172 172 3 0,013888888888888892
-		// from state ; to state ; symbol ; probability
-		while ((line = inputReader.readLine()) != null) {
-			final String[] lineSplit = line.split(" ");
-			if (lineSplit.length == 4) {
-				final int fromState = Integer.parseInt(lineSplit[0]);
-				final int toState = Integer.parseInt(lineSplit[1]);
-				final String symbol;
-				if(alphabet == null){
-					symbol = lineSplit[2];
-				}else{
-					symbol = trainingSequences.getSymbol(Integer.parseInt(lineSplit[2]));
+		try (BufferedReader inputReader = Files.newBufferedReader(trebaPath, StandardCharsets.UTF_8)) {
+			this.alphabet = trainingSequences;
+			String line = "";
+			// 172 172 3 0,013888888888888892
+			// from state ; to state ; symbol ; probability
+			while ((line = inputReader.readLine()) != null) {
+				final String[] lineSplit = line.split(" ");
+				if (lineSplit.length == 4) {
+					final int fromState = Integer.parseInt(lineSplit[0]);
+					final int toState = Integer.parseInt(lineSplit[1]);
+					final String symbol;
+					if (alphabet == null) {
+						symbol = lineSplit[2];
+					} else {
+						symbol = trainingSequences.getSymbol(Integer.parseInt(lineSplit[2]));
+					}
+					final double probability = Double.parseDouble(lineSplit[3]);
+					addTransition(fromState, toState, symbol, probability);
+				} else if (lineSplit.length == 2) {
+					final int state = Integer.parseInt(lineSplit[0]);
+					final double finalProb = Double.parseDouble(lineSplit[1]);
+					addFinalState(state, finalProb);
 				}
-				final double probability = Double.parseDouble(lineSplit[3]);
-				addTransition(fromState, toState, symbol, probability);
-			} else if (lineSplit.length == 2) {
-				final int state = Integer.parseInt(lineSplit[0]);
-				final double finalProb = Double.parseDouble(lineSplit[1]);
-				addFinalState(state, finalProb);
 			}
+			inputReader.close();
 		}
 	}
 
@@ -221,7 +235,6 @@ public class PDFA implements AutomatonModel, Serializable {
 		this.finalStateProbabilities = pdfa.finalStateProbabilities;
 		this.abnormalFinalStates = pdfa.abnormalFinalStates;
 	}
-
 
 	public int getTransitionCount() {
 		return transitions.size();
@@ -265,65 +278,75 @@ public class PDFA implements AutomatonModel, Serializable {
 		}
 	}
 
-	public void toGraphvizFile(Path graphvizResult, boolean compressed) throws IOException {
-		final BufferedWriter writer = Files.newBufferedWriter(graphvizResult, StandardCharsets.UTF_8);
-		writer.write("digraph G {\n");
-		// start states
-		writer.write("qi [shape = point ];");
-		// write states
-		for (final int state : finalStateProbabilities.keys()) {
-			writer.write(Integer.toString(state));
-			writer.write(" [shape=");
-			final boolean abnormal = getFinalTransition(state).isAbnormal();
-			final double finalProb = getFinalStateProbability(state);
-			if (finalProb > 0 || (compressed && finalProb > 0.01)) {
-				writer.write("double");
-			}
-			writer.write("circle");
-			if (abnormal) {
-				writer.write(", color=red");
-			}
-			if (finalProb > 0 || (compressed && finalProb > 0.01)) {
-				writer.write(", label=\"");
+	public void toGraphvizFile(Path graphvizResult, boolean compressed, Map<String, String> idReplacement) throws IOException {
+		try (BufferedWriter writer = Files.newBufferedWriter(graphvizResult, StandardCharsets.UTF_8)) {
+			writer.write("digraph G {\n");
+			// start states
+			writer.write("qi [shape = point ];");
+			// write states
+			for (final int state : finalStateProbabilities.keys()) {
 				writer.write(Integer.toString(state));
-				writer.write("&#92;np= ");
-				writer.write(Double.toString(Precision.round(finalProb, 2)));
-				writer.write("\"");
+				writer.write(" [shape=");
+				final boolean abnormal = getFinalTransition(state).isAbnormal();
+				final double finalProb = getFinalStateProbability(state);
+				if (finalProb > 0 || (compressed && finalProb > 0.01)) {
+					writer.write("double");
+				}
+				writer.write("circle");
+				if (abnormal) {
+					writer.write(", color=red");
+				}
+				if (finalProb > 0 || (compressed && finalProb > 0.01)) {
+					writer.write(", label=\"");
+					writer.write(Integer.toString(state));
+					writer.write("&#92;np= ");
+					writer.write(Double.toString(Precision.round(finalProb, 2)));
+					writer.write("\"");
+				}
+				writer.write("];\n");
 			}
-			writer.write("];\n");
-		}
-		writer.write("qi -> 0;");
-		// write transitions
-		for (final Transition t : transitions) {
-			if (compressed && t.getProbability() <= 0.01) {
-				continue;
-			}
-			// 0 -> 0 [label=0.06];
-			writer.write(Integer.toString(t.getFromState()));
-			writer.write(" -> ");
-			writer.write(Integer.toString(t.getToState()));
-			writer.write(" [label=<");
-			writer.write(t.getSymbol());
-			if (t.getProbability() > 0) {
-				writer.write(" p=");
-				writer.write(Double.toString(Precision.round(t.getProbability(), 2)));
-			}
-			if (t.isAbnormal()) {
-				writer.write("<BR/>");
-				writer.write("<FONT COLOR=\"red\">");
-				writer.write(Integer.toString(t.getAnomalyInsertionType().getTypeIndex()));
-				writer.write("</FONT>");
-			}
-			writer.write(">");
-			if (t.isAbnormal()) {
-				writer.write(" color=\"red\"");
-			}
-			writer.write(";];\n");
+			writer.write("qi -> 0;");
+			// write transitions
+			for (final Transition t : transitions) {
+				if (compressed && t.getProbability() <= 0.01) {
+					continue;
+				}
+				// 0 -> 0 [label=0.06];
+				writer.write(Integer.toString(t.getFromState()));
+				writer.write(" -> ");
+				writer.write(Integer.toString(t.getToState()));
+				writer.write(" [label=<");
+				if (idReplacement != null && idReplacement.containsKey(t.getSymbol())) {
+					writer.write(idReplacement.get(t.getSymbol()));
+				} else {
+					writer.write(t.getSymbol());
+				}
+				if (t.getProbability() > 0) {
+					writer.write(" p=");
+					writer.write(Double.toString(Precision.round(t.getProbability(), 2)));
+				}
+				if (t.isAbnormal()) {
+					writer.write("<BR/>");
+					writer.write("<FONT COLOR=\"red\">");
+					writer.write(Integer.toString(t.getAnomalyInsertionType().getTypeIndex()));
+					writer.write("</FONT>");
+				}
+				writer.write(">");
+				if (t.isAbnormal()) {
+					writer.write(" color=\"red\"");
+				}
+				writer.write(";];\n");
 
+			}
+			writer.write("}");
+			writer.flush();
+			writer.close();
 		}
-		writer.write("}");
-		writer.close();
 
+	}
+
+	public void toGraphvizFile(Path graphvizResult, boolean compressed) throws IOException {
+		toGraphvizFile(graphvizResult, compressed, Collections.emptyMap());
 	}
 
 	public void addFinalState(int state, double probability) {
@@ -366,8 +389,6 @@ public class PDFA implements AutomatonModel, Serializable {
 		}
 		return result;
 	}
-
-
 
 	protected boolean removeTransition(Transition t) {
 		checkImmutable();
@@ -420,10 +441,8 @@ public class PDFA implements AutomatonModel, Serializable {
 	/**
 	 * Returns all outgoing transitions for a given state
 	 * 
-	 * @param currentState
-	 *            the given state
-	 * @param includeStoppingTransition
-	 *            whether to include final transition probabilities
+	 * @param currentState the given state
+	 * @param includeStoppingTransition whether to include final transition probabilities
 	 * @return the outgoing transitions
 	 */
 	public List<Transition> getTransitions(int currentState, boolean includeStoppingTransition) {
@@ -500,10 +519,10 @@ public class PDFA implements AutomatonModel, Serializable {
 		if (obj == null) {
 			return false;
 		}
-		if (!(obj instanceof PDTTA)) {
+		if (!(obj instanceof PDFA)) {
 			return false;
 		}
-		final PDTTA other = (PDTTA) obj;
+		final PDFA other = (PDFA) obj;
 		if (abnormalFinalStates == null) {
 			if (other.abnormalFinalStates != null) {
 				return false;
@@ -556,11 +575,11 @@ public class PDFA implements AutomatonModel, Serializable {
 	}
 
 	/**
+	 * returns all possible sequences concatenated with the given sequence
 	 * 
-	 * @param fromState
-	 * @param s
-	 *            the sequence taken from the root node so far
-	 * @return
+	 * @param fromState the state from where to gather the sequences
+	 * @param s the sequence taken from the root node so far
+	 * @return test
 	 */
 	private Set<UntimedSequence> getAllSequences(int fromState, UntimedSequence s) {
 		final Set<UntimedSequence> result = new HashSet<>();
@@ -586,7 +605,6 @@ public class PDFA implements AutomatonModel, Serializable {
 	public int[] getStates() {
 		return finalStateProbabilities.keys();
 	}
-
 
 	public TimedInput getAlphabet() {
 		return alphabet;
@@ -623,5 +641,6 @@ public class PDFA implements AutomatonModel, Serializable {
 	public Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord s) {
 		return Pair.create(computeEventLikelihoods(s), null);
 	}
+
 
 }

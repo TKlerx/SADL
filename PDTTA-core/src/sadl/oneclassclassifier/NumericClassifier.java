@@ -74,7 +74,7 @@ public abstract class NumericClassifier implements OneClassClassifier {
 					filter.setInputFormat(unscaledInstances);
 				}
 				final Instances scaledInstances = Filter.useFilter(unscaledInstances, filter);
-				final ArrayList<double[]> result = (ArrayList<double[]>) DatasetTransformationUtils.instancesToDoubles(scaledInstances, true);
+				final List<double[]> result = DatasetTransformationUtils.instancesToDoubles(scaledInstances, true);
 				return result;
 			} catch (final Exception e) {
 				logger.error("Unexpected exception", e);
@@ -87,23 +87,6 @@ public abstract class NumericClassifier implements OneClassClassifier {
 
 	protected void setFilter(Filter f) {
 		filter = f;
-	}
-
-	@Override
-	public final boolean[] areAnomalies(List<double[]> testSamples) {
-		if (Settings.isDebug()) {
-			try {
-				IoUtils.writeToFile(testSamples, classificationTestFile);
-			} catch (final IOException e) {
-				logger.error("Unexpected exception", e);
-			}
-		}
-		final List<double[]> scaledSamples = scale(testSamples, false);
-		final boolean[] result = new boolean[scaledSamples.size()];
-		for (int i = 0; i < scaledSamples.size(); i++) {
-			result[i] = isOutlier(scaledSamples.get(i), true);
-		}
-		return result;
 	}
 
 	@Override
@@ -129,8 +112,19 @@ public abstract class NumericClassifier implements OneClassClassifier {
 		return isOutlierScaled(toEvaluate);
 	}
 
+	/**
+	 * Checks whether the provided test sample is an outlier. The test sample are already scaled.
+	 * 
+	 * @param scaledTestSample
+	 * @return
+	 */
 	protected abstract boolean isOutlierScaled(double[] scaledTestSample);
 
+	/**
+	 * Trains a model with the provided training samples. The training samples are already scaled.
+	 * 
+	 * @param scaledTrainSamples
+	 */
 	protected abstract void trainModelScaled(List<double[]> scaledTrainSamples);
 
 	@Override

@@ -15,33 +15,33 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sadl.constants.ClassLabel;
-import sadl.detectors.PdttaDetector;
-import sadl.experiments.PdttaExperimentResult;
+import sadl.detectors.AnomalyDetector;
+import sadl.experiments.ExperimentResult;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.Model;
 
 public class Evaluation {
-	PdttaDetector detector;
+	AnomalyDetector detector;
 	Model model;
 	private static Logger logger = LoggerFactory.getLogger(Evaluation.class);
 
-	public Evaluation(PdttaDetector detector, Model model) {
+	public Evaluation(AnomalyDetector detector, Model model) {
 		super();
 		this.detector = detector;
 		this.model = model;
 	}
 
-	public PdttaExperimentResult evaluate(TimedInput testSet) {
+	public ExperimentResult evaluate(TimedInput testSet) {
 		detector.setModel(model);
 		detector.areAnomalies(testSet);
 		logger.info("Testing with {} sequences", testSet.size());
 		detector.setModel(model);
 		final boolean[] detectorResult = detector.areAnomalies(testSet);
-		int truePos = 0;
-		int trueNeg = 0;
-		int falsePos = 0;
-		int falseNeg = 0;
+		long truePos = 0;
+		long trueNeg = 0;
+		long falsePos = 0;
+		long falseNeg = 0;
 		// prec = tp/(tp +fp)
 		// The precision is the ratio between correctly detected anomalies and
 		// all detected anomalies
@@ -69,7 +69,7 @@ public class Evaluation {
 			}
 
 		}
-		final PdttaExperimentResult expResult = new PdttaExperimentResult(truePos, trueNeg, falsePos, falseNeg);
+		final ExperimentResult expResult = new ExperimentResult(truePos, trueNeg, falsePos, falseNeg);
 
 		return expResult;
 

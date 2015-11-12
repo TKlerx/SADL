@@ -16,6 +16,7 @@ package sadl.modellearner.rtiplus;
  * @author Fabian Witter
  *
  */
+@Deprecated
 public class ProgressBarPrinter {
 
 	private final int max;

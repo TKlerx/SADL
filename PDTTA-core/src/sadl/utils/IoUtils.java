@@ -15,10 +15,10 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.PipedReader;
 import java.io.PipedWriter;
 import java.io.Reader;
@@ -40,7 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sadl.input.TimedInput;
-import sadl.run.smac.SmacDataGenerator;
+import sadl.run.datagenerators.SmacDataGenerator;
 import weka.core.xml.XStream;
 
 /**
@@ -52,8 +52,16 @@ public class IoUtils {
 	private static Logger logger = LoggerFactory.getLogger(IoUtils.class);
 
 	public static void deleteFiles(String[] strings) throws IOException {
-		for (final String fileName : strings) {
-			final Path p = Paths.get(fileName);
+		final Path[] paths = new Path[strings.length];
+		for (int i = 0; i < strings.length; i++) {
+			final Path p = Paths.get(strings[i]);
+			paths[i] = p;
+		}
+		deleteFiles(paths);
+	}
+
+	public static void deleteFiles(Path[] paths) throws IOException {
+		for (final Path p : paths) {
 			if (!Files.deleteIfExists(p)) {
 				logger.warn("{} should have been explicitly deleted, but did not exist.", p);
 			}
@@ -106,6 +114,11 @@ public class IoUtils {
 			}
 			testWriter.close();
 			ex.shutdown();
+			if (writeTrain) {
+				trainWriter.close();
+				ex.shutdownNow();
+				throw new IOException("The provided file " + trainTestFile + " does not contain the separator " + SmacDataGenerator.TRAIN_TEST_SEP);
+			}
 			final Pair<TimedInput, TimedInput> result = new Pair<>(trainWorker.get(), testWorker.get());
 			return result;
 		} catch (final IOException | InterruptedException | ExecutionException e) {
@@ -135,8 +148,9 @@ public class IoUtils {
 	}
 
 	public static void serialize(Object o, Path path) throws IOException {
-		try (FileOutputStream fileOut = new FileOutputStream(path.toFile()); ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
+		try (OutputStream fileOut = Files.newOutputStream(path); ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
 			out.writeObject(o);
+			out.close();
 		}
 	}
 

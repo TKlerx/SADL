@@ -24,15 +24,24 @@ import java.util.Properties;
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.MergeTest;
 import sadl.constants.ProbabilityAggregationMethod;
-import sadl.run.Pipeline;
 
 /**
  * 
  * @author Timo Klerx
  *
  */
-@SuppressWarnings("deprecation")
 public class PropertiesWriter {
+	public static final String TIME_THRESHOLD = "timeThreshold";
+	public static final String EVENT_THRESHOLD = "eventThreshold";
+	public static final String ANOMALY_INSERTION_TYPE = "anomalyInsertionType";
+	public static final String AGGREGATION_TYPE = "aggType";
+	public static final String TEMP_FILE_PREFIX = "tempFilePrefix";
+	public static final String TIMED_INPUT_FILE = "timedInputFile";
+	public static final String JOB_NAME = "jobName";
+	public static final String MERGE_ALPHA = "mergeAlpha";
+	public static final String RECURSIVE_MERGE_TEST = "recursiveMergeTest";
+	public static final String MERGE_TEST = "mergeTest";
+	public static final String RESULT_FOLDER = "results";
 	static boolean deleteOldFiles = true;
 
 	public static void main(String[] args) {
@@ -50,9 +59,10 @@ public class PropertiesWriter {
 				Files.createDirectory(configDir);
 			}
 			if (deleteOldFiles) {
-				final DirectoryStream<Path> dirStream = Files.newDirectoryStream(configDir, "*");
-				for (final Path p : dirStream) {
-					Files.delete(p);
+				try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(configDir, "*")) {
+					for (final Path p : dirStream) {
+						Files.delete(p);
+					}
 				}
 			}
 			int tempIndex = 0;
@@ -68,17 +78,17 @@ public class PropertiesWriter {
 							}
 							try (OutputStream output = new FileOutputStream(p.toFile())) {
 								final Properties prop = new Properties();
-								prop.setProperty(Pipeline.AGGREGATION_TYPE, ProbabilityAggregationMethod.NORMALIZED_MULTIPLY.toString());
-								prop.setProperty(Pipeline.ANOMALY_INSERTION_TYPE, anomalyInsertionType.toString());
-								prop.setProperty(Pipeline.EVENT_THRESHOLD, Arrays.toString(eventThresholds));
-								prop.setProperty(Pipeline.JOB_NAME, Integer.toString(jobNameCount) + "_");
-								prop.setProperty(Pipeline.MERGE_ALPHA, Double.toString(mergeAlpha));
-								prop.setProperty(Pipeline.MERGE_TEST, mergeTest.toString());
-								prop.setProperty(Pipeline.RECURSIVE_MERGE_TEST, Boolean.toString(recursiveMergeTest));
-								prop.setProperty(Pipeline.TEMP_FILE_PREFIX, "treba_temp_");
-								prop.setProperty(Pipeline.TIME_THRESHOLD, Arrays.toString(timeThresholds));
-								prop.setProperty(Pipeline.TIMED_INPUT_FILE, "rti_input.txt");
-								prop.setProperty(Pipeline.RESULT_FOLDER, "results");
+								prop.setProperty(AGGREGATION_TYPE, ProbabilityAggregationMethod.NORMALIZED_MULTIPLY.toString());
+								prop.setProperty(ANOMALY_INSERTION_TYPE, anomalyInsertionType.toString());
+								prop.setProperty(EVENT_THRESHOLD, Arrays.toString(eventThresholds));
+								prop.setProperty(JOB_NAME, Integer.toString(jobNameCount) + "_");
+								prop.setProperty(MERGE_ALPHA, Double.toString(mergeAlpha));
+								prop.setProperty(MERGE_TEST, mergeTest.toString());
+								prop.setProperty(RECURSIVE_MERGE_TEST, Boolean.toString(recursiveMergeTest));
+								prop.setProperty(TEMP_FILE_PREFIX, "treba_temp_");
+								prop.setProperty(TIME_THRESHOLD, Arrays.toString(timeThresholds));
+								prop.setProperty(TIMED_INPUT_FILE, "rti_input.txt");
+								prop.setProperty(RESULT_FOLDER, "results");
 								prop.store(output, null);
 								output.close();
 								jobNameCount++;

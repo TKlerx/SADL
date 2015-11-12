@@ -11,15 +11,6 @@
 
 package sadl.models;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TDoubleArrayList;
-import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.map.TIntDoubleMap;
-import gnu.trove.map.hash.TIntDoubleHashMap;
-import gnu.trove.set.TIntSet;
-import gnu.trove.set.hash.TIntHashSet;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -36,8 +27,6 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 
-import jsat.distributions.Distribution;
-
 import org.apache.commons.math3.exception.MathArithmeticException;
 import org.apache.commons.math3.fraction.BigFraction;
 import org.apache.commons.math3.util.Pair;
@@ -45,6 +34,16 @@ import org.apache.commons.math3.util.Precision;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.map.TIntDoubleMap;
+import gnu.trove.map.hash.TIntDoubleHashMap;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
+import jsat.distributions.ContinuousDistribution;
+import jsat.distributions.Distribution;
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.ClassLabel;
 import sadl.input.TimedInput;
@@ -61,6 +60,7 @@ import sadl.utils.MasterSeed;
  * @author Timo Klerx
  *
  */
+@SuppressWarnings("all")
 public class PDTTAold implements AutomatonModel, Serializable {
 
 	protected static final int START_STATE = 0;
@@ -68,7 +68,6 @@ public class PDTTAold implements AutomatonModel, Serializable {
 	private static final long serialVersionUID = 3017416753740710943L;
 
 	transient private static Logger logger = LoggerFactory.getLogger(PDTTAold.class);
-	// TODO maybe change Set<Transition> transitions to Map<State,Set<Transition>>
 	protected Random r = MasterSeed.nextRandom();
 
 	protected static final double NO_TRANSITION_PROBABILITY = 0;
@@ -76,14 +75,14 @@ public class PDTTAold implements AutomatonModel, Serializable {
 	private static final boolean DELETE_NO_TIME_INFORMATION_TRANSITIONS = true;
 	Set<Transition> transitions = new HashSet<>();
 	TIntDoubleMap finalStateProbabilities = new TIntDoubleHashMap();
-	Map<ZeroProbTransition, Distribution> transitionDistributions = null;
+	Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions = null;
 	TIntSet abnormalFinalStates = new TIntHashSet();
 
-	public Map<ZeroProbTransition, Distribution> getTransitionDistributions() {
+	public Map<ZeroProbTransition, ContinuousDistribution> getTransitionDistributions() {
 		return transitionDistributions;
 	}
 
-	public void setTransitionDistributions(Map<ZeroProbTransition, Distribution> transitionDistributions) {
+	public void setTransitionDistributions(Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions) {
 		this.transitionDistributions = transitionDistributions;
 		restoreConsistency();
 	}
@@ -183,7 +182,7 @@ public class PDTTAold implements AutomatonModel, Serializable {
 
 	protected void changeTransitionProbability(Transition transition, double newProbability, boolean bindTimeInformation) {
 		if (!transition.isStopTraversingTransition()) {
-			Distribution d = null;
+			ContinuousDistribution d = null;
 			d = removeTransition(transition, bindTimeInformation);
 			final Transition t = new Transition(transition.getFromState(), transition.getToState(), transition.getSymbol(), newProbability);
 			transitions.add(t);
@@ -358,7 +357,7 @@ public class PDTTAold implements AutomatonModel, Serializable {
 			result = getFinalTransition(currentState);
 		} else {
 			for (final Transition t : transitions) {
-				if (t.getFromState() == currentState && t.getSymbol() == event) {
+				if (t.getFromState() == currentState && t.getSymbol().equals(event)) {
 					if (result != null) {
 						logger.error("Found more than one transition for state " + currentState + " and event " + event);
 					}
@@ -369,7 +368,7 @@ public class PDTTAold implements AutomatonModel, Serializable {
 		return result;
 	}
 
-	protected void bindTransitionDistribution(Transition newTransition, Distribution d) {
+	protected void bindTransitionDistribution(Transition newTransition, ContinuousDistribution d) {
 		if (transitionDistributions != null) {
 			transitionDistributions.put(newTransition.toZeroProbTransition(), d);
 		} else {
@@ -386,7 +385,7 @@ public class PDTTAold implements AutomatonModel, Serializable {
 		return removeTransition(t, true);
 	}
 
-	protected Distribution removeTransition(Transition t, boolean removeTimeDistribution) {
+	protected ContinuousDistribution removeTransition(Transition t, boolean removeTimeDistribution) {
 		final boolean wasRemoved = transitions.remove(t);
 		if (!wasRemoved) {
 			logger.warn("Tried to remove a non existing transition={}", t);
@@ -447,13 +446,13 @@ public class PDTTAold implements AutomatonModel, Serializable {
 	}
 
 	/**
-	 * Returns all outgoing probabilities from the given state
+	 * Returns all outgoing transitions from the given state
 	 * 
 	 * @param currentState
 	 *            the given state
 	 * @param includeStoppingTransition
 	 *            whether to include final transition probabilities
-	 * @return
+	 * @return the outgoing transitions
 	 */
 	protected List<Transition> getTransitions(int currentState, boolean includeStoppingTransition) {
 		final List<Transition> result = new ArrayList<>();
@@ -552,11 +551,11 @@ public class PDTTAold implements AutomatonModel, Serializable {
 					return false;
 				}
 			} else if (!transitionDistributions.equals(other.transitionDistributions)) {
-				final Set<Entry<ZeroProbTransition, Distribution>> e1 = transitionDistributions.entrySet();
-				final Set<Entry<ZeroProbTransition, Distribution>> e2 = other.transitionDistributions.entrySet();
+				final Set<Entry<ZeroProbTransition, ContinuousDistribution>> e1 = transitionDistributions.entrySet();
+				final Set<Entry<ZeroProbTransition, ContinuousDistribution>> e2 = other.transitionDistributions.entrySet();
 
 				int count = 0;
-				for (final Entry<ZeroProbTransition, Distribution> e : e1) {
+				for (final Entry<ZeroProbTransition, ContinuousDistribution> e : e1) {
 					if (!e2.contains(e)) {
 						logger.error("Entry {} not contained in e2", e);
 						final Distribution result = other.transitionDistributions.get(e.getKey());
@@ -570,7 +569,7 @@ public class PDTTAold implements AutomatonModel, Serializable {
 					}
 				}
 				logger.error("");
-				for (final Entry<ZeroProbTransition, Distribution> e : e2) {
+				for (final Entry<ZeroProbTransition, ContinuousDistribution> e : e2) {
 					if (!e1.contains(e)) {
 						logger.error("Entry {} not contained in e1", e);
 						final Distribution result = transitionDistributions.get(e.getKey());
@@ -633,10 +632,10 @@ public class PDTTAold implements AutomatonModel, Serializable {
 				return false;
 			}
 		} else if (!transitionDistributions.equals(other.transitionDistributions)) {
-			final Set<Entry<ZeroProbTransition, Distribution>> e1 = transitionDistributions.entrySet();
-			final Set<Entry<ZeroProbTransition, Distribution>> e2 = other.transitionDistributions.entrySet();
+			final Set<Entry<ZeroProbTransition, ContinuousDistribution>> e1 = transitionDistributions.entrySet();
+			final Set<Entry<ZeroProbTransition, ContinuousDistribution>> e2 = other.transitionDistributions.entrySet();
 			int count = 0;
-			for (final Entry<ZeroProbTransition, Distribution> e : e1) {
+			for (final Entry<ZeroProbTransition, ContinuousDistribution> e : e1) {
 				if (!e2.contains(e)) {
 					logger.error("Entry {} not contained in e2", e);
 					final Distribution result = other.transitionDistributions.get(e.getKey());
@@ -649,7 +648,7 @@ public class PDTTAold implements AutomatonModel, Serializable {
 				}
 			}
 			logger.error("");
-			for (final Entry<ZeroProbTransition, Distribution> e : e2) {
+			for (final Entry<ZeroProbTransition, ContinuousDistribution> e : e2) {
 				if (!e1.contains(e)) {
 					logger.error("Entry {} not contained in e1", e);
 					final Distribution result = transitionDistributions.get(e.getKey());
@@ -703,7 +702,7 @@ public class PDTTAold implements AutomatonModel, Serializable {
 				list.add(0);
 				return list;
 			}
-			final Distribution d = getTransitionDistributions().get(t.toZeroProbTransition());
+			final ContinuousDistribution d = getTransitionDistributions().get(t.toZeroProbTransition());
 			if (d == null) {
 				// System.out.println("Found no time distribution for Transition "
 				// + t);
@@ -743,5 +742,4 @@ public class PDTTAold implements AutomatonModel, Serializable {
 		list.add(getFinalStateProbability(currentState));
 		return list;
 	}
-
 }

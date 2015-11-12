@@ -1,0 +1,66 @@
+#RTI+ parameters
+sig [0,1] [0.05]
+hist [1,100] [4]i
+em {LRT, LRT_ADV, NAIVE_LRT, FM, FM_ADV} [LRT]
+ida {DISABLED, ALL_BORDER, ALL, MAD_BORDER, MAD, OUTLIER_BORDER, OUTLIER} [DISABLED]
+sp {LEFT, MIDDLE, RIGHT} [MIDDLE]
+
+bop {AAA, AOO} [AAA]
+bop | em in {LRT, LRT_ADV, FM, FM_ADV}
+
+
+
+#Detector parameters
+detectorMethod {SVM,DBSCAN,THRESHOLD_AGG_ONLY, THRESHOLD_ALL} [SVM]
+# Must be tested first!
+# aggregateSublists {true,false} [false] 
+
+
+#Threshold parameters
+aggregatedEventThreshold [0,1] [0.00033]
+aggregatedEventThreshold | detectorMethod in {THRESHOLD_AGG_ONLY,THRESHOLD_ALL}
+
+aggregatedTimeThreshold [0,1] [0.0067]
+aggregatedTimeThreshold | detectorMethod in {THRESHOLD_AGG_ONLY,THRESHOLD_ALL}
+
+singleEventThreshold [0.0,1.0] [0.00001]
+singleEventThreshold | detectorMethod in {THRESHOLD_ALL}
+
+singleTimeThreshold [0.0,1.0] [0.00001]
+singleTimeThreshold | detectorMethod in {THRESHOLD_ALL}
+
+
+#vector detector parameters
+featureCreator {UBER,FULL,SMALL,MINIMAL} [FULL]
+featureCreator | detectorMethod in {SVM,DBSCAN}
+
+scalingMethod {NONE,NORMALIZE,STANDARDIZE} [NORMALIZE]
+scalingMethod | detectorMethod in {SVM,DBSCAN}
+
+
+#svm parameters
+svmNu[0,1] [0.1]
+svmNu| detectorMethod in {SVM}
+
+svmGamma[0,10E15] [0]
+svmGamma | detectorMethod in {SVM}
+
+svmEps[0,1] [0.001]
+svmEps| detectorMethod in {SVM}
+
+svmKernel[0,3] [2]i
+svmKernel| detectorMethod in {SVM}
+
+svmDegree [0,2000000000] [3]i
+svmDegree | detectorMethod in {SVM}
+
+svmProbabilityEstimate[0,1] [0]i
+svmProbabilityEstimate| detectorMethod in {SVM}
+
+
+#db scan paramters
+dbScanN[1,100] [5]i
+dbScanN | detectorMethod in {DBSCAN}
+
+dbScanEps[0,1] [0.05]
+dbScanEps | detectorMethod in {DBSCAN}

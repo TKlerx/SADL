@@ -11,9 +11,6 @@
 
 package sadl.modellearner;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.array.TDoubleArrayList;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -26,17 +23,18 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import jsat.distributions.Distribution;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
+import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.MyDistributionSearch;
 import jsat.distributions.SingleValueDistribution;
 import jsat.distributions.empirical.MyKernelDensityEstimator;
 import jsat.distributions.empirical.kernelfunc.KernelFunction;
 import jsat.linear.DenseVector;
 import jsat.linear.Vec;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import sadl.constants.MergeTest;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
@@ -55,6 +53,7 @@ import treba.wfsa;
  * @author Timo Klerx
  *
  */
+@SuppressWarnings("all")
 public class PdttaLeanerOld implements ModelLearner {
 	double mergeAlpha;
 	MergeTest mergeTest = MergeTest.ALERGIA;
@@ -126,7 +125,7 @@ public class PdttaLeanerOld implements ModelLearner {
 			// Fill time interval buckets and fit PDFs for every bucket
 			final Map<ZeroProbTransition, TDoubleList> timeValueBuckets = parseAutomatonPaths(trebaResultPathFile, trainingSequences);
 			// do the fitting
-			final Map<ZeroProbTransition, Distribution> transitionDistributions = fit(timeValueBuckets);
+			final Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions = fit(timeValueBuckets);
 			// compute likelihood on test set for automaton and for time PDFs
 			pdtta = new PDTTAold(Paths.get(trebaAutomatonFile), trainingSequences);
 			pdtta.setTransitionDistributions(transitionDistributions);
@@ -144,8 +143,8 @@ public class PdttaLeanerOld implements ModelLearner {
 		return null;
 	}
 
-	private Map<ZeroProbTransition, Distribution> fit(Map<ZeroProbTransition, TDoubleList> timeValueBuckets) {
-		final Map<ZeroProbTransition, Distribution> result = new HashMap<>();
+	private Map<ZeroProbTransition, ContinuousDistribution> fit(Map<ZeroProbTransition, TDoubleList> timeValueBuckets) {
+		final Map<ZeroProbTransition, ContinuousDistribution> result = new HashMap<>();
 		for (final ZeroProbTransition t : timeValueBuckets.keySet()) {
 			result.put(t, fitDistribution(timeValueBuckets.get(t)));
 		}
@@ -156,14 +155,14 @@ public class PdttaLeanerOld implements ModelLearner {
 			5186.0, 5327.0, 6281.0, 6395.0, 8111.0, 8168.0, 8431.0, 8811.0, 8886.0, 9147.0, 9410.0, 9461.0, 9565.0, 9612.0, 9893.0, 10017.0, 10755.0, 10775.0,
 			12439.0, 13232.0, 13329.0, 13435.0, 18433.0, 22705.0, 24529.0, 37176.0 };
 	@SuppressWarnings("boxing")
-	private Distribution fitDistribution(TDoubleList transitionTimes) {
+	private ContinuousDistribution fitDistribution(TDoubleList transitionTimes) {
 		if (Arrays.equals(ds, transitionTimes.toArray())) {
 			logger.info("Peng");
 		}
 		final Vec v = new DenseVector(transitionTimes.toArray());
 		final jsat.utils.Pair<Boolean, Double> sameValues = MyDistributionSearch.checkForDifferentValues(v);
 		if (sameValues.getFirstItem()) {
-			final Distribution d = new SingleValueDistribution(sameValues.getSecondItem());
+			final ContinuousDistribution d = new SingleValueDistribution(sameValues.getSecondItem());
 			return d;
 		} else {
 			KernelFunction newKernelFunction = kdeKernelFunction;

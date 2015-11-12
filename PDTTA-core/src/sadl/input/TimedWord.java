@@ -11,9 +11,6 @@
 
 package sadl.input;
 
-import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TIntArrayList;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +18,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
 import sadl.constants.ClassLabel;
 
 /**
@@ -250,6 +249,21 @@ public class TimedWord implements Serializable{
 			return false;
 		}
 		return true;
+	}
+
+	/**
+	 * Generates a subword of this word
+	 * 
+	 * @param newLength the length of the new subword @return the subword of the specified length
+	 */
+	public TimedWord getSubWord(int newLength){
+		final List<String> newSymbols = new ArrayList<>();
+		final TIntList newTimeValues = new TIntArrayList();
+		for(int i = 0;i<newLength;i++){
+			newSymbols.add(getSymbol(i));
+			newTimeValues.add(getTimeValue(i));
+		}
+		return new TimedWord(newSymbols, newTimeValues, getLabel());
 	}
 
 }

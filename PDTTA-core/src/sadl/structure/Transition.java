@@ -22,7 +22,7 @@ import sadl.constants.AnomalyInsertionType;
  */
 public class Transition implements Serializable, Comparable<Transition> {
 	private static final long serialVersionUID = -8764538459984228024L;
-	public static final String STOP_TRAVERSING_SYMBOL = "-1";
+	public static final String STOP_TRAVERSING_SYMBOL = "#";
 	protected int fromState, toState;
 	protected String symbol;
 	protected double probability;

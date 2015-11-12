@@ -20,7 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import sadl.experiments.PdttaExperimentResult;
+import sadl.experiments.ExperimentResult;
 
 /**
  * 
@@ -33,21 +33,21 @@ public class ResultAggregator {
 		final Path resultFolder = Paths.get(args[0]);
 		final String fileType = args[1];
 		final Path resultFile = Paths.get(args[2]);
-		final DirectoryStream<Path> ds = Files.newDirectoryStream(resultFolder, "*." + fileType);
-		final BufferedWriter bw = Files.newBufferedWriter(resultFile, StandardCharsets.UTF_8);
-		bw.write(PdttaExperimentResult.CsvHeader());
-		bw.append('\n');
-		String line = null;
-		for (final Path f : ds) {
-			if (!f.equals(resultFile)) {
-				final BufferedReader br = Files.newBufferedReader(f, StandardCharsets.UTF_8);
-				while ((line = br.readLine()) != null) {
-					bw.write(line);
-					bw.append('\n');
+		try (final DirectoryStream<Path> ds = Files.newDirectoryStream(resultFolder, "*." + fileType);
+				BufferedWriter bw = Files.newBufferedWriter(resultFile, StandardCharsets.UTF_8)){
+			bw.write(ExperimentResult.CsvHeader());
+			bw.append('\n');
+			String line = null;
+			for (final Path f : ds) {
+				if (!f.equals(resultFile)) {
+					try (BufferedReader br = Files.newBufferedReader(f, StandardCharsets.UTF_8)) {
+						while ((line = br.readLine()) != null) {
+							bw.write(line);
+							bw.append('\n');
+						}
+					}
 				}
 			}
 		}
-		bw.close();
 	}
-
 }

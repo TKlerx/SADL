@@ -4,28 +4,29 @@ import gnu.trove.list.TDoubleList;
 import sadl.constants.ProbabilityAggregationMethod;
 import sadl.input.TimedWord;
 import sadl.models.PTA.SubEvent;
-import sadl.models.pdrtaModified.PDRTAModified;
-import sadl.models.pdrtaModified.PDRTAStateModified;
-import sadl.models.pdrtaModified.PDRTATransitionModified;
+import sadl.models.pdtaModified.PDTAModified;
+import sadl.models.pdtaModified.PDTAStateModified;
+import sadl.models.pdtaModified.PDTATransitionModified;
 
 public class AnodaDetector extends AnomalyDetector {
 
-	protected PDRTAModified pdrta;
+	protected PDTAModified pdrta;
 
-	public AnodaDetector(ProbabilityAggregationMethod aggType, PDRTAModified pdrta) {
+	public AnodaDetector(ProbabilityAggregationMethod aggType, PDTAModified pdrta) {
 		super(aggType);
 		super.setModel(pdrta);
 	}
 
-	public boolean isAnomalie(TimedWord word) {
+	@Override
+	public boolean isAnomaly(TimedWord word) {
 
-		PDRTAStateModified currentState = pdrta.getRoot();
+		PDTAStateModified currentState = pdrta.getRoot();
 
 		for (int i = 0; i < word.length(); i++) {
 			final String eventSymbol = word.getSymbol(i);
 			final double time = word.getTimeValue(i);
 
-			final PDRTATransitionModified transition = currentState.getTransition(eventSymbol, time);
+			final PDTATransitionModified transition = currentState.getTransition(eventSymbol, time);
 			final SubEvent event = transition.getEvent();
 
 			if (event.hasWarning(time)) {

@@ -13,14 +13,11 @@ package sadl.models.pdrta;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
-
-import sadl.modellearner.rtiplus.tester.LikelihoodValue;
 
 /**
  * 
@@ -98,21 +95,24 @@ public class PDRTAState implements Serializable {
 	 */
 	public void addTail(TimedTail tail) {
 
-		if (automaton.hasInput() && tail != null) {
-			stat.addToStats(tail);
-			tail = tail.getNextTail();
+		if (automaton.hasInput()) {
 			if (tail != null) {
-				final Interval in = getInterval(tail.getSymbolAlphIndex(), tail.getTimeDelay());
-				assert (in != null);
-				in.addTail(tail);
+				stat.addToStats(tail);
+				final TimedTail t = tail.getNextTail();
+				if (t != null) {
+					final Interval in = getInterval(t.getSymbolAlphIndex(), t.getTimeDelay());
+					assert (in != null);
+					in.addTail(t);
+				}
+			} else {
+				throw new IllegalArgumentException("The given TimedTail must not be null!");
 			}
 		} else {
-			throw new UnsupportedOperationException();
+			throw new IllegalStateException("This operation is only allowed in training phase!");
 		}
 	}
 
 	public PDRTAState getTarget(TimedTail tail) {
-
 		return getTarget(tail.getSymbolAlphIndex(), tail.getTimeDelay());
 	}
 
@@ -126,112 +126,7 @@ public class PDRTAState implements Serializable {
 		}
 	}
 
-	protected LikelihoodValue calculateLikelihoodPropSym() {
-
-		int sumTails = 0;
-		final int[] symCount = new int[automaton.getAlphSize()];
-		for (int i = 0; i < automaton.getAlphSize(); i++) {
-			symCount[i] = getSymCount(i);
-			sumTails += symCount[i];
-		}
-		if (sumTails >= PDRTA.getMinData()) {
-			final List<Integer> symPools = new ArrayList<>();
-			int iPool = 0;
-			for (int i = 0; i < symCount.length; i++) {
-				// TODO Paper: Pooling only if symbol count of BOTH states
-				// less than minData
-				if (symCount[i] < PDRTA.getMinData()) {
-					if (iPool < symPools.size() && symPools.get(iPool) >= PDRTA.getMinData()) {
-						// Close full pool
-						iPool = symPools.size();
-					}
-					if (iPool >= symPools.size()) {
-						// Open new Pool
-						symPools.add(symCount[i]);
-					} else {
-						// Add to existing pool
-						symPools.set(iPool, symPools.get(iPool) + symCount[i]);
-					}
-				} else {
-					symPools.add(symCount[i]);
-				}
-			}
-			if (symPools.get(iPool) < PDRTA.getMinData()) {
-				sumTails -= symPools.get(iPool);
-				symPools.remove(iPool);
-			}
-			if (symPools.size() > 0) {
-				double p = 0.0;
-				for (int i = 0; i < symPools.size(); i++) {
-					p += Math.log((double) symPools.get(i) / (double) sumTails) * symPools.get(i);
-				}
-				return new LikelihoodValue(p, symPools.size() - 1);
-			}
-		}
-		return new LikelihoodValue(0.0, 0);
-	}
-
-	protected LikelihoodValue calculateLikelihoodPropTime() {
-
-		int sumTails = 0;
-		final int[] histCount = new int[automaton.getNumHistogramBars()];
-		for (int i = 0; i < automaton.getAlphSize(); i++) {
-			final Set<Entry<Integer, Interval>> ins = intervals.get(i).entrySet();
-			for (final Entry<Integer, Interval> eIn : ins) {
-				final int numTails = eIn.getValue().getTails().size();
-				sumTails += numTails;
-				final NavigableMap<Integer, Collection<TimedTail>> tails = eIn.getValue().getTails().asMap();
-				int idx;
-				if ((idx = tails.firstEntry().getValue().iterator().next().getHistBarIndex()) == tails.lastEntry().getValue().iterator().next()
-						.getHistBarIndex()) {
-					histCount[idx] += numTails;
-				} else {
-					for (final Entry<Integer, Collection<TimedTail>> eTail : tails.entrySet()) {
-						histCount[eTail.getValue().iterator().next().getHistBarIndex()] += eTail.getValue().size();
-					}
-				}
-
-			}
-		}
-		if (sumTails >= PDRTA.getMinData()) {
-			final List<Integer> histPools = new ArrayList<>();
-			int iPool = 0;
-			for (int i = 0; i < histCount.length; i++) {
-				// TODO Paper: Pooling only if time count of BOTH states less
-				// than minData
-				if (histCount[i] < PDRTA.getMinData()) {
-					if (iPool < histPools.size() && histPools.get(iPool) >= PDRTA.getMinData()) {
-						// Close full pool
-						iPool = histPools.size();
-					}
-					if (iPool >= histPools.size()) {
-						// Open new Pool
-						histPools.add(histCount[i]);
-					} else {
-						// Add to existing pool
-						histPools.set(iPool, histPools.get(iPool) + histCount[i]);
-					}
-				} else {
-					histPools.add(histCount[i]);
-				}
-			}
-			if (histPools.get(iPool) < PDRTA.getMinData()) {
-				sumTails -= histPools.get(iPool);
-				histPools.remove(iPool);
-			}
-			if (histPools.size() > 0) {
-				double p = 0.0;
-				for (int i = 0; i < histPools.size(); i++) {
-					p += Math.log((double) histPools.get(i) / (double) sumTails) * histPools.get(i);
-				}
-				return new LikelihoodValue(p, histPools.size() - 1);
-			}
-		}
-		return new LikelihoodValue(0.0, 0);
-	}
-
 	public double getProbabilityTrans(TimedTail tail) {
-
 		return getProbabilityTrans(tail.getSymbolAlphIndex(), tail.getTimeDelay());
 	}
 
@@ -245,13 +140,7 @@ public class PDRTAState implements Serializable {
 		}
 	}
 
-	public double getProbabilityHist(TimedTail tail) {
-
-		return stat.getHistProb(tail);
-	}
-
 	public int getTotalOutEvents() {
-
 		return stat.getTotalOutEvents();
 	}
 

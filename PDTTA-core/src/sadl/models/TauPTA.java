@@ -11,19 +11,6 @@
 
 package sadl.models;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TDoubleArrayList;
-import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.map.TIntIntMap;
-import gnu.trove.map.TObjectDoubleMap;
-import gnu.trove.map.TObjectIntMap;
-import gnu.trove.map.hash.TIntIntHashMap;
-import gnu.trove.map.hash.TObjectDoubleHashMap;
-import gnu.trove.map.hash.TObjectIntHashMap;
-import gnu.trove.set.TIntSet;
-import gnu.trove.set.hash.TIntHashSet;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,21 +25,34 @@ import java.util.function.IntUnaryOperator;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.SerializationUtils;
+import org.apache.commons.math3.util.Precision;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import gnu.trove.iterator.TIntIterator;
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.map.TIntIntMap;
+import gnu.trove.map.TObjectDoubleMap;
+import gnu.trove.map.TObjectIntMap;
+import gnu.trove.map.hash.TIntIntHashMap;
+import gnu.trove.map.hash.TObjectDoubleHashMap;
+import gnu.trove.map.hash.TObjectIntHashMap;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
+import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.Distribution;
 import jsat.distributions.MyDistributionSearch;
 import jsat.distributions.SingleValueDistribution;
 import jsat.distributions.empirical.MyKernelDensityEstimator;
 import jsat.linear.DenseVector;
 import jsat.linear.Vec;
-
-import org.apache.commons.lang3.SerializationUtils;
-import org.apache.commons.math3.util.Precision;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.ClassLabel;
-import sadl.detectors.PdttaDetector;
+import sadl.detectors.AnomalyDetector;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.structure.Transition;
@@ -77,15 +77,19 @@ public class TauPTA extends PDTTA {
 	private static final double ANOMALY_4_CHANGE_RATE = 0.1;
 	public static final double SEQUENCE_OMMIT_THRESHOLD = 0.0001;
 	private static final double MAX_TYPE_FIVE_PROBABILITY = 0.2;
-
+	List<UntimedSequence> abnormalSequences;
 	int ommitedSequenceCount = 0;
+
 
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
+		result = prime * result + ((abnormalSequences == null) ? 0 : abnormalSequences.hashCode());
 		result = prime * result + ((anomalyType == null) ? 0 : anomalyType.hashCode());
+		result = prime * result + ((finalStateCount == null) ? 0 : finalStateCount.hashCode());
+		result = prime * result + ((transitionCount == null) ? 0 : transitionCount.hashCode());
 		return result;
 	}
 
@@ -101,7 +105,28 @@ public class TauPTA extends PDTTA {
 			return false;
 		}
 		final TauPTA other = (TauPTA) obj;
+		if (abnormalSequences == null) {
+			if (other.abnormalSequences != null) {
+				return false;
+			}
+		} else if (!abnormalSequences.equals(other.abnormalSequences)) {
+			return false;
+		}
 		if (anomalyType != other.anomalyType) {
+			return false;
+		}
+		if (finalStateCount == null) {
+			if (other.finalStateCount != null) {
+				return false;
+			}
+		} else if (!finalStateCount.equals(other.finalStateCount)) {
+			return false;
+		}
+		if (transitionCount == null) {
+			if (other.transitionCount != null) {
+				return false;
+			}
+		} else if (!transitionCount.equals(other.transitionCount)) {
 			return false;
 		}
 		return true;
@@ -117,8 +142,12 @@ public class TauPTA extends PDTTA {
 	}
 
 
-	public TauPTA() {
+	public TauPTA(TObjectIntMap<Transition> transitionCount, TIntIntMap finalStateCount) {
+		this.transitionCount = transitionCount;
+		this.finalStateCount = finalStateCount;
+	}
 
+	private TauPTA() {
 	}
 
 	/**
@@ -142,7 +171,7 @@ public class TauPTA extends PDTTA {
 		for (final int state : initialPta.finalStateProbabilities.keys()) {
 			final List<Transition> stateTransitions = initialPta.getTransitions(state, false);
 			for (final Transition t : stateTransitions) {
-				if (initialPta.transitionCount.get(t) < threshold) {
+				if (initialPta.transitionCount.get(t.toZeroProbTransition()) < threshold) {
 					initialPta.removeTimedTransition(t, false);
 				}
 			}
@@ -156,11 +185,11 @@ public class TauPTA extends PDTTA {
 			final List<Transition> stateTransitions = initialPta.getTransitions(state, false);
 			int occurenceCount = 0;
 			for (final Transition t : stateTransitions) {
-				occurenceCount += initialPta.transitionCount.get(t);
+				occurenceCount += initialPta.transitionCount.get(t.toZeroProbTransition());
 			}
 			occurenceCount += initialPta.finalStateCount.get(state);
 			for (final Transition t : stateTransitions) {
-				initialPta.changeTransitionProbability(t, initialPta.transitionCount.get(t) / (double) occurenceCount, false);
+				initialPta.changeTransitionProbability(t, initialPta.transitionCount.get(t.toZeroProbTransition()) / (double) occurenceCount, false);
 			}
 			initialPta.addFinalState(state, initialPta.finalStateCount.get(state) / (double) occurenceCount);
 		}
@@ -179,11 +208,11 @@ public class TauPTA extends PDTTA {
 			final List<Transition> stateTransitions = getTransitions(state, false);
 			int occurenceCount = 0;
 			for (final Transition t : stateTransitions) {
-				occurenceCount += transitionCount.get(t);
+				occurenceCount += transitionCount.get(t.toZeroProbTransition());
 			}
 			occurenceCount += finalStateCount.get(state);
 			for (final Transition t : stateTransitions) {
-				changeTransitionProbability(t, transitionCount.get(t) / (double) occurenceCount, false);
+				changeTransitionProbability(t, transitionCount.get(t.toZeroProbTransition()) / (double) occurenceCount, false);
 			}
 			addFinalState(state, finalStateCount.get(state) / (double) occurenceCount);
 		}
@@ -209,7 +238,7 @@ public class TauPTA extends PDTTA {
 		}
 		logger.info("OmmitedSequenceCount={} out of {} sequences at a threshold of less than {} absolute occurences.", ommitedSequenceCount,
 				trainingSequences.size(), SEQUENCE_OMMIT_THRESHOLD * trainingSequences.size());
-		final Map<ZeroProbTransition, Distribution> distributions = fit(timeValueBuckets);
+		final Map<ZeroProbTransition, ContinuousDistribution> distributions = fit(timeValueBuckets);
 		setTransitionDistributions(distributions);
 		if (distributions.size() != getTransitionCount()) {
 			final List<Transition> missingDistributions = new ArrayList<>();
@@ -238,8 +267,8 @@ public class TauPTA extends PDTTA {
 		}
 	}
 
-	private Map<ZeroProbTransition, Distribution> fit(Map<ZeroProbTransition, TDoubleList> timeValueBuckets) {
-		final Map<ZeroProbTransition, Distribution> result = new HashMap<>();
+	private Map<ZeroProbTransition, ContinuousDistribution> fit(Map<ZeroProbTransition, TDoubleList> timeValueBuckets) {
+		final Map<ZeroProbTransition, ContinuousDistribution> result = new HashMap<>();
 		logger.debug("timevalueBuckets.size={}", timeValueBuckets.size());
 		for (final ZeroProbTransition t : timeValueBuckets.keySet()) {
 			result.put(t, fitDistribution(timeValueBuckets.get(t)));
@@ -248,11 +277,11 @@ public class TauPTA extends PDTTA {
 	}
 
 	@SuppressWarnings("boxing")
-	private Distribution fitDistribution(TDoubleList transitionTimes) {
+	private ContinuousDistribution fitDistribution(TDoubleList transitionTimes) {
 		final Vec v = new DenseVector(transitionTimes.toArray());
 		final jsat.utils.Pair<Boolean, Double> sameValues = MyDistributionSearch.checkForDifferentValues(v);
 		if (sameValues.getFirstItem()) {
-			final Distribution d = new SingleValueDistribution(sameValues.getSecondItem());
+			final ContinuousDistribution d = new SingleValueDistribution(sameValues.getSecondItem());
 			return d;
 		} else {
 			final MyKernelDensityEstimator kde = new MyKernelDensityEstimator(v);
@@ -268,9 +297,9 @@ public class TauPTA extends PDTTA {
 			Transition t = getTransition(currentState, nextEvent);
 			if (t == null) {
 				t = addTransition(currentState, getStateCount(), nextEvent, NO_TRANSITION_PROBABILITY);
-				transitionCount.put(t, 0);
+				transitionCount.put(t.toZeroProbTransition(), 0);
 			}
-			transitionCount.increment(t);
+			transitionCount.increment(t.toZeroProbTransition());
 			currentState = t.getToState();
 		}
 		// add final state count
@@ -304,7 +333,8 @@ public class TauPTA extends PDTTA {
 
 	public void makeAbnormal(AnomalyInsertionType newAnomalyType) {
 		if (this.anomalyType != AnomalyInsertionType.NONE) {
-			logger.error("A TauPTA can only have one type of anomaly. This one already has AnomalyInsertionType {}, which should be overridden with {}",
+			logger.error(
+					"A TauPTA can only have one type of anomaly. This one already has AnomalyInsertionType {}, which should be overwritten with {}. The overwriting was not done!",
 					this.anomalyType, anomalyType);
 			return;
 		}
@@ -312,24 +342,47 @@ public class TauPTA extends PDTTA {
 		setAnomalyType(newAnomalyType);
 		if (anomalyType == AnomalyInsertionType.TYPE_ONE) {
 			logger.debug("TransitionCount before inserting {} anomalies={}", anomalyType, getTransitionCount());
+			// choose a random state on every height and modify the symbol of an outgoing transition of that state to another random symbol
 			insertPerLevelAnomaly(this::computeTransitionCandicatesType13, this::changeTransitionEvent);
 			logger.debug("TransitionCount after inserting {} anomalies={}", anomalyType, getTransitionCount());
 		} else if (anomalyType == AnomalyInsertionType.TYPE_TWO) {
-			insertSequentialAnomaly(this::insertAnomaly2);
+			// label the k least probable paths as anomaly (every transition on the path is labeled as abnormal)
+			abnormalSequences = insertSequentialAnomaly(this::insertAnomaly2);
 		} else if (anomalyType == AnomalyInsertionType.TYPE_THREE) {
+			// choose a random state on every height and modify its time probability drastically (the modification of the time values is only done when sampling
+			// them)
 			insertPerLevelAnomaly(this::computeTransitionCandicatesType13, this::changeTimeProbability);
 		} else if (anomalyType == AnomalyInsertionType.TYPE_FOUR) {
+			// choose the k most probable sequences and modify every time value for every transition on the path slightly (the modification of the time values
+			// is only done when sampling them)
 			insertSequentialAnomaly(this::insertAnomaly4);
 		} else if (anomalyType == AnomalyInsertionType.TYPE_FIVE) {
 			insertPerLevelAnomaly(this::computeTransitionCandicatesType5, this::addFinalStateProbability);
 		} else {
 			throw new IllegalArgumentException("the AnomalyInsertionType " + newAnomalyType + " is not supported.");
 		}
+		checkForAbnormalTransitions();
 		this.checkAndRestoreConsistency();
 		immutable = true;
 	}
 
-	private void insertSequentialAnomaly(IntUnaryOperator f) {
+	private void checkForAbnormalTransitions() {
+		boolean hasAbnormalTransition = false;
+		outer: for (final int state : getStates()) {
+			final List<Transition> stateTransitions = getTransitions(state, true);
+			for (final Transition t : stateTransitions) {
+				if (t.isAbnormal()) {
+					hasAbnormalTransition = true;
+					break outer;
+				}
+			}
+		}
+		if (!hasAbnormalTransition) {
+			throw new IllegalStateException("TauPTA should be abnormal but has no abnormal transitions!");
+		}
+	}
+
+	private List<UntimedSequence> insertSequentialAnomaly(IntUnaryOperator f) {
 		final Set<UntimedSequence> allSequences = getAllSequences();
 		final TObjectDoubleMap<UntimedSequence> sequenceProbabilities = computeEventProbabilities(allSequences);
 		// this function may be one lamba with the streaming interface
@@ -345,8 +398,9 @@ public class TauPTA extends PDTTA {
 				return f.applyAsInt(s1.toString().compareTo(s2.toString()));
 			}
 		};
-		allSequences.stream().sorted(c).limit(SEQUENTIAL_ANOMALY_K).map(s -> labelWithAnomaly(s, getAnomalyType())).collect(Collectors.toList());
 		logger.debug("Transitions.size()={}", transitions.size());
+		final int cap = Math.min(SEQUENTIAL_ANOMALY_K, allSequences.size());
+		return allSequences.stream().sorted(c).limit(cap).peek(s -> labelWithAnomaly(s, getAnomalyType())).collect(Collectors.toList());
 		// allSequences.sort((t1, t2) -> Double.compare(sequenceProbabilities.get(t1), sequenceProbabilities.get(t2)));
 		// final List<UntimedSequence> abnormalSequences = function.apply(allSequences);
 		// abnormalSequences.forEach(s -> labelWithAnomaly(s,getAnomalyType()));
@@ -376,7 +430,7 @@ public class TauPTA extends PDTTA {
 	private void changeAnomalyType(Transition t, @SuppressWarnings("hiding") AnomalyInsertionType anomalyType) {
 		if ((t.getAnomalyInsertionType() != anomalyType)) {
 			final Transition newTransition = addAbnormalTransition(t, anomalyType);
-			final Distribution d = removeTimedTransition(t);
+			final ContinuousDistribution d = removeTimedTransition(t);
 			bindTransitionDistribution(newTransition, d);
 		}
 	}
@@ -400,7 +454,8 @@ public class TauPTA extends PDTTA {
 			probabilities.add(probability);
 			currentState = t.getToState();
 		}
-		return PdttaDetector.aggregate(probabilities);
+		probabilities.add(getFinalStateProbability(currentState));
+		return AnomalyDetector.aggregate(probabilities);
 		// return product(probabilities);
 	}
 
@@ -443,7 +498,7 @@ public class TauPTA extends PDTTA {
 		}
 		final Transition chosenTransition = chooseRandomObject(possibleTransitions, r);
 		logger.debug("Chose transition {} for inserting an anomaly of type 3", chosenTransition);
-		final Distribution d = removeTimedTransition(chosenTransition);
+		final ContinuousDistribution d = removeTimedTransition(chosenTransition);
 		final Transition newTransition = addAbnormalTransition(chosenTransition.getFromState(), chosenTransition.getToState(), chosenTransition.getSymbol(),
 				chosenTransition.getProbability(), AnomalyInsertionType.TYPE_THREE);
 		bindTransitionDistribution(newTransition.toZeroProbTransition(), d);
@@ -452,7 +507,7 @@ public class TauPTA extends PDTTA {
 
 	private int addFinalStateProbability(List<Transition> possibleTransitions) {
 		if (possibleTransitions.size() == 0) {
-			logger.warn("Chose states which do not have . Inserting a time anomaly is not possible.Transitions:{}", possibleTransitions);
+			logger.warn("Chose states which do not have transitions. Inserting a stopping anomaly is not possible. Transitions:{}", possibleTransitions);
 			return -1;
 		}
 		// only add if there was no final state transition before
@@ -471,12 +526,18 @@ public class TauPTA extends PDTTA {
 		final TIntList states = getStates(height);
 		for (int i = 0; i < states.size(); i++) {
 			final int state = states.get(i);
-			final List<Transition> possibleTransitions = getTransitions(state, true);
-			if (!possibleTransitions.stream().anyMatch(t -> t.isStopTraversingTransition() && t.getProbability() > 0)) {
-				// just add one transition which contains the state
-				result.add(possibleTransitions.get(0));
+			if (state == PDTTA.START_STATE) {
+				logger.info("Won't insert a stopping anomaly for the root node");
+				continue;
 			} else {
-				logger.debug("Filtered the state {} that already has a final state", state);
+				final List<Transition> possibleTransitions = getTransitions(state, true);
+				// check whether there is no real stopping transition in the current state
+				if (!possibleTransitions.stream().anyMatch(t -> t.isStopTraversingTransition() && t.getProbability() > 0)) {
+					// just add one transition which contains the state
+					result.add(possibleTransitions.get(0));
+				} else {
+					logger.debug("Filtered the state {} that already has a final state", state);
+				}
 			}
 		}
 		if (result.size() == 0) {
@@ -497,7 +558,9 @@ public class TauPTA extends PDTTA {
 			logger.warn("Chose states on height {} which are leaf states. Inserting a anomalies is not possible.", height);
 		}
 		if (result.size() == 1) {
-			return Collections.EMPTY_LIST;
+			// return an empty list if there is only one transition that is leading to the next level in the tree
+			// there must always be a normal path, because o/w a path from this height on is always abnormal
+			return Collections.emptyList();
 		}
 		return result;
 	}
@@ -506,20 +569,20 @@ public class TauPTA extends PDTTA {
 		final TIntSet currentStates = new TIntHashSet(possibleTransitions.stream().mapToInt(t -> t.getFromState()).distinct().toArray());
 		while (currentStates.size() > 0) {
 			final Transition chosenTransition = chooseRandomObject(possibleTransitions, r);
-			final int chosenState = chosenTransition.getFromState();
-			final List<Transition> stateTransitions = possibleTransitions.stream().filter(t -> t.getFromState() == chosenState).collect(Collectors.toList());
+			final int chosenFromState = chosenTransition.getFromState();
+			final List<Transition> stateTransitions = possibleTransitions.stream().filter(t -> t.getFromState() == chosenFromState).collect(Collectors.toList());
 			final List<String> notOccuringEvents = new ArrayList<>(Arrays.asList(alphabet.getSymbols()));
 			for (final Transition t : stateTransitions) {
 				notOccuringEvents.remove(t.getSymbol());
 			}
 			if (notOccuringEvents.size() == 0 || stateTransitions.size() == 0) {
-				logger.warn("Not possible to change an event in state {}", chosenState);
-				currentStates.remove(chosenState);
+				logger.warn("Not possible to change an event in state {}", chosenFromState);
+				currentStates.remove(chosenFromState);
 				continue;
 			} else {
 				final String chosenEvent = notOccuringEvents.get(r.nextInt(notOccuringEvents.size()));
 				logger.debug("Chose event {} from {}", chosenEvent, notOccuringEvents);
-				final Distribution d = removeTimedTransition(chosenTransition);
+				final ContinuousDistribution d = removeTimedTransition(chosenTransition);
 				final Transition newTransition = addAbnormalTransition(chosenTransition.getFromState(), chosenTransition.getToState(), chosenEvent,
 						chosenTransition.getProbability(), AnomalyInsertionType.TYPE_ONE);
 				bindTransitionDistribution(newTransition.toZeroProbTransition(), d);
@@ -591,6 +654,7 @@ public class TauPTA extends PDTTA {
 		boolean choseFinalState = false;
 		@SuppressWarnings("hiding")
 		AnomalyInsertionType anomalyType = AnomalyInsertionType.NONE;
+		int timedAnomalyCounter = 0;
 		while (!choseFinalState) {
 			List<Transition> possibleTransitions = getTransitions(currentState, true);
 			double random = r.nextDouble();
@@ -651,13 +715,22 @@ public class TauPTA extends PDTTA {
 				}
 				int timeValue = (int) d.sample(1, r)[0];
 				if (anomalyType == AnomalyInsertionType.TYPE_THREE) {
-					timeValue = changeTimeValue(timeValue, ANOMALY_3_CHANGE_RATE);
+					if (chosenTransition.isAbnormal()) {
+						timeValue = changeTimeValue(timeValue, ANOMALY_3_CHANGE_RATE);
+						timedAnomalyCounter++;
+					}
 				} else if (anomalyType == AnomalyInsertionType.TYPE_FOUR) {
-					timeValue = changeTimeValue(timeValue, ANOMALY_4_CHANGE_RATE);
+					if (chosenTransition.isAbnormal()) {
+						timedAnomalyCounter++;
+						timeValue = changeTimeValue(timeValue, ANOMALY_4_CHANGE_RATE);
+					}
 				}
 				eventList.add(chosenTransition.getSymbol());
 				timeList.add(timeValue);
 			}
+		}
+		if (anomalyType == AnomalyInsertionType.TYPE_THREE || anomalyType == AnomalyInsertionType.TYPE_FOUR) {
+			logger.info("{} out of {} transitions are marked with anomaly {}", timedAnomalyCounter, eventList.size(), anomalyType);
 		}
 		if (anomalyType != AnomalyInsertionType.NONE) {
 			return new TimedWord(eventList, timeList, ClassLabel.ANOMALY);
@@ -676,6 +749,138 @@ public class TauPTA extends PDTTA {
 
 	public Set<Transition> getAllTransitions() {
 		return transitions;
+	}
+
+	/**
+	 * Removes the previously found abnormal sequences from the given normal PTA.
+	 * Use this method carefully. It also changes normalPta.
+	 * @param normalPta
+	 */
+	public void removeAbnormalSequences(TauPTA normalPta) {
+		if (anomalyType == AnomalyInsertionType.TYPE_TWO && normalPta.anomalyType == AnomalyInsertionType.NONE) {
+			normalPta.makeMutable();
+			normalPta.removePaths(abnormalSequences);
+			normalPta.makeImmutable();
+		} else {
+			logger.warn("Tried to remove abnormal sequences from pta {}", normalPta);
+		}
+	}
+
+	/**
+	 * Removes the given sample paths.
+	 * 
+	 * @param abnormalSeqs the sample paths to remove.
+	 */
+	public void removePaths(List<UntimedSequence> abnormalSeqs) {
+		for (final UntimedSequence s : abnormalSeqs) {
+			removePath(s);
+		}
+		recomputeProbabilities();
+		removeUnreachableStates();
+	}
+
+	private void recomputeProbabilities() {
+		// TODO this code is more or less a duplicate of TauPtaLearner
+		for (final int state : getStates()) {
+			List<Transition> stateTransitions = getTransitions(state, false);
+			boolean removedTransition = false;
+			int occurenceCount = 0;
+			for (final Transition t : stateTransitions) {
+				final int count = transitionCount.get(t.toZeroProbTransition());
+				if (count == 0) {
+					removeTransition(t);
+					removedTransition = true;
+				} else {
+					occurenceCount += count;
+				}
+			}
+			final int count = finalStateCount.get(state);
+			if (count == 0) {
+				addFinalState(state, NO_TRANSITION_PROBABILITY);
+				removedTransition = true;
+			} else {
+				occurenceCount += count;
+			}
+			if (removedTransition) {
+				stateTransitions = getTransitions(state, false);
+				for (final Transition t : stateTransitions) {
+					if (occurenceCount == 0) {
+						removeTransition(t);
+					} else {
+						changeTransitionProbability(t,  transitionCount.get(t.toZeroProbTransition()) / (double) occurenceCount,
+								false);
+					}
+				}
+				if (occurenceCount == 0) {
+					removeState(state);
+				} else {
+					addFinalState(state, occurenceCount == 0 ? 0 : finalStateCount.get(state) / (double) occurenceCount);
+					fixProbability(state);
+				}
+			}
+		}
+	}
+
+	private TIntSet removeUnreachableStates() {
+		final TIntSet removedStates = new TIntHashSet();
+		final TIntSet reachableStates = new TIntHashSet();
+		reachableStates.add(START_STATE);
+		getReachableStates(START_STATE, reachableStates);
+		for (final int state : getStates()) {
+			if (!reachableStates.contains(state)) {
+				removeState(state);
+				removedStates.add(state);
+			}
+		}
+		removeUnnecessaryTransitions(removedStates);
+		return removedStates;
+	}
+
+	private void removeUnnecessaryTransitions(TIntSet removedStates) {
+		final TIntIterator it = removedStates.iterator();
+		while (it.hasNext()) {
+			final int state = it.next();
+			final List<Transition> removableTransintions = getTransitions(state, false);
+			for (final Transition t : removableTransintions) {
+				removeTransition(t);
+			}
+		}
+
+	}
+
+	private void getReachableStates(int currentState, TIntSet reachableStates) {
+		final List<Transition> reachableTransitions = getTransitions(currentState, false);
+		reachableStates.add(currentState);
+		for (final Transition t : reachableTransitions) {
+			if (t.getProbability() > 0) {
+				getReachableStates(t.getToState(), reachableStates);
+			}
+		}
+	}
+
+	/**
+	 * 
+	 * @param s the sample path to remove
+	 * @param probability the probability of s
+	 * @param removeSingleTransition whether to remove a transition if it is the only outgoing one (except the final transition)
+	 */
+	private void removePath(UntimedSequence s) {
+		int currentState = START_STATE;
+		Transition temp;
+		final List<Transition> visitedTransitions = new ArrayList<>(s.length());
+		for (int i = 0; i < s.length(); i++) {
+			temp = getTransition(currentState, s.getEvent(i));
+			visitedTransitions.add(temp);
+			currentState = temp.getToState();
+		}
+		final int count = finalStateCount.get(currentState);
+		finalStateCount.adjustValue(currentState, -count);
+		logger.debug("Adjusting final state prob for state " + currentState + " from " + count + " with " + (-count));
+		for (final Transition t : visitedTransitions) {
+			logger.debug("Adjusting value for transition " + t + " from " + transitionCount.get(t.toZeroProbTransition()) + " with " + (-count));
+			transitionCount.adjustValue(t.toZeroProbTransition(), -count);
+		}
+		logger.debug("Removed path " + s);
 	}
 
 }

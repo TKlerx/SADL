@@ -35,69 +35,69 @@ public class TauPtaTestSmallV1 {
 
 
 	@Test
-	public void testTauPTATimedInputNormalSmall() throws IOException, URISyntaxException {
-		final Path p = Paths.get(this.getClass().getResource("/taupta/small/pta_normal.xml").toURI());
+	public void testTauPTATimedInputNormalSmall() throws IOException, URISyntaxException, ClassNotFoundException {
+		final Path p = Paths.get(this.getClass().getResource("/taupta/small/pta_normal.ser").toURI());
 		final TauPtaLearner learner = new TauPtaLearner();
 		final TauPTA pta = learner.train(trainingTimedSequences);
-		final TauPTA saved = (TauPTA) IoUtils.xmlDeserialize(p);
+		final TauPTA saved = (TauPTA) IoUtils.deserialize(p);
 		assertEquals(pta, saved);
 	}
 
 
 
 	@Test
-	public void testTauPTATimedInputAbnormal1Small() throws IOException, URISyntaxException {
-		final Path p = Paths.get(this.getClass().getResource("/taupta/small/pta_abnormal_1.xml").toURI());
+	public void testTauPTATimedInputAbnormal1Small() throws IOException, URISyntaxException, ClassNotFoundException {
+		final Path p = Paths.get(this.getClass().getResource("/taupta/small/pta_abnormal_1.ser").toURI());
 		final TauPtaLearner learner = new TauPtaLearner();
 		final TauPTA pta = learner.train(trainingTimedSequences);
 		pta.makeAbnormal(AnomalyInsertionType.TYPE_ONE);
-		final TauPTA saved = (TauPTA) IoUtils.xmlDeserialize(p);
+		final TauPTA saved = (TauPTA) IoUtils.deserialize(p);
 		assertEquals(pta, saved);
 	}
 
 
 
 	@Test
-	public void testTauPTATimedInputAbnormal2Small() throws IOException, URISyntaxException {
-		final Path p = Paths.get(this.getClass().getResource("/taupta/small/pta_abnormal_2.xml").toURI());
+	public void testTauPTATimedInputAbnormal2Small() throws IOException, URISyntaxException, ClassNotFoundException {
+		final Path p = Paths.get(this.getClass().getResource("/taupta/small/pta_abnormal_2.ser").toURI());
 		final TauPtaLearner learner = new TauPtaLearner();
 		final TauPTA pta = learner.train(trainingTimedSequences);
 		pta.makeAbnormal(AnomalyInsertionType.TYPE_TWO);
-		final TauPTA saved = (TauPTA) IoUtils.xmlDeserialize(p);
+		final TauPTA saved = (TauPTA) IoUtils.deserialize(p);
 		assertEquals(pta, saved);
 	}
 
 
 
 	@Test
-	public void testTauPTATimedInputAbnormal3Small() throws IOException, URISyntaxException {
-		final Path p = Paths.get(this.getClass().getResource("/taupta/small/pta_abnormal_3.xml").toURI());
+	public void testTauPTATimedInputAbnormal3Small() throws IOException, URISyntaxException, ClassNotFoundException {
+		final Path p = Paths.get(this.getClass().getResource("/taupta/small/pta_abnormal_3.ser").toURI());
 		final TauPtaLearner learner = new TauPtaLearner();
 		final TauPTA pta = learner.train(trainingTimedSequences);
 		pta.makeAbnormal(AnomalyInsertionType.TYPE_THREE);
-		final TauPTA saved = (TauPTA) IoUtils.xmlDeserialize(p);
+		final TauPTA saved = (TauPTA) IoUtils.deserialize(p);
 		assertEquals(pta, saved);
 	}
 
 	@Test
-	public void testTauPTATimedInputAbnormal4Small() throws IOException, URISyntaxException {
-		final Path p = Paths.get(this.getClass().getResource("/taupta/small/pta_abnormal_4.xml").toURI());
+	public void testTauPTATimedInputAbnormal4Small() throws IOException, URISyntaxException, ClassNotFoundException {
+		final Path p = Paths.get(this.getClass().getResource("/taupta/small/pta_abnormal_4.ser").toURI());
 		final TauPtaLearner learner = new TauPtaLearner();
 		final TauPTA pta = learner.train(trainingTimedSequences);
 		pta.makeAbnormal(AnomalyInsertionType.TYPE_FOUR);
-		final TauPTA saved = (TauPTA) IoUtils.xmlDeserialize(p);
+		final TauPTA saved = (TauPTA) IoUtils.deserialize(p);
 		assertEquals(pta, saved);
 	}
 
 
 
 	@Test
-	public void testTauPTATimedInputAbnormal5Small() throws IOException, URISyntaxException {
-		final Path p = Paths.get(this.getClass().getResource("/taupta/small/pta_abnormal_5.xml").toURI());
+	public void testTauPTATimedInputAbnormal5Small() throws IOException, URISyntaxException, ClassNotFoundException {
+		final Path p = Paths.get(this.getClass().getResource("/taupta/small/pta_abnormal_5.ser").toURI());
 		final TauPtaLearner learner = new TauPtaLearner();
 		final TauPTA pta = learner.train(trainingTimedSequences);
 		pta.makeAbnormal(AnomalyInsertionType.TYPE_FIVE);
-		final TauPTA saved = (TauPTA) IoUtils.xmlDeserialize(p);
+		final TauPTA saved = (TauPTA) IoUtils.deserialize(p);
 		assertEquals(pta, saved);
 	}
 

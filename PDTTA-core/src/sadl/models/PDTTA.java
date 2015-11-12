@@ -11,11 +11,6 @@
 
 package sadl.models;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TDoubleArrayList;
-import gnu.trove.list.array.TIntArrayList;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,16 +18,22 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import jsat.distributions.Distribution;
-
 import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.array.TIntArrayList;
+import jsat.distributions.ContinuousDistribution;
+import jsat.distributions.Distribution;
 import sadl.constants.ClassLabel;
 import sadl.input.TimedWord;
+import sadl.interfaces.TauEstimator;
 import sadl.structure.Transition;
 import sadl.structure.ZeroProbTransition;
+import sadl.tau_estimation.IdentityEstimator;
 
 /**
  * A Probabilistic Deterministic Timed-Transition Automaton (PDTTA).
@@ -42,34 +43,95 @@ import sadl.structure.ZeroProbTransition;
  */
 public class PDTTA extends PDFA {
 
-	private static final long serialVersionUID = 3017416753740710943L;
+	private static final long serialVersionUID = -5394139607433634347L;
 
 	transient private static Logger logger = LoggerFactory.getLogger(PDTTA.class);
 
-	Map<ZeroProbTransition, Distribution> transitionDistributions = null;
 
-	public Map<ZeroProbTransition, Distribution> getTransitionDistributions() {
-		return transitionDistributions;
+	private TauEstimator tauEstimator;
+	Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions = null;
+
+	protected PDTTA() {
 	}
 
-	public void setTransitionDistributions(Map<ZeroProbTransition, Distribution> transitionDistributions) {
-		checkImmutable();
+	public PDTTA(PDFA pdfa, Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions, TauEstimator tauEstimation) throws IOException {
+		super(pdfa);
 		this.transitionDistributions = transitionDistributions;
+		this.tauEstimator = tauEstimation;
+		if (tauEstimator == null) {
+			tauEstimator = new IdentityEstimator();
+		}
 		checkAndRestoreConsistency();
 	}
 
-	@Override
-	protected boolean restoreConsistency() {
-		return super.restoreConsistency() | deleteIrrelevantTransitions();
+
+	protected void bindTransitionDistribution(Transition newTransition, ContinuousDistribution d) {
+		checkImmutable();
+		if (transitionDistributions != null) {
+			transitionDistributions.put(newTransition.toZeroProbTransition(), d);
+		} else {
+			logger.warn("Trying to add Distribution {} to non existing time transition distributions", d);
+		}
 	}
 
 	@Override
-	protected boolean isConsistent() {
-		if (getTransitionCount() != transitionDistributions.size()) {
-			logger.warn("transitions and transitionDistributions must be of same size! {}!={}", getTransitionCount(), transitionDistributions.size());
-			return false;
+	public Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord s) {
+		return Pair.create(computeEventLikelihoods(s), computeTimeLikelihoods(s));
+	}
+
+	@Override
+	protected void changeTransitionProbability(Transition transition, double newProbability) {
+		changeTransitionProbability(transition, newProbability, true);
+	}
+
+	/**
+	 * 
+	 * @param transition
+	 * @param newProbability
+	 * @param bindTimeInformation
+	 *            also bind the time distribution to the internally created new transition. Only set this to false if there is no time information present in
+	 *            this automaton
+	 */
+	public void changeTransitionProbability(Transition transition, double newProbability, boolean bindTimeInformation) {
+		checkImmutable();
+		if (transition.isStopTraversingTransition()) {
+			super.changeTransitionProbability(transition, newProbability);
+		} else {
+			ContinuousDistribution d = null;
+			d = removeTimedTransition(transition, bindTimeInformation);
+			final Transition t = new Transition(transition.getFromState(), transition.getToState(), transition.getSymbol(), newProbability);
+			transitions.add(t);
+			if (bindTimeInformation) {
+				bindTransitionDistribution(t, d);
+			}
+			if (d == null && bindTimeInformation) {
+				logger.warn("Should incorporate time but there was no time distribution associated with transition {}", t);
+			}
 		}
-		return super.isConsistent();
+	}
+
+	protected TDoubleList computeTimeLikelihoods(TimedWord ts) {
+		final TDoubleList list = new TDoubleArrayList();
+		int currentState = 0;
+		for (int i = 0; i < ts.length(); i++) {
+			final Transition t = getTransition(currentState, ts.getSymbol(i));
+			// DONE this is crap, isnt it? why not return an empty list or null iff there is no transition for the given sequence? or at least put a '0' in the
+			// last slot.
+			if (t == null) {
+				list.add(0);
+				return list;
+			}
+			final ContinuousDistribution d = getTransitionDistributions().get(t.toZeroProbTransition());
+			if (d == null) {
+				// System.out.println("Found no time distribution for Transition "
+				// + t);
+				list.add(0);
+			} else {
+				list.add(tauEstimator.estimateTau(d, ts.getTimeValue(i)));
+			}
+			currentState = t.getToState();
+		}
+		return list;
 	}
 
 	/**
@@ -92,52 +154,85 @@ public class PDTTA extends PDFA {
 	}
 
 	@Override
-	protected void changeTransitionProbability(Transition transition, double newProbability) {
-		changeTransitionProbability(transition, newProbability, true);
-	}
-
-	/**
-	 * 
-	 * @param transition
-	 * @param newProbability
-	 * @param bindTimeInformation
-	 *            also bind the time distribution to the internally created new transition. Only set this to false if there is no time information present in
-	 *            this automaton
-	 */
-	public void changeTransitionProbability(Transition transition, double newProbability, boolean bindTimeInformation) {
-		checkImmutable();
-		if (transition.isStopTraversingTransition()) {
-			super.changeTransitionProbability(transition, newProbability);
-		} else {
-			Distribution d = null;
-			d = removeTimedTransition(transition, bindTimeInformation);
-			final Transition t = new Transition(transition.getFromState(), transition.getToState(), transition.getSymbol(), newProbability);
-			transitions.add(t);
-			if (bindTimeInformation) {
-				bindTransitionDistribution(t, d);
-			}
-			if (d == null && bindTimeInformation) {
-				logger.warn("Should incorporate time but there was no time distribution associated with transition {}", t);
-			}
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
 		}
-	}
-
-	protected PDTTA() {
-	}
-
-	public PDTTA(PDFA pdfa, Map<ZeroProbTransition, Distribution> transitionDistributions) throws IOException {
-		super(pdfa);
-		this.transitionDistributions = transitionDistributions;
-		checkAndRestoreConsistency();
-	}
-
-	protected void bindTransitionDistribution(Transition newTransition, Distribution d) {
-		checkImmutable();
-		if (transitionDistributions != null) {
-			transitionDistributions.put(newTransition.toZeroProbTransition(), d);
-		} else {
-			logger.warn("Trying to add Distribution {} to non existing time transition distributions", d);
+		if (!super.equals(obj)) {
+			return false;
 		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final PDTTA other = (PDTTA) obj;
+		if (transitionDistributions == null) {
+			if (other.transitionDistributions != null) {
+				return false;
+			}
+		} else if (!transitionDistributions.equals(other.transitionDistributions)) {
+			final Set<Entry<ZeroProbTransition, ContinuousDistribution>> e1 = transitionDistributions.entrySet();
+			final Set<Entry<ZeroProbTransition, ContinuousDistribution>> e2 = other.transitionDistributions.entrySet();
+			int count = 0;
+			for (final Entry<ZeroProbTransition, ContinuousDistribution> e : e1) {
+				if (!e2.contains(e)) {
+					logger.error("Entry {} not contained in e2", e);
+					final Distribution result = other.transitionDistributions.get(e.getKey());
+					if (result != null) {
+						final boolean compare = e.getValue().equals(result);
+						logger.info("Both maps contain a distribution for key {}; distributions are equal: {}", e.getKey(), compare);
+						logger.info("d1: {}, d2: {}", e.getValue(), result);
+					}
+					count++;
+				}
+			}
+			logger.error("");
+			for (final Entry<ZeroProbTransition, ContinuousDistribution> e : e2) {
+				if (!e1.contains(e)) {
+					logger.error("Entry {} not contained in e1", e);
+					final Distribution result = transitionDistributions.get(e.getKey());
+					if (result != null) {
+						final boolean compare = e.getValue().equals(result);
+						logger.info("Both maps contain a distribution for key {}; distributions are equal: {}", e.getKey(), compare);
+						logger.info("d1: {}, d2: {}", e.getValue(), result);
+					}
+					count++;
+				}
+			}
+			if (count > 0) {
+				logger.error("{} out of {} entries did not match", count, transitionDistributions.size());
+			}
+			return false;
+		}
+		if (tauEstimator == null) {
+			if (other.tauEstimator != null) {
+				return false;
+			}
+		} else if (!tauEstimator.equals(other.tauEstimator)) {
+			return false;
+		}
+		return true;
+	}
+
+	public Map<ZeroProbTransition, ContinuousDistribution> getTransitionDistributions() {
+		return transitionDistributions;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((transitionDistributions == null) ? 0 : transitionDistributions.hashCode());
+		result = prime * result + ((tauEstimator == null) ? 0 : tauEstimator.hashCode());
+		return result;
+	}
+
+	@Override
+	protected boolean isConsistent() {
+		if (getTransitionCount() != transitionDistributions.size()) {
+			logger.warn("transitions and transitionDistributions must be of same size! {}!={}", getTransitionCount(), transitionDistributions.size());
+			return false;
+		}
+		return super.isConsistent();
 	}
 
 	/**
@@ -145,16 +240,11 @@ public class PDTTA extends PDFA {
 	 * 
 	 * @param t
 	 */
-	protected Distribution removeTimedTransition(Transition t) {
+	protected ContinuousDistribution removeTimedTransition(Transition t) {
 		return removeTimedTransition(t, true);
 	}
 
-	@Override
-	protected boolean removeTransition(Transition t) {
-		return removeTimedTransition(t) != null;
-	}
-
-	public Distribution removeTimedTransition(Transition t, boolean removeTimeDistribution) {
+	public ContinuousDistribution removeTimedTransition(Transition t, boolean removeTimeDistribution) {
 		super.removeTransition(t);
 		if (removeTimeDistribution) {
 			if (transitionDistributions != null) {
@@ -166,6 +256,16 @@ public class PDTTA extends PDFA {
 		} else {
 			return null;
 		}
+	}
+
+	@Override
+	protected boolean removeTransition(Transition t) {
+		return removeTimedTransition(t) != null;
+	}
+
+	@Override
+	protected boolean restoreConsistency() {
+		return deleteIrrelevantTransitions() | super.restoreConsistency();
 	}
 
 	@Override
@@ -197,94 +297,10 @@ public class PDTTA extends PDFA {
 		return new TimedWord(eventList, timeList, ClassLabel.NORMAL);
 	}
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = super.hashCode();
-		result = prime * result + ((transitionDistributions == null) ? 0 : transitionDistributions.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (!super.equals(obj)) {
-			return false;
-		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		final PDTTA other = (PDTTA) obj;
-		if (transitionDistributions == null) {
-			if (other.transitionDistributions != null) {
-				return false;
-			}
-		} else if (!transitionDistributions.equals(other.transitionDistributions)) {
-			final Set<Entry<ZeroProbTransition, Distribution>> e1 = transitionDistributions.entrySet();
-			final Set<Entry<ZeroProbTransition, Distribution>> e2 = other.transitionDistributions.entrySet();
-			int count = 0;
-			for (final Entry<ZeroProbTransition, Distribution> e : e1) {
-				if (!e2.contains(e)) {
-					logger.error("Entry {} not contained in e2", e);
-					final Distribution result = other.transitionDistributions.get(e.getKey());
-					if (result != null) {
-						final boolean compare = e.getValue().equals(result);
-						logger.info("Both maps contain a distribution for key {}; distributions are equal: {}", e.getKey(), compare);
-						logger.info("d1: {}, d2: {}", e.getValue(), result);
-					}
-					count++;
-				}
-			}
-			logger.error("");
-			for (final Entry<ZeroProbTransition, Distribution> e : e2) {
-				if (!e1.contains(e)) {
-					logger.error("Entry {} not contained in e1", e);
-					final Distribution result = transitionDistributions.get(e.getKey());
-					if (result != null) {
-						final boolean compare = e.getValue().equals(result);
-						logger.info("Both maps contain a distribution for key {}; distributions are equal: {}", e.getKey(), compare);
-						logger.info("d1: {}, d2: {}", e.getValue(), result);
-					}
-					count++;
-				}
-			}
-			if (count > 0) {
-				logger.error("{} out of {} entries did not match", count, transitionDistributions.size());
-			}
-			return false;
-		}
-		return true;
-	}
-
-	protected TDoubleList computeTimeLikelihoods(TimedWord ts) {
-		final TDoubleList list = new TDoubleArrayList();
-		int currentState = 0;
-		for (int i = 0; i < ts.length(); i++) {
-			final Transition t = getTransition(currentState, ts.getSymbol(i));
-			// DONE this is crap, isnt it? why not return an empty list or null iff there is no transition for the given sequence? or at least put a '0' in the
-			// last slot.
-			if (t == null) {
-				list.add(0);
-				return list;
-			}
-			final Distribution d = getTransitionDistributions().get(t.toZeroProbTransition());
-			if (d == null) {
-				// System.out.println("Found no time distribution for Transition "
-				// + t);
-				list.add(0);
-			} else {
-				list.add(d.pdf(ts.getTimeValue(i)));
-			}
-			currentState = t.getToState();
-		}
-		return list;
-	}
-
-	@Override
-	public Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord s) {
-		return Pair.create(computeEventLikelihoods(s), computeTimeLikelihoods(s));
+	public void setTransitionDistributions(Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions) {
+		checkImmutable();
+		this.transitionDistributions = transitionDistributions;
+		checkAndRestoreConsistency();
 	}
 
 }

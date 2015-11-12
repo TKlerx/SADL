@@ -11,8 +11,6 @@
 
 package sadl.models.pdrta;
 
-import gnu.trove.list.TDoubleList;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -29,14 +27,17 @@ import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Function;
 
 import org.apache.commons.math3.util.Pair;
 
+import com.google.common.collect.TreeMultimap;
+
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
 import sadl.input.TimedWord;
 import sadl.interfaces.AutomatonModel;
 import sadl.modellearner.rtiplus.StateColoring;
-
-import com.google.common.collect.TreeMultimap;
 
 /**
  * This class represents a Probabilistic Deterministic Real Time Automaton (PDRTA). It provides methods for training (Split and Merge) and for anomaly
@@ -61,28 +62,28 @@ public class PDRTA implements AutomatonModel, Serializable {
 		final TreeMultimap<Integer, String> stats = TreeMultimap.create();
 		final List<String> inputData = new ArrayList<>();
 
-		final BufferedReader br = new BufferedReader(new FileReader(file));
-		String line;
+		try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+			String line;
 
-		while ((line = br.readLine()) != null) {
-			if (line.matches("^// \\D.+")) {
-				inputData.add(line.substring(3));
-			} else if (line.matches("^// \\d.+")) {
-				line = line.substring(3);
-				final String start = line.split(" ", 2)[0];
-				final int idx = Integer.parseInt(start);
-				stats.put(idx, new String(line));
-			} else if (line.matches("^\\d.+")) {
-				final String start = line.split(" ", 2)[0];
-				final int idx = Integer.parseInt(start);
-				if (line.matches("^\\d+ \\[.+")) {
+			while ((line = br.readLine()) != null) {
+				if (line.matches("^// \\D.+")) {
+					inputData.add(line.substring(3));
+				} else if (line.matches("^// \\d.+")) {
+					line = line.substring(3);
+					final String start = line.split(" ", 2)[0];
+					final int idx = Integer.parseInt(start);
 					stats.put(idx, new String(line));
-				} else {
-					trans.put(idx, new String(line));
+				} else if (line.matches("^\\d.+")) {
+					final String start = line.split(" ", 2)[0];
+					final int idx = Integer.parseInt(start);
+					if (line.matches("^\\d+ \\[.+")) {
+						stats.put(idx, new String(line));
+					} else {
+						trans.put(idx, new String(line));
+					}
 				}
 			}
 		}
-		br.close();
 
 		final PDRTAInput in = PDRTAInput.parse(inputData);
 		return new PDRTA(trans, stats, in);
@@ -104,15 +105,15 @@ public class PDRTA implements AutomatonModel, Serializable {
 				final Set<Entry<Integer, Interval>> ins = org.getIntervals(i).entrySet();
 				for (final Entry<Integer, Interval> eIn : ins) {
 					final Interval cIn = getState(org.getIndex()).getInterval(i, eIn.getKey());
-					assert (cIn.getBegin() == eIn.getValue().getBegin());
-					assert (cIn.getEnd() == eIn.getValue().getEnd());
-					assert (cIn.getTails().size() == eIn.getValue().getTails().size());
+					assert(cIn.getBegin() == eIn.getValue().getBegin());
+					assert(cIn.getEnd() == eIn.getValue().getEnd());
+					assert(cIn.getTails().size() == eIn.getValue().getTails().size());
 					if (eIn.getValue().getTarget() != null) {
-						assert (cIn.getTarget() == eIn.getValue().getTarget());
+						assert(cIn.getTarget() == eIn.getValue().getTarget());
 						cIn.setTarget(getState(eIn.getValue().getTarget().getIndex()));
-						assert (cIn.getTarget() != eIn.getValue().getTarget());
+						assert(cIn.getTarget() != eIn.getValue().getTarget());
 					} else {
-						assert (cIn.getTarget() == null);
+						assert(cIn.getTarget() == null);
 					}
 				}
 			}
@@ -120,75 +121,79 @@ public class PDRTA implements AutomatonModel, Serializable {
 
 		root = getState(a.root.getIndex());
 
-		assert (states.size() == a.states.size());
+		assert(states.size() == a.states.size());
 
 	}
 
-	public double[] testSeqHisto(TimedTail tail) {
+	private Pair<TDoubleList, TDoubleList> testSeqHisto(TimedTail tail) {
 
-		final List<Double> vals = new ArrayList<>();
-		TimedTail t = tail;
+		final TDoubleList symP = new TDoubleArrayList();
+		final TDoubleList timeP = new TDoubleArrayList();
+		double[] p;
+		TimedTail t = tail.getNextTail();
 		PDRTAState s = root;
 		while (t != null) {
 			if (t.getSymbolAlphIndex() < 0) {
-				return new double[] { -1.0 };
+				// return Pair.create(new TDoubleArrayList(new double[] { -1.0 }), new TDoubleArrayList(0));
+				return Pair.create(new TDoubleArrayList(new double[] { 0.0 }), new TDoubleArrayList(0));
 			}
 			if (t.getHistBarIndex() < 0) {
-				return new double[] { -2.0 };
+				// return Pair.create(new TDoubleArrayList(new double[] { -2.0 }), new TDoubleArrayList(0));
+				return Pair.create(new TDoubleArrayList(new double[] { 0.0 }), new TDoubleArrayList(0));
 			}
-			vals.add(s.getStat().getHistProb(t));
+			p = s.getStat().getHistProb(t);
+			symP.add(p[0]);
+			timeP.add(p[1]);
 			final Interval in = s.getInterval(t.getSymbolAlphIndex(), t.getTimeDelay());
 			s = in.getTarget();
 			t = t.getNextTail();
 			if (s == null) {
 				if (in.getBegin() == input.getMinTimeDelay() && in.getEnd() == input.getMaxTimeDelay()) {
-					return new double[] { -3.0 };
+					// return Pair.create(new TDoubleArrayList(0), new TDoubleArrayList(new double[] { -2.0 }));
+					return Pair.create(new TDoubleArrayList(new double[] { 0.0 }), new TDoubleArrayList(0));
 				} else {
-					return new double[] { -4.0 };
+					// return Pair.create(new TDoubleArrayList(0), new TDoubleArrayList(new double[] { -3.0 }));
+					return Pair.create(new TDoubleArrayList(new double[] { 0.0 }), new TDoubleArrayList(0));
 				}
 			}
 		}
-		vals.add(s.getStat().getTailEndProb());
+		symP.add(s.getStat().getTailEndProb());
 
-		final double[] res = new double[vals.size()];
-		for (int i = 0; i < res.length; i++) {
-			res[i] = vals.get(i);
-		}
-		return res;
+		return Pair.create(symP, timeP);
 	}
 
-	public double[] testSeqTrans(TimedTail tail) {
+	private TDoubleList testSeqTrans(TimedTail tail) {
 
-		final List<Double> vals = new ArrayList<>();
-		TimedTail t = tail;
+		final TDoubleList transP = new TDoubleArrayList();
+		TimedTail t = tail.getNextTail();
 		PDRTAState s = root;
 		while (t != null) {
 			if (t.getSymbolAlphIndex() < 0) {
-				return new double[] { -1.0 };
+				// return new TDoubleArrayList(new double[] { -1.0 });
+				return new TDoubleArrayList(new double[] { 0.0 });
 			}
 			if (t.getHistBarIndex() < 0) {
-				return new double[] { -2.0 };
+				// return new TDoubleArrayList(new double[] { -2.0 });
+				return new TDoubleArrayList(new double[] { 0.0 });
 			}
 			final Interval in = s.getInterval(t.getSymbolAlphIndex(), t.getTimeDelay());
-			assert (in != null);
-			vals.add(s.getStat().getTransProb(t.getSymbolAlphIndex(), in));
+			assert(in != null);
+			transP.add(s.getStat().getTransProb(t.getSymbolAlphIndex(), in));
 			s = in.getTarget();
 			t = t.getNextTail();
 			if (s == null) {
 				if (in.getBegin() == input.getMinTimeDelay() && in.getEnd() == input.getMaxTimeDelay()) {
-					return new double[] { -3.0 };
+					// return new TDoubleArrayList(new double[] { -3.0 });
+					return new TDoubleArrayList(new double[] { 0.0 });
 				} else {
-					return new double[] { -4.0 };
+					// return new TDoubleArrayList(new double[] { -4.0 });
+					return new TDoubleArrayList(new double[] { 0.0 });
 				}
 			}
 		}
-		vals.add(s.getStat().getTailEndProb());
+		transP.add(s.getStat().getTailEndProb());
 
-		final double[] res = new double[vals.size()];
-		for (int i = 0; i < res.length; i++) {
-			res[i] = vals.get(i);
-		}
-		return res;
+		return transP;
 	}
 
 	public Collection<PDRTAState> getStates() {
@@ -206,11 +211,11 @@ public class PDRTA implements AutomatonModel, Serializable {
 					TimedTail t = eTail.getValue();
 					PDRTAState source = root, target;
 					while (t != null) {
-						assert (source.getInterval(t.getSymbolAlphIndex(), t.getTimeDelay()).getTails().containsValue(t));
+						assert(source.getInterval(t.getSymbolAlphIndex(), t.getTimeDelay()).getTails().containsValue(t));
 						target = source.getTarget(t);
 						if (target == null) {
 							throw new IllegalStateException("The tail (" + input.getSymbol(t.getSymbolAlphIndex()) + "," + t.getTimeDelay()
-									+ ") has no transition from state ((" + source.getIndex() + "))!");
+							+ ") has no transition from state ((" + source.getIndex() + "))!");
 						}
 						source = target;
 						t = t.getNextTail();
@@ -311,11 +316,19 @@ public class PDRTA implements AutomatonModel, Serializable {
 	public String toString() {
 
 		final StringBuilder sb = new StringBuilder();
-		toString(sb, 0.0, false);
+		toDOTLang(sb);
 		return sb.toString();
 	}
 
-	public void toString(Appendable ap, double minP, boolean withInput) {
+	public void toDOTLang(Appendable ap) {
+		toDOTLang(ap, 0.0, false);
+	}
+
+	public void toDOTLang(Appendable ap, double minP, boolean withInput) {
+		toDOTLang(ap, minP, withInput, null);
+	}
+
+	public void toDOTLang(Appendable ap, double minP, boolean withInput, StateColoring sc) {
 
 		// Write transitions with high probability
 		final StringBuilder sb = new StringBuilder();
@@ -376,6 +389,13 @@ public class PDRTA implements AutomatonModel, Serializable {
 					ap.append(" [ xlabel = \"");
 					ap.append(Double.toString(s.getStat().getTailEndProb()));
 					ap.append("\"");
+					if (sc != null) {
+						if (sc.isRed(s)) {
+							ap.append(", fillcolor = \"#FFA9A9\"");
+						} else if (sc.isBlue(s)) {
+							ap.append(", fillcolor = \"#A9D1FF\"");
+						}
+					}
 					ap.append(" ];\n");
 				}
 			}
@@ -396,7 +416,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 			idx++;
 		}
 		final PDRTAState x1 = states.put(idx, s);
-		assert (x1 == null);
+		assert(x1 == null);
 		return idx;
 	}
 
@@ -465,10 +485,10 @@ public class PDRTA implements AutomatonModel, Serializable {
 				t = states.get(target);
 			}
 			Interval in = s.getInterval(input.getAlphIndex(sym), end);
-			assert (in != null);
-			assert (in.getTarget() == null);
-			assert (s.getStat().getTransProb(input.getAlphIndex(sym), in) == 0.0);
-			assert (in.contains(begin));
+			assert(in != null);
+			assert(in.getTarget() == null);
+			assert(s.getStat().getTransProb(input.getAlphIndex(sym), in) == 0.0);
+			assert(in.contains(begin));
 			Interval newIn;
 			if (end < in.getEnd()) {
 				newIn = in.split(end);
@@ -491,6 +511,24 @@ public class PDRTA implements AutomatonModel, Serializable {
 			root.addTail(input.getTailChain(i));
 		}
 		createSubTAPTA(root);
+	}
+
+	public void createSubTAPTA_rec_new(PDRTAState s) {
+
+		for (int i = 0; i < input.getAlphSize(); i++) {
+			assert(s.getIntervals(i).size() == 1);
+			final Interval interval = s.getIntervals(i).lastEntry().getValue();
+			assert(interval.getTarget() == null);
+			final Set<Entry<Integer, TimedTail>> tails = interval.getTails().entries();
+			if (!tails.isEmpty() && interval.getTarget() == null) {
+				final PDRTAState target = new PDRTAState(this);
+				interval.setTarget(target);
+				for (final Entry<Integer, TimedTail> e : tails) {
+					target.addTail(e.getValue());
+				}
+				createSubTAPTA(target);
+			}
+		}
 	}
 
 	public void createSubTAPTA(PDRTAState s) {
@@ -602,8 +640,15 @@ public class PDRTA implements AutomatonModel, Serializable {
 
 	@Override
 	public Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord seq) {
-		// TODO Auto-generated method stub
-		return null;
+
+		final TimedTail t = input.toTestTailChain(seq);
+		return testSeqHisto(t);
+	}
+
+	public Pair<TDoubleList, TDoubleList> calculateProbsTrans(TimedWord seq) {
+
+		final TimedTail t = input.toTestTailChain(seq);
+		return Pair.create(testSeqTrans(t), new TDoubleArrayList(0));
 	}
 
 	@Override
@@ -660,6 +705,15 @@ public class PDRTA implements AutomatonModel, Serializable {
 		for (final PDRTAState s : states.values()) {
 			s.cleanUp();
 		}
+	}
+
+	@Override
+	public Map<String, Function<TimedWord, Pair<TDoubleList, TDoubleList>>> getAvailableCalcMethods() {
+
+		final Map<String, Function<TimedWord, Pair<TDoubleList, TDoubleList>>> m = AutomatonModel.super.getAvailableCalcMethods();
+		m.put("histogramPobs", this::calculateProbabilities);
+		m.put("transitionProbs", this::calculateProbsTrans);
+		return m;
 	}
 
 }

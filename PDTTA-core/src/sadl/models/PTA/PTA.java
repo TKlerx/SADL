@@ -17,8 +17,8 @@ import sadl.constants.EventsCreationStrategy;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.CompatibilityChecker;
-import sadl.models.pdrtaModified.PDRTAModified;
-import sadl.models.pdrtaModified.PDRTAStateModified;
+import sadl.models.pdtaModified.PDTAModified;
+import sadl.models.pdtaModified.PDTAStateModified;
 
 public class PTA {
 
@@ -235,28 +235,28 @@ public class PTA {
 		}
 	}
 
-	public PDRTAModified toPDRTA() {
+	public PDTAModified toPDRTA() {
 
-		final HashMap<Integer, PDRTAStateModified> pdrtaStates = new HashMap<>();
+		final HashMap<Integer, PDTAStateModified> pdrtaStates = new HashMap<>();
 
 		for (final PTAState ptaState : states) {
 			final int stateId = ptaState.getId();
-			pdrtaStates.put(stateId, new PDRTAStateModified(stateId, ptaState.getEndProbability()));
+			pdrtaStates.put(stateId, new PDTAStateModified(stateId, ptaState.getEndProbability()));
 		}
 
 		for (final PTAState ptaState : states) {
-			final PDRTAStateModified pdrtaStateSource = pdrtaStates.get(ptaState.getId());
+			final PDTAStateModified pdrtaStateSource = pdrtaStates.get(ptaState.getId());
 			final int outTransitionsCount = ptaState.getOutTransitionsCount();
 
 			for (final PTATransition transition : ptaState.outTransitions.values()) {
-				final PDRTAStateModified pdrtaStateTarget = pdrtaStates.get(transition.getTarget().getId());
+				final PDTAStateModified pdrtaStateTarget = pdrtaStates.get(transition.getTarget().getId());
 				final SubEvent event = transition.getEvent();
 
 				pdrtaStateSource.addTransition(event, pdrtaStateTarget, event.getIntervalInState(ptaState), transition.getCount() / outTransitionsCount);
 			}
 		}
 
-		return new PDRTAModified(pdrtaStates.get(root.getId()), pdrtaStates, events);
+		return new PDTAModified(pdrtaStates.get(root.getId()), pdrtaStates, events);
 	}
 
 	public void toGraphvizFile(Path resultPath) throws IOException {

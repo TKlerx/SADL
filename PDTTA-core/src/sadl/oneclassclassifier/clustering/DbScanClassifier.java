@@ -13,6 +13,9 @@ package sadl.oneclassclassifier.clustering;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import jsat.DataSet;
 import jsat.classifiers.DataPoint;
 import jsat.clustering.MyDBSCAN;
@@ -22,10 +25,6 @@ import jsat.linear.VecPaired;
 import jsat.linear.distancemetrics.DistanceMetric;
 import jsat.linear.distancemetrics.EuclideanDistance;
 import jsat.linear.distancemetrics.ManhattanDistance;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import sadl.constants.DistanceMethod;
 import sadl.constants.ScalingMethod;
 import sadl.oneclassclassifier.NumericClassifier;
@@ -37,6 +36,7 @@ import sadl.utils.DatasetTransformationUtils;
  *
  */
 public class DbScanClassifier extends NumericClassifier {
+	// TODO write unit test for this
 	private static Logger logger = LoggerFactory.getLogger(DbScanClassifier.class);
 	DistanceMetric dm;
 	MyDBSCAN dbscan;
@@ -69,7 +69,7 @@ public class DbScanClassifier extends NumericClassifier {
 		// }
 
 		pointCats = new int[data.size()];
-		final DataSet dataSet = DatasetTransformationUtils.doublesToDataSet(data);
+		final DataSet<?> dataSet = DatasetTransformationUtils.doublesToDataSet(data);
 		clusterResult = MyDBSCAN.createClusterListFromAssignmentArray(dbscan.cluster(dataSet, eps, n, pointCats), dataSet);
 		final int clusterCount = clusterResult.size();
 		logger.info("There are {} many clusters.", clusterCount);
@@ -80,16 +80,13 @@ public class DbScanClassifier extends NumericClassifier {
 		}
 		logger.info("Original dataset size={}", data.size());
 		logger.info("There are {} clustered instances", count);
-
 	}
-
-
-
 
 
 
 	@Override
 	protected boolean isOutlierScaled(double[] testSample) {
+		// TODO do not use eps here, because it we must use a real threshold for testing and not the eps boundary that we used for training
 		final List<? extends VecPaired<VecPaired<Vec, Integer>, Double>> neighbours = dbscan.getLastVectorCollection().search(new DenseVector(testSample), eps);
 		// check whether one of the points is a core point!
 		for (final VecPaired<VecPaired<Vec, Integer>, Double> vecPaired : neighbours) {
@@ -114,9 +111,12 @@ public class DbScanClassifier extends NumericClassifier {
 			final int dataSetIndex = vecPaired.getVector().getPair();
 			if (pointCats[dataSetIndex] != MyDBSCAN.NOISE) {
 				nonNoisePoints++;
+				if (nonNoisePoints >= n) {
+					return true;
+				}
 			}
 		}
-		return nonNoisePoints >= n;
+		return false;
 	}
 
 	@Override

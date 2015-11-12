@@ -12,9 +12,13 @@
 package sadl.modellearner.rtiplus;
 
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,11 +33,21 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
 import sadl.input.TimedInput;
 import sadl.interfaces.Model;
 import sadl.interfaces.ModelLearner;
+import sadl.modellearner.rtiplus.boolop.AndOperator;
+import sadl.modellearner.rtiplus.boolop.BooleanOperator;
+import sadl.modellearner.rtiplus.boolop.OrOperator;
 import sadl.modellearner.rtiplus.tester.FishersMethodTester;
 import sadl.modellearner.rtiplus.tester.LikelihoodRatioTester;
+import sadl.modellearner.rtiplus.tester.LikelihoodValue;
 import sadl.modellearner.rtiplus.tester.NaiveLikelihoodRatioTester;
 import sadl.modellearner.rtiplus.tester.OperationTester;
 import sadl.models.pdrta.Interval;
@@ -41,6 +55,7 @@ import sadl.models.pdrta.PDRTA;
 import sadl.models.pdrta.PDRTAInput;
 import sadl.models.pdrta.PDRTAState;
 import sadl.models.pdrta.TimedTail;
+import sadl.utils.Settings;
 
 /**
  * 
@@ -49,98 +64,165 @@ import sadl.models.pdrta.TimedTail;
  */
 public class SimplePDRTALearner implements ModelLearner {
 
-	public enum RunMode {
-		SILENT, NORMAL_CONSOLE, NORMAL_FILE, NORMAL_BATCH, DEBUG, DEBUG_STEPS, DEBUG_DEEP
+	public enum OperationTesterType {
+		LRT, LRT_ADV, NAIVE_LRT, FM, FM_ADV
 	}
 
-	// Use JCommander and remove
-	private static final String USAGE = "Usage: java -cp jRTI+.jar de.upb.fw.searcher.Searcher"
-			+ " [SIGNIFICANCE] [DISTR_CHECK_TYPE] [HISTOGRAM_BINS] [FILE]\n"
-			+ "1.  SIGNIFICANCE  is a decision (float) value between 0.0 and 1.0, default is 0.05 (5% significance)\n"
-			+ "2.  DISTR_CHECK_TYPE  is -1 for disable dirtibution check, 0 for split every gap," + " 1 for MAD value, 2 for outlier value\n"
-			+ "3.  HISTOGRAM_BINS  can be given as (inner) borders -b1-b2-...-bn- or as the number of bins to use\n"
-			+ "4.  FILE  is an input file conaining unlabeled timed strings";
-
-	public RunMode runMode = RunMode.NORMAL_BATCH;
-
-	protected long startTime;
-
-	protected final double significance;
-	protected final int distrCheckType;
-	protected final String histBinsStr;
-	protected final OperationTester tester;
-
-	protected final String directory;
-
-	public SimplePDRTALearner(float sig, String histBins, int testerType, int distrCheckType, RunMode runMode, String dir) {
-
-		checkParams(sig, distrCheckType);
-
-		this.significance = sig;
-		this.distrCheckType = distrCheckType;
-		this.histBinsStr = histBins;
-		this.runMode = runMode;
-		this.directory = dir;
-
-		switch (testerType) {
-		case 0:
-			this.tester = new LikelihoodRatioTester(false);
-			break;
-		case 1:
-			this.tester = new LikelihoodRatioTester(true);
-			break;
-		case 2:
-			this.tester = new NaiveLikelihoodRatioTester();
-			break;
-		case 3:
-			this.tester = new FishersMethodTester();
-			break;
-		default:
-			this.tester = new LikelihoodRatioTester(false);
-			break;
-		}
-
+	public enum DistributionCheckType {
+		DISABLED, ALL_BORDER, ALL, MAD_BORDER, MAD, OUTLIER_BORDER, OUTLIER
 	}
 
-	@Override
-	public Model train(TimedInput trainingSequences) {
-
-		System.out.println("RTI+: Building automaton from input sequences");
-
-		final boolean expand = distrCheckType >= 1;
-		final PDRTAInput in = new PDRTAInput(trainingSequences, histBinsStr, expand);
-		final PDRTA a = new PDRTA(in);
-
-		System.out.println("Parameters are: significance=" + significance + " distrCheckType=" + distrCheckType);
-		System.out.println("Histogram Bins are: " + a.getHistBinsString());
-		if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
-			System.out.println("Log Level: " + runMode);
-		}
-
-		System.out.println("*** Performing simple RTI+ ***");
-		startTime = System.currentTimeMillis();
-		final StateColoring sc = new StateColoring(a);
-		sc.setRed(a.getRoot());
-		tester.setColoring(sc);
-		complete(a, sc);
-		a.cleanUp();
-		persistFinalResult(a);
-
-		System.out.println("Time: " + getDuration(startTime, System.currentTimeMillis()));
-		System.out.println("END");
-
-		return a;
+	public enum SplitPosition {
+		LEFT, MIDDLE, RIGHT
 	}
 
-	private void checkParams(float sig, int distrCheckT) {
+	// The boolean operators for the pooling strategy used by Verwer's LRT and FM
+	// 0: Operator for pooling (thesis: AND, impl: AND, own: AND)
+	// 1: Operator for pool discarding (thesis: missing, impl: [LRT: OR, FM: AND], own: AND)
+	// 2: Operator for calculation interruption (thesis: AND, impl: OR, own: AND)
+	public static BooleanOperator[] bOp;
+
+	static final Logger logger = LoggerFactory.getLogger(SimplePDRTALearner.class);
+
+	long startTime;
+
+	final double significance;
+	final DistributionCheckType distrCheckType;
+	final SplitPosition splitPos;
+	final String histBinsStr;
+	final OperationTester tester;
+
+	Path directory;
+
+	PDRTA mainModel;
+
+	public SimplePDRTALearner(double sig, String histBins, OperationTesterType testerType, DistributionCheckType distrCheckType, SplitPosition splitPos,
+			String boolOps, String dir) {
 
 		if (sig < 0.0 || sig > 1.0) {
 			throw new IllegalArgumentException("Wrong parameter: SIGNIFICANCE must be a decision (float) value between 0.0 and 1.0");
 		}
 
-		if (distrCheckT < -1 || distrCheckT > 5) {
-			throw new IllegalArgumentException("Wrong parameter: DISTR_CHECK_TYPE must be -1, 0, 1, 2, 3, 4 or 5");
+		parseBoolOps(boolOps);
+
+		this.significance = sig;
+		this.distrCheckType = distrCheckType;
+		this.histBinsStr = histBins;
+		this.splitPos = splitPos;
+		try {
+			this.directory = initStepsDir(dir);
+		} catch (final IOException e) {
+			logger.warn("Error when preparing steps directory: ", e.getMessage());
+			directory = null;
 		}
+
+		switch (testerType) {
+		case LRT:
+			this.tester = new LikelihoodRatioTester(false);
+			break;
+		case LRT_ADV:
+			this.tester = new LikelihoodRatioTester(true);
+			break;
+		case NAIVE_LRT:
+			this.tester = new NaiveLikelihoodRatioTester();
+			break;
+		case FM:
+			this.tester = new FishersMethodTester(false);
+			break;
+		case FM_ADV:
+			this.tester = new FishersMethodTester(true);
+			break;
+		default:
+			this.tester = new LikelihoodRatioTester(false);
+			break;
+		}
+	}
+
+	private Path initStepsDir(String dir) throws IOException {
+
+		if (dir != null) {
+			final Path p = Paths.get(dir, "steps");
+			if (Files.exists(directory) && Files.isDirectory(directory)) {
+				Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+					@Override
+					public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+						Files.delete(file);
+						return FileVisitResult.CONTINUE;
+					}
+					@Override
+					public FileVisitResult postVisitDirectory(Path d, IOException e) throws IOException {
+						if (e == null) {
+							Files.delete(d);
+							return FileVisitResult.CONTINUE;
+						} else {
+							throw e;
+						}
+					}
+				});
+			}
+			Files.createDirectories(directory);
+			return p;
+		} else {
+			return null;
+		}
+	}
+
+	private void parseBoolOps(String bOps) {
+
+		final char[] c = bOps.toUpperCase().toCharArray();
+
+		if (c.length != 3) {
+			throw new IllegalArgumentException("Boolean operators must be a tripple of 'A' or 'O' symbols!");
+		}
+
+		bOp = new BooleanOperator[c.length];
+		for (int i = 0; i < c.length; i++) {
+			switch (c[i]) {
+			case 'A':
+				bOp[i] = new AndOperator();
+				break;
+			case 'O':
+				bOp[i] = new OrOperator();
+				break;
+			default:
+				bOp[i] = new AndOperator();
+				logger.error("The symbol '{}' is not appropriate for boolean operator. Using default 'A'.", c[i]);
+				break;
+			}
+		}
+	}
+
+	@Override
+	public Model train(TimedInput trainingSequences) {
+
+		logger.info("RTI+: Building automaton from input sequences");
+
+		final boolean expand = distrCheckType.compareTo(DistributionCheckType.ALL) > 0;
+		final PDRTAInput in = new PDRTAInput(trainingSequences, histBinsStr, expand);
+		final PDRTA a = new PDRTA(in);
+
+		// TODO log new params
+		logger.info("Parameters are: significance={} distrCheckType={}", significance, distrCheckType);
+		logger.info("Histogram Bins are: {}", a.getHistBinsString());
+
+		logger.info("*** Performing simple RTI+ ***");
+		startTime = System.currentTimeMillis();
+		final StateColoring sc = new StateColoring(a);
+		sc.setRed(a.getRoot());
+		tester.setColoring(sc);
+		mainModel = a;
+		complete(a, sc);
+
+		logger.info("Final PDRTA contains {} states and {} transitions", a.getNumStates(), a.getSize());
+		// TODO Check why Likelihood is 0.0 here
+		logger.info("Trained PDRTA with quality: Likelihood={} and AIC={}", Math.exp(NaiveLikelihoodRatioTester.calcLikelihood(a).getRatio()), calcAIC(a));
+
+		a.cleanUp();
+
+		logger.info("Time: {}", getDuration(startTime, System.currentTimeMillis()));
+		logger.info("END");
+
+		return a;
 	}
 
 	protected Transition getMostVisitedTrans(PDRTA a, StateColoring sc) {
@@ -181,39 +263,24 @@ public class SimplePDRTALearner implements ModelLearner {
 		return trans;
 	}
 
-	@SuppressWarnings("null")
 	protected NavigableSet<Refinement> getMergeRefs(Transition t, StateColoring sc) {
-
-		ProgressBarPrinter pbp = null;
-		if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
-			pbp = new ProgressBarPrinter(sc.getNumRedStates());
-		}
 
 		final NavigableSet<Refinement> refs = new TreeSet<>();
 		for (final PDRTAState r : sc) {
 			double score = tester.testMerge(r, t.target);
-			if (runMode.compareTo(RunMode.DEBUG_DEEP) >= 0) {
-				System.out.println("Score: " + score + " (MERGE " + r.getIndex() + " with " + t.target.getIndex() + ")");
+			if (mainModel == t.ta) {
+				logger.trace("Score: {} (MERGE {} with {})", score, r.getIndex(), t.target.getIndex());
 			}
 			if (score > significance && score <= 1.0) {
 				score = (score - significance) / (1.0 - significance);
 				final Refinement ref = new Refinement(r, t.target, score, sc);
 				refs.add(ref);
 			}
-			if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
-				pbp.inc();
-			}
 		}
 		return refs;
 	}
 
-	@SuppressWarnings("null")
 	protected NavigableSet<Refinement> getSplitRefs(Transition t, StateColoring sc) {
-
-		ProgressBarPrinter pbp = null;
-		if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
-			pbp = new ProgressBarPrinter(t.in.getTails().keySet().size() - 1);
-		}
 
 		final NavigableSet<Refinement> refs = new TreeSet<>();
 		final Iterator<Integer> it = t.in.getTails().keySet().iterator();
@@ -221,18 +288,29 @@ public class SimplePDRTALearner implements ModelLearner {
 			int last = it.next();
 			while (it.hasNext()) {
 				final int cur = it.next();
-				final int splitTime = (int) Math.rint(((cur - last) - 1) / 2.0) + last;
+				int splitTime = -1;
+				switch (splitPos) {
+				case LEFT:
+					splitTime = last;
+					break;
+				case MIDDLE:
+					splitTime = (int) Math.rint(((cur - last) - 1) / 2.0) + last;
+					break;
+				case RIGHT:
+					splitTime = cur - 1;
+					break;
+				default:
+					splitTime = (int) Math.rint(((cur - last) - 1) / 2.0) + last;
+					break;
+				}
 				double score = tester.testSplit(t.source, t.symAlphIdx, splitTime);
-				if (runMode.compareTo(RunMode.DEBUG_DEEP) >= 0) {
-					System.out.println("Score: " + score + " (SPLIT " + t.source.getIndex() + " @ (" + t.ta.getSymbol(t.symAlphIdx) + "," + splitTime + "))");
+				if (mainModel == t.ta) {
+					logger.trace("Score: {} (SPLIT {} @ ({},{}))", score, t.source.getIndex(), t.ta.getSymbol(t.symAlphIdx), splitTime);
 				}
 				if (score < significance && score >= 0) {
 					score = (significance - score) / significance;
 					final Refinement ref = new Refinement(t.source, t.symAlphIdx, splitTime, score, sc);
 					refs.add(ref);
-				}
-				if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
-					pbp.inc();
 				}
 				last = cur;
 			}
@@ -240,84 +318,93 @@ public class SimplePDRTALearner implements ModelLearner {
 		return refs;
 	}
 
-	protected void complete(PDRTA a, StateColoring sc) {
+	void complete(PDRTA a, StateColoring sc) {
+
+		final boolean preExit = (bOp[2] instanceof OrOperator) && distrCheckType.equals(DistributionCheckType.DISABLED);
+		if (mainModel == a && preExit) {
+			logger.info("Pre-Exiting algorithm when number of tails falls below minData");
+		}
 
 		int counter = 0;
 		Transition t;
-		while ((t = getMostVisitedTrans(a, sc)) != null) {
-			if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
-				if (runMode.compareTo(RunMode.DEBUG_STEPS) >= 0) {
-					try {
-						draw(a, true, directory + "steps/step_" + counter + ".png");
-					} catch (IOException | InterruptedException e) {
-						e.printStackTrace();
-					}
+		while ((t = getMostVisitedTrans(a, sc)) != null && !(preExit && t.in.getTails().size() < PDRTA.getMinData())) {
+			if (mainModel == a) {
+				if (directory != null) {
+					draw(a, true, directory, counter);
 				}
-				System.out.println("Automaton contains " + a.getNumStates() + " states and " + a.getSize() + " transitions");
-				System.out.println("Found most visited transition  " + t.toString() + "  containing " + t.in.getTails().size() + " tails");
+				logger.debug("Automaton contains {} states and {} transitions", a.getNumStates(), a.getSize());
+				logger.debug("Found most visited transition  {}  containing {} tails", t.toString(), t.in.getTails().size());
 			}
 			counter++;
 
-			if (distrCheckType >= 0) {
-				if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
-					System.out.print("Checking data distribution... ");
+			if (!distrCheckType.equals(DistributionCheckType.DISABLED)) {
+				if (mainModel == a) {
+					logger.debug("Checking data distribution");
 				}
-				if (checkDistribution(t.source, t.symAlphIdx, distrCheckType, sc)) {
-					if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
-						System.out.print("Splited interval because of data distribution into:  ");
-						final NavigableMap<Integer, Interval> ins = t.source.getIntervals(t.symAlphIdx);
-						for (final Entry<Integer, Interval> eIn : ins.entrySet()) {
-							if (!eIn.getValue().isEmpty()) {
-								System.out.print(eIn.getValue().toString() + "  ");
-							}
+				final List<Interval> idaIns = checkDistribution(t.source, t.symAlphIdx, distrCheckType, sc);
+				if (idaIns.size() > 0) {
+					if (mainModel == a) {
+						logger.debug("#{} DO: Split interval due to IDA into {} intervals", counter, idaIns.size());
+						// TODO Printing the intervals may be to expensive just for logging
+						final StringBuilder sb = new StringBuilder();
+						for (final Interval in : idaIns) {
+							sb.append("  ");
+							sb.append(in.toString());
 						}
-						System.out.println();
+						logger.trace("Resulting intervals are:{}", sb.toString());
 					}
-					t = getMostVisitedTrans(a, sc);
 					continue;
-				} else if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
-					System.out.println("No splits because of data distributuion were perfomed in:  " + t.in.toString());
+				} else {
+					if (mainModel == a) {
+						logger.debug("No splits because of data distributuion were perfomed in:  {}", t.in.toString());
+					}
+					if (bOp[2] instanceof OrOperator && t.in.getTails().size() < PDRTA.getMinData()) {
+						// Shortcut for skipping merges and splits when OR is selected
+						if (mainModel == a) {
+							logger.debug("#{} DO: Color state {} red", counter, t.target.getIndex());
+						}
+						sc.setRed(t.target);
+						continue;
+					}
 				}
 			}
 
-			if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
-				System.out.print("Testing splits...");
+			if (mainModel == a) {
+				logger.debug("Testing splits");
 			}
 			final SortedSet<Refinement> splits = getSplitRefs(t, sc);
-			if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
-				System.out.println("\nFound " + splits.size() + " possible splits.");
+			if (mainModel == a) {
+				logger.debug("Found {} possible splits", splits.size());
 			}
 			if (splits.size() > 0) {
 				final Refinement r = splits.last();
-				if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
-					System.out.println("#" + counter + " DO: " + r.toString());
+				if (mainModel == a) {
+					logger.debug("#{} DO: {}", counter, r.toString());
 				}
 				r.refine();
 			} else {
-				if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
-					System.out.print("Testing merges...");
+				if (mainModel == a) {
+					logger.debug("Testing merges");
 				}
 				final SortedSet<Refinement> merges = getMergeRefs(t, sc);
-				if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
-					System.out.println("\nFound " + merges.size() + " possible merges.");
+				if (mainModel == a) {
+					logger.debug("Found {} possible merges", merges.size());
 				}
-				// TODO remove
-				a.checkConsistency();
 				if (merges.size() > 0) {
 					final Refinement r = merges.last();
-					if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
-						System.out.println("#" + counter + " DO: " + r.toString());
+					if (mainModel == a) {
+						logger.debug("#{} DO: {}", counter, r.toString());
 					}
 					r.refine();
 				} else {
-					if (runMode.compareTo(RunMode.NORMAL_CONSOLE) >= 0) {
-						System.out.println("#" + counter + " DO: Color state " + t.target.getIndex() + " red");
+					if (mainModel == a) {
+						logger.debug("#{} DO: Color state {} red", counter, t.target.getIndex());
 					}
 					sc.setRed(t.target);
 				}
 			}
 
-			if (runMode.compareTo(RunMode.DEBUG) >= 0) {
+			if (Settings.isDebug()) {
 				a.checkConsistency();
 			}
 		}
@@ -325,47 +412,34 @@ public class SimplePDRTALearner implements ModelLearner {
 		assert (a.getNumStates() == sc.getNumRedStates());
 
 		a.checkConsistency();
-		if (runMode.compareTo(RunMode.DEBUG_STEPS) >= 0) {
-			try {
-				draw(a, true, directory + "steps/step_" + counter + ".png");
-			} catch (IOException | InterruptedException e) {
-				e.printStackTrace();
-			}
+		if (directory != null) {
+			draw(a, true, directory, counter);
 		}
 	}
 
-	protected void draw(PDRTA a, boolean withInp, String path) throws IOException, InterruptedException {
+	void draw(PDRTA a, boolean withInp, Path path, int counter) {
 
-		final File f = new File(directory + "tmp.aut");
-		final File p = new File(path);
-		if (p.exists()) {
-			p.delete();
-		}
-		write(a, withInp, f.getAbsolutePath());
-		final String[] args = { "dot", "-Tpng", f.getAbsolutePath(), "-o", p.getAbsolutePath() };
-		final Process pr = Runtime.getRuntime().exec(args);
-		pr.waitFor();
-		f.delete();
-	}
-
-	private void write(PDRTA a, boolean withInp, String path) throws IOException {
-
-		final File f = new File(path);
-		final BufferedWriter bw = new BufferedWriter(new FileWriter(f));
-		a.toString(bw, 0.0, withInp);
-		bw.close();
-	}
-
-	protected void persistFinalResult(PDRTA a) {
-
-		try {
-			final NumberFormat nf = NumberFormat.getInstance(Locale.US);
-			nf.setMaximumFractionDigits(3);
-			// TODO Change filename
-			write(a, false, directory + "result" + ".aut");
-			draw(a, false, directory + "result" + ".png");
+		final String fileName = "step_" + counter;
+		final Path gvFile = path.resolve(fileName + ".gv");
+		final Path pngFile = path.resolve(fileName + ".png");
+		try (final BufferedWriter bw = Files.newBufferedWriter(gvFile)) {
+			a.toDOTLang(bw, 0.0, withInp);
 		} catch (final Exception e) {
-			e.printStackTrace();
+			logger.error("Not able to store PDRTA in Graphviz format: {}", e.getMessage());
+		}
+		final String[] args = { "dot", "-Tpng", gvFile.toAbsolutePath().toString(), "-o", pngFile.toAbsolutePath().toString() };
+		Process pr = null;
+		try {
+			pr = Runtime.getRuntime().exec(args);
+		} catch (final Exception e) {
+			logger.warn("Could not create plot of PDRTA: {}", e.getMessage());
+		} finally {
+			if (pr != null) {
+				try {
+					pr.waitFor();
+				} catch (final InterruptedException e) {
+				}
+			}
 		}
 	}
 
@@ -393,26 +467,26 @@ public class SimplePDRTALearner implements ModelLearner {
 		}
 	}
 
-	public boolean checkDistribution(PDRTAState s, int alphIdx, int type, StateColoring sc) {
+	public List<Interval> checkDistribution(PDRTAState s, int alphIdx, DistributionCheckType type, StateColoring sc) {
 
 		final NavigableMap<Integer, Interval> ins = s.getIntervals(alphIdx);
 		if (ins.size() != 1) {
-			return false;
+			return Collections.emptyList();
 		}
 
 		final Interval in = ins.firstEntry().getValue();
 		if (in.isEmpty()) {
-			return false;
+			return Collections.emptyList();
 		}
 
 		int tolerance;
-		if (type < 0) {
-			return false;
-		} else if (type == 0 || type == 1) {
+		if (type.equals(DistributionCheckType.DISABLED)) {
+			return Collections.emptyList();
+		} else if (type.equals(DistributionCheckType.ALL_BORDER) || type.equals(DistributionCheckType.ALL)) {
 			tolerance = 0;
-		} else if (type == 2 || type == 3) {
+		} else if (type.equals(DistributionCheckType.MAD_BORDER) || type.equals(DistributionCheckType.MAD)) {
 			tolerance = getToleranceMAD(in, PDRTA.getMinData());
-		} else if (type == 4 || type == 5) {
+		} else if (type.equals(DistributionCheckType.OUTLIER_BORDER) || type.equals(DistributionCheckType.OUTLIER)) {
 			tolerance = getToleranceOutliers(in, PDRTA.getMinData());
 		} else {
 			throw new IllegalArgumentException("Nonexistent type used!");
@@ -421,7 +495,8 @@ public class SimplePDRTALearner implements ModelLearner {
 		final NavigableMap<Integer, Collection<TimedTail>> tails = in.getTails().asMap();
 		final List<Integer> splits = new ArrayList<>();
 
-		if (type % 2 == 1) {
+		if ((type.ordinal() - 1) % 2 != 0) {
+			// The types without border
 			final Iterator<Entry<Integer, Collection<TimedTail>>> it = tails.entrySet().iterator();
 			if (it.hasNext()) {
 				Entry<Integer, Collection<TimedTail>> ePrev = it.next();
@@ -464,14 +539,22 @@ public class SimplePDRTALearner implements ModelLearner {
 		// }
 
 		if (splits.size() == 0) {
-			return false;
+			return Collections.emptyList();
 		}
 
+		final List<Interval> resultingIns = new ArrayList<>(splits.size() + 1);
+		Pair<Interval, Interval> splittedIns = null;
 		for (int i = 0; i < splits.size(); i++) {
-			OperationUtil.split(s, alphIdx, splits.get(i), sc);
+			splittedIns = OperationUtil.split(s, alphIdx, splits.get(i), sc);
+			if (!splittedIns.getLeft().isEmpty()) {
+				resultingIns.add(splittedIns.getLeft());
+			}
+		}
+		if (splittedIns != null && !splittedIns.getRight().isEmpty()) {
+			resultingIns.add(splittedIns.getRight());
 		}
 
-		return true;
+		return resultingIns;
 	}
 
 	class Transition {
@@ -511,19 +594,19 @@ public class SimplePDRTALearner implements ModelLearner {
 		if (times.size() <= 2) {
 			return getToleranceFewSlots(in, minData);
 		}
-		final List<Double> diffs = new ArrayList<>(times.size() - 1);
+		final TDoubleList diffs = new TDoubleArrayList(times.size() - 1);
 		final Iterator<Integer> it = times.iterator();
 		if (it.hasNext()) {
 			int prev = it.next();
 			while (it.hasNext()) {
 				final int curr = it.next();
-				diffs.add((double) (curr - prev - 1));
+				diffs.add(curr - prev - 1);
 				prev = curr;
 			}
 		}
 		final double median = StatisticsUtil.calculateMedian(diffs, true);
 		final double mad = StatisticsUtil.calculateMAD(diffs, median);
-		return (int) Math.floor(((median + 2.5 * mad) / 2.0) + 1.0);
+		return (int) Math.ceil(((median + 2.5 * mad) / 2.0));
 	}
 
 	/**
@@ -539,20 +622,20 @@ public class SimplePDRTALearner implements ModelLearner {
 		if (times.size() <= 2) {
 			return getToleranceFewSlots(in, minData);
 		}
-		final List<Double> diffs = new ArrayList<>(times.size() - 1);
+		final TDoubleList diffs = new TDoubleArrayList(times.size() - 1);
 		final Iterator<Integer> it = times.iterator();
 		if (it.hasNext()) {
 			int prev = it.next();
 			while (it.hasNext()) {
 				final int curr = it.next();
-				diffs.add((double) (curr - prev - 1));
+				diffs.add(curr - prev - 1);
 				prev = curr;
 			}
 		}
-		Collections.sort(diffs);
+		diffs.sort();
 		final double q1 = StatisticsUtil.calculateQ1(diffs, false);
 		final double q3 = StatisticsUtil.calculateQ3(diffs, false);
-		return (int) Math.floor(((q3 + (q3 - q1) * 1.5) / 2.0) + 1.0);
+		return (int) Math.ceil(((q3 + (q3 - q1) * 1.5) / 2.0));
 	}
 
 	/**
@@ -571,7 +654,7 @@ public class SimplePDRTALearner implements ModelLearner {
 		if (slots == 1) {
 			final int size = tails.firstEntry().getValue().size();
 			if (size < (minData / 2.0)) {
-				return (int) Math.floor((in.getEnd() - in.getBegin() + 1) * 0.05 + 1.0);
+				return (int) Math.ceil((in.getEnd() - in.getBegin() + 1) * 0.05);
 			} else {
 				return 0;
 			}
@@ -582,13 +665,19 @@ public class SimplePDRTALearner implements ModelLearner {
 			final int s2 = tails.get(t2).size();
 			final double perc = (double) (t2 - t1 - 1) / (double) (in.getEnd() - in.getBegin() - 1);
 			if (s1 >= minData && s2 >= minData && perc >= 0.2) {
-				return (int) Math.floor((in.getEnd() - in.getBegin() + 1) * 0.05 + 1.0);
+				return (int) Math.ceil((in.getEnd() - in.getBegin() + 1) * 0.05);
 			} else if ((s1 >= minData || s2 >= minData) && perc >= 0.2) {
-				return (int) Math.floor((in.getEnd() - in.getBegin() + 1) * 0.075 + 1.0);
+				return (int) Math.ceil((in.getEnd() - in.getBegin() + 1) * 0.075);
 			} else {
-				return (int) Math.floor((t2 - t1 - 1) / 2.0 + 1.0);
+				return (int) Math.ceil((t2 - t1 - 1) / 2.0);
 			}
 		}
+	}
+
+	double calcAIC(PDRTA a) {
+
+		final LikelihoodValue lv = NaiveLikelihoodRatioTester.calcLikelihood(a);
+		return (2.0 * lv.getParam()) - (2.0 * lv.getRatio());
 	}
 
 }

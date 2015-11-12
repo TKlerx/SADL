@@ -23,7 +23,7 @@ import sadl.oneclassclassifier.LibSvmClassifier;
  *
  */
 @Deprecated
-public class PdttaOneClassSvmDetector extends PdttaVectorDetector implements TrainableDetector {
+public class PdttaOneClassSvmDetector extends VectorDetector implements TrainableDetector {
 	/**
 	 * Use the PdttaVectorDetector constructor directly instead
 	 * 
@@ -32,15 +32,14 @@ public class PdttaOneClassSvmDetector extends PdttaVectorDetector implements Tra
 	 * @param useProbability
 	 * @param gamma
 	 * @param nu
-	 * @param costs
 	 * @param kernelType
 	 * @param eps
 	 * @param degree
 	 * @param scalingMethod
 	 */
-	public PdttaOneClassSvmDetector(ProbabilityAggregationMethod aggType, FeatureCreator fc, int useProbability, double gamma, double nu, double costs,
+	public PdttaOneClassSvmDetector(ProbabilityAggregationMethod aggType, FeatureCreator fc, int useProbability, double gamma, double nu,
 			int kernelType, double eps, int degree, ScalingMethod scalingMethod) {
-		super(aggType, fc, new LibSvmClassifier(useProbability, gamma, nu, costs, kernelType, eps, degree, scalingMethod));
+		super(aggType, fc, new LibSvmClassifier(useProbability, gamma, nu, kernelType, eps, degree, scalingMethod));
 	}
 
 }

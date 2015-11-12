@@ -3,7 +3,7 @@ package jsat.distributions.empirical;
 import java.util.LinkedList;
 import java.util.List;
 
-import jsat.distributions.Distribution;
+import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.empirical.kernelfunc.GaussKF;
 import jsat.linear.DenseVector;
 import jsat.linear.Vec;
@@ -56,8 +56,9 @@ public class KernelDensityEstimatorButla {
 		if (formelVariant == KDEFormelVariant.OriginalKDE) {
 
 			final KernelDensityEstimator kernelDensity = new KernelDensityEstimator(dataPoints, GaussKF.getInstance(), bandwidth);
-			kernelPdfFunction = Distribution.getFunctionPDF(kernelDensity);
-			kernelDerivationFunction = Distribution.getFunctionPDF(new KernelDensityEstimator(dataPoints, GaussKFDerivation.getInstance(), bandwidth));
+			kernelPdfFunction = ContinuousDistribution.getFunctionPDF(kernelDensity);
+			kernelDerivationFunction = ContinuousDistribution
+					.getFunctionPDF(new KernelDensityEstimator(dataPoints, GaussKFDerivation.getInstance(), bandwidth));
 
 			startX = kernelDensity.min() + bandwidth;
 			endX = kernelDensity.max() - bandwidth;
@@ -66,6 +67,7 @@ public class KernelDensityEstimatorButla {
 
 			kernelPdfFunction = new Function() {
 
+				private static final long serialVersionUID = 337703545623146489L;
 				@Override
 				public double f(Vec x) {
 					return f(new double[] { x.get(0) });
@@ -86,6 +88,8 @@ public class KernelDensityEstimatorButla {
 			};
 
 			kernelDerivationFunction = new Function() {
+				private static final long serialVersionUID = 1896912471233540595L;
+
 				@Override
 				public double f(Vec x) {
 					return f(new double[] { x.get(0) });
@@ -112,6 +116,8 @@ public class KernelDensityEstimatorButla {
 		} else if (formelVariant == KDEFormelVariant.ButlaBandwidthNotSquared) {
 
 			kernelPdfFunction = new Function() {
+				private static final long serialVersionUID = -8200289641116502672L;
+
 				@Override
 				public double f(Vec x) {
 					return f(new double[] { x.get(0) });
@@ -133,6 +139,8 @@ public class KernelDensityEstimatorButla {
 			};
 
 			kernelDerivationFunction = new Function() {
+				private static final long serialVersionUID = -2561020473687438986L;
+
 				@Override
 				public double f(Vec x) {
 					return f(new double[] { x.get(0) });
@@ -159,6 +167,8 @@ public class KernelDensityEstimatorButla {
 		} else if (formelVariant == KDEFormelVariant.ButlaBandwidthSquared) {
 
 			kernelPdfFunction = new Function() {
+				private static final long serialVersionUID = 6749547413109881687L;
+
 				@Override
 				public double f(Vec x) {
 					return f(new double[] { x.get(0) });
@@ -180,6 +190,8 @@ public class KernelDensityEstimatorButla {
 			};
 
 			kernelDerivationFunction = new Function() {
+				private static final long serialVersionUID = 3612595828189571262L;
+
 				@Override
 				public double f(Vec x) {
 					return f(new double[] { x.get(0) });

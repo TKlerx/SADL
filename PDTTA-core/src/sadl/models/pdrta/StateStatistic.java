@@ -11,19 +11,19 @@
 
 package sadl.models.pdrta;
 
-import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.map.hash.TIntObjectHashMap;
-import gnu.trove.map.hash.TObjectDoubleHashMap;
-
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 
-import sadl.modellearner.rtiplus.tester.LikelihoodValue;
-
 import com.google.common.collect.Multimap;
+
+import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.map.hash.TIntObjectHashMap;
+import gnu.trove.map.hash.TObjectDoubleHashMap;
+import sadl.modellearner.rtiplus.SimplePDRTALearner;
+import sadl.modellearner.rtiplus.tester.LikelihoodValue;
 
 /**
  * This class manages the time and symbol probabilities for a {@link PDRTAState} which are needed for calculating the Likelihood Ratio Test and anomaly
@@ -173,7 +173,7 @@ public class StateStatistic implements Serializable {
 	 *            Second {@link PDRTAState} for merging
 	 * @return The {@link LikelihoodValue} of the symbol distributions for merging
 	 */
-	public static LikelihoodValue getLikelihoodRatioSym(PDRTAState s1, PDRTAState s2, boolean advancedPooling) {
+	public static LikelihoodValue getLikelihoodRatioSym(PDRTAState s1, PDRTAState s2, boolean advancedPooling, CalcRatio cr) {
 
 		final StateStatistic st1 = s1.getStat();
 		final StateStatistic st2 = s2.getStat();
@@ -184,11 +184,11 @@ public class StateStatistic implements Serializable {
 			throw new UnsupportedOperationException();
 		}
 
-		// LRT_FIX : || -> &&
-		if (st1.totalOutCount < minData && st2.totalOutCount < minData) {
-			return new LikelihoodValue(0.0, 0);
+		// LRT_FIX : Operator for calculation interruption (thesis: AND, impl: OR, own: AND)
+		if (SimplePDRTALearner.bOp[2].eval(st1.totalOutCount < minData, st2.totalOutCount < minData)) {
+			return new LikelihoodValue();
 		} else {
-			return calcInterimLRT(a, st1.symbolCount, st2.symbolCount, advancedPooling);
+			return calcInterimLRT(a, st1.symbolCount, st2.symbolCount, advancedPooling, cr);
 		}
 	}
 
@@ -201,7 +201,7 @@ public class StateStatistic implements Serializable {
 	 *            Second {@link PDRTAState} for merging
 	 * @return The {@link LikelihoodValue} of the histogram bin distributions for merging
 	 */
-	public static LikelihoodValue getLikelihoodRatioTime(PDRTAState s1, PDRTAState s2, boolean advancedPooling) {
+	public static LikelihoodValue getLikelihoodRatioTime(PDRTAState s1, PDRTAState s2, boolean advancedPooling, CalcRatio cr) {
 
 		final StateStatistic st1 = s1.getStat();
 		final StateStatistic st2 = s2.getStat();
@@ -212,11 +212,11 @@ public class StateStatistic implements Serializable {
 			throw new UnsupportedOperationException();
 		}
 
-		// LRT_FIX : || -> &&
-		if (st1.totalOutCount < minData && st2.totalOutCount < minData) {
-			return new LikelihoodValue(0.0, 0);
+		// LRT_FIX : Operator for calculation interruption (thesis: AND, impl: OR, own: AND)
+		if (SimplePDRTALearner.bOp[2].eval(st1.totalOutCount < minData, st2.totalOutCount < minData)) {
+			return new LikelihoodValue();
 		} else {
-			return calcInterimLRT(a, st1.timeCount, st2.timeCount, advancedPooling);
+			return calcInterimLRT(a, st1.timeCount, st2.timeCount, advancedPooling, cr);
 		}
 	}
 
@@ -230,7 +230,7 @@ public class StateStatistic implements Serializable {
 	 *            The Set of {@link TimedTail}s to be split apart clustered by symbol index
 	 * @return The {@link LikelihoodValue} of the symbol distributions for splitting a transition
 	 */
-	public static LikelihoodValue getLikelihoodRatioSym(PDRTAState s, Multimap<Integer, TimedTail> mSym, boolean advancedPooling) {
+	public static LikelihoodValue getLikelihoodRatioSym(PDRTAState s, Multimap<Integer, TimedTail> mSym, boolean advancedPooling, CalcRatio cr) {
 
 		final StateStatistic st = s.getStat();
 		final PDRTA a = s.getPDRTA();
@@ -240,9 +240,9 @@ public class StateStatistic implements Serializable {
 			throw new UnsupportedOperationException();
 		}
 
-		// LRT_FIX : || -> &&
-		if ((st.totalOutCount - mSym.size()) < minData && mSym.size() < minData) {
-			return new LikelihoodValue(0.0, 0);
+		// LRT_FIX : Operator for calculation interruption (thesis: AND, impl: OR, own: AND)
+		if (SimplePDRTALearner.bOp[2].eval((st.totalOutCount - mSym.size()) < minData, mSym.size() < minData)) {
+			return new LikelihoodValue();
 		}
 
 		final int[] part1SymCount = Arrays.copyOf(st.symbolCount, st.symbolCount.length);
@@ -252,7 +252,7 @@ public class StateStatistic implements Serializable {
 			part2SymCount[eCol.getKey()] += eCol.getValue().size();
 		}
 
-		return calcInterimLRT(a, part1SymCount, part2SymCount, advancedPooling);
+		return calcInterimLRT(a, part1SymCount, part2SymCount, advancedPooling, cr);
 	}
 
 	/**
@@ -265,7 +265,7 @@ public class StateStatistic implements Serializable {
 	 *            The Set of {@link TimedTail}s to be split apart clustered by histogram index
 	 * @return The {@link LikelihoodValue} of the histogram bin distributions for splitting a transition
 	 */
-	public static LikelihoodValue getLikelihoodRatioTime(PDRTAState s, Multimap<Integer, TimedTail> mHist, boolean advancedPooling) {
+	public static LikelihoodValue getLikelihoodRatioTime(PDRTAState s, Multimap<Integer, TimedTail> mHist, boolean advancedPooling, CalcRatio cr) {
 
 		final StateStatistic st = s.getStat();
 		final PDRTA a = s.getPDRTA();
@@ -275,9 +275,9 @@ public class StateStatistic implements Serializable {
 			throw new UnsupportedOperationException();
 		}
 
-		// LRT_FIX : || -> &&
-		if ((st.totalOutCount - mHist.size()) < minData && mHist.size() < minData) {
-			return new LikelihoodValue(0.0, 0);
+		// LRT_FIX : Operator for calculation interruption (thesis: AND, impl: OR, own: AND)
+		if (SimplePDRTALearner.bOp[2].eval((st.totalOutCount - mHist.size()) < minData, mHist.size() < minData)) {
+			return new LikelihoodValue();
 		}
 
 		final int[] part1TimeCount = Arrays.copyOf(st.timeCount, st.timeCount.length);
@@ -287,7 +287,49 @@ public class StateStatistic implements Serializable {
 			part2TimeCount[eCol.getKey()] += eCol.getValue().size();
 		}
 
-		return calcInterimLRT(a, part1TimeCount, part2TimeCount, advancedPooling);
+		return calcInterimLRT(a, part1TimeCount, part2TimeCount, advancedPooling, cr);
+	}
+
+	public static LikelihoodValue getLikelihoodTime(PDRTAState s) {
+
+		final StateStatistic st = s.getStat();
+
+		if (!st.trainMode) {
+			throw new UnsupportedOperationException();
+		}
+
+		return calcLikelihood(st.timeCount, st.totalOutCount);
+	}
+
+	public static LikelihoodValue getLikelihoodSym(PDRTAState s) {
+
+		final StateStatistic st = s.getStat();
+
+		if (!st.trainMode) {
+			throw new UnsupportedOperationException();
+		}
+
+		return calcLikelihood(st.symbolCount, st.totalOutCount);
+	}
+
+	private static LikelihoodValue calcLikelihood(int[] count, int total) {
+
+		double ratio = 0.0;
+		int params = 0;
+		for (int i = 0; i < count.length; i++) {
+			if (count[i] > 0) {
+				ratio += Math.log((double) count[i] / (double) total) * count[i];
+				params++;
+			}
+		}
+		params--;
+
+		// LRT_FIX : Check if params or count.length (example in paper says count.length)
+		if (params >= 0) {
+			return new LikelihoodValue(ratio, count.length - 1);
+		} else {
+			return new LikelihoodValue();
+		}
 	}
 
 	/**
@@ -426,18 +468,20 @@ public class StateStatistic implements Serializable {
 	 *            The {@link TimedTail} to get the probability for
 	 * @return The probability for a given {@link TimedTail} according to the independent symbol and histogram bin probabilities
 	 */
-	protected double getHistProb(TimedTail t) {
+	protected double[] getHistProb(TimedTail t) {
 
 		if (t.getHistBarIndex() < 0 || t.getSymbolAlphIndex() < 0) {
-			return 0.0;
+			return new double[] { 0.0, 0.0 };
 		}
 
 		if (trainMode) {
 			final double timeP = (double) timeCount[t.getHistBarIndex()] / (double) totalOutCount;
 			final double symP = (double) symbolCount[t.getSymbolAlphIndex()] / (double) totalOutCount;
-			return symP * (timeP / histBarSizes[t.getHistBarIndex()]);
+			return new double[] { symP, (timeP / histBarSizes[t.getHistBarIndex()]) };
 		} else {
-			return symbolProbs[t.getSymbolAlphIndex()] * (timeProbs[t.getHistBarIndex()] / histBarSizes[t.getHistBarIndex()]);
+			final double timeP = (timeProbs[t.getHistBarIndex()] / histBarSizes[t.getHistBarIndex()]);
+			final double symP = symbolProbs[t.getSymbolAlphIndex()];
+			return new double[] { symP, timeP };
 		}
 	}
 
@@ -566,7 +610,7 @@ public class StateStatistic implements Serializable {
 	 *            The second set of {@link TimedTail} counts
 	 * @return The {@link LikelihoodValue} for two given sets of {@link TimedTail} counts
 	 */
-	private static LikelihoodValue calcInterimLRT(PDRTA a, int[] v1, int[] v2, boolean advancedPooling) {
+	private static LikelihoodValue calcInterimLRT(PDRTA a, int[] v1, int[] v2, boolean advancedPooling, CalcRatio cr) {
 
 		double ratio = 0.0;
 		int parameters = 0;
@@ -580,18 +624,18 @@ public class StateStatistic implements Serializable {
 
 		// Calculating ratio and parameters
 		for (int i = 0; i < (pooled[0].size() - 1); i++) {
-			ratio += calcRatio(pooled[0].get(i), total1, pooled[1].get(i), total2);
+			ratio += cr.calc(pooled[0].get(i), total1, pooled[1].get(i), total2);
 		}
+		// Minus 1 because sum of values is last item (not counting as parameter)
 		parameters = pooled[0].size() - 1;
 
-		// LRT_FIX : parameters -1
-		parameters--;
+		// LRT_FIX : Thesis: parameters -1, Impl: parameters
+		// parameters--;
 
-		if (parameters > 0) {
+		if (parameters >= 0) {
 			return new LikelihoodValue(ratio, parameters);
 		} else {
-			// LRT_FIX : why not return negative parameters?
-			return new LikelihoodValue(0.0, 0);
+			return new LikelihoodValue();
 		}
 	}
 
@@ -608,7 +652,7 @@ public class StateStatistic implements Serializable {
 	 *            The second total counts
 	 * @return The Likelihood Ratio for two given {@link TimedTail} counts
 	 */
-	private static double calcRatio(int v1, int v1Total, int v2, int v2Total) {
+	public static double calcLRTRatio(int v1, int v1Total, int v2, int v2Total) {
 
 		double v1Prob = 1.0;
 		if (v1 > 0) {
@@ -641,6 +685,33 @@ public class StateStatistic implements Serializable {
 		return ratio;
 	}
 
+	public static double calcFMRatio(int v1, int v1Total, int v2, int v2Total) {
+
+		final int minData = PDRTA.getMinData();
+
+		final double total = v1 + v2;
+		final double expected1 = (v1Total * total) / (v1Total + v2Total);
+		final double expected2 = (v2Total * total) / (v1Total + v2Total);
+
+		double top1 = v1 - expected1;
+		double top2 = v2 - expected2;
+
+		// Yates correction for continuity
+		if (v1 < minData || v2 < minData) {
+			if (top1 < 0) {
+				top1 = -top1;
+			}
+			top1 -= 0.5;
+			if (top2 < 0) {
+				top2 = -top2;
+			}
+			top2 -= 0.5;
+		}
+
+		// FIXME Check what happens if expected is 0 => Is NaN ok?
+		return ((top1 * top1) / expected1) + ((top2 * top2) / expected2);
+	}
+
 	private static TIntArrayList[] poolStats(int[] stat1, int[] stat2, int minData, boolean advanced) {
 
 		assert (stat1.length == stat2.length);
@@ -658,9 +729,10 @@ public class StateStatistic implements Serializable {
 		for (int i = 0; i < stat1.length; i++) {
 			sum1 += stat1[i];
 			sum2 += stat2[i];
-			if (stat1[i] < minData && stat2[i] < minData) {
+			// POOL_FIX : Operator for pooling (thesis: AND, impl: AND, own: AND)
+			if (SimplePDRTALearner.bOp[0].eval(stat1[i] < minData, stat2[i] < minData)) {
 				// Number of sequences is less than minData
-				if (advanced && (pooled1.get(iPool) >= minData || pooled2.get(iPool) >= minData)) {
+				if (advanced && !SimplePDRTALearner.bOp[0].eval(pooled1.get(iPool) < minData, pooled2.get(iPool) < minData)) {
 					// Close full pool and open new pool
 					iPool = pooled1.size();
 					pooled1.add(stat1[i]);
@@ -678,8 +750,8 @@ public class StateStatistic implements Serializable {
 		}
 
 		// Discard small pools
-		// POOL_FIX : || -> && ?
-		if (pooled1.get(iPool) < minData || pooled2.get(iPool) < minData) {
+		// POOL_FIX : Operator for pool discarding (thesis: missing, impl: [LRT: OR, FM: AND], own: AND)
+		if (SimplePDRTALearner.bOp[1].eval(pooled1.get(iPool) < minData, pooled2.get(iPool) < minData)) {
 			sum1 -= pooled1.removeAt(iPool);
 			sum2 -= pooled2.removeAt(iPool);
 		}
@@ -775,21 +847,32 @@ public class StateStatistic implements Serializable {
 				addToMap(i, in, getTransProb(i, in));
 			}
 		}
-		symbolProbs = new double[symbolCount.length];
-		for (int i = 0; i < symbolCount.length; i++) {
-			symbolProbs[i] = (double) symbolCount[i] / (double) totalOutCount;
-		}
-		timeProbs = new double[histBarSizes.length];
-		for (int i = 0; i < histBarSizes.length; i++) {
-			timeProbs[i] = (double) timeCount[i] / (double) totalOutCount;
-		}
-		tailEndProb = getTailEndProb();
-		trainMode = false;
 
+		symbolProbs = new double[symbolCount.length];
+		timeProbs = new double[histBarSizes.length];
+		if (totalOutCount > 0) {
+			for (int i = 0; i < symbolCount.length; i++) {
+				symbolProbs[i] = (double) symbolCount[i] / (double) totalOutCount;
+			}
+			for (int i = 0; i < histBarSizes.length; i++) {
+				timeProbs[i] = (double) timeCount[i] / (double) totalOutCount;
+			}
+		} else {
+			Arrays.fill(symbolProbs, 0.0);
+			Arrays.fill(timeProbs, 0.0);
+		}
+
+		tailEndProb = getTailEndProb();
+
+		trainMode = false;
 		timeCount = null;
 		symbolCount = null;
 		totalOutCount = -1;
 		totalInCount = -1;
+	}
+
+	public interface CalcRatio {
+		double calc(int v1, int t1, int v2, int t2);
 	}
 
 }

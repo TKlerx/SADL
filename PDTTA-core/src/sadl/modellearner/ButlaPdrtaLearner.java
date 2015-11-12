@@ -23,7 +23,7 @@ import sadl.models.PTA.EventGenerator;
 import sadl.models.PTA.PTA;
 import sadl.models.PTA.PTAState;
 import sadl.models.PTA.SubEvent;
-import sadl.models.pdrtaModified.PDRTAModified;
+import sadl.models.pdtaModified.PDTAModified;
 
 public class ButlaPdrtaLearner implements ModelLearner, CompatibilityChecker {
 
@@ -56,7 +56,7 @@ public class ButlaPdrtaLearner implements ModelLearner, CompatibilityChecker {
 	}
 
 	@Override
-	public PDRTAModified train(TimedInput TimedTrainingSequences) {
+	public PDTAModified train(TimedInput TimedTrainingSequences) {
 
 		final HashMap<String, LinkedList<Double>> eventToTimelistMap = mapEventsToTimes(TimedTrainingSequences);
 		final HashMap<String, Event> eventsMap = generateSubEvents(eventToTimelistMap);

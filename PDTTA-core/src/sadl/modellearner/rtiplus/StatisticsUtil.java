@@ -11,11 +11,11 @@
 
 package sadl.modellearner.rtiplus;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+
+import gnu.trove.iterator.TDoubleIterator;
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
 
 /**
  * A utility class that provides some common statistical functions.
@@ -27,18 +27,17 @@ public abstract class StatisticsUtil {
 	/**
 	 * Returns the mean of a collection of {@link Number} objects.
 	 * 
-	 * @param values
-	 *            {@link Collection} of values; elements may not be {@code null}; {@code NaN} and infinite values will be ignored
+	 * @param values {@link Collection} of values; elements may not be {@code null}; {@code NaN} and infinite values will be ignored
 	 * 
 	 * @return The mean of the given {@link Collection}
 	 */
-	public static double calculateMean(Collection<? extends Number> values) {
+	public static double calculateMean(TDoubleList values) {
 
 		int count = 0;
 		double total = 0.0;
-		final Iterator<? extends Number> iterator = values.iterator();
+		final TDoubleIterator iterator = values.iterator();
 		while (iterator.hasNext()) {
-			final double value = iterator.next().doubleValue();
+			final double value = iterator.next();
 			if (!Double.isNaN(value) && !Double.isInfinite(value)) {
 				total += value;
 				count++;
@@ -48,24 +47,19 @@ public abstract class StatisticsUtil {
 	}
 
 	/**
-	 * 0: Minimum regular value<br>
-	 * 1: Q1<br>
-	 * 2: Median<br>
-	 * 3: Q3<br>
-	 * 4: Maximum regular value<br>
-	 * 5: Mean<br>
+	 * 0: Minimum regular value<br> 1: Q1<br> 2: Median<br> 3: Q3<br> 4: Maximum regular value<br> 5: Mean<br>
 	 * 
-	 * @param values
-	 * @param copyAndSort
-	 * @return
+	 * @param values @param copyAndSort @return
 	 */
-	public static double[] calculateBox(List<Double> values, boolean copyAndSort) {
+	public static double[] calculateBox(TDoubleList values, boolean copyAndSort) {
 
 		final double[] box = new double[6];
 		if (values != null && copyAndSort) {
-			final List<Double> copy = new ArrayList<Double>(values);
-			Collections.sort(copy);
+			final TDoubleList copy = new TDoubleArrayList(values);
+			copy.sort();
 			values = copy;
+		} else {
+			throw new IllegalStateException("null not allowed as list for calculateBox");
 		}
 		box[5] = calculateMean(values);
 		box[2] = calculateMedian(values, false);
@@ -77,13 +71,13 @@ public abstract class StatisticsUtil {
 		return box;
 	}
 
-	public static double calculateQ1(List<Double> values, boolean copyAndSort) {
+	public static double calculateQ1(TDoubleList values, boolean copyAndSort) {
 
 		double result = Double.NaN;
 		if (values != null) {
 			if (copyAndSort) {
-				final List<Double> copy = new ArrayList<Double>(values);
-				Collections.sort(copy);
+				final TDoubleList copy = new TDoubleArrayList(values);
+				copy.sort();
 				values = copy;
 			}
 			final int count = values.size();
@@ -103,13 +97,13 @@ public abstract class StatisticsUtil {
 		return result;
 	}
 
-	public static double calculateQ3(List<Double> values, boolean copyAndSort) {
+	public static double calculateQ3(TDoubleList values, boolean copyAndSort) {
 
 		double result = Double.NaN;
 		if (values != null) {
 			if (copyAndSort) {
-				final List<Double> copy = new ArrayList<Double>(values);
-				Collections.sort(copy);
+				final TDoubleList copy = new TDoubleArrayList(values);
+				copy.sort();
 				values = copy;
 			}
 			final int count = values.size();
@@ -132,20 +126,17 @@ public abstract class StatisticsUtil {
 	 * Calculates the median for a list of values (<code>Number</code> objects). If <code>copyAndSort</code> is <code>false</code>, the list is assumed to be
 	 * presorted in ascending order by value.
 	 * 
-	 * @param values
-	 *            the values (<code>null</code> permitted).
-	 * @param copyAndSort
-	 *            a flag that controls whether the list of values is copied and sorted.
+	 * @param values the values (<code>null</code> permitted). @param copyAndSort a flag that controls whether the list of values is copied and sorted.
 	 * 
 	 * @return The median.
 	 */
-	public static double calculateMedian(List<Double> values, boolean copyAndSort) {
+	public static double calculateMedian(TDoubleList values, boolean copyAndSort) {
 
 		double result = Double.NaN;
 		if (values != null) {
 			if (copyAndSort) {
-				final List<Double> copy = new ArrayList<Double>(values);
-				Collections.sort(copy);
+				final TDoubleList copy = new TDoubleArrayList(values);
+				copy.sort();
 				values = copy;
 			}
 			result = calcMedian(values, 0, values.size() - 1);
@@ -153,42 +144,42 @@ public abstract class StatisticsUtil {
 		return result;
 	}
 
-	private static double calcMedian(List<Double> values, int start, int end) {
+	private static double calcMedian(TDoubleList values, int start, int end) {
 
 		double result = Double.NaN;
 		final int count = end - start + 1;
 		if (count > 0) {
 			if (count % 2 == 1) {
 				if (count > 1) {
-					result = values.get(start + ((count - 1) / 2)).doubleValue();
+					result = values.get(start + ((count - 1) / 2));
 				} else {
-					result = values.get(start).doubleValue();
+					result = values.get(start);
 				}
 			} else {
-				final Number value1 = values.get(start + ((count / 2) - 1));
-				final Number value2 = values.get(start + (count / 2));
-				result = (value1.doubleValue() + value2.doubleValue()) / 2.0;
+				final double value1 = values.get(start + ((count / 2) - 1));
+				final double value2 = values.get(start + (count / 2));
+				result = (value1 + value2) / 2.0;
 			}
 		}
 		return result;
 	}
 
-	public static double calculateMAD(List<? extends Number> values, Number median) {
+	public static double calculateMAD(TDoubleList values, Number median) {
 
 		double result = Double.NaN;
 		if (values != null && median != null) {
-			final List<Double> diffs = new ArrayList<Double>(values.size());
+			final TDoubleList diffs = new TDoubleArrayList(values.size());
 			for (int i = 0; i < values.size(); i++) {
-				diffs.add(Math.abs(values.get(i).doubleValue() - median.doubleValue()));
+				diffs.add(Math.abs(values.get(i) - median.doubleValue()));
 			}
-			Collections.sort(diffs);
+			diffs.sort();
 			final int count = diffs.size();
 			if (count > 0) {
 				if (count % 2 == 1) {
 					if (count > 1) {
-						result = diffs.get((count - 1) / 2).doubleValue();
+						result = diffs.get((count - 1) / 2);
 					} else {
-						result = diffs.get(0).doubleValue();
+						result = diffs.get(0);
 					}
 				} else {
 					final double value1 = diffs.get(count / 2 - 1);
@@ -200,7 +191,7 @@ public abstract class StatisticsUtil {
 		return result;
 	}
 
-	public static double calculateMAD(List<Double> values, boolean copyAndSort) {
+	public static double calculateMAD(TDoubleList values, boolean copyAndSort) {
 
 		double result = Double.NaN;
 		if (values != null) {
@@ -213,18 +204,18 @@ public abstract class StatisticsUtil {
 	/**
 	 * Returns the standard deviation of a set of numbers.
 	 * 
-	 * @param data
-	 *            the data (<code>null</code> or zero length array not permitted).
+	 * @param data the data (<code>null</code> or zero length array not permitted).
 	 * 
 	 * @return The standard deviation of a set of numbers.
 	 */
-	public static double getVariance(Collection<? extends Number> data, Number mean) {
+	public static double getVariance(TDoubleList data, double mean) {
 
 		double result = Double.NaN;
-		if (data != null && data.size() > 0 && mean != null) {
+		if (data != null && data.size() > 0 && !Double.isNaN(mean)) {
 			double sum = 0.0;
-			for (final Number n : data) {
-				final double diff = n.doubleValue() - mean.doubleValue();
+			for (int i = 0; i < data.size(); i++) {
+				final double n = data.get(i);
+				final double diff = n - mean;
 				sum = sum + (diff * diff);
 			}
 			result = sum / (data.size());
@@ -232,19 +223,19 @@ public abstract class StatisticsUtil {
 		return result;
 	}
 
-	public static double getVariance(Collection<? extends Number> data) {
+	public static double getVariance(TDoubleList data) {
 
 		final double avg = calculateMean(data);
 		return getVariance(data, avg);
 	}
 
-	public static double getStdDev(Collection<? extends Number> data) {
+	public static double getStdDev(TDoubleList data) {
 
 		final double avg = calculateMean(data);
 		return getStdDev(data, avg);
 	}
 
-	public static double getStdDev(Collection<? extends Number> data, Number mean) {
+	public static double getStdDev(TDoubleList data, double mean) {
 
 		return Math.sqrt(getVariance(data, mean));
 	}

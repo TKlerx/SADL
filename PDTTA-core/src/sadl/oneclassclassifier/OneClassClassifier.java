@@ -23,6 +23,4 @@ public interface OneClassClassifier {
 
 	boolean isOutlier(double[] testSample);
 
-	@Deprecated
-	boolean[] areAnomalies(List<double[]> testSamples);
 }

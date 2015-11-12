@@ -11,9 +11,6 @@
 
 package sadl.detectors;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.array.TDoubleArrayList;
-
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -27,6 +24,8 @@ import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
 import sadl.constants.ProbabilityAggregationMethod;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;

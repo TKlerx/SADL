@@ -11,18 +11,15 @@
 
 package sadl.models.pdrta;
 
-import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TIntArrayList;
-
-import java.io.BufferedWriter;
-import java.io.IOException;
 import java.io.Serializable;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import sadl.constants.ClassLabel;
+import org.apache.commons.math3.util.Precision;
+
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 
@@ -50,18 +47,19 @@ public class PDRTAInput implements Serializable {
 		this.inp = inp;
 		final TIntList timePoints = loadTimeDelays(expand);
 		setHistBorders(timePoints, histBins);
-		init(true);
+		init();
 	}
 
-	private void init(boolean extend) {
+	private void init() {
 
 		checkBorders();
 		calcHistSizes();
 		tails = new ArrayList<>(inp.size());
 		for (int i = 0; i < inp.size(); i++) {
-			tails.add(createTailChain(i, inp.get(i), extend));
+			tails.add(createTailChain(i, inp.get(i)));
 		}
-		inp.clearWords();
+		// TODO Decide what to do about TimedWords in memory
+		// inp.clearWords();
 	}
 
 	private TIntList loadTimeDelays(boolean expand) {
@@ -102,7 +100,7 @@ public class PDRTAInput implements Serializable {
 		if (histBins == null) {
 			err = true;
 		} else {
-			final String[] b = histBins.split("-");
+			final String[] b = histBins.split("-", -1);
 			if (b.length == 1) {
 				try {
 					final int numHistoBins = Integer.parseInt(b[0]);
@@ -111,11 +109,11 @@ public class PDRTAInput implements Serializable {
 					err = true;
 				}
 			} else {
-				if (!(b[0].equals("") || b[b.length - 1].equals(""))) {
+				if (!(b[0].equals("") || !b[b.length - 1].equals(""))) {
 					err = true;
 				} else {
 					histoBorders = new int[b.length - 2];
-					for (int i = 1; i < b.length - 1; i++) {
+					for (int i = 1; i < (b.length - 1); i++) {
 						try {
 							histoBorders[i - 1] = Integer.parseInt(b[i]);
 						} catch (final NumberFormatException e) {
@@ -132,11 +130,12 @@ public class PDRTAInput implements Serializable {
 
 	private void calcHistBorders(TIntList timePoints, int numHistoBins) {
 
+		timePoints.sort();
 		histoBorders = new int[numHistoBins - 1];
 		for (int i = 1; i < numHistoBins; i++) {
 			final double idx = ((double) i / (double) numHistoBins) * (timePoints.size() - 1);
 			final double idxFloor = Math.floor(idx);
-			if (idx == idxFloor) {
+			if (Precision.equals(idx, idxFloor)) {
 				histoBorders[i - 1] = timePoints.get((int) idx);
 			} else {
 				final double vFloor = timePoints.get((int) idxFloor);
@@ -218,34 +217,6 @@ public class PDRTAInput implements Serializable {
 		return inp.getAlphIndex(s);
 	}
 
-	/**
-	 * Returns the {@link String} representation of the {@link PDRTAInput} in standard format with class labels.
-	 * 
-	 * @return The {@link String} representation of the {@link PDRTAInput}
-	 * @see TimedWord#toString(boolean)
-	 * @see TimedInput#parse(Path)
-	 */
-	@Override
-	public String toString() {
-		// TODO
-		return inp.toString();
-	}
-
-	/**
-	 * Writes the {@link String} representation of the {@link TimedInput} in standard format as it is required for parsing with {@link TimedInput#parse(Path)}.
-	 * 
-	 * @param bw
-	 *            The writer where to write the {@link String} representation
-	 * @param withClassLabel
-	 *            If {@code true} the {@link ClassLabel} will be appended at the end of each timed sequence
-	 * @see TimedWord#toString(boolean)
-	 * @see TimedInput#parse(Path)
-	 */
-	public void toFile(BufferedWriter bw, boolean withClassLabel) throws IOException {
-		// TODO
-		inp.toFile(bw, withClassLabel);
-	}
-
 	private void calcHistSizes() {
 
 		histoSizes = new int[histoBorders.length + 1];
@@ -322,26 +293,29 @@ public class PDRTAInput implements Serializable {
 		return histoBorders;
 	}
 
-	private TimedTail createTailChain(int idxWord, TimedWord word, boolean extend) {
+	private TimedTail createTailChain(int idxWord, TimedWord word) {
 
-		final int start = extend ? -1 : 0;
+		// TODO Try to reuse this param check. Error when testing with trained tester, input not empty
+		// if (inp.isEmpty() || inp.get(idxWord).equals(word)) {
 
-		final int len = word.length();
-		String s = word.getSymbol(0);
-		int sIdx = getAlphIndex(s);
-		int tDel = word.getTimeValue(0);
-		int tDelIdx = getHistBarIdx(tDel);
-		final TimedTail tail = new TimedTail(s, sIdx, tDel, tDelIdx, idxWord, start, null);
+		String s = "startTail";
+		int sIdx = Integer.MIN_VALUE;
+		int tDel = sIdx;
+		int tDelIdx = sIdx;
+		final TimedTail startTail = new TimedTail(s, sIdx, tDel, tDelIdx, idxWord, Integer.MIN_VALUE, null);
 
-		TimedTail prevTail = tail;
-		for (int i = start + 1; i < len; i++) {
+		TimedTail prevTail = startTail;
+		for (int i = 0; i < word.length(); i++) {
 			s = word.getSymbol(i);
 			sIdx = getAlphIndex(s);
 			tDel = word.getTimeValue(i);
 			tDelIdx = getHistBarIdx(tDel);
 			prevTail = new TimedTail(s, sIdx, tDel, tDelIdx, idxWord, i, prevTail);
 		}
-		return tail;
+		return startTail;
+		// } else {
+		// throw new IllegalArgumentException("The given TimedWord must be part of the TimedInput");
+		// }
 	}
 
 	private int getHistBarIdx(int time) {
@@ -359,7 +333,7 @@ public class PDRTAInput implements Serializable {
 	}
 
 	TimedTail toTestTailChain(TimedWord word) {
-		return createTailChain(0, word, false);
+		return createTailChain(-1, word);
 	}
 
 	static PDRTAInput parse(List<String> data) {

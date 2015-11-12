@@ -82,24 +82,27 @@ public class TrebaPdfaLearner implements PdfaLearner {
 		jobName = jobName.substring(0, 5);
 		// create treba input file
 		final String tempFilePrefix = tempDir.toString() + File.separatorChar + jobName + getClass().getName();
-		final String trebaTrainSetFileString = tempFilePrefix + "train_set";
+		final Path trebaTrainSetFile = createUniqueFile(Paths.get(tempFilePrefix + "train_set"));
+
 		try {
-			createTrebaFile(trainingSequences, trebaTrainSetFileString);
-			final String trebaAutomatonFile = tempFilePrefix + "fsm.fsm";
-			final double loglikelihood = trainFsm(trebaTrainSetFileString, trebaAutomatonFile);
+			createTrebaFile(trainingSequences, trebaTrainSetFile);
+			final Path trebaAutomaton = createUniqueFile(Paths.get(tempFilePrefix + "fsm.fsm"));
+			logger.info("Starting to learn PDFA with treba...");
+			final double loglikelihood = trainFsm(trebaTrainSetFile, trebaAutomaton);
 			logger.debug("learned event automaton has loglikelihood of {}", loglikelihood);
 			// compute paths through the automata for the training set and write to
 			// 'trebaResultPathFile'
 			// parse the 'trebaResultPathFile'
 			// compute likelihood on test set for automaton and for time PDFs
-			pdfa = new PDFA(Paths.get(trebaAutomatonFile), trainingSequences);
+			pdfa = new PDFA(trebaAutomaton, trainingSequences);
 			pdfa.makeImmutable();
 			if (!Settings.isDebug()) {
-				IoUtils.deleteFiles(new String[] { trebaTrainSetFileString, trebaAutomatonFile });
+				IoUtils.deleteFiles(new Path[] { trebaTrainSetFile, trebaAutomaton });
 			} else {
 				logger.debug("temp dir: {}", tempDir);
 			}
 			treba.log1plus_free_wrapper();
+			logger.info("Learned PDFA with treba.");
 			return pdfa;
 		} catch (final IOException e) {
 			logger.error("An unexpected error occured", e);
@@ -110,8 +113,21 @@ public class TrebaPdfaLearner implements PdfaLearner {
 
 
 
-	private void createTrebaFile(TimedInput timedSequences, String trebaTrainFileString) throws IOException {
-		try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(trebaTrainFileString), StandardCharsets.UTF_8)) {
+	private Path createUniqueFile(Path path) {
+		Path result = path;
+		while (Files.exists(result)) {
+			logger.warn("File {} exists. Creating a new filename.", result);
+			final long jobNumber = Double.doubleToLongBits(Math.random());
+			String jobName = Long.toString(jobNumber);
+			jobName = jobName.substring(0, 5);
+			result = Paths.get(result.toString() + jobName);
+			logger.warn("New filename is {}", result);
+		}
+		return result;
+	}
+
+	private void createTrebaFile(TimedInput timedSequences, Path trebaTrainFile) throws IOException {
+		try (BufferedWriter bw = Files.newBufferedWriter(trebaTrainFile, StandardCharsets.UTF_8)) {
 			for (final TimedWord ts : timedSequences) {
 				bw.write(getIntString(ts, timedSequences));
 				bw.append('\n');
@@ -131,7 +147,7 @@ public class TrebaPdfaLearner implements PdfaLearner {
 		return sb.toString();
 	}
 
-	protected double trainFsm(String eventTrainFile, String fsmOutputFile) {
+	protected double trainFsm(Path eventTrainFile, Path fsmOutputFile) {
 		int recursive_merge_test = 0;
 		if (recursiveMergeTest) {
 			recursive_merge_test = 1;
@@ -139,7 +155,7 @@ public class TrebaPdfaLearner implements PdfaLearner {
 		treba.setT0(mergeT0);
 		treba.setPrior(smoothingPrior);
 		double ll;
-		observations o = treba.observations_read(eventTrainFile);
+		observations o = treba.observations_read(eventTrainFile.toString());
 		if (o == null) {
 			logger.error("Error reading observations file {}", eventTrainFile);
 			System.exit(1);
@@ -153,7 +169,7 @@ public class TrebaPdfaLearner implements PdfaLearner {
 			fsm = treba.dffa_to_wfsa(treba.dffa_state_merge(o, mergeAlpha, mergeTest.getAlgorithm(), recursive_merge_test));
 		}
 		ll = treba.loglikelihood_all_observations_fsm(fsm, o);
-		treba.wfsa_to_file(fsm, fsmOutputFile);
+		treba.wfsa_to_file(fsm, fsmOutputFile.toString());
 
 		if (fsm != null) {
 			treba.wfsa_destroy(fsm);

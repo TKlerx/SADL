@@ -5,6 +5,7 @@ import jsat.distributions.empirical.kernelfunc.KernelFunction;
 
 public class GaussKFDerivation implements KernelFunction {
 
+	private static final long serialVersionUID = -1862640002601190922L;
 	private final GaussKF gaussKF = GaussKF.getInstance();
 
 	private GaussKFDerivation() {

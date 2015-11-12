@@ -48,9 +48,10 @@ import jsat.utils.SystemInfo;
  * @author Edward Raff
  * @author Timo Klerx
  */
-public class MyDBSCAN extends ClustererBase {
+@SuppressWarnings("rawtypes")
+public class MyDBSCAN extends ClustererBase implements Cloneable {
 
-	private static final long serialVersionUID = 1627963360642560455L;
+	private static final long serialVersionUID = -2682331793218766965L;
 	/**
 	 * Used by {@link #cluster(DataSet, double, int, VectorCollection,int[]) } to mark that a data point as not yet been visited. <br>
 	 * Clusters that have been visited have a value >= 0, that indicates their cluster. Or have the value {@link #NOISE}
@@ -96,11 +97,11 @@ public class MyDBSCAN extends ClustererBase {
 		this.stndDevs = toCopy.stndDevs;
 	}
 
-	public List<List<DataPoint>> cluster(DataSet dataSet, int minPts) {
+	public List<List<DataPoint>> cluster(DataSet<?> dataSet, int minPts) {
 		return createClusterListFromAssignmentArray(cluster(dataSet, minPts, (int[]) null), dataSet);
 	}
 
-	public int[] cluster(DataSet dataSet, int minPts, int[] designations) {
+	public int[] cluster(DataSet<?> dataSet, int minPts, int[] designations) {
 		final OnLineStatistics stats = new OnLineStatistics();
 		TrainableDistanceMetric.trainIfNeeded(dm, dataSet);
 		final VectorCollection<VecPaired<Vec, Integer>> vc = vecFactory.getVectorCollection(getVecIndexPairs(dataSet), dm);

@@ -11,24 +11,22 @@
 
 package sadl.modellearner;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.map.TIntIntMap;
-import gnu.trove.map.TObjectIntMap;
-import gnu.trove.map.hash.TIntIntHashMap;
-import gnu.trove.map.hash.TObjectIntHashMap;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jsat.distributions.Distribution;
-import jsat.distributions.empirical.kernelfunc.KernelFunction;
-
 import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.map.TIntIntMap;
+import gnu.trove.map.TObjectIntMap;
+import gnu.trove.map.hash.TIntIntHashMap;
+import gnu.trove.map.hash.TObjectIntHashMap;
+import jsat.distributions.ContinuousDistribution;
+import jsat.distributions.empirical.kernelfunc.KernelFunction;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.models.TauPTA;
@@ -61,8 +59,10 @@ public class TauPtaLearner extends PdttaLearner {
 
 	@Override
 	public TauPTA train(TimedInput trainingSequences) {
+		transitionCount = new TObjectIntHashMap<>();
+		finalStateCount = new TIntIntHashMap();
 		trainingSequences = SerializationUtils.clone(trainingSequences);
-		final TauPTA initialPta = new TauPTA();
+		final TauPTA initialPta = new TauPTA(transitionCount, finalStateCount);
 		initialPta.addState(TauPTA.START_STATE);
 		initialPta.setAlphabet(trainingSequences);
 
@@ -75,7 +75,7 @@ public class TauPtaLearner extends PdttaLearner {
 		for (final int state : initialPta.getStates()) {
 			final List<Transition> stateTransitions = initialPta.getTransitions(state, false);
 			for (final Transition t : stateTransitions) {
-				if (transitionCount.get(t) < threshold) {
+				if (transitionCount.get(t.toZeroProbTransition()) < threshold) {
 					initialPta.removeTimedTransition(t, false);
 				}
 			}
@@ -89,19 +89,20 @@ public class TauPtaLearner extends PdttaLearner {
 			final List<Transition> stateTransitions = initialPta.getTransitions(state, false);
 			int occurenceCount = 0;
 			for (final Transition t : stateTransitions) {
-				occurenceCount += transitionCount.get(t);
+				occurenceCount += transitionCount.get(t.toZeroProbTransition());
 			}
 			occurenceCount += finalStateCount.get(state);
 			for (final Transition t : stateTransitions) {
-				initialPta.changeTransitionProbability(t, transitionCount.get(t) / (double) occurenceCount, false);
+				initialPta.changeTransitionProbability(t, transitionCount.get(t.toZeroProbTransition()) / (double) occurenceCount, false);
 			}
 			initialPta.addFinalState(state, finalStateCount.get(state) / (double) occurenceCount);
 		}
-		finalStateCount.clear();
-		transitionCount.clear();
+		transitionCount = new TObjectIntHashMap<>();
+		finalStateCount = new TIntIntHashMap();
 		// now the whole stuff again but only with those sequences that are in the initialPta
 		// do not remove any sequences because they should occur more often than the specified threshold
-		final TauPTA newPta = new TauPTA();
+		final TauPTA newPta = new TauPTA(transitionCount, finalStateCount);
+
 		newPta.addState(TauPTA.START_STATE);
 
 		for (final TimedWord s : trainingSequences) {
@@ -115,11 +116,11 @@ public class TauPtaLearner extends PdttaLearner {
 			final List<Transition> stateTransitions = newPta.getTransitions(state, false);
 			int occurenceCount = 0;
 			for (final Transition t : stateTransitions) {
-				occurenceCount += transitionCount.get(t);
+				occurenceCount += transitionCount.get(t.toZeroProbTransition());
 			}
 			occurenceCount += finalStateCount.get(state);
 			for (final Transition t : stateTransitions) {
-				newPta.changeTransitionProbability(t, transitionCount.get(t) / (double) occurenceCount, false);
+				newPta.changeTransitionProbability(t, transitionCount.get(t.toZeroProbTransition()) / (double) occurenceCount, false);
 			}
 			newPta.addFinalState(state, finalStateCount.get(state) / (double) occurenceCount);
 		}
@@ -145,13 +146,13 @@ public class TauPtaLearner extends PdttaLearner {
 		}
 		logger.info("OmmitedSequenceCount={} out of {} sequences at a threshold of less than {} absolute occurences.", ommitedSequenceCount,
 				trainingSequences.size(), TauPTA.SEQUENCE_OMMIT_THRESHOLD * trainingSequences.size());
-		final Map<ZeroProbTransition, Distribution> distributions = fit(timeValueBuckets);
+		final Map<ZeroProbTransition, ContinuousDistribution> distributions = fit(timeValueBuckets);
 		newPta.setTransitionDistributions(distributions);
 		if (distributions.size() != newPta.getTransitionCount()) {
 			final List<Transition> missingDistributions = new ArrayList<>();
 			for (final Transition t : newPta.getAllTransitions()) {
 				if (distributions.get(t.toZeroProbTransition()) == null) {
-					missingDistributions.add(t);
+					missingDistributions.add(t.toZeroProbTransition());
 				}
 			}
 			System.out.println(missingDistributions);
@@ -172,13 +173,14 @@ public class TauPtaLearner extends PdttaLearner {
 			Transition t = pta.getTransition(currentState, nextEvent);
 			if (t == null) {
 				t = pta.addTransition(currentState, pta.getStateCount(), nextEvent, TauPTA.NO_TRANSITION_PROBABILITY);
-				transitionCount.put(t, 0);
+				transitionCount.put(t.toZeroProbTransition(), 0);
 			}
-			transitionCount.increment(t);
+			transitionCount.increment(t.toZeroProbTransition());
 			currentState = t.getToState();
 		}
 		// add final state count
 		finalStateCount.adjustOrPutValue(currentState, 1, 1);
 	}
+
 
 }

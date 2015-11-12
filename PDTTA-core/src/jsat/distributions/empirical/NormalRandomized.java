@@ -6,6 +6,8 @@ import jsat.distributions.Normal;
 
 public class NormalRandomized extends Normal {
 
+	private static final long serialVersionUID = 2926027478092427009L;
+
 	public NormalRandomized() { // TODO remove?
 		super();
 	}
