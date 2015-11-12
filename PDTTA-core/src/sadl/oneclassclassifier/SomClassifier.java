@@ -33,7 +33,7 @@ public class SomClassifier extends NumericClassifier {
 
 	@Override
 	protected void trainModelScaled(List<double[]> scaledTrainSamples) {
-		som.trainC(DatasetTransformationUtils.doublesToDataSet(scaledTrainSamples));
+		som.trainC(DatasetTransformationUtils.doublesToClassificationDataSet(scaledTrainSamples, 0));
 	}
 
 }

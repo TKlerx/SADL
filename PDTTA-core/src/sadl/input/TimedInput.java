@@ -310,15 +310,15 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 				ClassLabel label;
 				if (splitWord.length == 2) {
 					switch (splitWord[1]) {
-					case "0":
-						label = ClassLabel.NORMAL;
-						break;
-					case "1":
-						label = ClassLabel.ANOMALY;
-						break;
-					default:
-						label = ClassLabel.NORMAL;
-						break;
+						case "0":
+							label = ClassLabel.NORMAL;
+							break;
+						case "1":
+							label = ClassLabel.ANOMALY;
+							break;
+						default:
+							label = ClassLabel.NORMAL;
+							break;
 					}
 					word.setLabel(label);
 				}

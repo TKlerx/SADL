@@ -86,18 +86,37 @@ public class SmacDataGenerator implements Serializable {
 		final List<TimedWord> testSequences = new ArrayList<>();
 		final TauPtaLearner learner = new TauPtaLearner();
 		final TauPTA pta = learner.train(trainingTimedSequences);
+		final TauPTA typeTwoNormalPta = SerializationUtils.clone(pta);
 		final DecimalFormat df = new DecimalFormat("00");
+		// final Path p = Paths.get("pta_normal.dot");
+		// pta.toGraphvizFile(outputDir.resolve(p), false);
+		// final Process ps = Runtime.getRuntime().exec("dot -Tpdf -O " + outputDir.resolve(p));
+		// System.out.println(outputDir.resolve(p));
+		// ps.waitFor();
 		logger.info("Finished TauPTA creation.");
+		TauPTA currentPta;
 		while (k < 100) {
 			for (final AnomalyInsertionType type : AnomalyInsertionType.values()) {
 				if (type != AnomalyInsertionType.NONE && type != AnomalyInsertionType.ALL) {
+					// if (type != AnomalyInsertionType.TYPE_TWO) {
+					// continue;
+					// }
+					if (type == AnomalyInsertionType.TYPE_TWO) {
+						currentPta = SerializationUtils.clone(typeTwoNormalPta);
+						currentPta.setRandom(MasterSeed.nextRandom());
+					} else {
+						currentPta = pta;
+					}
 					trainSequences.clear();
 					testSequences.clear();
-					final TauPTA anomaly = SerializationUtils.clone(pta);
+					final TauPTA anomaly = SerializationUtils.clone(currentPta);
 					logger.info("inserting Anomaly Type {}", type);
 					anomaly.makeAbnormal(type);
+					if (type == AnomalyInsertionType.TYPE_TWO) {
+						anomaly.removeAbnormalSequences(currentPta);
+					}
 					for (int i = 0; i < TRAIN_SIZE; i++) {
-						trainSequences.add(pta.sampleSequence());
+						trainSequences.add(currentPta.sampleSequence());
 					}
 					// PTAs of Type 2 and 4 always produce abnormal sequences
 					// it is possible to sample abnormal and normal sequences with abnormal ptas of the other types (1,3,5).
@@ -112,7 +131,7 @@ public class SmacDataGenerator implements Serializable {
 							}
 							testSequences.add(seq);
 						} else {
-							testSequences.add(pta.sampleSequence());
+							testSequences.add(currentPta.sampleSequence());
 						}
 					}
 					final TimedInput trainset = new TimedInput(trainSequences);

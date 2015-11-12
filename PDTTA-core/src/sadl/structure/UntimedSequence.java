@@ -11,6 +11,7 @@
 
 package sadl.structure;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +25,9 @@ import sadl.constants.ClassLabel;
  * @author Timo Klerx
  *
  */
-public class UntimedSequence implements Cloneable {
+public class UntimedSequence implements Cloneable, Serializable {
+
+	private static final long serialVersionUID = -7118067339350922993L;
 
 	@SuppressWarnings("unused")
 	private static Logger logger = LoggerFactory.getLogger(UntimedSequence.class);

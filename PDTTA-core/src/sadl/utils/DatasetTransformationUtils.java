@@ -18,6 +18,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import jsat.DataSet;
+import jsat.SimpleDataSet;
 import jsat.classifiers.ClassificationDataSet;
 import jsat.classifiers.DataPoint;
 import jsat.linear.DenseVector;
@@ -98,23 +100,23 @@ public class DatasetTransformationUtils {
 		return result;
 	}
 
-	// public static DataSet<SimpleDataSet> doublesToDataSet(List<double[]> doubleVectors) {
-	// final List<DataPoint> dataPoints = new ArrayList<>(doubleVectors.size());
-	// for (final double[] sample : doubleVectors) {
-	// final DataPoint dp = new DataPoint(new DenseVector(sample));
-	// dataPoints.add(dp);
-	// }
-	// final DataSet<SimpleDataSet> result = new SimpleDataSet(dataPoints);
-	// return result;
-	// }
-
-	public static ClassificationDataSet doublesToDataSet(List<double[]> doubleVectors) {
+	public static DataSet<SimpleDataSet> doublesToDataSet(List<double[]> doubleVectors) {
 		final List<DataPoint> dataPoints = new ArrayList<>(doubleVectors.size());
 		for (final double[] sample : doubleVectors) {
 			final DataPoint dp = new DataPoint(new DenseVector(sample));
 			dataPoints.add(dp);
 		}
-		final ClassificationDataSet result = new ClassificationDataSet(dataPoints, 0);
+		final DataSet<SimpleDataSet> result = new SimpleDataSet(dataPoints);
+		return result;
+	}
+
+	public static ClassificationDataSet doublesToClassificationDataSet(List<double[]> doubleVectors, int classValue) {
+		final List<DataPoint> dataPoints = new ArrayList<>(doubleVectors.size());
+		for (final double[] sample : doubleVectors) {
+			final DataPoint dp = new DataPoint(new DenseVector(sample));
+			dataPoints.add(dp);
+		}
+		final ClassificationDataSet result = new ClassificationDataSet(dataPoints, classValue);
 		return result;
 	}
 

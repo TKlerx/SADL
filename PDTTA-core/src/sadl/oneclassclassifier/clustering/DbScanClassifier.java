@@ -80,11 +80,7 @@ public class DbScanClassifier extends NumericClassifier {
 		}
 		logger.info("Original dataset size={}", data.size());
 		logger.info("There are {} clustered instances", count);
-
 	}
-
-
-
 
 
 
