@@ -730,7 +730,7 @@ public class TauPTA extends PDTTA {
 			}
 		}
 		if (anomalyType == AnomalyInsertionType.TYPE_THREE || anomalyType == AnomalyInsertionType.TYPE_FOUR) {
-			logger.info("{} out of {} transitions are marked with anomaly {}", timedAnomalyCounter, eventList.size(), anomalyType);
+			logger.debug("{} out of {} transitions are marked with anomaly {}", timedAnomalyCounter, eventList.size(), anomalyType);
 		}
 		if (anomalyType != AnomalyInsertionType.NONE) {
 			return new TimedWord(eventList, timeList, ClassLabel.ANOMALY);
