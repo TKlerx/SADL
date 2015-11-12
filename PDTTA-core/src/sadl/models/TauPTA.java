@@ -814,7 +814,7 @@ public class TauPTA extends PDTTA {
 				if (occurenceCount == 0) {
 					removeState(state);
 				} else {
-					addFinalState(state, occurenceCount == 0 ? 0 : finalStateCount.get(state) / (double) occurenceCount);
+					addFinalState(state, finalStateCount.get(state) / (double) occurenceCount);
 					fixProbability(state);
 				}
 			}
