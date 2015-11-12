@@ -42,11 +42,16 @@ public class DbScanClassifier extends NumericClassifier {
 	MyDBSCAN dbscan;
 	double eps;
 	int n;
+	private final double threshold;
 
 	private List<List<DataPoint>> clusterResult;
 	int[] pointCats;
 
 	public DbScanClassifier(double dbscan_eps, int dbscan_n, DistanceMethod distanceMethod, ScalingMethod scalingMethod) {
+		this(dbscan_eps, dbscan_n, dbscan_eps, distanceMethod, scalingMethod);
+	}
+
+	public DbScanClassifier(double dbscan_eps, int dbscan_n, double dbscan_threshold, DistanceMethod distanceMethod, ScalingMethod scalingMethod) {
 		super(scalingMethod);
 		eps = dbscan_eps;
 		n = dbscan_n;
@@ -56,6 +61,7 @@ public class DbScanClassifier extends NumericClassifier {
 			dm = new ManhattanDistance();
 		}
 		dbscan = new MyDBSCAN(dm);
+		this.threshold = dbscan_threshold;
 	}
 
 	private void cluster(List<double[]> data) {
@@ -87,7 +93,8 @@ public class DbScanClassifier extends NumericClassifier {
 	@Override
 	protected boolean isOutlierScaled(double[] testSample) {
 		// TODO do not use eps here, because it we must use a real threshold for testing and not the eps boundary that we used for training
-		final List<? extends VecPaired<VecPaired<Vec, Integer>, Double>> neighbours = dbscan.getLastVectorCollection().search(new DenseVector(testSample), eps);
+		final List<? extends VecPaired<VecPaired<Vec, Integer>, Double>> neighbours = dbscan.getLastVectorCollection().search(new DenseVector(testSample),
+				threshold);
 		// check whether one of the points is a core point!
 		for (final VecPaired<VecPaired<Vec, Integer>, Double> vecPaired : neighbours) {
 			final int dataSetIndex = vecPaired.getVector().getPair();

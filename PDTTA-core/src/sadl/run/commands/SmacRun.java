@@ -140,6 +140,9 @@ public class SmacRun {
 	@Parameter(names = "-dbScanN")
 	private int dbscan_n;
 
+	@Parameter(names = "-dbScanThreshold")
+	private double dbscan_threshold = -1;
+
 	private OneClassClassifier classifier;
 
 
@@ -192,7 +195,10 @@ public class SmacRun {
 			featureCreator = new SmallFeatureCreator();
 			classifier = new ThresholdClassifier(aggregatedEventThreshold, aggregatedTimeThreshold, singleEventThreshold, singleTimeThreshold);
 		} else if (detectorMethod == DetectorMethod.DBSCAN) {
-			classifier = new DbScanClassifier(dbscan_eps, dbscan_n, dbScanDistanceMethod, scalingMethod);
+			if (dbscan_threshold < 0) {
+				dbscan_threshold = dbscan_eps;
+			}
+			classifier = new DbScanClassifier(dbscan_eps, dbscan_n, dbscan_threshold, dbScanDistanceMethod, scalingMethod);
 		} else {
 			classifier = null;
 		}
