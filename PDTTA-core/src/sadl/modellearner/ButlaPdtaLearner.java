@@ -1,6 +1,15 @@
-package sadl.modellearner;
+/**
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
+ * Copyright (C) 2013-2015  the original author or authors.
+ *
+ * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * SADL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
-import gnu.trove.list.array.TIntArrayList;
+package sadl.modellearner;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import gnu.trove.list.array.TIntArrayList;
 import sadl.constants.ClassLabel;
 import sadl.constants.EventsCreationStrategy;
 import sadl.constants.KDEFormelVariant;
@@ -23,9 +33,9 @@ import sadl.models.PTA.EventGenerator;
 import sadl.models.PTA.PTA;
 import sadl.models.PTA.PTAState;
 import sadl.models.PTA.SubEvent;
-import sadl.models.pdtaModified.PDTAModified;
+import sadl.models.pdta.PDTA;
 
-public class ButlaPdrtaLearner implements ModelLearner, CompatibilityChecker {
+public class ButlaPdtaLearner implements ModelLearner, CompatibilityChecker {
 
 	EventGenerator eventGenerator;
 	double a;
@@ -33,7 +43,7 @@ public class ButlaPdrtaLearner implements ModelLearner, CompatibilityChecker {
 	MergeStrategy mergeStrategy;
 	EventsCreationStrategy splittingStrategy;
 
-	public ButlaPdrtaLearner(double bandwidth, double a, TransitionsType check, double anomalyProbability, double warningProbability,
+	public ButlaPdtaLearner(double bandwidth, double a, TransitionsType check, double anomalyProbability, double warningProbability,
 			MergeStrategy mergeStrategy, EventsCreationStrategy splittingStrategy, KDEFormelVariant formelVariant) {
 
 		if (Double.isNaN(a) || a >= 1.0d || a <= 0.0d) {
@@ -56,7 +66,7 @@ public class ButlaPdrtaLearner implements ModelLearner, CompatibilityChecker {
 	}
 
 	@Override
-	public PDTAModified train(TimedInput TimedTrainingSequences) {
+	public PDTA train(TimedInput TimedTrainingSequences) {
 
 		final HashMap<String, LinkedList<Double>> eventToTimelistMap = mapEventsToTimes(TimedTrainingSequences);
 		final HashMap<String, Event> eventsMap = generateSubEvents(eventToTimelistMap);

@@ -1,4 +1,15 @@
-package sadl.models.pdtaModified;
+/**
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
+ * Copyright (C) 2013-2015  the original author or authors.
+ *
+ * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * SADL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package sadl.models.pdta;
 
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
@@ -24,10 +35,10 @@ import sadl.interfaces.Model;
 import sadl.models.PTA.Event;
 import sadl.models.PTA.SubEvent;
 
-public class PDTAModified implements AutomatonModel, Model {
+public class PDTA implements AutomatonModel, Model {
 
-	PDTAStateModified root;
-	HashMap<Integer, PDTAStateModified> states;
+	PDTAState root;
+	HashMap<Integer, PDTAState> states;
 	HashMap<String, Event> events;
 
 	@Override
@@ -36,13 +47,13 @@ public class PDTAModified implements AutomatonModel, Model {
 		final TDoubleList probabilities1 = new TDoubleArrayList(s.length());
 		final TDoubleList probabilities2 = new TDoubleArrayList(s.length());
 
-		final PDTAStateModified currentState = root;
+		final PDTAState currentState = root;
 
 		for (int i = 0; i < s.length(); i++) {
 			final String eventSymbol = s.getSymbol(i);
 			final double time = s.getTimeValue(i);
 
-			final PDTATransitionModified currentTransition = currentState.getMostProbablyTransition(eventSymbol, time);
+			final PDTATransition currentTransition = currentState.getMostProbablyTransition(eventSymbol, time);
 
 			if (currentTransition == null) {
 				probabilities1.add(0.0);
@@ -57,13 +68,13 @@ public class PDTAModified implements AutomatonModel, Model {
 		return new Pair<>(probabilities1, probabilities2);
 	}
 
-	public PDTAModified(PDTAStateModified root, HashMap<Integer, PDTAStateModified> states, HashMap<String, Event> events) {
+	public PDTA(PDTAState root, HashMap<Integer, PDTAState> states, HashMap<String, Event> events) {
 		this.root = root;
 		this.states = states;
 		this.events = events;
 	}
 
-	public PDTAStateModified getRoot() {
+	public PDTAState getRoot() {
 
 		return root;
 	}
@@ -99,11 +110,11 @@ public class PDTAModified implements AutomatonModel, Model {
 		final LinkedList<String> symbols = new LinkedList<>();
 		final TIntLinkedList timeValues = new TIntLinkedList();
 
-		PDTAStateModified currentState = root;
+		PDTAState currentState = root;
 
 		while (currentState != null) {
 
-			final PDTATransitionModified nextTransition = currentState.getRandomTransition();
+			final PDTATransition nextTransition = currentState.getRandomTransition();
 
 			if (nextTransition != null) {
 				final SubEvent event = nextTransition.getEvent();
@@ -170,13 +181,13 @@ public class PDTAModified implements AutomatonModel, Model {
 
 	public boolean hasAnomalie(TimedWord word) {
 
-		PDTAStateModified currentState = root;
+		PDTAState currentState = root;
 
 		for (int i = 0; i < word.length(); i++) {
 			final String eventSymbol = word.getSymbol(i);
 			final double time = word.getTimeValue(i);
 
-			final PDTATransitionModified transition = currentState.getTransition(eventSymbol, time);
+			final PDTATransition transition = currentState.getTransition(eventSymbol, time);
 
 			if (transition == null) {
 				// System.out.println("ERROR: (" + currentState.getId() + ")");
@@ -209,7 +220,7 @@ public class PDTAModified implements AutomatonModel, Model {
 		writer.write("digraph G {\n");
 
 		// write states
-		for (final PDTAStateModified state : states.values()) {
+		for (final PDTAState state : states.values()) {
 
 			writer.write(Integer.toString(state.getId()));
 			writer.write(" [shape=");
@@ -222,9 +233,9 @@ public class PDTAModified implements AutomatonModel, Model {
 			writer.write("]\n");
 		}
 
-		for (final PDTAStateModified state : states.values()) {
-			for (final TreeMap<Double, PDTATransitionModified> transitions : state.getTransitions().values()) {
-				for (final PDTATransitionModified transition : transitions.values()) {
+		for (final PDTAState state : states.values()) {
+			for (final TreeMap<Double, PDTATransition> transitions : state.getTransitions().values()) {
+				for (final PDTATransition transition : transitions.values()) {
 					writer.write(Integer.toString(state.getId()) + "->" + Integer.toString(transition.getTarget().getId()) + " [label=<"
 							+ transition.getEvent().getSymbol() + ">;];\n");
 				}

@@ -12,7 +12,7 @@
 package sadl.constants;
 
 public enum Algoname {
-	RTI, PDTTA;
+	RTI, PDTTA, BUTLA;
 
 	public static Algoname getAlgoname(String string) {
 		for (final Algoname loopAlg : Algoname.values()) {

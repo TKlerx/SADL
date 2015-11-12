@@ -1,3 +1,14 @@
+/**
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
+ * Copyright (C) 2013-2015  the original author or authors.
+ *
+ * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * SADL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package sadl.models.PTA;
 
 import java.io.BufferedWriter;
@@ -17,8 +28,8 @@ import sadl.constants.EventsCreationStrategy;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.CompatibilityChecker;
-import sadl.models.pdtaModified.PDTAModified;
-import sadl.models.pdtaModified.PDTAStateModified;
+import sadl.models.pdta.PDTA;
+import sadl.models.pdta.PDTAState;
 
 public class PTA {
 
@@ -235,28 +246,28 @@ public class PTA {
 		}
 	}
 
-	public PDTAModified toPDRTA() {
+	public PDTA toPDRTA() {
 
-		final HashMap<Integer, PDTAStateModified> pdrtaStates = new HashMap<>();
+		final HashMap<Integer, PDTAState> pdrtaStates = new HashMap<>();
 
 		for (final PTAState ptaState : states) {
 			final int stateId = ptaState.getId();
-			pdrtaStates.put(stateId, new PDTAStateModified(stateId, ptaState.getEndProbability()));
+			pdrtaStates.put(stateId, new PDTAState(stateId, ptaState.getEndProbability()));
 		}
 
 		for (final PTAState ptaState : states) {
-			final PDTAStateModified pdrtaStateSource = pdrtaStates.get(ptaState.getId());
+			final PDTAState pdrtaStateSource = pdrtaStates.get(ptaState.getId());
 			final int outTransitionsCount = ptaState.getOutTransitionsCount();
 
 			for (final PTATransition transition : ptaState.outTransitions.values()) {
-				final PDTAStateModified pdrtaStateTarget = pdrtaStates.get(transition.getTarget().getId());
+				final PDTAState pdrtaStateTarget = pdrtaStates.get(transition.getTarget().getId());
 				final SubEvent event = transition.getEvent();
 
 				pdrtaStateSource.addTransition(event, pdrtaStateTarget, event.getIntervalInState(ptaState), transition.getCount() / outTransitionsCount);
 			}
 		}
 
-		return new PDTAModified(pdrtaStates.get(root.getId()), pdrtaStates, events);
+		return new PDTA(pdrtaStates.get(root.getId()), pdrtaStates, events);
 	}
 
 	public void toGraphvizFile(Path resultPath) throws IOException {

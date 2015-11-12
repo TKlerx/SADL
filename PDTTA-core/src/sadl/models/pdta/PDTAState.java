@@ -1,4 +1,15 @@
-package sadl.models.pdtaModified;
+/**
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
+ * Copyright (C) 2013-2015  the original author or authors.
+ *
+ * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * SADL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package sadl.models.pdta;
 
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -9,16 +20,16 @@ import org.apache.commons.lang3.Range;
 
 import sadl.models.PTA.SubEvent;
 
-public class PDTAStateModified {
+public class PDTAState {
 
 	protected int id;
 	protected double endProbability;
-	protected HashMap<String, TreeMap<Double, PDTATransitionModified>> transitions = new HashMap<>();
-	protected TreeMap<Double, PDTATransitionModified> transitionsProbability = new TreeMap<>();
+	protected HashMap<String, TreeMap<Double, PDTATransition>> transitions = new HashMap<>();
+	protected TreeMap<Double, PDTATransition> transitionsProbability = new TreeMap<>();
 
 	protected double sumProbabilities = 0.0d;
 
-	public PDTAStateModified(int id, double endProbability) {
+	public PDTAState(int id, double endProbability) {
 
 		if (Double.isNaN(endProbability) || endProbability < 0.0d || endProbability > 1.0d) {
 			throw new IllegalArgumentException("Wrong parameter endProbability: " + endProbability);
@@ -29,9 +40,9 @@ public class PDTAStateModified {
 		this.sumProbabilities = endProbability;
 	}
 
-	public PDTAStateModified getNextState(String eventSymbol, double time) {
+	public PDTAState getNextState(String eventSymbol, double time) {
 
-		final PDTATransitionModified transition = this.getTransition(eventSymbol, time);
+		final PDTATransition transition = this.getTransition(eventSymbol, time);
 
 		if (transition != null && transition.inInterval(time)) {
 			return transition.getTarget();
@@ -40,26 +51,26 @@ public class PDTAStateModified {
 		return null;
 	}
 
-	public HashMap<String, TreeMap<Double, PDTATransitionModified>> getTransitions() {
+	public HashMap<String, TreeMap<Double, PDTATransition>> getTransitions() {
 
 		return transitions;
 	}
 
-	public PDTATransitionModified getTransition(String eventSymbol, double time) {
+	public PDTATransition getTransition(String eventSymbol, double time) {
 
-		final TreeMap<Double, PDTATransitionModified> eventTransitions = transitions.get(eventSymbol);
+		final TreeMap<Double, PDTATransition> eventTransitions = transitions.get(eventSymbol);
 
 		if (eventTransitions == null) {
 			return null;
 		}
 
-		final Entry<Double, PDTATransitionModified> transitionEntry = eventTransitions.floorEntry(time);
+		final Entry<Double, PDTATransition> transitionEntry = eventTransitions.floorEntry(time);
 
 		if (transitionEntry == null) {
 			return null;
 		}
 
-		final PDTATransitionModified transition = transitionEntry.getValue();
+		final PDTATransition transition = transitionEntry.getValue();
 
 		if (transition.inInterval(time)) {
 			return transition;
@@ -68,12 +79,12 @@ public class PDTAStateModified {
 		return null;
 	}
 
-	public PDTATransitionModified getMostProbablyTransition(String eventSymbol, double time) {
+	public PDTATransition getMostProbablyTransition(String eventSymbol, double time) {
 
-		PDTATransitionModified probablyTransition = getTransition(eventSymbol, time);
+		PDTATransition probablyTransition = getTransition(eventSymbol, time);
 
 		if (probablyTransition == null) {
-			final TreeMap<Double, PDTATransitionModified> eventTransitions = transitions.get(eventSymbol);
+			final TreeMap<Double, PDTATransition> eventTransitions = transitions.get(eventSymbol);
 
 			if (eventTransitions == null) {
 				return null;
@@ -81,7 +92,7 @@ public class PDTAStateModified {
 
 			double maxProbability = 0.0;
 
-			for (final PDTATransitionModified transition : eventTransitions.values()){
+			for (final PDTATransition transition : eventTransitions.values()){
 
 				final double probability = transition.getEvent().calculateProbability(time);
 
@@ -95,7 +106,7 @@ public class PDTAStateModified {
 		return probablyTransition;
 	}
 
-	public PDTATransitionModified getRandomTransition() {
+	public PDTATransition getRandomTransition() {
 
 		if (sumProbabilities < 1.0d) {
 			throw new IllegalStateException("Probability not 1.0");
@@ -107,13 +118,13 @@ public class PDTAStateModified {
 			return null;
 		}
 
-		final Entry<Double, PDTATransitionModified> transitionEntry = transitionsProbability.floorEntry(random);
+		final Entry<Double, PDTATransition> transitionEntry = transitionsProbability.floorEntry(random);
 
 		if (transitionEntry == null) {
 			throw new IllegalStateException("No transition selected(" + random + ")" + this);
 		}
 
-		final PDTATransitionModified transition = transitionEntry.getValue();
+		final PDTATransition transition = transitionEntry.getValue();
 
 		if (transitionEntry.getKey() + transition.getPropability() < random) {
 			throw new IllegalStateException("No transition selected.");
@@ -122,12 +133,12 @@ public class PDTAStateModified {
 		return transition;
 	}
 
-	public void addTransition(SubEvent event, PDTAStateModified target, Range<Double> interval, double probability) {
+	public void addTransition(SubEvent event, PDTAState target, Range<Double> interval, double probability) {
 
-		final PDTATransitionModified transition = new PDTATransitionModified(event, target, interval, probability);
+		final PDTATransition transition = new PDTATransition(event, target, interval, probability);
 		final String eventSymbol = event.getEvent().getSymbol();
 
-		TreeMap<Double, PDTATransitionModified> eventTransitions = transitions.get(eventSymbol);
+		TreeMap<Double, PDTATransition> eventTransitions = transitions.get(eventSymbol);
 
 		if (eventTransitions == null) {
 			eventTransitions = new TreeMap<>();
@@ -158,8 +169,8 @@ public class PDTAStateModified {
 		final StringBuilder stringBuilder = new StringBuilder();
 		stringBuilder.append("State " + this.id + "(");
 
-		for (final TreeMap<Double, PDTATransitionModified> event : transitions.values()) {
-			for (final PDTATransitionModified transition : event.values()) {
+		for (final TreeMap<Double, PDTATransition> event : transitions.values()) {
+			for (final PDTATransition transition : event.values()) {
 				stringBuilder.append(transition + " ");
 			}
 		}

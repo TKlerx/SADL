@@ -1,32 +1,45 @@
+/**
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
+ * Copyright (C) 2013-2015  the original author or authors.
+ *
+ * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * SADL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package sadl.detectors;
 
 import gnu.trove.list.TDoubleList;
 import sadl.constants.ProbabilityAggregationMethod;
 import sadl.input.TimedWord;
 import sadl.models.PTA.SubEvent;
-import sadl.models.pdtaModified.PDTAModified;
-import sadl.models.pdtaModified.PDTAStateModified;
-import sadl.models.pdtaModified.PDTATransitionModified;
+import sadl.models.pdta.PDTA;
+import sadl.models.pdta.PDTAState;
+import sadl.models.pdta.PDTATransition;
 
 public class AnodaDetector extends AnomalyDetector {
 
-	protected PDTAModified pdrta;
+	protected PDTA pdrta;
 
-	public AnodaDetector(ProbabilityAggregationMethod aggType, PDTAModified pdrta) {
+	public AnodaDetector(ProbabilityAggregationMethod aggType) {
 		super(aggType);
-		super.setModel(pdrta);
 	}
 
 	@Override
 	public boolean isAnomaly(TimedWord word) {
+		if (pdrta == null) {
+			pdrta = (PDTA) super.model;
+		}
 
-		PDTAStateModified currentState = pdrta.getRoot();
+		PDTAState currentState = pdrta.getRoot();
 
 		for (int i = 0; i < word.length(); i++) {
 			final String eventSymbol = word.getSymbol(i);
 			final double time = word.getTimeValue(i);
 
-			final PDTATransitionModified transition = currentState.getTransition(eventSymbol, time);
+			final PDTATransition transition = currentState.getTransition(eventSymbol, time);
 			final SubEvent event = transition.getEvent();
 
 			if (event.hasWarning(time)) {
