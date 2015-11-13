@@ -18,7 +18,7 @@ import java.util.TreeMap;
 
 import org.apache.commons.lang3.Range;
 
-import sadl.models.PTA.SubEvent;
+import sadl.models.pta.SubEvent;
 import sadl.utils.MasterSeed;
 
 public class PDTAState {

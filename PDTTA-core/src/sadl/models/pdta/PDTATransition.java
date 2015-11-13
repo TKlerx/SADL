@@ -13,7 +13,7 @@ package sadl.models.pdta;
 
 import org.apache.commons.lang3.Range;
 
-import sadl.models.PTA.SubEvent;
+import sadl.models.pta.SubEvent;
 
 public class PDTATransition {
 

@@ -32,8 +32,8 @@ import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.AutomatonModel;
 import sadl.interfaces.Model;
-import sadl.models.PTA.Event;
-import sadl.models.PTA.SubEvent;
+import sadl.models.pta.Event;
+import sadl.models.pta.SubEvent;
 
 public class PDTA implements AutomatonModel, Model {
 

@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.models.PTA;
+package sadl.models.pta;
 
 import java.io.BufferedWriter;
 import java.io.IOException;

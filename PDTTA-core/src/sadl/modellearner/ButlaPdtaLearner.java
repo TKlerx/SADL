@@ -28,12 +28,12 @@ import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.CompatibilityChecker;
 import sadl.interfaces.ModelLearner;
-import sadl.models.PTA.Event;
-import sadl.models.PTA.EventGenerator;
-import sadl.models.PTA.PTA;
-import sadl.models.PTA.PTAState;
-import sadl.models.PTA.SubEvent;
 import sadl.models.pdta.PDTA;
+import sadl.models.pta.Event;
+import sadl.models.pta.EventGenerator;
+import sadl.models.pta.PTA;
+import sadl.models.pta.PTAState;
+import sadl.models.pta.SubEvent;
 
 public class ButlaPdtaLearner implements ModelLearner, CompatibilityChecker {
 
