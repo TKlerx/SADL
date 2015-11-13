@@ -140,6 +140,12 @@ public class SmacRun {
 	@Parameter(names = "-dbScanN")
 	private int dbscan_n;
 
+	@Parameter(names = "-dbScanThreshold")
+	private double dbscan_threshold = -1;
+
+	@Parameter(names = "skipFirstElement", arity = 1)
+	boolean skipFirstElement = false;
+
 	private OneClassClassifier classifier;
 
 
@@ -192,7 +198,10 @@ public class SmacRun {
 			featureCreator = new SmallFeatureCreator();
 			classifier = new ThresholdClassifier(aggregatedEventThreshold, aggregatedTimeThreshold, singleEventThreshold, singleTimeThreshold);
 		} else if (detectorMethod == DetectorMethod.DBSCAN) {
-			classifier = new DbScanClassifier(dbscan_eps, dbscan_n, dbScanDistanceMethod, scalingMethod);
+			if (dbscan_threshold < 0) {
+				dbscan_threshold = dbscan_eps;
+			}
+			classifier = new DbScanClassifier(dbscan_eps, dbscan_n, dbscan_threshold, dbScanDistanceMethod, scalingMethod);
 		} else {
 			classifier = null;
 		}
@@ -207,7 +216,7 @@ public class SmacRun {
 		}
 		ExperimentResult result = null;
 		try {
-			result = detection.trainTest(Paths.get(mainParams.get(1)));
+			result = detection.trainTest(Paths.get(mainParams.get(1)), skipFirstElement);
 		} catch (final IOException e) {
 			logger.error("Error when loading input from file: " + e.getMessage());
 			smacErrorAbort();

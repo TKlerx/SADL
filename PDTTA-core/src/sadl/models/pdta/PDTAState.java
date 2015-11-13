@@ -19,6 +19,7 @@ import java.util.TreeMap;
 import org.apache.commons.lang3.Range;
 
 import sadl.models.PTA.SubEvent;
+import sadl.utils.MasterSeed;
 
 public class PDTAState {
 
@@ -28,9 +29,10 @@ public class PDTAState {
 	protected TreeMap<Double, PDTATransition> transitionsProbability = new TreeMap<>();
 
 	protected double sumProbabilities = 0.0d;
+	Random rand;
 
 	public PDTAState(int id, double endProbability) {
-
+		rand = MasterSeed.nextRandom();
 		if (Double.isNaN(endProbability) || endProbability < 0.0d || endProbability > 1.0d) {
 			throw new IllegalArgumentException("Wrong parameter endProbability: " + endProbability);
 		}
@@ -112,7 +114,7 @@ public class PDTAState {
 			throw new IllegalStateException("Probability not 1.0");
 		}
 
-		final double random = new Random().nextDouble();
+		final double random = rand.nextDouble();
 
 		if (random <= endProbability) {
 			return null;

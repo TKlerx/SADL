@@ -18,7 +18,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
@@ -58,6 +57,7 @@ import sadl.input.TimedWord;
 import sadl.structure.Transition;
 import sadl.structure.UntimedSequence;
 import sadl.structure.ZeroProbTransition;
+import sadl.utils.CollectionUtils;
 
 /**
  * 
@@ -496,7 +496,7 @@ public class TauPTA extends PDTTA {
 			logger.warn("Chose states on which are leaf states. Inserting a anomalies is not possible.");
 			return -1;
 		}
-		final Transition chosenTransition = chooseRandomObject(possibleTransitions, r);
+		final Transition chosenTransition = CollectionUtils.chooseRandomObject(possibleTransitions, r);
 		logger.debug("Chose transition {} for inserting an anomaly of type 3", chosenTransition);
 		final ContinuousDistribution d = removeTimedTransition(chosenTransition);
 		final Transition newTransition = addAbnormalTransition(chosenTransition.getFromState(), chosenTransition.getToState(), chosenTransition.getSymbol(),
@@ -512,7 +512,7 @@ public class TauPTA extends PDTTA {
 		}
 		// only add if there was no final state transition before
 		// restore probability sum afterwards
-		final Transition t = chooseRandomObject(possibleTransitions, r);
+		final Transition t = CollectionUtils.chooseRandomObject(possibleTransitions, r);
 		// only do so if there is no stopping transition in the possibleTransitions
 		final double probability = r.nextDouble() * MAX_TYPE_FIVE_PROBABILITY;
 		addAbnormalFinalState(t.getFromState(), probability);
@@ -568,7 +568,7 @@ public class TauPTA extends PDTTA {
 	private int changeTransitionEvent(List<Transition> possibleTransitions) {
 		final TIntSet currentStates = new TIntHashSet(possibleTransitions.stream().mapToInt(t -> t.getFromState()).distinct().toArray());
 		while (currentStates.size() > 0) {
-			final Transition chosenTransition = chooseRandomObject(possibleTransitions, r);
+			final Transition chosenTransition = CollectionUtils.chooseRandomObject(possibleTransitions, r);
 			final int chosenFromState = chosenTransition.getFromState();
 			final List<Transition> stateTransitions = possibleTransitions.stream().filter(t -> t.getFromState() == chosenFromState).collect(Collectors.toList());
 			final List<String> notOccuringEvents = new ArrayList<>(Arrays.asList(alphabet.getSymbols()));
@@ -594,9 +594,7 @@ public class TauPTA extends PDTTA {
 		return 0;
 	}
 
-	public static <T> T chooseRandomObject(List<T> list, Random rnd) {
-		return list.get(rnd.nextInt(list.size()));
-	}
+
 
 	/**
 	 * returns the maximum tree height
@@ -730,7 +728,7 @@ public class TauPTA extends PDTTA {
 			}
 		}
 		if (anomalyType == AnomalyInsertionType.TYPE_THREE || anomalyType == AnomalyInsertionType.TYPE_FOUR) {
-			logger.info("{} out of {} transitions are marked with anomaly {}", timedAnomalyCounter, eventList.size(), anomalyType);
+			logger.debug("{} out of {} transitions are marked with anomaly {}", timedAnomalyCounter, eventList.size(), anomalyType);
 		}
 		if (anomalyType != AnomalyInsertionType.NONE) {
 			return new TimedWord(eventList, timeList, ClassLabel.ANOMALY);
@@ -814,7 +812,7 @@ public class TauPTA extends PDTTA {
 				if (occurenceCount == 0) {
 					removeState(state);
 				} else {
-					addFinalState(state, occurenceCount == 0 ? 0 : finalStateCount.get(state) / (double) occurenceCount);
+					addFinalState(state, finalStateCount.get(state) / (double) occurenceCount);
 					fixProbability(state);
 				}
 			}

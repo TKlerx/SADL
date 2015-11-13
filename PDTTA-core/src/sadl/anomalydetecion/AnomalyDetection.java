@@ -69,15 +69,19 @@ public class AnomalyDetection {
 	 * @throws IOException
 	 */
 	public ExperimentResult trainTest(Path dataFile) throws IOException {
-		checkFileExistance(dataFile);
-
-		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(dataFile);
-		return trainTest(trainTest.getKey(), trainTest.getValue());
+		return trainTest(dataFile, false);
 	}
 
 	public ExperimentResult trainTest(TimedInput train, TimedInput test) throws IOException {
 		train(train);
 		return test(test);
+	}
+
+	public ExperimentResult trainTest(Path dataFile, boolean skipFirstElement) throws IOException {
+		checkFileExistance(dataFile);
+
+		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(dataFile, skipFirstElement);
+		return trainTest(trainTest.getKey(), trainTest.getValue());
 	}
 
 	/**
@@ -146,4 +150,5 @@ public class AnomalyDetection {
 	public ExperimentResult trainTest(String dataFile) throws IOException {
 		return trainTest(Paths.get(dataFile));
 	}
+
 }

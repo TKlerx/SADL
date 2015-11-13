@@ -75,15 +75,19 @@ public class IoUtils {
 		}
 	}
 
-	public static Pair<TimedInput, TimedInput> readTrainTestFile(Path trainTestFile) {
+	public static Pair<TimedInput, TimedInput> readTrainTestFile(Path trainTestFile, boolean skipFirstElement) {
 		return readTrainTestFile(trainTestFile, (reader) -> {
 			try {
-				return TimedInput.parse(reader);
+				return TimedInput.parse(reader, skipFirstElement);
 			} catch (final Exception e) {
 				logger.error("Error while parsing train-test file {}", trainTestFile, e);
 				throw new RuntimeException(e);
 			}
 		});
+	}
+
+	public static Pair<TimedInput, TimedInput> readTrainTestFile(Path trainTestFile) {
+		return readTrainTestFile(trainTestFile, false);
 	}
 
 	public static Pair<TimedInput, TimedInput> readTrainTestFile(Path trainTestFile, Function<Reader, TimedInput> f) {
@@ -171,6 +175,7 @@ public class IoUtils {
 		}
 
 	}
+
 
 
 }

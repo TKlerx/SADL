@@ -11,9 +11,9 @@
 
 package sadl.models.PTA;
 
-import jsat.distributions.empirical.NormalRandomized;
-
 import org.apache.commons.lang3.Range;
+
+import jsat.distributions.empirical.NormalRandomized;
 
 public class SubEvent {
 
@@ -302,14 +302,34 @@ public class SubEvent {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((event == null) ? 0 : event.getSymbol() == null ? 0 : event.getSymbol().hashCode());
+		result = prime * result + Float.floatToIntBits(subEventNumber);
+		return result;
+	}
 
-		if (obj == null || !(obj instanceof SubEvent)) {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
 			return false;
 		}
-
-		final SubEvent e = (SubEvent) obj;
-		return e.getSymbol().equals(this.getSymbol());
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final SubEvent other = (SubEvent) obj;
+		if (event == null) {
+			if (other.event != null) {
+				return false;
+			}
+		} else if (!event.getSymbol().equals(other.event.getSymbol())) {
+			return false;
+		}
+		return true;
 	}
 
 	@Override
