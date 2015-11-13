@@ -143,6 +143,9 @@ public class SmacRun {
 	@Parameter(names = "-dbScanThreshold")
 	private double dbscan_threshold = -1;
 
+	@Parameter(names = "skipFirstElement", arity = 1)
+	boolean skipFirstElement = false;
+
 	private OneClassClassifier classifier;
 
 
@@ -213,7 +216,7 @@ public class SmacRun {
 		}
 		ExperimentResult result = null;
 		try {
-			result = detection.trainTest(Paths.get(mainParams.get(1)));
+			result = detection.trainTest(Paths.get(mainParams.get(1)), skipFirstElement);
 		} catch (final IOException e) {
 			logger.error("Error when loading input from file: " + e.getMessage());
 			smacErrorAbort();

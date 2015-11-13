@@ -104,8 +104,14 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	 * @throws IOException
 	 */
 	public static TimedInput parse(Reader br) throws IOException {
-		return parseCustom(br, parseStart, parseSymbols[0], parseSymbols[1], parseSymbols[2], parseSymbols[3], parseSymbols[4]);
+		return parse(br, false);
 	}
+
+	public static TimedInput parse(Reader br, boolean skipFirstElement) throws IOException {
+		return parseCustom(br, parseStart, parseSymbols[0], parseSymbols[1], parseSymbols[2], parseSymbols[3], parseSymbols[4], skipFirstElement);
+
+	}
+
 
 	/**
 	 * Parses timed sequences from a file that has the following alternative format:
@@ -264,22 +270,26 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	 * @return A {@link TimedInput} that represents the timed sequences parsed
 	 * @throws IOException
 	 */
-	public static TimedInput parseCustom(Reader br, int lineOffset, String seqPrefix, String seqPostfix, String pairSep, String valueSep,
-			String classSep) throws IOException {
+	public static TimedInput parseCustom(Reader br, int lineOffset, String seqPrefix, String seqPostfix, String pairSep, String valueSep, String classSep)
+			throws IOException {
+		return parseCustom(br, lineOffset, seqPrefix, seqPostfix, pairSep, valueSep, classSep, false);
+	}
 
+	public static TimedInput parseCustom(Reader br, int lineOffset, String seqPrefix, String seqPostfix, String pairSep, String valueSep, String classSep,
+			boolean skipFirstElement) throws IOException {
 		final String pre = !seqPrefix.startsWith("^") ? "^" + seqPrefix : seqPrefix;
 		final String post = !seqPostfix.endsWith("$") ? seqPostfix + "$" : seqPostfix;
 
-		return new TimedInput(br, lineOffset, pre, post, pairSep, valueSep, classSep);
+		return new TimedInput(br, lineOffset, pre, post, pairSep, valueSep, classSep, skipFirstElement);
 	}
 
-	private TimedInput(Reader br, int lineOffset, String seqPrefix, String seqPostfix, String pairSep, String valueSep, String classSep)
-			throws IOException {
-		loadData(br, lineOffset, seqPrefix, seqPostfix, pairSep, valueSep, classSep);
+	private TimedInput(Reader br, int lineOffset, String seqPrefix, String seqPostfix, String pairSep, String valueSep, String classSep,
+			boolean skipFirstElement) throws IOException {
+		loadData(br, lineOffset, seqPrefix, seqPostfix, pairSep, valueSep, classSep, skipFirstElement);
 	}
 
-	private void loadData(Reader br, int lineOffset, String seqPrefix, String seqPostfix, String pairSep, String valueSep, String classSep)
-			throws IOException {
+	private void loadData(Reader br, int lineOffset, String seqPrefix, String seqPostfix, String pairSep, String valueSep, String classSep,
+			boolean skipFirstElement) throws IOException {
 
 
 		try (BufferedReader in = new BufferedReader(br)) {
@@ -331,7 +341,11 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 				if (!line.isEmpty()) {
 					// Parse sequence
 					splitWord = line.split(pairSep);
-					for (int i = 0; i < splitWord.length; i++) {
+					int i = 0;
+					if (skipFirstElement) {
+						i = 1;
+					}
+					for (; i < splitWord.length; i++) {
 						splitPair = splitWord[i].split(valueSep, 2);
 						if (splitPair.length < 2) {
 							final String errorMessage = "Pair \"" + splitWord[i] + "\" in line " + lineCount + " is in the wrong format. Separator \"" + valueSep
@@ -594,5 +608,6 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	public void decreaseSamples(double d) {
 		words = words.subList(0, (int) (words.size() * d));
 	}
+
 
 }
