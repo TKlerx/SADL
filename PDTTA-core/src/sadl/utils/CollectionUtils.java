@@ -14,13 +14,14 @@ package sadl.utils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * 
  * @author Timo Klerx
  *
  */
-public class MapUtils {
+public class CollectionUtils {
 	public static <K, V> void putOrCreateList(Map<K, List<V>> map, K key, V value) {
 		List<V> list;
 		list = map.get(key);
@@ -31,5 +32,9 @@ public class MapUtils {
 		} else {
 			list.add(value);
 		}
+	}
+
+	public static <T> T chooseRandomObject(List<T> list, Random rnd) {
+		return list.get(rnd.nextInt(list.size()));
 	}
 }
