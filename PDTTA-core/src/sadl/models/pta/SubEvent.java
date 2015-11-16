@@ -11,14 +11,14 @@
 
 package sadl.models.pta;
 
-import org.apache.commons.lang3.Range;
-
 import jsat.distributions.empirical.NormalRandomized;
+
+import org.apache.commons.lang3.Range;
 
 public class SubEvent {
 
 	protected Event event;
-	protected float subEventNumber;
+	protected String subEventNumber;
 	protected Range<Double> anomalyInterval;
 	protected Range<Double> warningInterval;
 	protected Range<Double> boundInterval;
@@ -30,7 +30,7 @@ public class SubEvent {
 	protected SubEvent previousSubEvent;
 	protected SubEvent nextSubEvent;
 
-	public SubEvent(Event event, float subEventNumber, double expectedValue, double deviation, Range<Double> boundInterval, Range<Double> anomalyInterval,
+	public SubEvent(Event event, String subEventNumber, double expectedValue, double deviation, Range<Double> boundInterval, Range<Double> anomalyInterval,
 			Range<Double> warningInterval) {
 
 		this.event = event;
@@ -116,7 +116,7 @@ public class SubEvent {
 		return false;
 	}
 
-	public float getNumber() {
+	public String getNumber() {
 
 		return subEventNumber;
 	}
@@ -306,7 +306,6 @@ public class SubEvent {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((event == null) ? 0 : event.getSymbol() == null ? 0 : event.getSymbol().hashCode());
-		result = prime * result + Float.floatToIntBits(subEventNumber);
 		return result;
 	}
 

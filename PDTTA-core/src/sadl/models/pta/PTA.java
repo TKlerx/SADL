@@ -163,15 +163,20 @@ public class PTA {
 
 			final LinkedHashMap<Integer, PTAState> nextTails = new LinkedHashMap<>(tails.size());
 
-			for (final PTAState tailState : tails.values()) {
+			for (PTAState tailState : tails.values()) {
+
+				if (tailState.isRemoved()) {
+					tailState = tailState.isMergedWith();
+
+					if (tailState.isMarked()) {
+						continue;
+					}
+				}
 
 				final PTAState fatherState = tailState.getFatherState();
 				if (fatherState != root && !fatherState.isMarked() && !fatherState.isRemoved()) {
+					fatherState.mark();
 					nextTails.putIfAbsent(fatherState.getId(), fatherState);
-				}
-
-				if (tailState.isRemoved()) {
-					continue;
 				}
 
 				for (final ListIterator<PTAState> mergedStatesIterator = mergedStates.listIterator(); mergedStatesIterator.hasNext();) {
@@ -189,7 +194,6 @@ public class PTA {
 				}
 
 				if (!tailState.isRemoved()) {
-					tailState.mark();
 					mergedStates.add(tailState);
 				}
 			}
@@ -215,28 +219,63 @@ public class PTA {
 
 	public void mergeStatesTopDown(CompatibilityChecker checker, EventsCreationStrategy strategy) {
 
+		int i = 0;
+
 		final LinkedList<PTAState> mergedStates = new LinkedList<>();
-		final LinkedHashMap<Integer, PTAState> heads = new LinkedHashMap<>(1);
-		heads.put(root.getId(), root);
+		LinkedHashMap<Integer, PTAState> heads = new LinkedHashMap<>(1);
+
+		for (final PTATransition transition : root.outTransitions.values()) {
+			final PTAState state = transition.getTarget();
+			heads.put(state.getId(), state);
+			state.mark();
+		}
 
 		while (!heads.isEmpty()) {
+			// TODO first add all
+
 			final LinkedHashMap<Integer, PTAState> nextHeads = new LinkedHashMap<>(heads.size() * events.size());
 
-			for (final PTAState head : heads.values()) {
+			for (PTAState headState : heads.values()) {
+
+				if (headState.isRemoved()) {
+					headState = headState.mergedWith;
+				}
+
+				if (headState.isMarked()) {
+					continue;
+				}
+
 				for (final PTAState state : mergedStates) {
-					if (checker.compatible(state, head)) {
-						PTAState.merge(state, head, strategy);
-					} else {
-						head.mark();
-						for (final PTATransition transition : head.outTransitions.values()) {
-							nextHeads.put(head.getId(), head);
+					if (!state.isRemoved() && checker.compatible(state, headState)) {
+						PTAState.merge(state, headState, strategy);
+						break;
+					}
+				}
+				if (!headState.isRemoved()) {
+					for (final PTATransition transition : headState.outTransitions.values()) {
+						final PTAState nextState = transition.getTarget();
+						if (!nextState.isMarked()) {
+							nextState.mark();
+							nextHeads.put(nextState.getId(), nextState);
 						}
 					}
 				}
+
 			}
 
+			heads = nextHeads;
+
+			try {
+				this.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\top-down" + i++ + ".gv"));
+			} catch (final IOException e) {
+				e.printStackTrace();
+			}
 		}
 
+		mergedStates.add(root);
+
+		states = mergedStates;
+		cleanUp();
 	}
 
 	public void mergeTransitionsInCriticalAreas() {

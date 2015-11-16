@@ -44,7 +44,7 @@ public class EventGenerator {
 
 		Arrays.sort(times);
 
-		final KernelDensityEstimatorButla kde = new KernelDensityEstimatorButla(times, formel);
+		final KernelDensityEstimatorButla kde = new KernelDensityEstimatorButla(times, formel, bandwidth);
 		final Double[] minPoints = kde.getMinima();
 		final TreeMap<Double, SubEvent> events = new TreeMap<>();
 
@@ -64,7 +64,8 @@ public class EventGenerator {
 			final double differenceWarning = Math.abs(warningNormalPoint * deviation);
 			final Range<Double> warningInterval = Range.between(Math.max(0, expectedValue - differenceWarning), expectedValue + differenceWarning);
 
-			events.put(minValue, new SubEvent(event, i + 1, expectedValue, deviation, Range.between(minValue, minPoints[i]), anomalyInterval, warningInterval));
+			events.put(minValue, new SubEvent(event, String.valueOf(i + 1), expectedValue, deviation, Range.between(minValue, minPoints[i]), anomalyInterval,
+					warningInterval));
 			minValue = minPoints[i];
 			minIndex = maxIndex + 1;
 		}
@@ -78,8 +79,9 @@ public class EventGenerator {
 		final double differenceWarning = Math.abs(warningNormalPoint * deviation);
 		final Range<Double> warningInterval = Range.between(Math.max(0, expectedValue - differenceWarning), expectedValue + differenceWarning);
 
-		events.put(minValue, new SubEvent(event, minPoints.length + 1, expectedValue, deviation, Range.between(minValue, Double.POSITIVE_INFINITY),
-				anomalyInterval, warningInterval));
+		events.put(minValue,
+				new SubEvent(event, String.valueOf(minPoints.length + 1), expectedValue, deviation, Range.between(minValue, Double.POSITIVE_INFINITY),
+						anomalyInterval, warningInterval));
 
 		final Iterator<Entry<Double, SubEvent>> subEventsIterator = events.entrySet().iterator();
 		SubEvent currentSubEvent = subEventsIterator.next().getValue();
@@ -111,7 +113,8 @@ public class EventGenerator {
 		final double differenceWarning = Math.abs(warningNormalPoint * deviation);
 		final Range<Double> warningInterval = Range.between(Math.max(0, expectedValue - differenceWarning), expectedValue + differenceWarning);
 
-		events.put(0.0, new SubEvent(event, 1, expectedValue, deviation, Range.between(0.0, Double.POSITIVE_INFINITY), anomalyInterval, warningInterval));
+		events.put(0.0, new SubEvent(event, String.valueOf(1), expectedValue, deviation, Range.between(0.0, Double.POSITIVE_INFINITY), anomalyInterval,
+				warningInterval));
 
 		return event;
 	}
@@ -124,7 +127,7 @@ public class EventGenerator {
 			if (subEvent.hasRightCriticalArea()) {
 
 				final Range<Double> interval = Range.between(subEvent.getRightBound(), subEvent.getRightAnomalyBound());
-				final SubEvent criticalArea = new SubEvent(event, subEvent.getNumber() + 0.5f, subEvent.getExpectedValue(), subEvent.getDeviation(), interval,
+				final SubEvent criticalArea = new SubEvent(event, subEvent.getNumber() + ".5", subEvent.getExpectedValue(), subEvent.getDeviation(), interval,
 						interval, interval);
 				final SubEvent nextSubEvent = subEvent.nextSubEvent;
 				subEvent.isolateRightCriticalArea();

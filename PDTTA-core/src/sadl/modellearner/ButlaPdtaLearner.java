@@ -11,6 +11,8 @@
 
 package sadl.modellearner;
 
+import gnu.trove.list.array.TIntArrayList;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -18,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import gnu.trove.list.array.TIntArrayList;
 import sadl.constants.ClassLabel;
 import sadl.constants.EventsCreationStrategy;
 import sadl.constants.KDEFormelVariant;
@@ -76,7 +77,7 @@ public class ButlaPdtaLearner implements ModelLearner, CompatibilityChecker {
 			// pta.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\output.gv"));
 			if (mergeStrategy == MergeStrategy.TopDown) {
 				pta.mergeStatesTopDown(this, splittingStrategy);
-			} else if (mergeStrategy == MergeStrategy.BottonUp) {
+			} else if (mergeStrategy == MergeStrategy.BottomUp) {
 				pta.mergeStatesBottomUp(this, splittingStrategy);
 			}
 
@@ -246,7 +247,7 @@ public class ButlaPdtaLearner implements ModelLearner, CompatibilityChecker {
 		return Math.abs(((double) f0 / n0) - ((double) f1 / n1)) > (Math.sqrt(0.5 * Math.log(2.0 / a)) * ((1.0 / Math.sqrt(n0)) + (1.0 / Math.sqrt(n1))));
 	}
 
-	private double[] listToDoubleArray(List<Double> list) {
+	public double[] listToDoubleArray(List<Double> list) {
 
 		final double[] array = new double[list.size()];
 		int i = 0;

@@ -18,7 +18,7 @@ public class SubEventCriticalArea extends SubEvent {
 	double enterProbability;
 	int almostSurelyCount;
 
-	public SubEventCriticalArea(Event event, int subEventNumber, double expectedValue, double deviation, Range<Double> boundInterval,
+	public SubEventCriticalArea(Event event, String subEventNumber, double expectedValue, double deviation, Range<Double> boundInterval,
 			Range<Double> anomalyInterval, Range<Double> warningInterval, double enterProbability) {
 		super(event, subEventNumber, expectedValue, deviation, boundInterval, anomalyInterval, warningInterval);
 

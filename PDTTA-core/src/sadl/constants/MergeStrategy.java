@@ -12,5 +12,5 @@
 package sadl.constants;
 
 public enum MergeStrategy {
-	TopDown, BottonUp
+	TopDown, BottomUp
 }

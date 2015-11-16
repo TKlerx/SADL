@@ -14,14 +14,15 @@ package jsat.distributions.empirical;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.commons.math3.util.Precision;
-
 import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.empirical.kernelfunc.GaussKF;
 import jsat.linear.DenseVector;
 import jsat.linear.Vec;
 import jsat.math.Function;
 import jsat.math.optimization.GoldenSearch;
+
+import org.apache.commons.math3.util.Precision;
+
 import sadl.constants.KDEFormelVariant;
 
 public class KernelDensityEstimatorButla {
@@ -71,10 +72,11 @@ public class KernelDensityEstimatorButla {
 
 		if (formelVariant == KDEFormelVariant.OriginalKDE) {
 
-			final KernelDensityEstimator kernelDensity = new KernelDensityEstimator(dataPoints, GaussKF.getInstance(), bandwidth);
+			final MyKernelDensityEstimator kernelDensity = new MyKernelDensityEstimator(dataPoints, GaussKF.getInstance(), bandwidth);
 			kernelPdfFunction = ContinuousDistribution.getFunctionPDF(kernelDensity);
 			kernelDerivationFunction = ContinuousDistribution
-					.getFunctionPDF(new KernelDensityEstimator(dataPoints, GaussKFDerivation.getInstance(), bandwidth));
+					.getFunctionPDF(new MyKernelDensityEstimator(dataPoints, GaussKFDerivation.getInstance(),
+							bandwidth));
 
 			startX = kernelDensity.min() + bandwidth;
 			endX = kernelDensity.max() - bandwidth;
