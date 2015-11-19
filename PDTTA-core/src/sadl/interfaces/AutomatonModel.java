@@ -17,5 +17,5 @@ package sadl.interfaces;
  *
  */
 public interface AutomatonModel extends Model {
-
+	public int getNumberOfStates();
 }

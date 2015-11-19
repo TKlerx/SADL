@@ -172,7 +172,7 @@ public class TauPtaLearner extends PdttaLearner {
 			final String nextEvent = s.getSymbol(i);
 			Transition t = pta.getTransition(currentState, nextEvent);
 			if (t == null) {
-				t = pta.addTransition(currentState, pta.getStateCount(), nextEvent, TauPTA.NO_TRANSITION_PROBABILITY);
+				t = pta.addTransition(currentState, pta.getNumberOfStates(), nextEvent, TauPTA.NO_TRANSITION_PROBABILITY);
 				transitionCount.put(t.toZeroProbTransition(), 0);
 			}
 			transitionCount.increment(t.toZeroProbTransition());

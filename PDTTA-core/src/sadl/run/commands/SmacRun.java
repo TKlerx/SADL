@@ -53,6 +53,7 @@ import sadl.run.factories.learn.ButlaFactory;
 import sadl.run.factories.learn.PdttaFactory;
 import sadl.run.factories.learn.RTIFactory;
 import sadl.utils.MasterSeed;
+import sadl.utils.RamGobbler;
 
 public class SmacRun {
 
@@ -152,6 +153,8 @@ public class SmacRun {
 
 	@SuppressWarnings("null")
 	public ExperimentResult run(JCommander jc) {
+		final RamGobbler gobbler = new RamGobbler();
+		gobbler.start();
 		logger.info("Starting new SmacRun with commands={}", jc.getUnknownOptions());
 		MasterSeed.setSeed(Long.parseLong(mainParams.get(4)));
 		// TODO log all quality metrics?! true pos, true neg, fp, fn, runtime, memory consumption (like in batchrunner with sigar) for every runs
@@ -247,6 +250,11 @@ public class SmacRun {
 
 		logger.info(qCrit.name() + "={}", qVal);
 		System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - qVal) + ", 0");
+		gobbler.shutdown();
+		result.setAvgMemoryUsage(gobbler.getAvgRam());
+		result.setMaxMemoryUsage(gobbler.getMaxRam());
+		result.setMinMemoryUsage(gobbler.getMinRam());
+		logger.debug("{}", result);
 		return result;
 	}
 

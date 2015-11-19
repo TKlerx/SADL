@@ -19,6 +19,7 @@ import sadl.detectors.AnomalyDetector;
 import sadl.experiments.ExperimentResult;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
+import sadl.interfaces.AutomatonModel;
 import sadl.interfaces.Model;
 
 public class Evaluation {
@@ -70,6 +71,10 @@ public class Evaluation {
 
 		}
 		final ExperimentResult expResult = new ExperimentResult(truePos, trueNeg, falsePos, falseNeg);
+
+		if (model instanceof AutomatonModel) {
+			expResult.setNumberOfStates(((AutomatonModel) model).getNumberOfStates());
+		}
 
 		return expResult;
 
