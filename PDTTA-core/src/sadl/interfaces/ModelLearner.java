@@ -19,5 +19,5 @@ import sadl.input.TimedInput;
  *
  */
 public interface ModelLearner {
-	public Model train(TimedInput trainingSequences);
+	public ProbabilisticModel train(TimedInput trainingSequences);
 }

@@ -17,7 +17,7 @@ import java.util.NavigableSet;
 import com.google.common.collect.TreeMultimap;
 
 import sadl.input.TimedInput;
-import sadl.interfaces.Model;
+import sadl.interfaces.ProbabilisticModel;
 import sadl.modellearner.rtiplus.boolop.OrOperator;
 import sadl.modellearner.rtiplus.tester.NaiveLikelihoodRatioTester;
 import sadl.models.pdrta.Interval;
@@ -41,7 +41,7 @@ public class GreedyPDRTALearner extends SimplePDRTALearner {
 	}
 
 	@Override
-	public Model train(TimedInput trainingSequences) {
+	public ProbabilisticModel train(TimedInput trainingSequences) {
 
 		logger.info("RTI+: Building automaton from input sequences");
 

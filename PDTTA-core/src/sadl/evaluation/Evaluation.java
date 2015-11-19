@@ -20,14 +20,14 @@ import sadl.experiments.ExperimentResult;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.AutomatonModel;
-import sadl.interfaces.Model;
+import sadl.interfaces.ProbabilisticModel;
 
 public class Evaluation {
 	AnomalyDetector detector;
-	Model model;
+	ProbabilisticModel model;
 	private static Logger logger = LoggerFactory.getLogger(Evaluation.class);
 
-	public Evaluation(AnomalyDetector detector, Model model) {
+	public Evaluation(AnomalyDetector detector, ProbabilisticModel model) {
 		super();
 		this.detector = detector;
 		this.model = model;

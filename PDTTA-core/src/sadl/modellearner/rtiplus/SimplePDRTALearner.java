@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import sadl.input.TimedInput;
-import sadl.interfaces.Model;
+import sadl.interfaces.ProbabilisticModel;
 import sadl.interfaces.ModelLearner;
 import sadl.modellearner.rtiplus.boolop.AndOperator;
 import sadl.modellearner.rtiplus.boolop.BooleanOperator;
@@ -193,7 +193,7 @@ public class SimplePDRTALearner implements ModelLearner {
 	}
 
 	@Override
-	public Model train(TimedInput trainingSequences) {
+	public ProbabilisticModel train(TimedInput trainingSequences) {
 
 		logger.info("RTI+: Building automaton from input sequences");
 

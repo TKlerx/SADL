@@ -201,7 +201,8 @@ public class ExperimentResult {
 	@Override
 	public String toString() {
 		return "ExperimentResult [truePositives=" + truePositives + ", trueNegatives=" + trueNegatives + ", falsePositives=" + falsePositives
-				+ ", falseNegatives=" + falseNegatives + ", executionTimeTraining=" + executionTimeTraining + ", executionTimeTesting=" + executionTimeTesting
+				+ ", falseNegatives=" + falseNegatives + ", executionTimeTraining=" + DurationFormatUtils.formatDurationHMS(executionTimeTraining)
+				+ ", executionTimeTesting=" + DurationFormatUtils.formatDurationHMS(executionTimeTesting)
 				+ ", numberOfStates=" + numberOfStates + ", maxMemoryUsage=" + maxMemoryUsage + ", minMemoryUsage=" + minMemoryUsage + ", avgMemoryUsage="
 				+ avgMemoryUsage + "]";
 	}

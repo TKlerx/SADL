@@ -29,7 +29,7 @@ import gnu.trove.list.array.TDoubleArrayList;
 import sadl.constants.ProbabilityAggregationMethod;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
-import sadl.interfaces.Model;
+import sadl.interfaces.ProbabilisticModel;
 import sadl.models.PDTTA;
 import sadl.utils.Settings;
 
@@ -42,14 +42,14 @@ public abstract class AnomalyDetector {
 	private static Logger logger = LoggerFactory.getLogger(AnomalyDetector.class);
 
 	protected ProbabilityAggregationMethod aggType;
-	Model model;
+	ProbabilisticModel model;
 
-	public boolean isAnomaly(Model newModel, TimedWord s) {
+	public boolean isAnomaly(ProbabilisticModel newModel, TimedWord s) {
 		setModel(newModel);
 		return isAnomaly(s);
 	}
 
-	public boolean[] areAnomalies(Model newModel, TimedInput testSequences) {
+	public boolean[] areAnomalies(ProbabilisticModel newModel, TimedInput testSequences) {
 		setModel(newModel);
 		return areAnomalies(testSequences);
 
@@ -147,7 +147,7 @@ public abstract class AnomalyDetector {
 		return result;
 	}
 
-	public void setModel(Model model) {
+	public void setModel(ProbabilisticModel model) {
 		this.model = model;
 	}
 

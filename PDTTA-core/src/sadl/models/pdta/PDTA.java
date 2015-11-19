@@ -30,11 +30,11 @@ import sadl.constants.ClassLabel;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.AutomatonModel;
-import sadl.interfaces.Model;
+import sadl.interfaces.ProbabilisticModel;
 import sadl.models.PTA.Event;
 import sadl.models.PTA.SubEvent;
 
-public class PDTA implements AutomatonModel, Model {
+public class PDTA implements AutomatonModel, ProbabilisticModel {
 
 	PDTAState root;
 	HashMap<Integer, PDTAState> states;

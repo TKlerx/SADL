@@ -11,11 +11,33 @@
 
 package sadl.interfaces;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+
+import org.apache.commons.math3.util.Pair;
+
+import gnu.trove.list.TDoubleList;
+import sadl.input.TimedWord;
+
 /**
  * 
  * @author Timo Klerx
  *
  */
-public interface Model {
+public interface ProbabilisticModel extends Model {
+
+	Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord s);
+
+	default Map<String, Function<TimedWord, Pair<TDoubleList, TDoubleList>>> getAvailableCalcMethods() {
+		final Map<String, Function<TimedWord, Pair<TDoubleList, TDoubleList>>> m = new HashMap<>();
+		m.put("default", this::calculateProbabilities);
+		return m;
+	}
+
+	default Function<TimedWord, Pair<TDoubleList, TDoubleList>> getCalcMethodByName(String methodName) {
+		final Map<String, Function<TimedWord, Pair<TDoubleList, TDoubleList>>> m = getAvailableCalcMethods();
+		return m.get(methodName);
+	}
 
 }
