@@ -21,6 +21,7 @@ import libsvm.svm_node;
 import libsvm.svm_parameter;
 import libsvm.svm_problem;
 import sadl.constants.ScalingMethod;
+import sadl.utils.MasterSeed;
 
 /**
  * 
@@ -34,6 +35,7 @@ public class LibSvmClassifier extends NumericClassifier {
 
 	public LibSvmClassifier(int useProbability, double gamma, double nu, int kernelType, double eps, int degree, ScalingMethod scalingMethod) {
 		super(scalingMethod);
+		svm.setRandom(MasterSeed.nextRandom());
 		param = new svm_parameter();
 		param.probability = useProbability; // default 0
 		param.gamma = gamma;// 0.2;
