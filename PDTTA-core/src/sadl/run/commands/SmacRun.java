@@ -34,6 +34,7 @@ import sadl.constants.DistanceMethod;
 import sadl.constants.FeatureCreatorMethod;
 import sadl.constants.ProbabilityAggregationMethod;
 import sadl.constants.ScalingMethod;
+import sadl.detectors.AnodaDetector;
 import sadl.detectors.AnomalyDetector;
 import sadl.detectors.VectorDetector;
 import sadl.detectors.featureCreators.FeatureCreator;
@@ -48,9 +49,11 @@ import sadl.oneclassclassifier.OneClassClassifier;
 import sadl.oneclassclassifier.ThresholdClassifier;
 import sadl.oneclassclassifier.clustering.DbScanClassifier;
 import sadl.run.factories.LearnerFactory;
+import sadl.run.factories.learn.ButlaFactory;
 import sadl.run.factories.learn.PdttaFactory;
 import sadl.run.factories.learn.RTIFactory;
 import sadl.utils.MasterSeed;
+import sadl.utils.RamGobbler;
 
 public class SmacRun {
 
@@ -138,13 +141,22 @@ public class SmacRun {
 	@Parameter(names = "-dbScanN")
 	private int dbscan_n;
 
+	@Parameter(names = "-dbScanThreshold")
+	private double dbscan_threshold = -1;
+
+	@Parameter(names = "-skipFirstElement", arity = 1)
+	boolean skipFirstElement = false;
+
 	private OneClassClassifier classifier;
 
 
 
 	@SuppressWarnings("null")
 	public ExperimentResult run(JCommander jc) {
+		final RamGobbler gobbler = new RamGobbler();
+		gobbler.start();
 		logger.info("Starting new SmacRun with commands={}", jc.getUnknownOptions());
+		MasterSeed.setSeed(Long.parseLong(mainParams.get(4)));
 		// TODO log all quality metrics?! true pos, true neg, fp, fn, runtime, memory consumption (like in batchrunner with sigar) for every runs
 
 		// TODO Try to use this again
@@ -189,18 +201,25 @@ public class SmacRun {
 			featureCreator = new SmallFeatureCreator();
 			classifier = new ThresholdClassifier(aggregatedEventThreshold, aggregatedTimeThreshold, singleEventThreshold, singleTimeThreshold);
 		} else if (detectorMethod == DetectorMethod.DBSCAN) {
-			classifier = new DbScanClassifier(dbscan_eps, dbscan_n, dbScanDistanceMethod, scalingMethod);
+			if (dbscan_threshold < 0) {
+				dbscan_threshold = dbscan_eps;
+			}
+			classifier = new DbScanClassifier(dbscan_eps, dbscan_n, dbscan_threshold, dbScanDistanceMethod, scalingMethod);
 		} else {
 			classifier = null;
 		}
 		anomalyDetector = new VectorDetector(aggType, featureCreator, classifier, aggregateSublists);
 
-		MasterSeed.setSeed(Long.parseLong(mainParams.get(4)));
 		final ModelLearner learner = getLearner(Algoname.getAlgoname(mainParams.get(0)), jc);
-		final AnomalyDetection detection = new AnomalyDetection(anomalyDetector, learner);
+		final AnomalyDetection detection;
+		if (detectorMethod == DetectorMethod.ANODA) {
+			detection = new AnomalyDetection(new AnodaDetector(aggType), learner);
+		} else {
+			detection = new AnomalyDetection(anomalyDetector, learner);
+		}
 		ExperimentResult result = null;
 		try {
-			result = detection.trainTest(Paths.get(mainParams.get(1)));
+			result = detection.trainTest(Paths.get(mainParams.get(1)), skipFirstElement);
 		} catch (final IOException e) {
 			logger.error("Error when loading input from file: " + e.getMessage());
 			smacErrorAbort();
@@ -209,27 +228,32 @@ public class SmacRun {
 		// Can stay the same
 		double qVal = 0.0;
 		switch (qCrit) {
-		case F_MEASURE:
-			qVal = result.getFMeasure();
-			break;
-		case PRECISION:
-			qVal = result.getPrecision();
-			break;
-		case RECALL:
-			qVal = result.getRecall();
-			break;
-		case PHI_COEFFICIENT:
-			qVal = result.getPhiCoefficient();
-			break;
-		case ACCURACY:
-			qVal = result.getAccuracy();
-			break;
-		default:
-			logger.error("Quality criterion not found!");
-			break;
+			case F_MEASURE:
+				qVal = result.getFMeasure();
+				break;
+			case PRECISION:
+				qVal = result.getPrecision();
+				break;
+			case RECALL:
+				qVal = result.getRecall();
+				break;
+			case PHI_COEFFICIENT:
+				qVal = result.getPhiCoefficient();
+				break;
+			case ACCURACY:
+				qVal = result.getAccuracy();
+				break;
+			default:
+				logger.error("Quality criterion not found!");
+				break;
 		}
 
 		logger.info(qCrit.name() + "={}", qVal);
+		result.setAvgMemoryUsage(gobbler.getAvgRam());
+		result.setMaxMemoryUsage(gobbler.getMaxRam());
+		result.setMinMemoryUsage(gobbler.getMinRam());
+		logger.info("{}", result);
+		gobbler.shutdown();
 		System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - qVal) + ", 0");
 		return result;
 	}
@@ -260,17 +284,20 @@ public class SmacRun {
 		LearnerFactory lf = null;
 
 		switch (algoName) {
-		case RTI:
-			lf = new RTIFactory();
-			break;
-		case PDTTA:
-			lf = new PdttaFactory();
-			break;
-			// TODO Add other learning algorithms
-		default:
-			logger.error("Unknown algo param {}!", algoName);
-			smacErrorAbort();
-			break;
+			case RTI:
+				lf = new RTIFactory();
+				break;
+			case PDTTA:
+				lf = new PdttaFactory();
+				break;
+			case BUTLA:
+				lf = new ButlaFactory();
+				break;
+				// TODO Add other learning algorithms
+			default:
+				logger.error("Unknown algo param {}!", algoName);
+				smacErrorAbort();
+				break;
 		}
 
 		final JCommander subjc = new JCommander(lf);

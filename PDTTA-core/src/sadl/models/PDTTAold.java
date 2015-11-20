@@ -68,7 +68,6 @@ public class PDTTAold implements AutomatonModel, Serializable {
 	private static final long serialVersionUID = 3017416753740710943L;
 
 	transient private static Logger logger = LoggerFactory.getLogger(PDTTAold.class);
-	// TODO maybe change Set<Transition> transitions to Map<State,Set<Transition>>
 	protected Random r = MasterSeed.nextRandom();
 
 	protected static final double NO_TRANSITION_PROBABILITY = 0;
@@ -501,7 +500,7 @@ public class PDTTAold implements AutomatonModel, Serializable {
 		return START_STATE;
 	}
 
-	public int getStateCount() {
+	public int getNumberOfStates() {
 		return finalStateProbabilities.size();
 	}
 

@@ -1,4 +1,4 @@
-paramfile = ./rti+/params.pcs
+paramfile = rti+/params.pcs
 runObj = QUALITY
 # 100 hours algo run-time
 cutoffTime = 360000
@@ -7,9 +7,9 @@ cutoffTime = 360000
 # 14 days run-time
 wallclock-limit = 1209600
 deterministic = 1
-instance_file = ./rti+/instances/train
-test_instance_file = ./rti+/instances/test
+instance_file = instances/train
+test_instance_file = instances/test
 instance-suffix = txt
 test-instance-suffix = txt
-algo = java -Xmx3g -jar ./rti+/PDTTA-core-0.0.1-SNAPSHOT.jar smac rti
+algo = java -Xmx3g -XX:+HeapDumpOnOutOfMemoryError -jar run/PDTTA-core-0.0.1-SNAPSHOT.jar smac rti
 num-test-instances = 10

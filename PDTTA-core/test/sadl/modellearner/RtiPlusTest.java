@@ -15,7 +15,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import sadl.input.TimedInput;
-import sadl.interfaces.Model;
+import sadl.interfaces.ProbabilisticModel;
 import sadl.modellearner.rtiplus.SimplePDRTALearner;
 import sadl.modellearner.rtiplus.SimplePDRTALearner.DistributionCheckType;
 import sadl.modellearner.rtiplus.SimplePDRTALearner.OperationTesterType;
@@ -50,11 +50,11 @@ public class RtiPlusTest {
 
 			final SimplePDRTALearner l1 = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.ALL, SplitPosition.MIDDLE, "AAO",
 					null);
-			final Model p1 = l1.train(ti1);
+			final ProbabilisticModel p1 = l1.train(ti1);
 
 			final SimplePDRTALearner l2 = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.ALL, SplitPosition.MIDDLE, "AAO",
 					null);
-			final Model p2 = l2.train(ti2);
+			final ProbabilisticModel p2 = l2.train(ti2);
 
 			assertEquals("PDRTAs for files " + i + " are not equal", p2, p1);
 		}
@@ -71,11 +71,11 @@ public class RtiPlusTest {
 			final SimplePDRTALearner l1 = new SimplePDRTALearner(0.05, "4", OperationTesterType.NAIVE_LRT, DistributionCheckType.ALL, SplitPosition.MIDDLE,
 					"AOO",
 					"/home/fabian/sadl_rti_test/" + i + "/");
-			final Model p1 = l1.train(ti1);
+			final ProbabilisticModel p1 = l1.train(ti1);
 
 			final SimplePDRTALearner l2 = new SimplePDRTALearner(0.05, "4", OperationTesterType.NAIVE_LRT, DistributionCheckType.ALL, SplitPosition.MIDDLE,
 					"AOO", null);
-			final Model p2 = l2.train(ti2);
+			final ProbabilisticModel p2 = l2.train(ti2);
 
 			assertEquals("PDRTAs for files " + i + " are not equal", p2, p1);
 		}
@@ -89,11 +89,11 @@ public class RtiPlusTest {
 			final TimedInput ti = TimedInput.parse(Paths.get(this.getClass().getResource("/pdrta/test_" + i + ".inp").toURI()));
 
 			final SimplePDRTALearner l = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.ALL,SplitPosition.MIDDLE, "AOO", null);
-			final Model p = l.train(ti);
+			final ProbabilisticModel p = l.train(ti);
 
 			final Path path = Paths.get(this.getClass().getResource("/pdrta/pdrta_" + i + ".aut").toURI());
 			IoUtils.serialize(p, path);
-			final Model cP = (Model) IoUtils.deserialize(path);
+			final ProbabilisticModel cP = (ProbabilisticModel) IoUtils.deserialize(path);
 
 			assertEquals("PDRTAs for files " + i + " are not equal", p, cP);
 		}
@@ -107,10 +107,10 @@ public class RtiPlusTest {
 			final TimedInput ti = TimedInput.parse(Paths.get(this.getClass().getResource("/pdrta/test_" + i + ".inp").toURI()));
 
 			final SimplePDRTALearner l = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.ALL,SplitPosition.MIDDLE, "AOO", null);
-			final Model pdrta = l.train(ti);
+			final ProbabilisticModel pdrta = l.train(ti);
 
 			// Deserialize
-			final Model p = (Model) IoUtils.deserialize(Paths.get(this.getClass().getResource("/pdrta/pdrta_" + i + ".aut").toURI()));
+			final ProbabilisticModel p = (ProbabilisticModel) IoUtils.deserialize(Paths.get(this.getClass().getResource("/pdrta/pdrta_" + i + ".aut").toURI()));
 
 			assertEquals("PDRTAs for files " + i + " are not equal", pdrta, p);
 		}

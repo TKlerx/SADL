@@ -36,7 +36,8 @@ featureCreator | detectorMethod in {SVM,DBSCAN}
 
 scalingMethod {NONE,NORMALIZE,STANDARDIZE} [NORMALIZE]
 scalingMethod | detectorMethod in {SVM,DBSCAN}
-
+#forbidden because senseless
+{detectorMethod=DBSCAN,scalingMethod=NONE}
 
 #svm parameters
 svmNu[0,1] [0.1]
@@ -63,4 +64,7 @@ dbScanN[1,100] [5]i
 dbScanN | detectorMethod in {DBSCAN}
 
 dbScanEps[0,1] [0.05]
+dbScanEps | detectorMethod in {DBSCAN}
+
+dbScanThreshold[0,1] [0.05]
 dbScanEps | detectorMethod in {DBSCAN}

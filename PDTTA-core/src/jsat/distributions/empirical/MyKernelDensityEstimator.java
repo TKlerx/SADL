@@ -17,6 +17,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.math3.util.Precision;
+
 import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.empirical.kernelfunc.EpanechnikovKF;
 import jsat.distributions.empirical.kernelfunc.GaussKF;
@@ -398,7 +400,7 @@ public class MyKernelDensityEstimator extends ContinuousDistribution
 
 	@Override
 	public String toString() {
-		return "KernelDensityEstimator [sumOFWeights=" + sumOFWeights
+		return "KernelDensityEstimator [size=" + X.length + ", sumOFWeights=" + sumOFWeights
 				+ ", h=" + h + ", Xmean=" + Xmean + ", Xvar=" + Xvar
 				+ ", Xskew=" + Xskew + "]";
 	}
@@ -433,21 +435,19 @@ public class MyKernelDensityEstimator extends ContinuousDistribution
 			return false;
 		}
 		final MyKernelDensityEstimator other = (MyKernelDensityEstimator) obj;
-		if (Double.doubleToLongBits(Xmean) != Double
-				.doubleToLongBits(other.Xmean)) {
+		if (!Precision.equals(Xmean, other.Xmean, 10000)) {
 			return false;
 		}
-		if (Math.abs(Xskew - other.Xskew)>0.00000001) {
+		if (!Precision.equals(Xskew, other.Xskew, 10000)) {
 			return false;
 		}
-		if (Math.abs(Xvar - other.Xvar)>0.00000001) {
+		if (!Precision.equals(Xvar, other.Xvar, 10000)) {
 			return false;
 		}
-		if (Double.doubleToLongBits(h) != Double.doubleToLongBits(other.h)) {
+		if (!Precision.equals(h, other.h, 10000)) {
 			return false;
 		}
-		if (Double.doubleToLongBits(sumOFWeights) != Double
-				.doubleToLongBits(other.sumOFWeights)) {
+		if (!Precision.equals(sumOFWeights, other.sumOFWeights, 10000)) {
 			return false;
 		}
 		if (k == null) {

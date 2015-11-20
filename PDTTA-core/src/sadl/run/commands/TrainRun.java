@@ -26,7 +26,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
 import sadl.input.TimedInput;
-import sadl.interfaces.Model;
+import sadl.interfaces.ProbabilisticModel;
 import sadl.interfaces.ModelLearner;
 import sadl.models.pdrta.PDRTA;
 import sadl.run.factories.LearnerFactory;
@@ -54,7 +54,7 @@ public class TrainRun {
 		this.smacMode = smacMode;
 	}
 
-	public Model run(JCommander jc) {
+	public ProbabilisticModel run(JCommander jc) {
 
 		LearnerFactory lf = null;
 
@@ -91,7 +91,7 @@ public class TrainRun {
 			}
 		}
 
-		final Model m = ml.train(trainSeqs);
+		final ProbabilisticModel m = ml.train(trainSeqs);
 
 		if (!smacMode) {
 			try {

@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,8 +25,8 @@ import sadl.detectors.AnomalyDetector;
 import sadl.evaluation.Evaluation;
 import sadl.experiments.ExperimentResult;
 import sadl.input.TimedInput;
-import sadl.interfaces.Model;
 import sadl.interfaces.ModelLearner;
+import sadl.interfaces.ProbabilisticModel;
 import sadl.interfaces.TrainableDetector;
 import sadl.utils.IoUtils;
 
@@ -35,7 +36,7 @@ public class AnomalyDetection {
 	private static Logger logger = LoggerFactory.getLogger(AnomalyDetection.class);
 	private final AnomalyDetector anomalyDetector;
 	ModelLearner learner;
-	Model learnedModel;
+	ProbabilisticModel learnedModel;
 
 
 	public AnomalyDetector getAnomalyDetector() {
@@ -46,7 +47,7 @@ public class AnomalyDetection {
 		return learner;
 	}
 
-	public Model getLearnedModel() {
+	public ProbabilisticModel getLearnedModel() {
 		return learnedModel;
 	}
 	public AnomalyDetection(AnomalyDetector anomalyDetector, ModelLearner learner) {
@@ -55,7 +56,7 @@ public class AnomalyDetection {
 		this.learner = learner;
 	}
 
-	public AnomalyDetection(AnomalyDetector anomalyDetector, Model model) {
+	public AnomalyDetection(AnomalyDetector anomalyDetector, ProbabilisticModel model) {
 		super();
 		this.anomalyDetector = anomalyDetector;
 		this.learnedModel = model;
@@ -69,15 +70,30 @@ public class AnomalyDetection {
 	 * @throws IOException
 	 */
 	public ExperimentResult trainTest(Path dataFile) throws IOException {
-		checkFileExistance(dataFile);
-
-		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(dataFile);
-		return trainTest(trainTest.getKey(), trainTest.getValue());
+		return trainTest(dataFile, false);
 	}
 
 	public ExperimentResult trainTest(TimedInput train, TimedInput test) throws IOException {
+		final StopWatch sw = new StopWatch();
+		sw.start();
 		train(train);
-		return test(test);
+		sw.stop();
+		final long trainTime = sw.getTime();
+		sw.reset();
+		sw.start();
+		final ExperimentResult testResult = test(test);
+		sw.stop();
+		final long testTime = sw.getTime();
+		testResult.setExecutionTimeTesting(testTime);
+		testResult.setExecutionTimeTraining(trainTime);
+		return testResult;
+	}
+
+	public ExperimentResult trainTest(Path dataFile, boolean skipFirstElement) throws IOException {
+		checkFileExistance(dataFile);
+
+		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(dataFile, skipFirstElement);
+		return trainTest(trainTest.getKey(), trainTest.getValue());
 	}
 
 	/**
@@ -87,7 +103,7 @@ public class AnomalyDetection {
 	 * @return the learned model (in this case a PDTTA)
 	 * @throws IOException
 	 */
-	public Model train(Path dataFile) throws IOException {
+	public ProbabilisticModel train(Path dataFile) throws IOException {
 		if (Files.notExists(dataFile)) {
 			final IOException e = new IOException("Path with input data does not exist(" + dataFile + ")");
 			logger.error("Input data file does not exist", e);
@@ -96,7 +112,7 @@ public class AnomalyDetection {
 		return train(TimedInput.parse(dataFile));
 	}
 
-	public Model train(TimedInput trainingInput) {
+	public ProbabilisticModel train(TimedInput trainingInput) {
 
 		learnedModel = learner.train(trainingInput);
 		if (anomalyDetector instanceof TrainableDetector) {
@@ -146,4 +162,5 @@ public class AnomalyDetection {
 	public ExperimentResult trainTest(String dataFile) throws IOException {
 		return trainTest(Paths.get(dataFile));
 	}
+
 }

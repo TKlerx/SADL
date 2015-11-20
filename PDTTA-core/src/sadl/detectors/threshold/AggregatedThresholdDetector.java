@@ -46,7 +46,6 @@ public class AggregatedThresholdDetector extends AnomalyDetector {
 
 	@Override
 	protected boolean decide(TDoubleList eventLikelihoods, TDoubleList timeLikelihoods) {
-		// TODO also use aggregateSublists in VectorDetector
 		if(aggregateSublists){
 			final Pair<TDoubleList, TDoubleList> anomalyTrend = computeAggregatedTrendLikelihood(eventLikelihoods, timeLikelihoods);
 			final TDoubleList eventLHs = anomalyTrend.getKey();

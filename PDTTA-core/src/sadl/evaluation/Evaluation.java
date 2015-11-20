@@ -19,22 +19,21 @@ import sadl.detectors.AnomalyDetector;
 import sadl.experiments.ExperimentResult;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
-import sadl.interfaces.Model;
+import sadl.interfaces.AutomatonModel;
+import sadl.interfaces.ProbabilisticModel;
 
 public class Evaluation {
 	AnomalyDetector detector;
-	Model model;
+	ProbabilisticModel model;
 	private static Logger logger = LoggerFactory.getLogger(Evaluation.class);
 
-	public Evaluation(AnomalyDetector detector, Model model) {
+	public Evaluation(AnomalyDetector detector, ProbabilisticModel model) {
 		super();
 		this.detector = detector;
 		this.model = model;
 	}
 
 	public ExperimentResult evaluate(TimedInput testSet) {
-		detector.setModel(model);
-		detector.areAnomalies(testSet);
 		logger.info("Testing with {} sequences", testSet.size());
 		detector.setModel(model);
 		final boolean[] detectorResult = detector.areAnomalies(testSet);
@@ -70,6 +69,10 @@ public class Evaluation {
 
 		}
 		final ExperimentResult expResult = new ExperimentResult(truePos, trueNeg, falsePos, falseNeg);
+
+		if (model instanceof AutomatonModel) {
+			expResult.setNumberOfStates(((AutomatonModel) model).getNumberOfStates());
+		}
 
 		return expResult;
 

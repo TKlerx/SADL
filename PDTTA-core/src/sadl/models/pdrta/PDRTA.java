@@ -253,7 +253,8 @@ public class PDRTA implements AutomatonModel, Serializable {
 		}
 	}
 
-	public int getNumStates() {
+	@Override
+	public int getNumberOfStates() {
 		return states.size();
 	}
 
