@@ -17,6 +17,7 @@ import java.util.NavigableSet;
 import com.google.common.collect.TreeMultimap;
 
 import sadl.input.TimedInput;
+import sadl.interfaces.Model;
 import sadl.interfaces.ProbabilisticModel;
 import sadl.modellearner.rtiplus.boolop.OrOperator;
 import sadl.modellearner.rtiplus.tester.NaiveLikelihoodRatioTester;
@@ -30,12 +31,12 @@ import sadl.utils.Settings;
  * @author Fabian Witter
  *
  */
-public class GreedyPDRTALearner extends SimplePDRTALearner {
+public class SearchingPDRTALearner extends SimplePDRTALearner {
 
 	private final int maxMergesToSearch = 10;
 	private final int maxSplitsToSearch = 10;
 
-	public GreedyPDRTALearner(double sig, String histBins, OperationTesterType testerType, DistributionCheckType distrCheckType, SplitPosition splitPos,
+	public SearchingPDRTALearner(double sig, String histBins, OperationTesterType testerType, DistributionCheckType distrCheckType, SplitPosition splitPos,
 			String boolOps, String dir) {
 		super(sig, histBins, testerType, distrCheckType, splitPos, boolOps, dir);
 	}
