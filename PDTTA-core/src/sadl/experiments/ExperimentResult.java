@@ -203,8 +203,8 @@ public class ExperimentResult {
 		return "ExperimentResult [truePositives=" + truePositives + ", trueNegatives=" + trueNegatives + ", falsePositives=" + falsePositives
 				+ ", falseNegatives=" + falseNegatives + ", executionTimeTraining=" + DurationFormatUtils.formatDurationHMS(executionTimeTraining)
 				+ ", executionTimeTesting=" + DurationFormatUtils.formatDurationHMS(executionTimeTesting)
-				+ ", numberOfStates=" + numberOfStates + ", maxMemoryUsage=" + maxMemoryUsage + ", minMemoryUsage=" + minMemoryUsage + ", avgMemoryUsage="
-				+ avgMemoryUsage + "]";
+ + ", numberOfStates=" + numberOfStates
+				+ ", maxMemoryUsage=" + maxMemoryUsage + "(MB), minMemoryUsage=" + minMemoryUsage + "(MB), avgMemoryUsage=" + avgMemoryUsage + "(MB)]";
 	}
 
 

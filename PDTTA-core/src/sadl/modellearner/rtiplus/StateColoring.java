@@ -11,13 +11,15 @@
 
 package sadl.modellearner.rtiplus;
 
-import gnu.trove.iterator.TIntIterator;
-import gnu.trove.set.hash.TIntHashSet;
-
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import gnu.trove.iterator.TIntIterator;
+import gnu.trove.procedure.TIntProcedure;
+import gnu.trove.set.hash.TIntHashSet;
 import sadl.models.pdrta.Interval;
 import sadl.models.pdrta.PDRTA;
 import sadl.models.pdrta.PDRTAState;
@@ -97,6 +99,15 @@ public class StateColoring implements Iterable<PDRTAState> {
 		} else {
 			throw new IllegalStateException("Red states must not be removed");
 		}
+	}
+
+	public List<PDRTAState> getRedStates() {
+		final List<PDRTAState> result = new ArrayList<>();
+		redStates.forEach((TIntProcedure) value -> {
+			result.add(a.getState(value));
+			return true;
+		});
+		return result;
 	}
 
 	@Override

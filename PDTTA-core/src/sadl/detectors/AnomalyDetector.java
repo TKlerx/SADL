@@ -107,7 +107,7 @@ public abstract class AnomalyDetector {
 		final TDoubleList timeLikelihoods = p.getValue();
 		if (eventLikelihoods.size() < timeLikelihoods.size()) {
 			throw new IllegalStateException("There must be at least as many event likelihoods as time likelihoods, but there are not: "
-					+ eventLikelihoods.size() + " vs. " + timeLikelihoods.size());
+					+ eventLikelihoods.size() + "(events) vs. " + timeLikelihoods.size() + "(time values)");
 		}
 		return decide(eventLikelihoods, timeLikelihoods);
 	}
@@ -140,10 +140,16 @@ public abstract class AnomalyDetector {
 			}
 		}
 		final boolean[] result = new boolean[testSequences.size()];
+		// sequential
 		for (int i = 0; i < testSequences.size(); i++) {
 			final TimedWord s = testSequences.get(i);
 			result[i] = isAnomaly(s);
 		}
+		// parallel -> does not work because of weka doing some strange stuff when normalizing
+		// IntStream.range(0, testSequences.size()).parallel().forEach(i -> {
+		// final TimedWord s = testSequences.get(i);
+		// result[i] = isAnomaly(s);
+		// });
 		return result;
 	}
 

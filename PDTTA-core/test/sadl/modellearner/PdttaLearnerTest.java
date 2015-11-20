@@ -52,7 +52,7 @@ public class PdttaLearnerTest {
 			MasterSeed.reset();
 			final PdttaLeanerOld l2 = new PdttaLeanerOld(0.05, false);
 			final ProbabilisticModel p2 = l2.train(ti2);
-			assertEquals("PDTTAs for files " + i + " are not equal", p2, p1);
+			assertEquals("PDTTAs for file " + i + " are not equal", p2, p1);
 			// TODO Also compare with loaded model from file
 		}
 	}

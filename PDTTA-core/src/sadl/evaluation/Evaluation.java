@@ -34,8 +34,6 @@ public class Evaluation {
 	}
 
 	public ExperimentResult evaluate(TimedInput testSet) {
-		detector.setModel(model);
-		detector.areAnomalies(testSet);
 		logger.info("Testing with {} sequences", testSet.size());
 		detector.setModel(model);
 		final boolean[] detectorResult = detector.areAnomalies(testSet);

@@ -249,12 +249,12 @@ public class SmacRun {
 		}
 
 		logger.info(qCrit.name() + "={}", qVal);
-		System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - qVal) + ", 0");
-		gobbler.shutdown();
 		result.setAvgMemoryUsage(gobbler.getAvgRam());
 		result.setMaxMemoryUsage(gobbler.getMaxRam());
 		result.setMinMemoryUsage(gobbler.getMinRam());
-		logger.debug("{}", result);
+		logger.info("{}", result);
+		gobbler.shutdown();
+		System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - qVal) + ", 0");
 		return result;
 	}
 

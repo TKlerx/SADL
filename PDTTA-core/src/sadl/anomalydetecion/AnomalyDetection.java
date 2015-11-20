@@ -25,8 +25,8 @@ import sadl.detectors.AnomalyDetector;
 import sadl.evaluation.Evaluation;
 import sadl.experiments.ExperimentResult;
 import sadl.input.TimedInput;
-import sadl.interfaces.ProbabilisticModel;
 import sadl.interfaces.ModelLearner;
+import sadl.interfaces.ProbabilisticModel;
 import sadl.interfaces.TrainableDetector;
 import sadl.utils.IoUtils;
 
