@@ -53,7 +53,7 @@ public class SearchingPDRTALearner extends SimplePDRTALearner {
 		logger.info("Parameters are: significance={} distrCheckType={}", significance, distrCheckType);
 		logger.info("Histogram Bins are: {}", a.getHistBinsString());
 
-		logger.info("*** Performing greedy RTI+ ***");
+		logger.info("*** Performing searching RTI+ ***");
 		startTime = System.currentTimeMillis();
 		final StateColoring sc = new StateColoring(a);
 		sc.setRed(a.getRoot());

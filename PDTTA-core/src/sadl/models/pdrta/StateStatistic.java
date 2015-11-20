@@ -324,6 +324,7 @@ public class StateStatistic implements Serializable {
 		}
 
 		// LRT_FIX : Check if params or count.length (example in paper says count.length)
+		// Dues not work with param -> Degrees of Freedom for compared states may not be equal then
 		if (params > 0) {
 			return new LikelihoodValue(ratio, count.length - 1);
 		} else {
