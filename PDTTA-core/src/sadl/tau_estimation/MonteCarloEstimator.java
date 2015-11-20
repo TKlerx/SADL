@@ -12,8 +12,9 @@
 package sadl.tau_estimation;
 
 import java.io.Serializable;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +27,7 @@ public class MonteCarloEstimator implements TauEstimator, Serializable {
 	private static Logger logger = LoggerFactory.getLogger(MonteCarloEstimator.class);
 
 	private static final long serialVersionUID = -4398919127157832777L;
-	Map<ContinuousDistribution, MonteCarloIntegration> mcs = new HashMap<>();
+	Map<ContinuousDistribution, MonteCarloIntegration> mcs = new ConcurrentHashMap<>();
 	int pointsToStore, numberOfSteps;
 
 	public MonteCarloEstimator(int numberOfSteps, int pointsToStore) {
@@ -37,15 +38,21 @@ public class MonteCarloEstimator implements TauEstimator, Serializable {
 
 	@Override
 	public double estimateTau(ContinuousDistribution d, double timeValue) {
-		MonteCarloIntegration mc = mcs.get(d);
-		if (mc == null) {
-			mc = new MonteCarloIntegration(pointsToStore);
-			mc.preprocess(d, numberOfSteps);
+		final MonteCarloIntegration mc = mcs.get(d);
+		final double result = mc.integrate(d.pdf(timeValue));
+		return result;
+	}
+
+	@Override
+	public void preprocess(Collection<ContinuousDistribution> values) {
+		for (final ContinuousDistribution d : values) {
+			final MonteCarloIntegration mc = new MonteCarloIntegration(pointsToStore);
 			mcs.put(d, mc);
 			logger.debug("Preprocessed {} Monte Carlo Intervals.", mcs.size());
 		}
-		final double result = mc.integrate(d.pdf(timeValue));
-		return result;
+		mcs.entrySet().parallelStream().forEach(e -> {
+			e.getValue().preprocess(e.getKey(), numberOfSteps);
+		});
 	}
 
 }

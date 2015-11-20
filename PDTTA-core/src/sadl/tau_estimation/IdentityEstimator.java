@@ -12,6 +12,7 @@
 package sadl.tau_estimation;
 
 import java.io.Serializable;
+import java.util.Collection;
 
 import jsat.distributions.ContinuousDistribution;
 import sadl.interfaces.TauEstimator;
@@ -25,4 +26,8 @@ public class IdentityEstimator implements TauEstimator,Serializable {
 		return d.pdf(timeValue);
 	}
 
+	@Override
+	public void preprocess(Collection<ContinuousDistribution> values) {
+		// do nothing
+	}
 }
