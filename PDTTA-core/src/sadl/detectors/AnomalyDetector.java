@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
@@ -140,16 +141,12 @@ public abstract class AnomalyDetector {
 			}
 		}
 		final boolean[] result = new boolean[testSequences.size()];
-		// sequential
-		for (int i = 0; i < testSequences.size(); i++) {
+
+		// parallelism does not destroy determinism
+		IntStream.range(0, testSequences.size()).parallel().forEach(i -> {
 			final TimedWord s = testSequences.get(i);
 			result[i] = isAnomaly(s);
-		}
-		// parallel -> does not work because of weka doing some strange stuff when normalizing
-		// IntStream.range(0, testSequences.size()).parallel().forEach(i -> {
-		// final TimedWord s = testSequences.get(i);
-		// result[i] = isAnomaly(s);
-		// });
+		});
 		return result;
 	}
 

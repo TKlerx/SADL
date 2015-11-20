@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
@@ -111,26 +112,51 @@ public class PDTTA extends PDFA {
 	}
 
 	protected TDoubleList computeTimeLikelihoods(TimedWord ts) {
-		final TDoubleList list = new TDoubleArrayList();
+		final TDoubleList list = new TDoubleArrayList(ts.length());
 		int currentState = 0;
+		//sequential
+		// for (int i = 0; i < ts.length(); i++) {
+		// final Transition t = getTransition(currentState, ts.getSymbol(i));
+		// // DONE this is crap, isnt it? why not return an empty list or null iff there is no transition for the given sequence? or at least put a '0' in the
+		// // last slot.
+		// if (t == null) {
+		// list.add(0);
+		// return list;
+		// }
+		// final ContinuousDistribution d = getTransitionDistributions().get(t.toZeroProbTransition());
+		// if (d == null) {
+		// logger.warn("Found no time distribution for Transition " + t);
+		// list.add(0);
+		// } else {
+		// list.add(tauEstimator.estimateTau(d, ts.getTimeValue(i)));
+		// }
+		// currentState = t.getToState();
+		// }
+		// parallel (does not change determinism)
+		final List<Transition> traversedTransitions = new ArrayList<>();
 		for (int i = 0; i < ts.length(); i++) {
 			final Transition t = getTransition(currentState, ts.getSymbol(i));
-			// DONE this is crap, isnt it? why not return an empty list or null iff there is no transition for the given sequence? or at least put a '0' in the
-			// last slot.
 			if (t == null) {
-				list.add(0);
-				return list;
+				break;
+			}
+			traversedTransitions.add(t);
+			currentState = t.getToState();
+		}
+		list.fill(0, traversedTransitions.size(), 0);
+		IntStream.range(0, traversedTransitions.size()).parallel().forEach(i -> {
+			final Transition t = traversedTransitions.get(i);
+			if (t == null) {
+				list.set(i, 0);
+				return;
 			}
 			final ContinuousDistribution d = getTransitionDistributions().get(t.toZeroProbTransition());
 			if (d == null) {
-				// System.out.println("Found no time distribution for Transition "
-				// + t);
-				list.add(0);
+				logger.warn("Found no time distribution for Transition " + t);
+				list.set(i, 0);
 			} else {
-				list.add(tauEstimator.estimateTau(d, ts.getTimeValue(i)));
+				list.set(i, tauEstimator.estimateTau(d, ts.getTimeValue(i)));
 			}
-			currentState = t.getToState();
-		}
+		});
 		return list;
 	}
 
@@ -303,4 +329,8 @@ public class PDTTA extends PDFA {
 		checkAndRestoreConsistency();
 	}
 
+	public void preprocess() {
+		tauEstimator.preprocess(transitionDistributions.values());
+
+	}
 }

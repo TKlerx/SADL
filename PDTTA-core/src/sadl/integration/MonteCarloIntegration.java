@@ -32,10 +32,12 @@ public class MonteCarloIntegration implements Serializable {
 	MonteCarloPoint[] integral;
 	boolean preprocessed = false;
 	private boolean singleValueDis = false;
-
-
+	final Random xRandom;
+	final Random yRandom;
 	public MonteCarloIntegration(int pointsToStore) {
 		this.pointsToStore = pointsToStore;
+		xRandom = MasterSeed.nextRandom();
+		yRandom = MasterSeed.nextRandom();
 	}
 
 	public void preprocess(ContinuousDistribution d, double stepSize, double xMin, double xMax) {
@@ -55,8 +57,7 @@ public class MonteCarloIntegration implements Serializable {
 		final double yMax = minMax.getRight();
 		final double xDiff = xMax - xMin;
 		final double yDiff = yMax - yMin;
-		final Random xRandom = MasterSeed.nextRandom();
-		final Random yRandom = MasterSeed.nextRandom();
+
 		int pointsFound = 0;
 		int pointsRejected = 0;
 		integral = new MonteCarloPoint[pointsToStore];

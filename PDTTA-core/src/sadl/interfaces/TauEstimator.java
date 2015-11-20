@@ -11,8 +11,12 @@
 
 package sadl.interfaces;
 
+import java.util.Collection;
+
 import jsat.distributions.ContinuousDistribution;
 
 public interface TauEstimator {
 	public double estimateTau(ContinuousDistribution d, double timeValue);
+
+	public void preprocess(Collection<ContinuousDistribution> values);
 }
