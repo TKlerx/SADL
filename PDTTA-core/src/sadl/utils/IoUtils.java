@@ -41,7 +41,6 @@ import org.slf4j.LoggerFactory;
 
 import sadl.input.TimedInput;
 import sadl.run.datagenerators.SmacDataGenerator;
-import weka.core.xml.XStream;
 
 /**
  * 
@@ -131,25 +130,6 @@ public class IoUtils {
 		return null;
 	}
 
-	public static Object xmlDeserialize(Path path) {
-		try {
-			final String xml = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
-			return XStream.deSerialize(xml);
-		} catch (final Exception e) {
-			logger.error("Unexpected exception", e);
-		}
-		return null;
-	}
-
-	public static void xmlSerialize(Object o, Path path) {
-		String xml;
-		try {
-			xml = XStream.serialize(o);
-			Files.write(path, xml.getBytes());
-		} catch (final Exception e) {
-			logger.error("Unexpected exception", e);
-		}
-	}
 
 	public static void serialize(Object o, Path path) throws IOException {
 		try (OutputStream fileOut = Files.newOutputStream(path); ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
