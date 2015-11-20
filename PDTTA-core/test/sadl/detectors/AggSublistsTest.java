@@ -80,13 +80,13 @@ public class AggSublistsTest {
 		inputSets = IoUtils.readTrainTestFile(p);
 		inputSets.getKey().decreaseSamples(0.2);
 		final ExperimentResult actual2 = detection2.trainTest(inputSets.getKey(), inputSets.getValue());
-		final ExperimentResult expected2 = new ExperimentResult(467, 2518, 2015, 0);
+		final ExperimentResult expected2 = new ExperimentResult(47, 2520, 2013, 420);
 		assertEquals(expected2, actual2);
 
 		inputSets = IoUtils.readTrainTestFile(p);
 		inputSets.getKey().decreaseSamples(0.2);
 		final ExperimentResult actual3 = detection3.trainTest(inputSets.getKey(), inputSets.getValue());
-		final ExperimentResult expected3 = new ExperimentResult(467, 0, 4533, 0);
+		final ExperimentResult expected3 = new ExperimentResult(48, 0, 4533, 419);
 		assertEquals(expected3, actual3);
 
 		inputSets = IoUtils.readTrainTestFile(p);
