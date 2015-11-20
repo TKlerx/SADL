@@ -18,29 +18,16 @@ public class MonteCarloPoint implements Comparable<MonteCarloPoint>, Serializabl
 	private static final long serialVersionUID = -9038714832199550481L;
 	double x;
 	double pdfValue;
-	int sampleCount;
 
 	@Override
 	public String toString() {
-		return "MonteCarloPoint [x=" + x + ", pdfValue=" + pdfValue + ", sampleCount=" + sampleCount + "]";
+		return "MonteCarloPoint [x=" + x + ", pdfValue=" + pdfValue + "]";
 	}
 
 	public MonteCarloPoint(double x, double pdfValue) {
 		super();
 		this.x = x;
 		this.pdfValue = pdfValue;
-		sampleCount = 0;
-	}
-
-	public MonteCarloPoint(double x, double pdfValue, int sampleCount) {
-		super();
-		this.x = x;
-		this.pdfValue = pdfValue;
-		this.sampleCount = sampleCount;
-	}
-
-	public void incSampleCount() {
-		sampleCount++;
 	}
 
 	public double getPdfValue() {
@@ -64,10 +51,6 @@ public class MonteCarloPoint implements Comparable<MonteCarloPoint>, Serializabl
 
 	}
 
-	public int getSampleCount() {
-		return sampleCount;
-	}
-
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -75,7 +58,6 @@ public class MonteCarloPoint implements Comparable<MonteCarloPoint>, Serializabl
 		long temp;
 		temp = Double.doubleToLongBits(pdfValue);
 		result = prime * result + (int) (temp ^ (temp >>> 32));
-		result = prime * result + sampleCount;
 		temp = Double.doubleToLongBits(x);
 		result = prime * result + (int) (temp ^ (temp >>> 32));
 		return result;
@@ -94,9 +76,6 @@ public class MonteCarloPoint implements Comparable<MonteCarloPoint>, Serializabl
 		}
 		final MonteCarloPoint other = (MonteCarloPoint) obj;
 		if (Double.doubleToLongBits(pdfValue) != Double.doubleToLongBits(other.pdfValue)) {
-			return false;
-		}
-		if (sampleCount != other.sampleCount) {
 			return false;
 		}
 		if (Double.doubleToLongBits(x) != Double.doubleToLongBits(other.x)) {

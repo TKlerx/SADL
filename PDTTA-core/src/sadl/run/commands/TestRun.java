@@ -36,7 +36,7 @@ import sadl.detectors.featureCreators.SmallFeatureCreator;
 import sadl.evaluation.Evaluation;
 import sadl.experiments.ExperimentResult;
 import sadl.input.TimedInput;
-import sadl.interfaces.Model;
+import sadl.interfaces.ProbabilisticModel;
 import sadl.interfaces.TrainableDetector;
 import sadl.oneclassclassifier.LibSvmClassifier;
 import sadl.oneclassclassifier.OneClassClassifier;
@@ -107,7 +107,8 @@ public class TestRun {
 
 	@Parameter(names = "-model", required = true)
 	private Path modelFile;
-	Model testModel;
+
+	ProbabilisticModel testModel;
 
 	@Parameter(names = "-trainSeqs")
 	private Path trainIn;
@@ -156,7 +157,7 @@ public class TestRun {
 
 		if(!smacMode){
 			try {
-				testModel = (Model) IoUtils.deserialize(modelFile);
+				testModel = (ProbabilisticModel) IoUtils.deserialize(modelFile);
 			} catch (final Exception e) {
 				logger.error("Error when loading model from file!", e);
 			}

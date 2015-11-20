@@ -61,7 +61,6 @@ public class PDFA implements AutomatonModel, Serializable {
 
 	public static final int START_STATE = 0;
 
-
 	transient private static Logger logger = LoggerFactory.getLogger(PDFA.class);
 	// TODO maybe change Set<Transition> transitions to Map<State,Set<Transition>>
 	protected Random r = MasterSeed.nextRandom();
@@ -75,10 +74,13 @@ public class PDFA implements AutomatonModel, Serializable {
 
 	protected boolean immutable = false;
 
+	protected void makeMutable() {
+		immutable = false;
+	}
+
 	public void makeImmutable() {
 		immutable = true;
 	}
-
 
 	public boolean isImmutable() {
 		return immutable;
@@ -161,7 +163,7 @@ public class PDFA implements AutomatonModel, Serializable {
 					}
 					if (!preciseSum.equals(BigFraction.ONE)) {
 						throw new IllegalStateException("Probabilities do not sum up to one, but instead to " + tempSum);
-					}else{
+					} else {
 						logger.warn(
 								"Probabilities do not sum up to one, but instead to {}. This is due to double underflows, but they sum up to one if using BigFraction. This small error will be ignored.",
 								tempSum);
@@ -206,9 +208,9 @@ public class PDFA implements AutomatonModel, Serializable {
 					final int fromState = Integer.parseInt(lineSplit[0]);
 					final int toState = Integer.parseInt(lineSplit[1]);
 					final String symbol;
-					if(alphabet == null){
+					if (alphabet == null) {
 						symbol = lineSplit[2];
-					}else{
+					} else {
 						symbol = trainingSequences.getSymbol(Integer.parseInt(lineSplit[2]));
 					}
 					final double probability = Double.parseDouble(lineSplit[3]);
@@ -233,7 +235,6 @@ public class PDFA implements AutomatonModel, Serializable {
 		this.finalStateProbabilities = pdfa.finalStateProbabilities;
 		this.abnormalFinalStates = pdfa.abnormalFinalStates;
 	}
-
 
 	public int getTransitionCount() {
 		return transitions.size();
@@ -389,8 +390,6 @@ public class PDFA implements AutomatonModel, Serializable {
 		return result;
 	}
 
-
-
 	protected boolean removeTransition(Transition t) {
 		checkImmutable();
 		final boolean wasRemoved = transitions.remove(t);
@@ -442,10 +441,8 @@ public class PDFA implements AutomatonModel, Serializable {
 	/**
 	 * Returns all outgoing transitions for a given state
 	 * 
-	 * @param currentState
-	 *            the given state
-	 * @param includeStoppingTransition
-	 *            whether to include final transition probabilities
+	 * @param currentState the given state
+	 * @param includeStoppingTransition whether to include final transition probabilities
 	 * @return the outgoing transitions
 	 */
 	public List<Transition> getTransitions(int currentState, boolean includeStoppingTransition) {
@@ -494,7 +491,8 @@ public class PDFA implements AutomatonModel, Serializable {
 		return START_STATE;
 	}
 
-	public int getStateCount() {
+	@Override
+	public int getNumberOfStates() {
 		return finalStateProbabilities.size();
 	}
 
@@ -522,10 +520,10 @@ public class PDFA implements AutomatonModel, Serializable {
 		if (obj == null) {
 			return false;
 		}
-		if (!(obj instanceof PDTTA)) {
+		if (!(obj instanceof PDFA)) {
 			return false;
 		}
-		final PDTTA other = (PDTTA) obj;
+		final PDFA other = (PDFA) obj;
 		if (abnormalFinalStates == null) {
 			if (other.abnormalFinalStates != null) {
 				return false;
@@ -578,11 +576,11 @@ public class PDFA implements AutomatonModel, Serializable {
 	}
 
 	/**
+	 * returns all possible sequences concatenated with the given sequence
 	 * 
-	 * @param fromState
-	 * @param s
-	 *            the sequence taken from the root node so far
-	 * @return
+	 * @param fromState the state from where to gather the sequences
+	 * @param s the sequence taken from the root node so far
+	 * @return test
 	 */
 	private Set<UntimedSequence> getAllSequences(int fromState, UntimedSequence s) {
 		final Set<UntimedSequence> result = new HashSet<>();
@@ -608,7 +606,6 @@ public class PDFA implements AutomatonModel, Serializable {
 	public int[] getStates() {
 		return finalStateProbabilities.keys();
 	}
-
 
 	public TimedInput getAlphabet() {
 		return alphabet;
@@ -645,5 +642,6 @@ public class PDFA implements AutomatonModel, Serializable {
 	public Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord s) {
 		return Pair.create(computeEventLikelihoods(s), null);
 	}
+
 
 }

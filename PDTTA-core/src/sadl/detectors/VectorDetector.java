@@ -48,8 +48,6 @@ public class VectorDetector extends AnomalyDetector implements TrainableDetector
 
 	@Override
 	protected boolean decide(TDoubleList eventLikelihoods, TDoubleList timeLikelihoods) {
-		// TODO also use aggregateSublists in VectorDetector
-		// then also train with sublists!
 		if (aggSublists) {
 			// do sublists over timelikelihoods because the time list is shorter than the event list
 			for (int i = 1; i <= timeLikelihoods.size(); i++) {

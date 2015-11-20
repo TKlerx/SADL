@@ -21,14 +21,14 @@ import sadl.input.TimedWord;
  */
 @Deprecated
 public interface AnomalyDetectorUnused {
-	boolean isAnomaly(Model model, TimedWord s);
+	boolean isAnomaly(ProbabilisticModel model, TimedWord s);
 
 	/**
 	 * 0 indicates normal sequence, 1 indicates abnormal sequence
 	 * 
 	 * @param testSequences
 	 */
-	boolean[] areAnomalies(Model model, TimedInput testSequences);
+	boolean[] areAnomalies(ProbabilisticModel model, TimedInput testSequences);
 
 	boolean isAnomaly(TimedWord s);
 
@@ -39,5 +39,5 @@ public interface AnomalyDetectorUnused {
 	 */
 	boolean[] areAnomalies(TimedInput testSequences);
 
-	void setModel(Model model);
+	void setModel(ProbabilisticModel model);
 }

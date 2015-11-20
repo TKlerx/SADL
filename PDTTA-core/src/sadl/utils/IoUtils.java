@@ -39,9 +39,10 @@ import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.thoughtworks.xstream.XStream;
+
 import sadl.input.TimedInput;
 import sadl.run.datagenerators.SmacDataGenerator;
-import weka.core.xml.XStream;
 
 /**
  * 
@@ -75,15 +76,19 @@ public class IoUtils {
 		}
 	}
 
-	public static Pair<TimedInput, TimedInput> readTrainTestFile(Path trainTestFile) {
+	public static Pair<TimedInput, TimedInput> readTrainTestFile(Path trainTestFile, boolean skipFirstElement) {
 		return readTrainTestFile(trainTestFile, (reader) -> {
 			try {
-				return TimedInput.parse(reader);
+				return TimedInput.parse(reader, skipFirstElement);
 			} catch (final Exception e) {
 				logger.error("Error while parsing train-test file {}", trainTestFile, e);
 				throw new RuntimeException(e);
 			}
 		});
+	}
+
+	public static Pair<TimedInput, TimedInput> readTrainTestFile(Path trainTestFile) {
+		return readTrainTestFile(trainTestFile, false);
 	}
 
 	public static Pair<TimedInput, TimedInput> readTrainTestFile(Path trainTestFile, Function<Reader, TimedInput> f) {
@@ -127,25 +132,6 @@ public class IoUtils {
 		return null;
 	}
 
-	public static Object xmlDeserialize(Path path) {
-		try {
-			final String xml = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
-			return XStream.deSerialize(xml);
-		} catch (final Exception e) {
-			logger.error("Unexpected exception", e);
-		}
-		return null;
-	}
-
-	public static void xmlSerialize(Object o, Path path) {
-		String xml;
-		try {
-			xml = XStream.serialize(o);
-			Files.write(path, xml.getBytes());
-		} catch (final Exception e) {
-			logger.error("Unexpected exception", e);
-		}
-	}
 
 	public static void serialize(Object o, Path path) throws IOException {
 		try (OutputStream fileOut = Files.newOutputStream(path); ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
@@ -169,8 +155,30 @@ public class IoUtils {
 				bw.append('\n');
 			}
 		}
-
 	}
+
+	public static Object xmlDeserialize(Path path) {
+		try {
+			final String xml = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+			final XStream x = new XStream();
+			return x.fromXML(xml);
+		} catch (final Exception e) {
+			logger.error("Unexpected exception", e);
+		}
+		return null;
+	}
+
+	public static void xmlSerialize(Object o, Path path) {
+		String xml;
+		try {
+			final XStream x = new XStream();
+			xml = x.toXML(o);
+			Files.write(path, xml.getBytes());
+		} catch (final Exception e) {
+			logger.error("Unexpected exception", e);
+		}
+	}
+
 
 
 }

@@ -54,7 +54,7 @@ public class SADL {
 
 	@Parameter(names = "-debug")
 	boolean debug = false;
-
+	static boolean crash = false;
 	public static void main(String[] args) throws Exception {
 		try {
 			if (args.length < 1) {
@@ -85,50 +85,52 @@ public class SADL {
 			}
 
 			switch (jc.getParsedCommand()) {
-			case test:
-				testRun.run();
-				break;
-			case train:
-				trainRun.run(jc.getCommands().get(train));
-				break;
-			case smac:
-				logger.info("Starting SMAC with params=" + Arrays.toString(args));
-				boolean fileExisted = true;
-				final ExperimentResult result = smacRun.run(jc.getCommands().get(smac));
-				final Path resultPath = Paths.get("result.csv");
-				if (!Files.exists(resultPath)) {
-					Files.createFile(resultPath);
-					fileExisted = false;
-				}
-				final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				case test:
+					testRun.run();
+					break;
+				case train:
+					trainRun.run(jc.getCommands().get(train));
+					break;
+				case smac:
+					logger.info("Starting SMAC with params=" + Arrays.toString(args));
+					boolean fileExisted = true;
+					final ExperimentResult result = smacRun.run(jc.getCommands().get(smac));
+					final Path resultPath = Paths.get("result.csv");
+					if (!Files.exists(resultPath)) {
+						Files.createFile(resultPath);
+						fileExisted = false;
+					}
+					final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-				try (BufferedWriter bw = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8, StandardOpenOption.APPEND)) {
-					if (!fileExisted) {
-						bw.append("time");
+					try (BufferedWriter bw = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8, StandardOpenOption.APPEND)) {
+						if (!fileExisted) {
+							bw.append("time");
+							bw.append(" ; ");
+							bw.append("arg array");
+							bw.append(" ; ");
+							bw.append(ExperimentResult.CsvHeader());
+							bw.append('\n');
+						}
+						bw.append(df.format(new Date()));
 						bw.append(" ; ");
-						bw.append("arg array");
-						bw.append(" ; ");
-						bw.append(ExperimentResult.CsvHeader());
+						bw.append(Arrays.toString(args));
+						bw.append("; ");
+						bw.append(result.toCsvString());
 						bw.append('\n');
 					}
-					bw.append(df.format(new Date()));
-					bw.append(" ; ");
-					bw.append(Arrays.toString(args));
-					bw.append("; ");
-					bw.append(result.toCsvString());
-					bw.append('\n');
-				}
-				break;
-			default:
-				// TODO Print usage
-				jc.usage();
-				logger.error("Wrong mode param!");
-				System.exit(1);
-				break;
+					break;
+				default:
+					// TODO Print usage
+					jc.usage();
+					logger.error("Wrong mode param!");
+					System.exit(1);
+					break;
 			}
 		} catch (final Exception e) {
 			logger.error("Unexpected exception with parameters" + Arrays.toString(args), e);
-			throw e;
+			crash = true;
+		} finally {
+			System.exit(crash ? 1 : 0);
 		}
 	}
 

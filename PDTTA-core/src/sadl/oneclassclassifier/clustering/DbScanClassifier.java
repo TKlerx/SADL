@@ -17,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import jsat.DataSet;
-import jsat.SimpleDataSet;
 import jsat.classifiers.DataPoint;
 import jsat.clustering.MyDBSCAN;
 import jsat.linear.DenseVector;
@@ -37,16 +36,22 @@ import sadl.utils.DatasetTransformationUtils;
  *
  */
 public class DbScanClassifier extends NumericClassifier {
+	// TODO write unit test for this
 	private static Logger logger = LoggerFactory.getLogger(DbScanClassifier.class);
 	DistanceMetric dm;
 	MyDBSCAN dbscan;
 	double eps;
 	int n;
+	private final double threshold;
 
 	private List<List<DataPoint>> clusterResult;
 	int[] pointCats;
 
 	public DbScanClassifier(double dbscan_eps, int dbscan_n, DistanceMethod distanceMethod, ScalingMethod scalingMethod) {
+		this(dbscan_eps, dbscan_n, dbscan_eps, distanceMethod, scalingMethod);
+	}
+
+	public DbScanClassifier(double dbscan_eps, int dbscan_n, double dbscan_threshold, DistanceMethod distanceMethod, ScalingMethod scalingMethod) {
 		super(scalingMethod);
 		eps = dbscan_eps;
 		n = dbscan_n;
@@ -56,6 +61,7 @@ public class DbScanClassifier extends NumericClassifier {
 			dm = new ManhattanDistance();
 		}
 		dbscan = new MyDBSCAN(dm);
+		this.threshold = dbscan_threshold;
 	}
 
 	private void cluster(List<double[]> data) {
@@ -69,7 +75,7 @@ public class DbScanClassifier extends NumericClassifier {
 		// }
 
 		pointCats = new int[data.size()];
-		final DataSet<SimpleDataSet> dataSet = DatasetTransformationUtils.doublesToDataSet(data);
+		final DataSet<?> dataSet = DatasetTransformationUtils.doublesToDataSet(data);
 		clusterResult = MyDBSCAN.createClusterListFromAssignmentArray(dbscan.cluster(dataSet, eps, n, pointCats), dataSet);
 		final int clusterCount = clusterResult.size();
 		logger.info("There are {} many clusters.", clusterCount);
@@ -80,18 +86,15 @@ public class DbScanClassifier extends NumericClassifier {
 		}
 		logger.info("Original dataset size={}", data.size());
 		logger.info("There are {} clustered instances", count);
-
 	}
-
-
-
 
 
 
 	@Override
 	protected boolean isOutlierScaled(double[] testSample) {
 		// TODO do not use eps here, because it we must use a real threshold for testing and not the eps boundary that we used for training
-		final List<? extends VecPaired<VecPaired<Vec, Integer>, Double>> neighbours = dbscan.getLastVectorCollection().search(new DenseVector(testSample), eps);
+		final List<? extends VecPaired<VecPaired<Vec, Integer>, Double>> neighbours = dbscan.getLastVectorCollection().search(new DenseVector(testSample),
+				threshold);
 		// check whether one of the points is a core point!
 		for (final VecPaired<VecPaired<Vec, Integer>, Double> vecPaired : neighbours) {
 			final int dataSetIndex = vecPaired.getVector().getPair();

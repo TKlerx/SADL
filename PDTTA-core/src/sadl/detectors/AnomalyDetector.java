@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
@@ -29,7 +30,7 @@ import gnu.trove.list.array.TDoubleArrayList;
 import sadl.constants.ProbabilityAggregationMethod;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
-import sadl.interfaces.Model;
+import sadl.interfaces.ProbabilisticModel;
 import sadl.models.PDTTA;
 import sadl.utils.Settings;
 
@@ -42,14 +43,14 @@ public abstract class AnomalyDetector {
 	private static Logger logger = LoggerFactory.getLogger(AnomalyDetector.class);
 
 	protected ProbabilityAggregationMethod aggType;
-	Model model;
+	ProbabilisticModel model;
 
-	public boolean isAnomaly(Model newModel, TimedWord s) {
+	public boolean isAnomaly(ProbabilisticModel newModel, TimedWord s) {
 		setModel(newModel);
 		return isAnomaly(s);
 	}
 
-	public boolean[] areAnomalies(Model newModel, TimedInput testSequences) {
+	public boolean[] areAnomalies(ProbabilisticModel newModel, TimedInput testSequences) {
 		setModel(newModel);
 		return areAnomalies(testSequences);
 
@@ -107,7 +108,7 @@ public abstract class AnomalyDetector {
 		final TDoubleList timeLikelihoods = p.getValue();
 		if (eventLikelihoods.size() < timeLikelihoods.size()) {
 			throw new IllegalStateException("There must be at least as many event likelihoods as time likelihoods, but there are not: "
-					+ eventLikelihoods.size() + " vs. " + timeLikelihoods.size());
+					+ eventLikelihoods.size() + "(events) vs. " + timeLikelihoods.size() + "(time values)");
 		}
 		return decide(eventLikelihoods, timeLikelihoods);
 	}
@@ -140,14 +141,16 @@ public abstract class AnomalyDetector {
 			}
 		}
 		final boolean[] result = new boolean[testSequences.size()];
-		for (int i = 0; i < testSequences.size(); i++) {
+
+		// parallelism does not destroy determinism
+		IntStream.range(0, testSequences.size()).parallel().forEach(i -> {
 			final TimedWord s = testSequences.get(i);
 			result[i] = isAnomaly(s);
-		}
+		});
 		return result;
 	}
 
-	public void setModel(Model model) {
+	public void setModel(ProbabilisticModel model) {
 		this.model = model;
 	}
 

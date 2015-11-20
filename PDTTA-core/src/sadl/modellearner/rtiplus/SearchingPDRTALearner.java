@@ -18,6 +18,7 @@ import com.google.common.collect.TreeMultimap;
 
 import sadl.input.TimedInput;
 import sadl.interfaces.Model;
+import sadl.interfaces.ProbabilisticModel;
 import sadl.modellearner.rtiplus.boolop.OrOperator;
 import sadl.modellearner.rtiplus.tester.NaiveLikelihoodRatioTester;
 import sadl.models.pdrta.Interval;
@@ -41,7 +42,7 @@ public class SearchingPDRTALearner extends SimplePDRTALearner {
 	}
 
 	@Override
-	public Model train(TimedInput trainingSequences) {
+	public ProbabilisticModel train(TimedInput trainingSequences) {
 
 		logger.info("RTI+: Building automaton from input sequences");
 
@@ -61,7 +62,7 @@ public class SearchingPDRTALearner extends SimplePDRTALearner {
 		mainModel = a;
 		greedyRTIplus(a, sc);
 
-		logger.info("Final PDRTA contains {} states and {} transitions", a.getNumStates(), a.getSize());
+		logger.info("Final PDRTA contains {} states and {} transitions", a.getNumberOfStates(), a.getSize());
 		logger.info("Trained PDRTA with quality: Likelihood={} and AIC={}", Math.exp(NaiveLikelihoodRatioTester.calcLikelihood(a).getRatio()), calcAIC(a));
 
 		a.cleanUp();
@@ -86,7 +87,7 @@ public class SearchingPDRTALearner extends SimplePDRTALearner {
 			if (directory != null) {
 				draw(a, true, directory, counter);
 			}
-			logger.debug("Automaton contains {} states and {} transitions", a.getNumStates(), a.getSize());
+			logger.debug("Automaton contains {} states and {} transitions", a.getNumberOfStates(), a.getSize());
 			logger.debug("Found most visited transition  {}  containing {} tails", t.toString(), t.in.getTails().size());
 			counter++;
 
@@ -176,7 +177,7 @@ public class SearchingPDRTALearner extends SimplePDRTALearner {
 		}
 
 		a.checkConsistency();
-		assert (a.getNumStates() == sc.getNumRedStates());
+		assert (a.getNumberOfStates() == sc.getNumRedStates());
 		if (directory != null) {
 			draw(a, true, directory, counter);
 		}

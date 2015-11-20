@@ -45,7 +45,7 @@ import sadl.detectors.featureCreators.FullFeatureCreator;
 import sadl.detectors.featureCreators.MinimalFeatureCreator;
 import sadl.detectors.featureCreators.SmallFeatureCreator;
 import sadl.experiments.ExperimentResult;
-import sadl.interfaces.Model;
+import sadl.interfaces.ProbabilisticModel;
 import sadl.interfaces.ModelLearner;
 import sadl.modellearner.rtiplus.SearchingPDRTALearner;
 import sadl.modellearner.rtiplus.SimplePDRTALearner;
@@ -256,7 +256,7 @@ public class RTISmacPipeline implements Serializable {
 			learner = new SearchingPDRTALearner(sig, hist, tester, distrCheck, splitPos, boolOps, stepsDir);
 		}
 		final AnomalyDetection detection = new AnomalyDetection(anomalyDetector, learner);
-		final Model m = detection.train(Paths.get(dataString));
+		final ProbabilisticModel m = detection.train(Paths.get(dataString));
 		final PDRTA p = (PDRTA) m;
 		System.out.println(p.toString());
 		// final ExperimentResult result = detection.trainTest(dataString);

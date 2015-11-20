@@ -11,12 +11,22 @@
 
 package sadl.experiments;
 
+import org.apache.commons.lang3.time.DurationFormatUtils;
+
 /**
  * 
  * @author Timo Klerx
  *
  */
 public class ExperimentResult {
+
+	public void setExecutionTimeTraining(long executionTimeTraining) {
+		this.executionTimeTraining = executionTimeTraining;
+	}
+
+	public void setExecutionTimeTesting(long executionTimeTesting) {
+		this.executionTimeTesting = executionTimeTesting;
+	}
 
 	public ExperimentResult(long truePositives, long trueNegatives, long falsePositives, long falseNegatives) {
 		super();
@@ -26,12 +36,68 @@ public class ExperimentResult {
 		this.falseNegatives = falseNegatives;
 	}
 
+	public ExperimentResult(long truePositives, long trueNegatives, long falsePositives, long falseNegatives, long executionTimeTraining,
+			long executionTimeTesting, int numberOfStates) {
+		super();
+		this.truePositives = truePositives;
+		this.trueNegatives = trueNegatives;
+		this.falsePositives = falsePositives;
+		this.falseNegatives = falseNegatives;
+		this.executionTimeTraining = executionTimeTraining;
+		this.executionTimeTesting = executionTimeTesting;
+		this.numberOfStates = numberOfStates;
+	}
+
 	long truePositives;
 	long trueNegatives;
 	long falsePositives;
 	long falseNegatives;
+	long executionTimeTraining = 0;
+	long executionTimeTesting = 0;
+	int numberOfStates = 0;
+	int maxMemoryUsage = 0;
+	int minMemoryUsage = 0;
+	double avgMemoryUsage = 0;
 
+	public int getMaxMemoryUsage() {
+		return maxMemoryUsage;
+	}
 
+	public int getMinMemoryUsage() {
+		return minMemoryUsage;
+	}
+
+	public double getAvgMemoryUsage() {
+		return avgMemoryUsage;
+	}
+
+	public void setNumberOfStates(int numberOfStates) {
+		this.numberOfStates = numberOfStates;
+	}
+
+	public void setMaxMemoryUsage(int maxMemoryUsage) {
+		this.maxMemoryUsage = maxMemoryUsage;
+	}
+
+	public void setMinMemoryUsage(int minMemoryUsage) {
+		this.minMemoryUsage = minMemoryUsage;
+	}
+
+	public void setAvgMemoryUsage(double avgMemoryUsage) {
+		this.avgMemoryUsage = avgMemoryUsage;
+	}
+
+	public long getExecutionTimeTraining() {
+		return executionTimeTraining;
+	}
+
+	public long getExecutionTimeTesting() {
+		return executionTimeTesting;
+	}
+
+	public int getNumberOfStates() {
+		return numberOfStates;
+	}
 
 	public double getPrecision() {
 		return truePositives / (double) (truePositives + falsePositives);
@@ -68,11 +134,17 @@ public class ExperimentResult {
 	static String separator = ";";
 
 	public static String CsvHeader() {
-		return "truePositives" + separator + "falsePositives" + separator + "trueNegatives" + separator + "falseNegatives" + separator + "precision" + separator
+
+		return "trainTime" + separator + "testTime" + separator + "minRam" + separator + "maxRam" + separator + "AvgRam" + separator + "numberOfStates"
+				+ separator + "truePositives" + separator + "falsePositives" + separator + "trueNegatives" + separator + "falseNegatives" + separator
+				+ "precision" + separator
 				+ "recall" + separator + "accuracy" + separator + "FMeasure" + separator + "PhiCoefficient";
 	}
 	public String toCsvString() {
-		return truePositives + separator + falsePositives + separator + trueNegatives + separator + falseNegatives + separator + getPrecision() + separator
+		return DurationFormatUtils.formatDurationHMS(executionTimeTraining) + "(" + executionTimeTraining + ")" + separator
+				+ DurationFormatUtils.formatDurationHMS(executionTimeTesting) + "(" + executionTimeTesting + ")" + separator + minMemoryUsage + separator
+				+ maxMemoryUsage + separator + avgMemoryUsage + separator + numberOfStates + separator + truePositives + separator
+				+ falsePositives + separator + trueNegatives + separator + falseNegatives + separator + getPrecision() + separator
 				+ getRecall() + separator + getAccuracy() + separator + getFMeasure() + separator + getPhiCoefficient();
 	}
 
@@ -129,7 +201,11 @@ public class ExperimentResult {
 	@Override
 	public String toString() {
 		return "ExperimentResult [truePositives=" + truePositives + ", trueNegatives=" + trueNegatives + ", falsePositives=" + falsePositives
-				+ ", falseNegatives=" + falseNegatives + "]";
+				+ ", falseNegatives=" + falseNegatives + ", executionTimeTraining=" + DurationFormatUtils.formatDurationHMS(executionTimeTraining)
+				+ ", executionTimeTesting=" + DurationFormatUtils.formatDurationHMS(executionTimeTesting)
+ + ", numberOfStates=" + numberOfStates
+				+ ", maxMemoryUsage=" + maxMemoryUsage + "(MB), minMemoryUsage=" + minMemoryUsage + "(MB), avgMemoryUsage=" + avgMemoryUsage + "(MB)]";
 	}
+
 
 }

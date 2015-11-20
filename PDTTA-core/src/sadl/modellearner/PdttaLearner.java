@@ -12,8 +12,11 @@
 package sadl.modellearner;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +32,6 @@ import jsat.linear.DenseVector;
 import jsat.linear.Vec;
 import sadl.constants.MergeTest;
 import sadl.input.TimedInput;
-import sadl.input.TimedWord;
 import sadl.interfaces.ModelLearner;
 import sadl.interfaces.TauEstimator;
 import sadl.models.PDFA;
@@ -47,7 +49,7 @@ public class PdttaLearner implements ModelLearner {
 	KernelFunction kdeKernelFunction;
 	double kdeBandwidth;
 	private final PdfaLearner pdfaLearner;
-	private final TauEstimator tauEstimatior;
+	private final TauEstimator tauEstimator;
 
 	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest) {
 		this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest), null, 0);
@@ -61,7 +63,7 @@ public class PdttaLearner implements ModelLearner {
 		this.kdeKernelFunction = kdeKernelFunction;
 		this.kdeBandwidth = kdeBandwidth;
 		this.pdfaLearner = pdfaLearner;
-		this.tauEstimatior = tauEstimation;
+		this.tauEstimator = tauEstimation;
 	}
 
 	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
@@ -104,17 +106,42 @@ public class PdttaLearner implements ModelLearner {
 
 	@Override
 	public PDTTA train(TimedInput trainingSequences) {
-		final PDTTA pdtta;
+
 		final PDFA pdfa = pdfaLearner.train(trainingSequences);
 		try {
+			// for debugging why the hell parallel execution leads to different and non deterministic results even though the maps (and even the automata) are
+			// the same!
+			// final Map<ZeroProbTransition, TDoubleList> timeValueBucketsPar = fillTimeValueBucketsParallel(pdfa, trainingSequences);
+			final Map<ZeroProbTransition, TDoubleList> timeValueBucketsSeq = fillTimeValueBuckets(pdfa, trainingSequences);
 
-			final Map<ZeroProbTransition, TDoubleList> timeValueBuckets = fillTimeValueBuckets(pdfa, trainingSequences);
-			final Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions = fit(timeValueBuckets);
-			pdtta = new PDTTA(pdfa, transitionDistributions, tauEstimatior);
-			pdtta.setAlphabet(trainingSequences);
-			pdtta.makeImmutable();
+			// timeValueBucketsPar.values().forEach(list -> list.sort());
+			// timeValueBucketsSeq.values().forEach(list -> list.sort());
+			// if (!timeValueBucketsPar.equals(timeValueBucketsSeq)) {
+			// throw new IllegalStateException();
+			// }
+
+			// final Map<ZeroProbTransition, ContinuousDistribution> transitionDistributionsPar = fit(timeValueBucketsPar);
+			final Map<ZeroProbTransition, ContinuousDistribution> transitionDistributionsSeq = fit(timeValueBucketsSeq);
+			// if (!transitionDistributionsPar.equals(transitionDistributionsSeq)) {
+			// throw new IllegalStateException();
+			// }
+
+			// final PDTTA pdttaPar = new PDTTA(pdfa, transitionDistributionsPar, tauEstimator);
+			// pdttaPar.setAlphabet(trainingSequences);
+			// pdttaPar.preprocess();
+			// pdttaPar.makeImmutable();
+
+			final PDTTA pdttaSeq = new PDTTA(pdfa, transitionDistributionsSeq, tauEstimator);
+			pdttaSeq.setAlphabet(trainingSequences);
+			pdttaSeq.preprocess();
+			pdttaSeq.makeImmutable();
+			//
+			// if (!pdttaSeq.equals(pdttaPar)) {
+			// throw new IllegalStateException();
+			// }
+
 			logger.info("Learned PDTTA.");
-			return pdtta;
+			return pdttaSeq;
 		} catch (final IOException e) {
 			logger.error("An unexpected error occured", e);
 			e.printStackTrace();
@@ -122,26 +149,53 @@ public class PdttaLearner implements ModelLearner {
 		return null;
 	}
 
-	protected Map<ZeroProbTransition, TDoubleList> fillTimeValueBuckets(PDFA pdfa, TimedInput trainingSequences) {
+	@SuppressWarnings("unused")
+	private Map<ZeroProbTransition, TDoubleList> fillTimeValueBucketsParallel(PDFA pdfa, TimedInput trainingSequences) {
 		final Map<ZeroProbTransition, TDoubleList> result = new HashMap<>();
-		int currentState = -1;
-		int followingState = -1;
-		for (final TimedWord word : trainingSequences) {
+		// TODO check why parallelism destroys determinism
+		final Lock l = new ReentrantLock();
+		trainingSequences.getWords().parallelStream().forEach(word -> {
+			int currentState = -1;
+			int followingState = -1;
 			currentState = pdfa.getStartState();
 			for (int i = 0; i < word.length(); i++) {
 				final String symbol = word.getSymbol(i);
 				final int timeValue = word.getTimeValue(i);
 				final Transition t = pdfa.getTransition(currentState, symbol);
 				followingState = t.getToState();
+				l.lock();
 				addTimeValue(result, currentState, followingState, symbol, timeValue);
+				l.unlock();
 				currentState = followingState;
 			}
-		}
+		});
 		return result;
 	}
 
+	protected Map<ZeroProbTransition, TDoubleList> fillTimeValueBuckets(PDFA pdfa, TimedInput trainingSequences) {
 
-	protected static void addTimeValue(Map<ZeroProbTransition, TDoubleList> result, int currentState, int followingState, String event, double timeValue) {
+		final Map<ZeroProbTransition, TDoubleList> result2 = new HashMap<>();
+		trainingSequences.getWords().stream().forEach(word -> {
+			int currentState = -1;
+			int followingState = -1;
+			currentState = pdfa.getStartState();
+			for (int i = 0; i < word.length(); i++) {
+				final String symbol = word.getSymbol(i);
+				final int timeValue = word.getTimeValue(i);
+				final Transition t = pdfa.getTransition(currentState, symbol);
+				followingState = t.getToState();
+				addTimeValue(result2, currentState, followingState, symbol, timeValue);
+				currentState = followingState;
+			}
+		});
+
+		// works if done with result2, does not work with result. Even though both maps are the same (except order).
+		return result2;
+	}
+
+
+	protected static void addTimeValue(Map<ZeroProbTransition, TDoubleList> result, int currentState, int followingState, String event,
+			double timeValue) {
 		final ZeroProbTransition t = new ZeroProbTransition(currentState, followingState, event);
 		final TDoubleList list = result.get(t);
 		if (list == null) {
@@ -154,10 +208,9 @@ public class PdttaLearner implements ModelLearner {
 	}
 
 	protected Map<ZeroProbTransition, ContinuousDistribution> fit(Map<ZeroProbTransition, TDoubleList> timeValueBuckets) {
-		final Map<ZeroProbTransition, ContinuousDistribution> result = new HashMap<>();
-		for (final ZeroProbTransition t : timeValueBuckets.keySet()) {
-			result.put(t, fitDistribution(timeValueBuckets.get(t)));
-		}
+		// parallel (does not destroy determinism)
+		final Map<ZeroProbTransition, ContinuousDistribution> result = Collections.synchronizedMap(new HashMap<>());
+		timeValueBuckets.keySet().parallelStream().forEach(t -> result.put(t, fitDistribution(timeValueBuckets.get(t))));
 		return result;
 	}
 

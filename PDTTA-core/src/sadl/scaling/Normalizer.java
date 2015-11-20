@@ -9,22 +9,31 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.utils;
+package sadl.scaling;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.commons.math3.util.Precision;
+
+import sadl.interfaces.Scaling;
 
 /**
  * 
  * @author Timo Klerx
  *
  */
-public class Normalizer {
+public class Normalizer implements Scaling {
 	double mins[];
 	double maxs[];
 	double scalingFactors[];
 
-	public Normalizer(int featureCount) {
+	public Normalizer() {
+
+	}
+
+	@Override
+	public void setFeatureCount(int featureCount) {
 		mins = new double[featureCount];
 		maxs = new double[featureCount];
 		for (int i = 0; i < featureCount; i++) {
@@ -33,6 +42,13 @@ public class Normalizer {
 		}
 	}
 
+	public Normalizer(int featureCount) {
+		setFeatureCount(featureCount);
+	}
+
+	boolean trained = false;
+
+	@Override
 	public List<double[]> train(List<double[]> input) {
 		for (final double[] ds : input) {
 			for (int i = 0; i < ds.length; i++) {
@@ -44,15 +60,24 @@ public class Normalizer {
 		for (int i = 0; i < mins.length; i++) {
 			scalingFactors[i] = maxs[i] - mins[i];
 		}
-		return normalize(input);
+		trained = true;
+		return scale(input);
 	}
 
-	public List<double[]> normalize(List<double[]> input) {
+	@Override
+	public List<double[]> scale(List<double[]> input) {
+		if (!trained) {
+			throw new IllegalStateException("Scaler must be trained first before scaling");
+		}
 		final List<double[]> result = new ArrayList<>(input.size());
 		for (final double[] ds : input) {
 			final double[] temp = new double[ds.length];
 			for (int i = 0; i < ds.length; i++) {
-				temp[i] = (ds[i] - mins[i]) / scalingFactors[i];
+				if (Precision.equals(scalingFactors[i], 0)) {
+					temp[1] = 1;
+				} else {
+					temp[i] = (ds[i] - mins[i]) / scalingFactors[i];
+				}
 			}
 			result.add(temp);
 		}
