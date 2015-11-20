@@ -39,6 +39,8 @@ import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.thoughtworks.xstream.XStream;
+
 import sadl.input.TimedInput;
 import sadl.run.datagenerators.SmacDataGenerator;
 
@@ -153,7 +155,28 @@ public class IoUtils {
 				bw.append('\n');
 			}
 		}
+	}
 
+	public static Object xmlDeserialize(Path path) {
+		try {
+			final String xml = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+			final XStream x = new XStream();
+			return x.fromXML(xml);
+		} catch (final Exception e) {
+			logger.error("Unexpected exception", e);
+		}
+		return null;
+	}
+
+	public static void xmlSerialize(Object o, Path path) {
+		String xml;
+		try {
+			final XStream x = new XStream();
+			xml = x.toXML(o);
+			Files.write(path, xml.getBytes());
+		} catch (final Exception e) {
+			logger.error("Unexpected exception", e);
+		}
 	}
 
 
