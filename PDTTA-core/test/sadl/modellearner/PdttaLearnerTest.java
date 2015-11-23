@@ -32,6 +32,7 @@ public class PdttaLearnerTest {
 
 	@Before
 	public void setUp() throws Exception {
+		MasterSeed.reset();
 	}
 
 	@After
@@ -39,11 +40,11 @@ public class PdttaLearnerTest {
 	}
 
 	@Test
-	public void test() throws IOException, URISyntaxException {
+	public void oldNewLeanerTest() throws IOException, URISyntaxException {
 		// TODO Change to train file (TimedInput.parse())
 		for (int i = 1; i <= 5; i++) {
-			final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type" + i + ".txt")
-					.toURI()));
+			final Pair<TimedInput, TimedInput> trainTest = IoUtils
+					.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type" + i + ".txt").toURI()));
 			Settings.setDebug(false);
 			final TimedInput ti1 = trainTest.getKey();
 			final TimedInput ti2 = SerializationUtils.clone(ti1);
@@ -56,5 +57,4 @@ public class PdttaLearnerTest {
 			// TODO Also compare with loaded model from file
 		}
 	}
-
 }
