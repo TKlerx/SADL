@@ -9,6 +9,7 @@ import org.junit.Test;
 import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.Normal;
 import jsat.distributions.SingleValueDistribution;
+import jsat.distributions.Uniform;
 
 public class MonteCarloTest {
 
@@ -63,6 +64,23 @@ public class MonteCarloTest {
 		assertEquals(0, mc2.integrate(d2.pdf(0)), 0.005);
 		sw.stop();
 		System.out.println("Single value integration took " + DurationFormatUtils.formatDurationHMS(sw.getTime()));
+	}
+
+	@Test
+	public void testUniform() {
+		final StopWatch sw = new StopWatch();
+		sw.start();
+		final Uniform n = new Uniform(1, 3);
+		final MonteCarloIntegration mc = new MonteCarloIntegration(100000);
+		mc.preprocess(n, 1000, -20, 20);
+		System.out.println("mc.integrate(1)=" + mc.integrate(n.pdf(1)));
+		assertEquals(1, mc.integrate(n.pdf(1)), 0.005);
+		System.out.println("mc.integrate(2)=" + mc.integrate(n.pdf(2)));
+		assertEquals(1, mc.integrate(n.pdf(2)), 0.005);
+		System.out.println("mc.integrate(3)=" + mc.integrate(n.pdf(13)));
+		assertEquals(1, mc.integrate(n.pdf(3)), 0.005);
+		sw.stop();
+		System.out.println("Uniform integration took " + DurationFormatUtils.formatDurationHMS(sw.getTime()));
 	}
 
 }
