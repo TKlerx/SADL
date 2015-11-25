@@ -213,7 +213,28 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
 				<version>2.10</version>
+			<configuration>
+                <artifactItems>
+                    <artifactItem>
+                        <groupId>de.upb.timok</groupId>
+                        <artifactId>trebaNative</artifactId>
+                        <type>so</type>
+                       <version>0.0.1-SNAPSHOT</version>
+                        <overWrite>true</overWrite>
+                        <outputDirectory>${basedir}/target/lib/</outputDirectory>
+                        <!--<destFileName>so</destFileName>-->
+                    </artifactItem>
+                </artifactItems>
+            </configuration>
 				<executions>
+				<execution>
+            <id>copy</id>
+            <phase>process-classes</phase>
+            <goals>
+                <goal>copy</goal>
+            </goals>
+            
+        </execution>
 					<execution>
 						<id>copy-dependencies</id>
 						<phase>package</phase>
