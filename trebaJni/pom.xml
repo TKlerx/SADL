@@ -4,7 +4,7 @@
 	<artifactId>trebaJni</artifactId>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<skipTests>true</skipTests>
+		<skipTests>false</skipTests>
 		<github.global.server>github</github.global.server>
 	</properties>
 	<dependencies>
@@ -49,7 +49,7 @@
 					</execution>
 				</executions>
 			</plugin>
-			
+
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.1</version>
@@ -61,23 +61,40 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
+				<version>2.10</version>
+				<configuration>
+					<artifactItems>
+						<artifactItem>
+							<groupId>de.upb.timok</groupId>
+							<artifactId>trebaNative</artifactId>
+							<type>so</type>
+							<version>0.0.1-SNAPSHOT</version>
+							<overWrite>true</overWrite>
+							<outputDirectory>${project.build.directory}/lib/</outputDirectory>
+							<!--<destFileName>so</destFileName> -->
+						</artifactItem>
+					</artifactItems>
+				</configuration>
 				<executions>
 					<execution>
-						<id>copy-dependency</id>
-						<phase>package</phase>
+						<id>copy</id>
+						<phase>process-classes</phase>
 						<goals>
 							<goal>copy</goal>
 						</goals>
+					</execution>
+					<execution>
+						<id>copy-dependencies</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
 						<configuration>
-							<artifactItems>
-								<artifactItem>
-									<groupId>de.upb.timok</groupId>
-									<artifactId>trebaNative</artifactId>
-									<type>so</type>
-									<overWrite>true</overWrite>
-									<outputDirectory>${project.build.directory}/native_libs</outputDirectory>
-								</artifactItem>
-							</artifactItems>
+							<outputDirectory>${project.build.directory}/lib</outputDirectory>
+							<overWriteReleases>false</overWriteReleases>
+							<overWriteSnapshots>true</overWriteSnapshots>
+							<overWriteIfNewer>true</overWriteIfNewer>
+							<useBaseVersion>true</useBaseVersion>
 						</configuration>
 					</execution>
 				</executions>
@@ -104,7 +121,8 @@
 				<artifactId>site-maven-plugin</artifactId>
 				<version>0.11</version>
 				<configuration>
-					<message>Maven artifacts for ${project.artifactId} (v. ${project.version})</message>  <!-- git commit message -->
+					<message>Maven artifacts for ${project.artifactId} (v.
+						${project.version})</message>  <!-- git commit message -->
 					<noJekyll>true</noJekyll>                                  <!-- disable webpage processing -->
 					<outputDirectory>${project.build.directory}/mvn-repo</outputDirectory> <!-- matches distribution management repository url above -->
 					<branch>refs/heads/mvn-repo</branch>                       <!-- remote branch name -->
