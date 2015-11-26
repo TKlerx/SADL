@@ -16,18 +16,15 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.ListIterator;
-import java.util.Map;
 
-import sadl.constants.EventsCreationStrategy;
+import sadl.constants.PTAOrdering;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
-import sadl.interfaces.CompatibilityChecker;
 import sadl.models.pdta.PDTA;
 import sadl.models.pdta.PDTAState;
 
@@ -36,6 +33,7 @@ public class PTA {
 	protected PTAState root;
 	protected LinkedHashMap<Integer, PTAState> tails = new LinkedHashMap<>();
 	protected HashMap<String, Event> events;
+	protected int depth = 0;
 
 	protected LinkedList<PTAState> states = new LinkedList<>();
 	protected LinkedList<PTATransition> transitions = new LinkedList<>();
@@ -52,10 +50,6 @@ public class PTA {
 	public PTA(HashMap<String, Event> events, TimedInput timedSequences) {
 		this(events);
 		this.addSequences(timedSequences);
-	}
-
-	public Map<String, Event> getEventsMap() {
-		return events;
 	}
 
 	public HashMap<String, Event> getEvents() {
@@ -75,10 +69,25 @@ public class PTA {
 		return states;
 	}
 
+	public void setStates(LinkedList<PTAState> states) {
+
+		this.states = states;
+	}
+
+	public PTAState getRoot() {
+
+		return root;
+	}
+
+	public int getDepth() {
+
+		return depth;
+	}
+
 	public void addSequences(TimedInput timedSequences) {
 
 		if (timedSequences == null) {
-			return;
+			throw new IllegalArgumentException();
 		}
 
 		for (final TimedWord sequence : timedSequences) {
@@ -150,177 +159,121 @@ public class PTA {
 			tails.put(currentState.getId(), currentState);
 		}
 
-	}
-
-	public void mergeStatesBottomUp(CompatibilityChecker checker, EventsCreationStrategy strategy) {
-
-		final LinkedList<PTAState> mergedStates = new LinkedList<>();
-
-		int i = 0;
-
-		while (!tails.isEmpty()) {
-			// printTails();
-
-			final LinkedHashMap<Integer, PTAState> nextTails = new LinkedHashMap<>(tails.size());
-
-			for (PTAState tailState : tails.values()) {
-
-				if (tailState.isRemoved()) {
-					tailState = tailState.isMergedWith();
-
-					if (tailState.isMarked()) {
-						continue;
-					}
-				}
-
-				final PTAState fatherState = tailState.getFatherState();
-				if (fatherState != root && !fatherState.isMarked() && !fatherState.isRemoved()) {
-					fatherState.mark();
-					nextTails.putIfAbsent(fatherState.getId(), fatherState);
-				}
-
-				for (final ListIterator<PTAState> mergedStatesIterator = mergedStates.listIterator(); mergedStatesIterator.hasNext();) {
-					final PTAState state = mergedStatesIterator.next();
-
-					if (state.isRemoved()) {
-						mergedStatesIterator.remove();
-						continue;
-					}
-
-					if (checker.compatible(state, tailState)) {
-						PTAState.merge(state, tailState, strategy);
-						break;
-					}
-				}
-
-				if (!tailState.isRemoved()) {
-					mergedStates.add(tailState);
-				}
-			}
-
-			tails = nextTails;
-
-
-			try {
-				this.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\test-merged" + i++ + ".gv"));
-			}
-			catch (final IOException e) {
-				e.printStackTrace();
-			}
-
-			states = mergedStates;
-			statesMerged = true;
-
+		if (sequence.length() > depth) {
+			depth = sequence.length();
 		}
 
-		states.add(root);
-		cleanUp();
 	}
 
-	public void mergeStatesTopDown(CompatibilityChecker checker, EventsCreationStrategy strategy) {
+	public LinkedList<PTAState> getStatesOrdered(PTAOrdering order) {
 
-		int i = 0;
+		final LinkedList<PTAState> orderedStates = new LinkedList<>();
 
-		final LinkedList<PTAState> mergedStates = new LinkedList<>();
-		LinkedHashMap<Integer, PTAState> heads = new LinkedHashMap<>(1);
+		if (order == PTAOrdering.TopDown) {
+			LinkedList<PTAState> heads = new LinkedList<>();
 
-		for (final PTATransition transition : root.outTransitions.values()) {
-			final PTAState state = transition.getTarget();
-			heads.put(state.getId(), state);
-			state.mark();
-		}
+			for (final PTATransition transition : root.getOutTransitions()) {
+				final PTAState state = transition.getTarget();
+				heads.add(state);
+			}
 
-		while (!heads.isEmpty()) {
-			// TODO first add all
+			while (!heads.isEmpty()) {
+				orderedStates.addAll(heads);
 
-			final LinkedHashMap<Integer, PTAState> nextHeads = new LinkedHashMap<>(heads.size() * events.size());
+				final LinkedList<PTAState> nextHeads = new LinkedList<>();
 
-			for (PTAState headState : heads.values()) {
-
-				if (headState.isRemoved()) {
-					headState = headState.mergedWith;
-				}
-
-				if (headState.isMarked()) {
-					continue;
-				}
-
-				for (final PTAState state : mergedStates) {
-					if (!state.isRemoved() && checker.compatible(state, headState)) {
-						PTAState.merge(state, headState, strategy);
-						break;
-					}
-				}
-				if (!headState.isRemoved()) {
-					for (final PTATransition transition : headState.outTransitions.values()) {
+				for (final PTAState headState : heads) {
+					for (final PTATransition transition : headState.getOutTransitions()) {
 						final PTAState nextState = transition.getTarget();
-						if (!nextState.isMarked()) {
-							nextState.mark();
-							nextHeads.put(nextState.getId(), nextState);
-						}
+						nextHeads.add(nextState);
 					}
 				}
 
+				heads = nextHeads;
+			}
+		} else if (order == PTAOrdering.BottomUp) {
+			LinkedHashMap<Integer, PTAState> currentTails = tails;
+
+			for (final PTAState tailState : currentTails.values()) {
+				tailState.mark();
 			}
 
-			heads = nextHeads;
+			while (!currentTails.isEmpty()) {
+				orderedStates.addAll(currentTails.values());
 
-			try {
-				this.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\top-down" + i++ + ".gv"));
-			} catch (final IOException e) {
-				e.printStackTrace();
+				final LinkedHashMap<Integer, PTAState> nextTails = new LinkedHashMap<>(currentTails.size());
+
+				for (final PTAState tailState : currentTails.values()) {
+					final PTAState fatherState = tailState.getFatherState();
+					if (fatherState != root && !fatherState.isMarked()) {
+						nextTails.putIfAbsent(fatherState.getId(), fatherState);
+						fatherState.mark();
+					}
+				}
+
+				currentTails = nextTails;
 			}
+		} else {
+			throw new IllegalArgumentException();
 		}
 
-		mergedStates.add(root);
-
-		states = mergedStates;
-		cleanUp();
+		return orderedStates;
 	}
 
 	public void mergeTransitionsInCriticalAreas() {
 
-		for (final PTAState state : states) {
-			state.removeCriticalTransitions();
+		for (final ListIterator<PTAState> statesIterator = states.listIterator(); statesIterator.hasNext();) {
+			final PTAState state = statesIterator.next();
+
+			if (!state.exists()) {
+				statesIterator.remove();
+			} else {
+				state.removeCriticalTransitions();
+			}
 		}
 	}
 
-	public PDTA toPDRTA() {
+	public PDTA toPDTA() {
 
-		final HashMap<Integer, PDTAState> pdrtaStates = new HashMap<>();
+		final HashMap<Integer, PDTAState> pdtaStates = new HashMap<>();
 
-		for (final PTAState ptaState : states) {
-			final int stateId = ptaState.getId();
-			pdrtaStates.put(stateId, new PDTAState(stateId, ptaState.getEndProbability()));
-		}
+		for (final ListIterator<PTAState> iterator = states.listIterator(); iterator.hasNext();) {
+			final PTAState ptaState = iterator.next();
 
-		for (final PTAState ptaState : states) {
-			final PDTAState pdrtaStateSource = pdrtaStates.get(ptaState.getId());
-			final int outTransitionsCount = ptaState.getOutTransitionsCount();
-
-			for (final PTATransition transition : ptaState.outTransitions.values()) {
-				final PDTAState pdrtaStateTarget = pdrtaStates.get(transition.getTarget().getId());
-				final SubEvent event = transition.getEvent();
-
-				pdrtaStateSource.addTransition(event, pdrtaStateTarget, event.getIntervalInState(ptaState), transition.getCount() / outTransitionsCount);
+			if (ptaState.exists()) {
+				final int stateId = ptaState.getId();
+				pdtaStates.put(stateId, new PDTAState(stateId, ptaState.getEndProbability()));
+			}
+			else {
+				iterator.remove();
 			}
 		}
 
-		return new PDTA(pdrtaStates.get(root.getId()), pdrtaStates, events);
+		for (final PTAState ptaState : states) {
+			final PDTAState pdrtaStateSource = pdtaStates.get(ptaState.getId());
+			final int outTransitionsCount = ptaState.getOutTransitionsCount();
+			final int endCount = ptaState.getEndCount();
+
+			for (final PTATransition transition : ptaState.outTransitions.values()) {
+				final PDTAState pdrtaStateTarget = pdtaStates.get(transition.getTarget().getId());
+				final SubEvent event = transition.getEvent();
+
+				pdrtaStateSource.addTransition(event, pdrtaStateTarget, event.getIntervalInState(ptaState), (double) transition.getCount()
+						/ (outTransitionsCount + endCount));
+			}
+		}
+
+		return new PDTA(pdtaStates.get(root.getId()), pdtaStates, events);
 	}
 
 	public void toGraphvizFile(Path resultPath) throws IOException {
-
-		if (true) {
-			return;
-		}
 
 		final BufferedWriter writer = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8);
 		writer.write("digraph G {\n");
 
 		// write states
 		for (final PTAState state : states) {
-			if (!state.isRemoved()) {
+			if (state.exists()) {
 				writer.write(Integer.toString(state.getId()));
 				writer.write(" [shape=circle, label=\"" + Integer.toString(state.getId()) + "\"");
 
@@ -333,7 +286,7 @@ public class PTA {
 		}
 
 		for (final PTATransition transition : transitions) {
-			if (!transition.removed) {
+			if (transition.exists()) {
 				writer.write(Integer.toString(transition.getSource().getId()) + "->" + Integer.toString(transition.getTarget().getId()) + " [label=<"
 						+ transition.getEvent().getSymbol() + "(" + transition.getCount() + ")>;];\n");
 			}
@@ -342,25 +295,12 @@ public class PTA {
 		writer.close();
 	}
 
-	public void printTails() {
-
-		for (final PTAState state : tails.values()) {
-			System.out.println("\t" + state);
-		}
-
-	}
-
-	public boolean statesMerged() {
-
-		return this.statesMerged;
-	}
-
 	private void cleanUp(){
 
 		for (final Iterator<PTAState> statesIterator = states.iterator(); statesIterator.hasNext();) {
 			final PTAState state = statesIterator.next();
 
-			if (state.isRemoved()) {
+			if (!state.exists()) {
 				statesIterator.remove();
 			}
 		}
@@ -368,7 +308,7 @@ public class PTA {
 		for (final Iterator<PTAState> statesIterator = tails.values().iterator(); statesIterator.hasNext();) {
 			final PTAState state = statesIterator.next();
 
-			if (state.isRemoved()) {
+			if (!state.exists()) {
 				statesIterator.remove();
 			}
 		}
@@ -376,7 +316,7 @@ public class PTA {
 		for (final Iterator<PTATransition> transitionsIterator = transitions.iterator(); transitionsIterator.hasNext();) {
 			final PTATransition transition = transitionsIterator.next();
 
-			if (transition.isRemoved()) {
+			if (!transition.exists()) {
 				transitionsIterator.remove();
 			}
 		}

@@ -20,12 +20,13 @@ public class Event implements Iterable<SubEvent> {
 
 	protected String symbol;
 	protected TreeMap<Double, SubEvent> subEvents;
-	protected double[] times;
 
-	Event(String symbol, double[] times, TreeMap<Double, SubEvent> subEvents) {
+	// protected double[] times;
+
+	public Event(String symbol, TreeMap<Double, SubEvent> subEvents) {
 
 		this.symbol = symbol;
-		this.times = times; // TODO remove?
+		// this.times = times; // TODO remove?
 		this.subEvents = subEvents;
 	}
 
@@ -44,7 +45,7 @@ public class Event implements Iterable<SubEvent> {
 
 		final SubEvent subEvent = subEventEntry.getValue();
 
-		if (subEvent.isInBounds(time)) {
+		if (subEvent.contains(time)) {
 			return subEvent;
 		}
 

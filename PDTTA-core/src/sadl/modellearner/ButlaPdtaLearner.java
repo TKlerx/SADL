@@ -17,13 +17,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
-import sadl.constants.ClassLabel;
 import sadl.constants.EventsCreationStrategy;
 import sadl.constants.KDEFormelVariant;
-import sadl.constants.MergeStrategy;
+import sadl.constants.PTAOrdering;
 import sadl.constants.TransitionsType;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
@@ -41,11 +41,11 @@ public class ButlaPdtaLearner implements ModelLearner, CompatibilityChecker {
 	EventGenerator eventGenerator;
 	double a;
 	TransitionsType transitionsToCheck;
-	MergeStrategy mergeStrategy;
+	PTAOrdering mergeStrategy;
 	EventsCreationStrategy splittingStrategy;
 
-	public ButlaPdtaLearner(double bandwidth, double a, TransitionsType check, double anomalyProbability, double warningProbability,
-			MergeStrategy mergeStrategy, EventsCreationStrategy splittingStrategy, KDEFormelVariant formelVariant) {
+	public ButlaPdtaLearner(double bandwidth, double a, TransitionsType transitionsToCheck, double anomalyProbability, double warningProbability,
+			PTAOrdering mergeStrategy, EventsCreationStrategy splittingStrategy, KDEFormelVariant formelVariant) {
 
 		if (Double.isNaN(a) || a >= 1.0d || a <= 0.0d) {
 			throw new IllegalArgumentException("a has to be between 0.0 and 1.0 excluded.");
@@ -59,9 +59,14 @@ public class ButlaPdtaLearner implements ModelLearner, CompatibilityChecker {
 			throw new IllegalArgumentException("Wrong parameter: warningProbability.");
 		}
 
+		if (transitionsToCheck == null || mergeStrategy == null || splittingStrategy == null || formelVariant == null) {
+			throw new IllegalArgumentException();
+		}
+
+
 		this.eventGenerator = new EventGenerator(bandwidth, anomalyProbability, warningProbability, formelVariant);
 		this.a = a;
-		this.transitionsToCheck = check;
+		this.transitionsToCheck = transitionsToCheck;
 		this.mergeStrategy = mergeStrategy;
 		this.splittingStrategy = splittingStrategy;
 	}
@@ -75,18 +80,15 @@ public class ButlaPdtaLearner implements ModelLearner, CompatibilityChecker {
 		try {
 			final PTA pta = new PTA(eventsMap, TimedTrainingSequences);
 			// pta.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\output.gv"));
-			if (mergeStrategy == MergeStrategy.TopDown) {
-				pta.mergeStatesTopDown(this, splittingStrategy);
-			} else if (mergeStrategy == MergeStrategy.BottomUp) {
-				pta.mergeStatesBottomUp(this, splittingStrategy);
-			}
 
-			if (splittingStrategy == EventsCreationStrategy.SplitEventsIsolateCriticalAreasMergeAfter) {
+			mergeCompatibleStates(pta, pta.getStatesOrdered(mergeStrategy));
+
+			if (splittingStrategy == EventsCreationStrategy.IsolateCriticalAreasMergeAfter) {
 				pta.mergeTransitionsInCriticalAreas();
 			}
 
 			// pta.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\in-out.gv"));
-			return pta.toPDRTA();
+			return pta.toPDTA();
 		} catch (final Exception e) {
 			e.printStackTrace();
 			return null;
@@ -123,6 +125,41 @@ public class ButlaPdtaLearner implements ModelLearner, CompatibilityChecker {
 
 	}
 
+	public void mergeCompatibleStates(PTA pta, List<PTAState> statesOrdering) {
+
+		final LinkedList<PTAState> workedOffStates = new LinkedList<>();
+
+		outerloop: for (final PTAState state : statesOrdering) {
+
+			for (final ListIterator<PTAState> workedOffIterator = workedOffStates.listIterator(); workedOffIterator.hasNext();) {
+				final PTAState workedOffState = workedOffIterator.next();
+
+				if (!state.exists()) {
+					continue outerloop;
+				}
+
+				if (!workedOffState.exists()) {
+					workedOffIterator.remove();
+					continue;
+				}
+
+				if (compatible(workedOffState, state)) {
+					PTAState.merge(workedOffState, state, splittingStrategy);
+					break;
+				}
+
+			}
+
+			if (state.exists()) {
+				workedOffStates.add(state);
+			}
+		}
+
+
+		workedOffStates.add(pta.getRoot());
+		pta.setStates(workedOffStates);
+	}
+
 	public TimedInput splitEventsInTimedSequences(TimedInput timedSequences) {
 
 		final HashMap<String, LinkedList<Double>> eventToTimelistMap = mapEventsToTimes(timedSequences);
@@ -138,13 +175,14 @@ public class ButlaPdtaLearner implements ModelLearner, CompatibilityChecker {
 			for (int i = 0; i < word.length(); i++) {
 				final String eventSymbol = word.getSymbol(i);
 				final double time = word.getTimeValue(i);
+
 				final String subEventSymbol = eventsMap.get(eventSymbol).getSubEventByTime(time).getSymbol();
 
 				symbols.add(subEventSymbol);
 				timeValues.add((int) time);
 			}
 
-			words.add(new TimedWord(symbols, timeValues, ClassLabel.NORMAL));
+			words.add(new TimedWord(symbols, timeValues, word.getLabel()));
 		}
 
 		return new TimedInput(words);
@@ -157,15 +195,22 @@ public class ButlaPdtaLearner implements ModelLearner, CompatibilityChecker {
 
 		for (final String eventSysbol : eventSymbolsSet) {
 			final List<Double> timeList = eventTimesMap.get(eventSysbol);
+			Event event = null;
 
 			if (splittingStrategy == EventsCreationStrategy.SplitEvents) {
-				eventsMap.put(eventSysbol, eventGenerator.generateSplittedEvent(eventSysbol, listToDoubleArray(timeList)));
+				event = eventGenerator.generateSplittedEvent(eventSysbol, listToDoubleArray(timeList));
 			} else if (splittingStrategy == EventsCreationStrategy.DontSplitEvents) {
-				eventsMap.put(eventSysbol, eventGenerator.generateNotSplittedEvent(eventSysbol, listToDoubleArray(timeList)));
-			} else if (splittingStrategy == EventsCreationStrategy.SplitEventsIsolateCriticalAreasMergeInProcess
-					|| splittingStrategy == EventsCreationStrategy.SplitEventsIsolateCriticalAreasMergeAfter) {
-				eventsMap.put(eventSysbol, eventGenerator.generateSplittedEventWithIsolatedCriticalArea(eventSysbol, listToDoubleArray(timeList)));
+				event = eventGenerator.generateNotSplittedEvent(eventSysbol, listToDoubleArray(timeList));
+			} else if (splittingStrategy == EventsCreationStrategy.NotTimedEvents) {
+				event = eventGenerator.generateNotTimedEvent(eventSysbol, listToDoubleArray(timeList));
+			} else if (splittingStrategy == EventsCreationStrategy.IsolateCriticalAreas
+					|| splittingStrategy == EventsCreationStrategy.IsolateCriticalAreasMergeInProcess
+					|| splittingStrategy == EventsCreationStrategy.IsolateCriticalAreasMergeAfter) {
+				event = eventGenerator.generateSplittedEventWithIsolatedCriticalArea(eventSysbol, listToDoubleArray(timeList));
 			}
+
+			eventsMap.put(eventSysbol, event);
+			System.out.println("Created event: " + event);
 		}
 
 		return eventsMap;
@@ -174,14 +219,6 @@ public class ButlaPdtaLearner implements ModelLearner, CompatibilityChecker {
 	@Override
 	public boolean compatible(PTAState stateV, PTAState stateW) {
 
-		if (stateV.isRemoved()) {
-			stateV = stateV.isMergedWith();
-		}
-
-		if (stateW.isRemoved()) {
-			stateW = stateW.isMergedWith();
-		}
-
 		if (stateV == stateW) {
 			return true;
 		}
@@ -189,8 +226,6 @@ public class ButlaPdtaLearner implements ModelLearner, CompatibilityChecker {
 		if (PTAState.compatibilityIsChecking(stateV, stateW)) {
 			return true;
 		}
-
-		PTAState.setCompatibilityChecking(stateV, stateW);
 
 		final int inTransitionCountV = stateV.getInTransitionsCount();
 		final int inTransitionCountW = stateW.getInTransitionsCount();
@@ -203,6 +238,8 @@ public class ButlaPdtaLearner implements ModelLearner, CompatibilityChecker {
 			return false;
 		}
 
+		PTAState.setCompatibilityChecking(stateV, stateW);
+
 		for (final Event event : stateV.getPTA().getEvents().values()) {
 			for (final SubEvent subEvent : event) {
 				final String eventSymbol = subEvent.getSymbol();
@@ -214,11 +251,13 @@ public class ButlaPdtaLearner implements ModelLearner, CompatibilityChecker {
 
 				if ((transitionsToCheck == TransitionsType.Incoming || transitionsToCheck == TransitionsType.Both)
 						&& fractionDifferent(inTransitionCountV, inTransitionEventCountV, inTransitionCountW, inTransitionEventCountW)) {
+					PTAState.unsetCompatibilityChecking(stateV, stateW);
 					return false;
 				}
 
 				if ((transitionsToCheck == TransitionsType.Outgoing || transitionsToCheck == TransitionsType.Both)
 						&& fractionDifferent(inTransitionCountV, outTransitionEventCountV, inTransitionCountW, outTransitionEventCountW)) {
+					PTAState.unsetCompatibilityChecking(stateV, stateW);
 					return false;
 				}
 
@@ -230,6 +269,7 @@ public class ButlaPdtaLearner implements ModelLearner, CompatibilityChecker {
 				}
 
 				if (!compatible(nextV, nextW)) {
+					PTAState.unsetCompatibilityChecking(stateV, stateW);
 					return false;
 				}
 
@@ -237,7 +277,6 @@ public class ButlaPdtaLearner implements ModelLearner, CompatibilityChecker {
 		}
 
 		PTAState.unsetCompatibilityChecking(stateV, stateW);
-
 		return true;
 
 	}

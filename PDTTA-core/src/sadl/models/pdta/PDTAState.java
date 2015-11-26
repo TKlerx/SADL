@@ -16,8 +16,7 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.TreeMap;
 
-import org.apache.commons.lang3.Range;
-
+import sadl.models.pta.HalfClosedInterval;
 import sadl.models.pta.SubEvent;
 import sadl.utils.MasterSeed;
 
@@ -135,7 +134,7 @@ public class PDTAState {
 		return transition;
 	}
 
-	public void addTransition(SubEvent event, PDTAState target, Range<Double> interval, double probability) {
+	public void addTransition(SubEvent event, PDTAState target, HalfClosedInterval<Double> interval, double probability) {
 
 		final PDTATransition transition = new PDTATransition(event, target, interval, probability);
 		final String eventSymbol = event.getEvent().getSymbol();
@@ -151,7 +150,7 @@ public class PDTAState {
 		transitionsProbability.put(sumProbabilities, transition);
 		sumProbabilities += probability;
 
-		if (sumProbabilities > 1.0d) {
+		if (sumProbabilities > 1.0001d) {
 			throw new IllegalStateException("Sum of probabilities > 1.0");
 		}
 	}

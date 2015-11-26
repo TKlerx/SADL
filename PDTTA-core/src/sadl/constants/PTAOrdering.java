@@ -11,6 +11,6 @@
 
 package sadl.constants;
 
-public enum MergeStrategy {
+public enum PTAOrdering {
 	TopDown, BottomUp
 }

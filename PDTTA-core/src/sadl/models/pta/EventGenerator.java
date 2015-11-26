@@ -13,14 +13,12 @@ package sadl.models.pta;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import jsat.distributions.Normal;
 import jsat.distributions.empirical.KernelDensityEstimatorButla;
-
-import org.apache.commons.lang3.Range;
-
 import sadl.constants.KDEFormelVariant;
 
 public class EventGenerator {
@@ -46,26 +44,28 @@ public class EventGenerator {
 
 		final KernelDensityEstimatorButla kde = new KernelDensityEstimatorButla(times, formel, bandwidth);
 		final Double[] minPoints = kde.getMinima();
-		final TreeMap<Double, SubEvent> events = new TreeMap<>();
+		final TreeMap<Double, SubEvent> subEvents = new TreeMap<>();
 
-		final Event event = new Event(symbol, times, events);
+		final Event event = new Event(symbol, subEvents);
 
 		double minValue = 0;
 		int minIndex = 0;
 
 		for (int i = 0; i < minPoints.length; i++) {
 
-			final int maxIndex = Math.abs(Arrays.binarySearch(times, minPoints[i])) - 2; // TODO from index // check
+			final int maxIndex = Math.abs(Arrays.binarySearch(times, minPoints[i])) - 2;
 			final double expectedValue = calculateExpectedValue(minIndex, maxIndex, times);
 			final double deviation = calculateDeviation(minIndex, maxIndex, times, expectedValue);
 
 			final double differenceAnomaly = Math.abs(anomalyNormalPoint * deviation);
-			final Range<Double> anomalyInterval = Range.between(Math.max(0, expectedValue - differenceAnomaly), expectedValue + differenceAnomaly);
+			final HalfClosedInterval<Double> anomalyInterval = new HalfClosedInterval<>(Math.max(0, expectedValue - differenceAnomaly), expectedValue
+					+ differenceAnomaly);
 			final double differenceWarning = Math.abs(warningNormalPoint * deviation);
-			final Range<Double> warningInterval = Range.between(Math.max(0, expectedValue - differenceWarning), expectedValue + differenceWarning);
+			final HalfClosedInterval<Double> warningInterval = new HalfClosedInterval<>(Math.max(0, expectedValue - differenceWarning), expectedValue
+					+ differenceWarning);
 
-			events.put(minValue, new SubEvent(event, String.valueOf(i + 1), expectedValue, deviation, Range.between(minValue, minPoints[i]), anomalyInterval,
-					warningInterval));
+			subEvents.put(minValue, new SubEvent(event, String.valueOf(i + 1), expectedValue, deviation, new HalfClosedInterval<>(minValue, minPoints[i]),
+					anomalyInterval, warningInterval));
 			minValue = minPoints[i];
 			minIndex = maxIndex + 1;
 		}
@@ -75,15 +75,18 @@ public class EventGenerator {
 		final double deviation = calculateDeviation(minIndex, maxIndex, times, expectedValue);
 
 		final double differenceAnomaly = Math.abs(anomalyNormalPoint * deviation);
-		final Range<Double> anomalyInterval = Range.between(Math.max(0, expectedValue - differenceAnomaly), expectedValue + differenceAnomaly);
+		final HalfClosedInterval<Double> anomalyInterval = new HalfClosedInterval<>(Math.max(0, expectedValue - differenceAnomaly), expectedValue
+				+ differenceAnomaly);
 		final double differenceWarning = Math.abs(warningNormalPoint * deviation);
-		final Range<Double> warningInterval = Range.between(Math.max(0, expectedValue - differenceWarning), expectedValue + differenceWarning);
+		final HalfClosedInterval<Double> warningInterval = new HalfClosedInterval<>(Math.max(0, expectedValue - differenceWarning), expectedValue
+				+ differenceWarning);
 
-		events.put(minValue,
-				new SubEvent(event, String.valueOf(minPoints.length + 1), expectedValue, deviation, Range.between(minValue, Double.POSITIVE_INFINITY),
+		subEvents.put(minValue,
+				new SubEvent(event, String.valueOf(minPoints.length + 1), expectedValue, deviation, new HalfClosedInterval<>(minValue,
+						Double.POSITIVE_INFINITY),
 						anomalyInterval, warningInterval));
 
-		final Iterator<Entry<Double, SubEvent>> subEventsIterator = events.entrySet().iterator();
+		final Iterator<Entry<Double, SubEvent>> subEventsIterator = subEvents.entrySet().iterator();
 		SubEvent currentSubEvent = subEventsIterator.next().getValue();
 
 		while (subEventsIterator.hasNext()) {
@@ -94,26 +97,46 @@ public class EventGenerator {
 			currentSubEvent = nextSubEvent;
 		}
 
-		System.out.println("Created event: " + event);
-
 		return event;
 	}
 
 	public Event generateNotSplittedEvent(String symbol, double[] times) {
 
-		final TreeMap<Double, SubEvent> events = new TreeMap<>();
-		final Event event = new Event(symbol, times, events);
+		final TreeMap<Double, SubEvent> subEvents = new TreeMap<>();
+		final Event event = new Event(symbol, subEvents);
 
 		Arrays.sort(times);
 		final double expectedValue = calculateExpectedValue(0, times.length - 1, times);
 		final double deviation = calculateDeviation(0, times.length - 1, times, expectedValue);
 
 		final double differenceAnomaly = Math.abs(anomalyNormalPoint * deviation);
-		final Range<Double> anomalyInterval = Range.between(Math.max(0, expectedValue - differenceAnomaly), expectedValue + differenceAnomaly);
+		final HalfClosedInterval<Double> anomalyInterval = new HalfClosedInterval<>(Math.max(0, expectedValue - differenceAnomaly), expectedValue
+				+ differenceAnomaly);
 		final double differenceWarning = Math.abs(warningNormalPoint * deviation);
-		final Range<Double> warningInterval = Range.between(Math.max(0, expectedValue - differenceWarning), expectedValue + differenceWarning);
+		final HalfClosedInterval<Double> warningInterval = new HalfClosedInterval<>(Math.max(0, expectedValue - differenceWarning), expectedValue
+				+ differenceWarning);
 
-		events.put(0.0, new SubEvent(event, String.valueOf(1), expectedValue, deviation, Range.between(0.0, Double.POSITIVE_INFINITY), anomalyInterval,
+		subEvents.put(0.0, new SubEvent(event, String.valueOf(1), expectedValue, deviation, new HalfClosedInterval<>(0.0, Double.POSITIVE_INFINITY),
+				anomalyInterval,
+				warningInterval));
+
+		return event;
+	}
+
+	public Event generateNotTimedEvent(String symbol, double[] times) {
+
+		final TreeMap<Double, SubEvent> subEvents = new TreeMap<>();
+		final Event event = new Event(symbol, subEvents);
+
+		Arrays.sort(times);
+		final double expectedValue = calculateExpectedValue(0, times.length - 1, times);
+		final double deviation = calculateDeviation(0, times.length - 1, times, expectedValue);
+
+		final HalfClosedInterval<Double> anomalyInterval = new HalfClosedInterval<>(0.0, Double.POSITIVE_INFINITY);
+		final HalfClosedInterval<Double> warningInterval = new HalfClosedInterval<>(0.0, Double.POSITIVE_INFINITY);
+
+		subEvents.put(0.0, new SubEvent(event, String.valueOf(1), expectedValue, deviation, new HalfClosedInterval<>(0.0, Double.POSITIVE_INFINITY),
+				anomalyInterval,
 				warningInterval));
 
 		return event;
@@ -122,25 +145,69 @@ public class EventGenerator {
 	public Event generateSplittedEventWithIsolatedCriticalArea(String symbol, double[] times) {
 
 		final Event event = generateSplittedEvent(symbol, times);
+		final LinkedList<SubEventCriticalArea> criticalAreas = new LinkedList<>();
+		final TreeMap<Double, SubEvent> newSubEvents = new TreeMap<>();
+		final Event newEvent = new Event(symbol, newSubEvents);
 
 		for (final SubEvent subEvent : event) {
-			if (subEvent.hasRightCriticalArea()) {
 
-				final Range<Double> interval = Range.between(subEvent.getRightBound(), subEvent.getRightAnomalyBound());
-				final SubEvent criticalArea = new SubEvent(event, subEvent.getNumber() + ".5", subEvent.getExpectedValue(), subEvent.getDeviation(), interval,
-						interval, interval);
-				final SubEvent nextSubEvent = subEvent.nextSubEvent;
-				subEvent.isolateRightCriticalArea();
-				nextSubEvent.isolateLeftCriticalArea();
+			if (subEvent.hasRightCriticalArea()) {
+				final SubEvent nextSubEvent = subEvent.getNextSubEvent();
+
+				final HalfClosedInterval<Double> intersection = nextSubEvent.getAnomalyBounds().getIntersectionWith(subEvent.getAnomalyBounds());
+				final double probLeft = subEvent.calculateProbability(intersection.getMinimum()) / 2.0;
+				final double probRight = nextSubEvent.calculateProbability(intersection.getMaximum()) / 2.0;
+
+				final SubEventCriticalArea criticalArea = new SubEventCriticalArea(newEvent, subEvent.getNumber() + ".5",
+						(intersection.getMinimum() + intersection.getMaximum()) / 2.0,
+						intersection.getMaximum() - intersection.getMinimum(), intersection,
+						intersection, intersection, probLeft, probRight);
+
+				subEvent.isolateRightArea(intersection.getMinimum());
+				subEvent.setRightBound(subEvent.getAnomalyBounds().getMaximum());
+				nextSubEvent.isolateLeftArea(intersection.getMaximum());
+				nextSubEvent.setLeftBound(nextSubEvent.getAnomalyBounds().getMinimum());
+
 				subEvent.nextSubEvent = criticalArea;
 				nextSubEvent.previousSubEvent = criticalArea;
 				criticalArea.previousSubEvent = subEvent;
 				criticalArea.nextSubEvent = nextSubEvent;
+				criticalAreas.add(criticalArea);
 			}
 
+			if (subEvent.hasLeftCriticalArea()) {
+				final SubEvent previousSubEvent = subEvent.getPreviousSubEvent();
+
+				final HalfClosedInterval<Double> intersection = new HalfClosedInterval<>(previousSubEvent.getRightAnomalyBound(),
+						subEvent.getLeftAnomalyBound());
+				final double probLeft = previousSubEvent.calculateProbability(intersection.getMinimum() / 2.0);
+				final double probRight = subEvent.calculateProbability(intersection.getMaximum() / 2.0);
+
+				final SubEventCriticalArea criticalArea = new SubEventCriticalArea(newEvent, subEvent.getNumber() + ".5",
+						(intersection.getMinimum() + intersection.getMaximum()) / 2.0, intersection.getMaximum() - intersection.getMinimum(), intersection,
+						intersection, intersection, probLeft, probRight);
+
+				previousSubEvent.isolateRightArea(intersection.getMinimum());
+				previousSubEvent.setRightBound(previousSubEvent.getAnomalyBounds().getMaximum());
+				subEvent.isolateLeftArea(intersection.getMaximum());
+				subEvent.setLeftBound(subEvent.getAnomalyBounds().getMinimum());
+
+				previousSubEvent.nextSubEvent = criticalArea;
+				subEvent.previousSubEvent = criticalArea;
+				criticalArea.previousSubEvent = previousSubEvent;
+				criticalArea.nextSubEvent = subEvent;
+				criticalAreas.add(criticalArea);
+			}
+
+			newSubEvents.put(subEvent.getLeftBound(), subEvent);
 		}
 
-		return event;
+		for (final SubEventCriticalArea criticalArea : criticalAreas) {
+
+			newSubEvents.put(criticalArea.getLeftBound(), criticalArea);
+		}
+
+		return newEvent;
 	}
 
 	private static double calculateDeviation(int fromIndex, int toIndex, double[] times, double expectedValue) {

@@ -13,15 +13,13 @@ package sadl.models.pta;
 
 import jsat.distributions.empirical.NormalRandomized;
 
-import org.apache.commons.lang3.Range;
-
 public class SubEvent {
 
 	protected Event event;
 	protected String subEventNumber;
-	protected Range<Double> anomalyInterval;
-	protected Range<Double> warningInterval;
-	protected Range<Double> boundInterval;
+	protected HalfClosedInterval<Double> anomalyInterval;
+	protected HalfClosedInterval<Double> warningInterval;
+	protected HalfClosedInterval<Double> boundInterval;
 	protected double expectedValue;
 	protected double deviation;
 
@@ -30,8 +28,13 @@ public class SubEvent {
 	protected SubEvent previousSubEvent;
 	protected SubEvent nextSubEvent;
 
-	public SubEvent(Event event, String subEventNumber, double expectedValue, double deviation, Range<Double> boundInterval, Range<Double> anomalyInterval,
-			Range<Double> warningInterval) {
+	public SubEvent(Event event, String subEventNumber, double expectedValue, double deviation, HalfClosedInterval<Double> boundInterval,
+			HalfClosedInterval<Double> anomalyInterval, HalfClosedInterval<Double> warningInterval) {
+
+		if (event == null || Double.isNaN(expectedValue) || Double.isNaN(deviation) || boundInterval == null || anomalyInterval == null
+				|| warningInterval == null || expectedValue < 0.0 || deviation < 0.0) {
+			throw new IllegalArgumentException();
+		}
 
 		this.event = event;
 		this.subEventNumber = subEventNumber;
@@ -43,46 +46,23 @@ public class SubEvent {
 		}
 
 		this.boundInterval = boundInterval;
-		this.anomalyInterval = anomalyInterval;
 		this.warningInterval = warningInterval;
+		setAnomalyBounds(anomalyInterval);
 	}
 
 	public String getSymbol() {
 
-		return event.getSymbol() + subEventNumber;
+		return event.getSymbol() + "." + subEventNumber;
 	}
 
 	public boolean isAnomaly(double time) {
 
-		double left;
-		final double right;
-
-		if (this.hasLeftCriticalArea()) {
-			left = this.getLeftBound();
-		} else {
-			left = this.anomalyInterval.getMinimum();
-		}
-
-		if (this.hasRightCriticalArea()) {
-			right = this.getRightBound();
-		} else {
-			right = this.anomalyInterval.getMaximum();
-		}
-
-		if (left == time || (left < time && time < right)) {
-			return false;
-		}
-
-		return true;
+		return !anomalyInterval.contains(time);
 	}
 
 	public boolean isInCriticalArea(double time) {
 
-		if (this.isAnomaly(time)) {
-			return false;
-		}
-
-		if (isInLeftCriticalArea(time) || isInRightCriticalArea(time)) {
+		if (!isAnomaly(time) && !contains(time)) {
 			return true;
 		}
 
@@ -90,7 +70,8 @@ public class SubEvent {
 	}
 
 	public boolean isInLeftCriticalArea(double time) {
-		if (this.hasLeftCriticalArea() && time < this.getLeftBound()) {
+		if (!isAnomaly(time) && time < boundInterval.getMinimum()) {
+
 			return true;
 		}
 
@@ -98,38 +79,23 @@ public class SubEvent {
 	}
 
 	public boolean isInRightCriticalArea(double time) {
-		if (this.hasRightCriticalArea() && this.getRightBound() >= time) {
+		if (!isAnomaly(time) && boundInterval.getMaximum() > time) {
+
 			return true;
 		}
 
 		return false;
 	}
 
-	public boolean isInBounds(double time) {
-		final double leftBound = this.getLeftBound();
-		final double rightBound = this.getRightBound();
+	public boolean contains(double time) {
 
-		if (leftBound == time || (leftBound < time && time < rightBound)) {
+		if (boundInterval.contains(time)) {
 			return true;
 		}
 
 		return false;
 	}
 
-	public String getNumber() {
-
-		return subEventNumber;
-	}
-
-	public double getExpectedValue() {
-
-		return expectedValue;
-	}
-
-	public double getDeviation() {
-
-		return deviation;
-	}
 
 	public double getLeftBound() {
 
@@ -151,52 +117,102 @@ public class SubEvent {
 		return anomalyInterval.getMaximum();
 	}
 
-	public double getLeftIntervalInState(PTAState state) {
+	public HalfClosedInterval<Double> getAnomalyBounds() {
 
-		if (this.hasLeftCriticalArea() && state.outTransitions.containsKey(this.getPreviousSubEvent().getSymbol())) {
-			return this.getLeftBound();
+		return anomalyInterval;
+	}
+
+	public void setAnomalyBounds(HalfClosedInterval<Double> bounds) {
+
+		if (bounds == null || bounds.getMinimum() < 0.0) {
+			throw new IllegalArgumentException();
 		}
 
-		return this.anomalyInterval.getMinimum();
+		anomalyInterval = bounds;
 
+		if (!anomalyInterval.contains(warningInterval)) {
+
+			warningInterval = anomalyInterval.getIntersectionWith(warningInterval);
+		}
 	}
 
-	public double getLeftInterval() {
+	public void setBounds(HalfClosedInterval<Double> bounds) {
 
-		if (this.hasLeftCriticalArea()) {
-			return this.getLeftBound();
+		this.boundInterval = bounds;
+	}
+
+	public void setLeftBound(double bound) {
+
+		boundInterval.setMinimum(bound);
+	}
+
+	public void setRightBound(double bound) {
+
+		boundInterval.setMaximum(bound);
+	}
+
+	public String getNumber() {
+
+		return subEventNumber;
+	}
+
+	public double getExpectedValue() {
+
+		return expectedValue;
+	}
+
+	public double getDeviation() {
+
+		return deviation;
+	}
+
+	public HalfClosedInterval<Double> getInterval() {
+
+		return anomalyInterval.getIntersectionWith(boundInterval);
+	}
+
+	public HalfClosedInterval<Double> getIntervalInState(PTAState state) {
+
+		if (state == null) {
+			throw new IllegalArgumentException();
 		}
 
-		return this.anomalyInterval.getMinimum();
-
+		return new HalfClosedInterval<>(getLeftIntervalBoundInState(state), getRightIntervalBoundInState(state));
 	}
 
-	public double getRightIntervalInState(PTAState state) {
+	public double getLeftIntervalBoundInState(PTAState state) {
 
-		if (this.hasRightCriticalArea() && state.outTransitions.containsKey(this.getNextSubEvent().getSymbol())) {
-			return this.getRightBound();
+		if (state == null) {
+			throw new IllegalArgumentException();
 		}
 
-		return this.anomalyInterval.getMaximum();
-	}
-
-	public double getRightInterval() {
-
-		if (this.hasRightCriticalArea()) {
-			return this.getRightBound();
+		if (previousSubEvent != null && state.outTransitions.containsKey(previousSubEvent.getSymbol())) {
+			if (this.hasLeftCriticalArea()) {
+				return getLeftBound();
+			} else if (previousSubEvent instanceof SubEventCriticalArea
+					&& !state.outTransitions.containsKey(previousSubEvent.getPreviousSubEvent().getSymbol())) {
+				return previousSubEvent.getLeftBound();
+			}
 		}
 
-		return this.anomalyInterval.getMaximum();
+		return getLeftAnomalyBound();
 	}
 
-	public Range<Double> getIntervalInState(PTAState state) {
+	public double getRightIntervalBoundInState(PTAState state) {
 
-		return Range.between(getLeftIntervalInState(state), getRightIntervalInState(state));
-	}
+		if (state == null) {
+			throw new IllegalArgumentException();
+		}
 
-	public Range<Double> getInterval() {
+		if (nextSubEvent != null & state.outTransitions.containsKey(this.getNextSubEvent().getSymbol())) {
+			if (this.hasRightCriticalArea()) {
+				return getRightBound();
+			} else if (nextSubEvent instanceof SubEventCriticalArea && !state.outTransitions.containsKey(nextSubEvent.getNextSubEvent().getSymbol())) {
+				return nextSubEvent.getRightBound();
+			}
+		}
 
-		return Range.between(getLeftInterval(), getRightInterval());
+		return getRightBound();
 	}
 
 	public boolean hasLeftCriticalArea() {
@@ -218,10 +234,8 @@ public class SubEvent {
 	}
 
 	public boolean hasWarning(double time) {
-		final double leftBound = warningInterval.getMinimum();
-		final double rightBound = warningInterval.getMaximum();
 
-		if (leftBound == time || (leftBound < time && time < rightBound)) {
+		if (!isAnomaly(time) && !warningInterval.contains(time)) {
 			return true;
 		}
 
@@ -242,23 +256,30 @@ public class SubEvent {
 		return this.event;
 	}
 
-	public double generateRandomTime(boolean allowAnomaly) {
+	public double generateRandomTime(HalfClosedInterval<Double> allowedInterval) {
 
-		if (deviation == 0){
-			return expectedValue;
+		if (deviation == 0) {
+			if (allowedInterval.contains(expectedValue)) {
+				return expectedValue;
+			} else {
+				throw new IllegalArgumentException("Impossible to enter the given interval.");
+			}
+		}
+
+		final double probability = normalFunction.cdf(allowedInterval.getMaximum()) - normalFunction.cdf(allowedInterval.getMinimum());
+
+		if (probability < 0.01) {
+			throw new IllegalArgumentException("Probability to enter the given interval is to low.");
 		}
 
 		double randomTime = 0.0d;
-		final boolean condition;
 
 		do {
-
 			randomTime = normalFunction.getRandomPoint();
 
-			if (randomTime >= 0.0d && !allowAnomaly && !this.isAnomaly(randomTime)) {
-				return randomTime; //TODO check
+			if (allowedInterval.contains(randomTime)) {
+				return randomTime;
 			}
-
 		} while (true);
 
 	}
@@ -283,22 +304,24 @@ public class SubEvent {
 		return probability * 2.0d;
 	}
 
-	public void isolateCriticalAreas() {
-		final double newMin = Math.max(boundInterval.getMinimum(), anomalyInterval.getMinimum());
-		final double newMax = Math.min(boundInterval.getMaximum(), anomalyInterval.getMaximum());
-		anomalyInterval = Range.between(newMin, newMax);
+	public boolean isolateLeftArea(double value) {
+
+		if (anomalyInterval.cutLeft(value)) {
+			setAnomalyBounds(anomalyInterval);
+			return true;
+		}
+
+		return false;
 	}
 
-	public void isolateLeftCriticalArea() {
-		final double newMin = Math.max(boundInterval.getMinimum(), anomalyInterval.getMinimum());
-		final double newMax = anomalyInterval.getMaximum();
-		anomalyInterval = Range.between(newMin, newMax);
-	}
+	public boolean isolateRightArea(double value) {
 
-	public void isolateRightCriticalArea() {
-		final double newMin = anomalyInterval.getMinimum();
-		final double newMax = Math.min(boundInterval.getMaximum(), anomalyInterval.getMaximum());
-		anomalyInterval = Range.between(newMin, newMax);
+		if (anomalyInterval.cutRight(value)) {
+			setAnomalyBounds(anomalyInterval);
+			return true;
+		}
+
+		return false;
 	}
 
 	@Override
