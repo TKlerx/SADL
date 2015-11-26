@@ -1,14 +1,14 @@
 #BUTLA parameters
 
 alpha [0,1] [0.05]
-check {	Incoming, Outgoing, Both} [Incoming]
+transitionsToCheck {Incoming, Outgoing, Both} [Incoming]
 anomalyProbability [0,1] [0.05]
 
 warningProbability [0,1] [0.05]
 #forbidden:
-{warningProbability < anomalyProbability}
+{warningProbability > anomalyProbability}
 
-mergeStrategy {TopDown, BottonUp} [BottonUp]
+mergeStrategy {TopDown, BottomUp} [BottomUp]
 splittingStrategy {	DontSplitEvents, SplitEvents, SplitEventsIsolateCriticalAreasMergeInProcess, SplitEventsIsolateCriticalAreasMergeAfter} [SplitEvents]
 formelVariant {	OriginalKDE, OriginalButlaVariableBandwidth, ButlaBandwidthSquared, ButlaBandwidthNotSquared} [OriginalKDE]
 

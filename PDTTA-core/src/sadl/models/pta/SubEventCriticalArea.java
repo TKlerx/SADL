@@ -9,30 +9,29 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.models.PTA;
+package sadl.models.pta;
 
-import org.apache.commons.lang3.Range;
 
 public class SubEventCriticalArea extends SubEvent {
 
-	double enterProbability;
-	int almostSurelyCount;
+	protected int almostSurelyCountPrevSubEvent;
+	protected int almostSurelyCountNextSubEvent;
 
-	public SubEventCriticalArea(Event event, int subEventNumber, double expectedValue, double deviation, Range<Double> boundInterval,
-			Range<Double> anomalyInterval, Range<Double> warningInterval, double enterProbability) {
+	public SubEventCriticalArea(Event event, String subEventNumber, double expectedValue, double deviation, HalfClosedInterval<Double> boundInterval,
+			HalfClosedInterval<Double> anomalyInterval, HalfClosedInterval<Double> warningInterval, double enterProbPrevSubEvent, double enterProbNextSubEvent) {
 		super(event, subEventNumber, expectedValue, deviation, boundInterval, anomalyInterval, warningInterval);
 
-		this.enterProbability = enterProbability;
-		almostSurelyCount = (int) (Math.log(0.9999999999d) / Math.log(enterProbability));
+		almostSurelyCountPrevSubEvent = (int) (Math.log(0.0000000000000000001d) / Math.log(enterProbPrevSubEvent)) + 1;
+		almostSurelyCountNextSubEvent = (int) (Math.log(0.0000000000000000001d) / Math.log(enterProbNextSubEvent)) + 1;
 	}
 
-	public double getEnterProbability() {
+	public int getAlmostSurelyCountPrev() {
 
-		return enterProbability;
+		return almostSurelyCountPrevSubEvent;
 	}
 
-	public int getAlmostSurelyCount() {
+	public int getAlmostSurelyCountNext() {
 
-		return almostSurelyCount;
+		return almostSurelyCountNextSubEvent;
 	}
 }

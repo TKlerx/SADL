@@ -11,7 +11,7 @@
 
 package sadl.interfaces;
 
-import sadl.models.PTA.PTAState;
+import sadl.models.pta.PTAState;
 
 public interface CompatibilityChecker {
 
