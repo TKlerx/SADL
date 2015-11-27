@@ -223,7 +223,8 @@
                         <overWrite>true</overWrite>
                         <outputDirectory>${basedir}/target/lib/</outputDirectory>
                         <!--<destFileName>so</destFileName>-->
-                    </artifactItem>
+                        <baseVersion>true</baseVersion>
+                     </artifactItem>
                 </artifactItems>
             </configuration>
 				<executions>

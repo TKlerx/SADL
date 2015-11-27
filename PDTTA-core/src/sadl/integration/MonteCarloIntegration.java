@@ -118,6 +118,7 @@ public class MonteCarloIntegration implements Serializable {
 				return 0;
 			}
 		}
+		// x value of monte carlo point does not matter, we search for the pdf value
 		int foundIndex = Arrays.binarySearch(integral, new MonteCarloPoint(0, pdfValue));
 		if (foundIndex > 0) {
 			// Check whether there are the same pdf values right to the found one (is just done because of binary search)
