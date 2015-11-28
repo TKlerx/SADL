@@ -74,4 +74,4 @@ dbScanEps[0,1] [0.05]
 dbScanEps | detectorMethod in {DBSCAN}
 
 dbScanThreshold[0,1] [0.05]
-dbScanEps | detectorMethod in {DBSCAN}
+dbScanThreshold | detectorMethod in {DBSCAN}
