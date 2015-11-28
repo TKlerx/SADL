@@ -17,9 +17,9 @@ public class SubEvent {
 
 	protected Event event;
 	protected String subEventNumber;
-	protected HalfClosedInterval<Double> anomalyInterval;
-	protected HalfClosedInterval<Double> warningInterval;
-	protected HalfClosedInterval<Double> boundInterval;
+	protected HalfClosedInterval anomalyInterval;
+	protected HalfClosedInterval warningInterval;
+	protected HalfClosedInterval boundInterval;
 	protected double expectedValue;
 	protected double deviation;
 
@@ -28,8 +28,8 @@ public class SubEvent {
 	protected SubEvent previousSubEvent;
 	protected SubEvent nextSubEvent;
 
-	public SubEvent(Event event, String subEventNumber, double expectedValue, double deviation, HalfClosedInterval<Double> boundInterval,
-			HalfClosedInterval<Double> anomalyInterval, HalfClosedInterval<Double> warningInterval) {
+	public SubEvent(Event event, String subEventNumber, double expectedValue, double deviation, HalfClosedInterval boundInterval,
+			HalfClosedInterval anomalyInterval, HalfClosedInterval warningInterval) {
 
 		if (event == null || Double.isNaN(expectedValue) || Double.isNaN(deviation) || boundInterval == null || anomalyInterval == null
 				|| warningInterval == null || expectedValue < 0.0 || deviation < 0.0) {
@@ -117,12 +117,12 @@ public class SubEvent {
 		return anomalyInterval.getMaximum();
 	}
 
-	public HalfClosedInterval<Double> getAnomalyBounds() {
+	public HalfClosedInterval getAnomalyBounds() {
 
 		return anomalyInterval;
 	}
 
-	public void setAnomalyBounds(HalfClosedInterval<Double> bounds) {
+	public void setAnomalyBounds(HalfClosedInterval bounds) {
 
 		if (bounds == null || bounds.getMinimum() < 0.0) {
 			throw new IllegalArgumentException();
@@ -136,7 +136,7 @@ public class SubEvent {
 		}
 	}
 
-	public void setBounds(HalfClosedInterval<Double> bounds) {
+	public void setBounds(HalfClosedInterval bounds) {
 
 		this.boundInterval = bounds;
 	}
@@ -166,18 +166,18 @@ public class SubEvent {
 		return deviation;
 	}
 
-	public HalfClosedInterval<Double> getInterval() {
+	public HalfClosedInterval getInterval() {
 
 		return anomalyInterval.getIntersectionWith(boundInterval);
 	}
 
-	public HalfClosedInterval<Double> getIntervalInState(PTAState state) {
+	public HalfClosedInterval getIntervalInState(PTAState state) {
 
 		if (state == null) {
 			throw new IllegalArgumentException();
 		}
 
-		return new HalfClosedInterval<>(getLeftIntervalBoundInState(state), getRightIntervalBoundInState(state));
+		return new HalfClosedInterval(getLeftIntervalBoundInState(state), getRightIntervalBoundInState(state));
 	}
 
 	public double getLeftIntervalBoundInState(PTAState state) {
@@ -204,7 +204,7 @@ public class SubEvent {
 			throw new IllegalArgumentException();
 		}
 
-		if (nextSubEvent != null & state.outTransitions.containsKey(this.getNextSubEvent().getSymbol())) {
+		if (nextSubEvent != null && state.outTransitions.containsKey(this.getNextSubEvent().getSymbol())) {
 			if (this.hasRightCriticalArea()) {
 				return getRightBound();
 			} else if (nextSubEvent instanceof SubEventCriticalArea && !state.outTransitions.containsKey(nextSubEvent.getNextSubEvent().getSymbol())) {
@@ -256,7 +256,7 @@ public class SubEvent {
 		return this.event;
 	}
 
-	public double generateRandomTime(HalfClosedInterval<Double> allowedInterval) {
+	public double generateRandomTime(HalfClosedInterval allowedInterval) {
 
 		if (deviation == 0) {
 			if (allowedInterval.contains(expectedValue)) {

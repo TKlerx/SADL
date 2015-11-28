@@ -1,13 +1,24 @@
+/**
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
+ * Copyright (C) 2013-2015  the original author or authors.
+ *
+ * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * SADL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package sadl.models.pta;
 
 
-public class HalfClosedInterval<T extends Comparable<T>> implements Cloneable {
-	protected T min;
-	protected T max;
+public class HalfClosedInterval implements Cloneable {
+	protected double min;
+	protected double max;
 
-	public HalfClosedInterval(T min, T max) {
+	public HalfClosedInterval(double min, double max) {
 
-		if (min == null || max == null || min.compareTo(max) > 0) {
+		if (Double.isNaN(min) || Double.isNaN(max) || min > max) {
 			throw new IllegalArgumentException();
 		}
 
@@ -15,35 +26,35 @@ public class HalfClosedInterval<T extends Comparable<T>> implements Cloneable {
 		this.max = max;
 	}
 
-	public T getMinimum() {
+	public double getMinimum() {
 
 		return min;
 	}
 
-	public T getMaximum() {
+	public double getMaximum() {
 
 		return max;
 	}
 
-	public void setMinimum(T newMin) {
+	public void setMinimum(double newMin) {
 
-		if (newMin == null || newMin.compareTo(max) > 0) {
+		if (Double.isNaN(newMin) || newMin > max) {
 			throw new IllegalArgumentException();
 		}
 
 		min = newMin;
 	}
 
-	public void setMaximum(T newMax) {
+	public void setMaximum(double newMax) {
 
-		if (newMax == null || newMax.compareTo(min) < 0) {
+		if (Double.isNaN(newMax) || newMax < min) {
 			throw new IllegalArgumentException();
 		}
 
 		max = newMax;
 	}
 
-	public boolean cutLeft(T value) {
+	public boolean cutLeft(double value) {
 
 		if (this.contains(value)) {
 
@@ -54,7 +65,7 @@ public class HalfClosedInterval<T extends Comparable<T>> implements Cloneable {
 		return false;
 	}
 
-	public boolean cutRight(T value) {
+	public boolean cutRight(double value) {
 
 		if (this.contains(value)) {
 
@@ -65,9 +76,9 @@ public class HalfClosedInterval<T extends Comparable<T>> implements Cloneable {
 		return false;
 	}
 
-	public boolean contains(T value) {
+	public boolean contains(double value) {
 
-		if (min.compareTo(value) == 0 || (min.compareTo(value) < 0 && value.compareTo(max) < 0)) {
+		if (min <= value && value < max) {
 			return true;
 		}
 
@@ -75,21 +86,43 @@ public class HalfClosedInterval<T extends Comparable<T>> implements Cloneable {
 	}
 
 	// true if interval is included in current interval
-	public boolean contains(HalfClosedInterval<T> value) {
-		final T valueMin = value.getMinimum();
-		final T valueMax = value.getMaximum();
+	public boolean contains(HalfClosedInterval value) {
 
-		if ((min.compareTo(valueMin) == 0 || (min.compareTo(valueMin) < 0) && (valueMax.compareTo(max) == 0 || valueMax.compareTo(max) < 0))) {
+		if (value instanceof EmptyInterval) {
+			return true;
+		}
+
+		final double valueMin = value.getMinimum();
+		final double valueMax = value.getMaximum();
+
+		if (min <= valueMin && valueMax <= max) {
 			return true;
 		}
 
 		return false;
 	}
 
-	public boolean intersects(HalfClosedInterval<T> value) {
+	public boolean intersects(HalfClosedInterval value) {
 
-		if (contains(value.getMinimum()) || value.contains(min) || (contains(value.getMaximum()) && !min.equals(value.getMaximum()))
-				|| (value.contains(max) && !max.equals(value.getMinimum()))) {
+		if (value instanceof EmptyInterval) {
+			return true;
+		}
+
+		if (contains(value.getMinimum()) || value.contains(min) || (contains(value.getMaximum()) && min != value.getMaximum())
+				|| (value.contains(max) && max != value.getMinimum())) {
+			return true;
+		}
+
+		return false;
+	}
+
+	public boolean included(HalfClosedInterval value) {
+
+		if (value instanceof EmptyInterval) {
+			return true;
+		}
+
+		if (contains(value.getMinimum()) && (contains(value.getMaximum()) || max == value.getMaximum())) {
 			return true;
 		}
 
@@ -97,37 +130,37 @@ public class HalfClosedInterval<T extends Comparable<T>> implements Cloneable {
 	}
 
 	// returns the intersaction of two intervals
-	public HalfClosedInterval<T> getIntersectionWith(HalfClosedInterval<T> value){
+	public HalfClosedInterval getIntersectionWith(HalfClosedInterval value) {
 
 		if (!intersects(value)) {
-			return null;
+			return new EmptyInterval();
 		}
 
-		T minIntersection;
-		T maxIntersection;
+		double minIntersection;
+		double maxIntersection;
 
-		final T minValue = value.getMinimum();
-		final T maxValue = value.getMaximum();
+		final double minValue = value.getMinimum();
+		final double maxValue = value.getMaximum();
 
-		if (min.compareTo(minValue) > 0) {
+		if (min > minValue) {
 			minIntersection = min;
 		}else{
 			minIntersection = minValue;
 		}
 
-		if (max.compareTo(maxValue) < 0) {
+		if (max < maxValue) {
 			maxIntersection = max;
 		}else{
 			maxIntersection = maxValue;
 		}
 
-		return new HalfClosedInterval<>(minIntersection, maxIntersection);
+		return new HalfClosedInterval(minIntersection, maxIntersection);
 	}
 
 	@Override
 	public String toString() {
 
-		if (min.equals(max)) {
+		if (min == max) {
 			return "[" + min + ";" + max + "]";
 		}
 
@@ -135,9 +168,9 @@ public class HalfClosedInterval<T extends Comparable<T>> implements Cloneable {
 	}
 
 	@Override
-	public HalfClosedInterval<T> clone() {
+	public HalfClosedInterval clone() {
 
-		return new HalfClosedInterval<>(min, max);
+		return new HalfClosedInterval(min, max);
 	}
 
 }

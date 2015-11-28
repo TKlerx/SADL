@@ -106,18 +106,20 @@ public class ButlaPdtaLearner implements ModelLearner, CompatibilityChecker {
 		final HashMap<String, LinkedList<Double>> eventTimesMap = new HashMap<>(timedEventSequences.getSymbols().length);
 
 		for (final TimedWord word : timedEventSequences) {
-			for (int i = 0; i < word.length(); i++) {
-				final String event = word.getSymbol(i);
-				final double time = word.getTimeValue(i);
+			if (!word.isAnomaly()) {
+				for (int i = 0; i < word.length(); i++) {
+					final String event = word.getSymbol(i);
+					final double time = word.getTimeValue(i);
 
-				LinkedList<Double> timeList = eventTimesMap.get(event);
+					LinkedList<Double> timeList = eventTimesMap.get(event);
 
-				if (timeList == null) {
-					timeList = new LinkedList<>();
-					eventTimesMap.put(event, timeList);
+					if (timeList == null) {
+						timeList = new LinkedList<>();
+						eventTimesMap.put(event, timeList);
+					}
+
+					timeList.add(time);
 				}
-
-				timeList.add(time);
 			}
 		}
 

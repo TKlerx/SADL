@@ -134,7 +134,7 @@ public class PDTAState {
 		return transition;
 	}
 
-	public void addTransition(SubEvent event, PDTAState target, HalfClosedInterval<Double> interval, double probability) {
+	public void addTransition(SubEvent event, PDTAState target, HalfClosedInterval interval, double probability) {
 
 		final PDTATransition transition = new PDTATransition(event, target, interval, probability);
 		final String eventSymbol = event.getEvent().getSymbol();

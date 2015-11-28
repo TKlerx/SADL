@@ -17,8 +17,8 @@ public class SubEventCriticalArea extends SubEvent {
 	protected int almostSurelyCountPrevSubEvent;
 	protected int almostSurelyCountNextSubEvent;
 
-	public SubEventCriticalArea(Event event, String subEventNumber, double expectedValue, double deviation, HalfClosedInterval<Double> boundInterval,
-			HalfClosedInterval<Double> anomalyInterval, HalfClosedInterval<Double> warningInterval, double enterProbPrevSubEvent, double enterProbNextSubEvent) {
+	public SubEventCriticalArea(Event event, String subEventNumber, double expectedValue, double deviation, HalfClosedInterval boundInterval,
+			HalfClosedInterval anomalyInterval, HalfClosedInterval warningInterval, double enterProbPrevSubEvent, double enterProbNextSubEvent) {
 		super(event, subEventNumber, expectedValue, deviation, boundInterval, anomalyInterval, warningInterval);
 
 		almostSurelyCountPrevSubEvent = (int) (Math.log(0.0000000000000000001d) / Math.log(enterProbPrevSubEvent)) + 1;
