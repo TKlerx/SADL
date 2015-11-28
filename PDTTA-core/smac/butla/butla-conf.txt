@@ -1,7 +1,7 @@
 paramfile = butla/params.pcs
 runObj = QUALITY
 cutoffTime = 10000
-wallclock-limit = 432000
+wallclock-limit = 300
 deterministic = 1
 instance_file = instances/train
 test_instance_file = instances/test

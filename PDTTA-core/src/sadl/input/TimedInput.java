@@ -613,6 +613,4 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	public List<TimedWord> getWords() {
 		return Collections.unmodifiableList(words);
 	}
-
-
 }

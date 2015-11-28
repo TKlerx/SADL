@@ -12,5 +12,5 @@
 package sadl.constants;
 
 public enum EventsCreationStrategy {
-	DontSplitEvents, SplitEvents, SplitEventsIsolateCriticalAreasMergeInProcess, SplitEventsIsolateCriticalAreasMergeAfter
+	DontSplitEvents, NotTimedEvents, SplitEvents, IsolateCriticalAreas, IsolateCriticalAreasMergeInProcess, IsolateCriticalAreasMergeAfter
 }

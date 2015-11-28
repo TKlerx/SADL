@@ -11,15 +11,15 @@
 
 package sadl.run.factories.learn;
 
-import com.beust.jcommander.Parameter;
-
 import sadl.constants.EventsCreationStrategy;
 import sadl.constants.KDEFormelVariant;
-import sadl.constants.MergeStrategy;
+import sadl.constants.PTAOrdering;
 import sadl.constants.TransitionsType;
 import sadl.interfaces.ModelLearner;
 import sadl.modellearner.ButlaPdtaLearner;
 import sadl.run.factories.LearnerFactory;
+
+import com.beust.jcommander.Parameter;
 
 public class ButlaFactory implements LearnerFactory {
 	@Parameter(names = "-bandwidth")
@@ -28,17 +28,14 @@ public class ButlaFactory implements LearnerFactory {
 	@Parameter(names = "-alpha")
 	double alpha;
 
-	@Parameter(names = "-check")
-	TransitionsType check;
+	@Parameter(names = "-transitionsToCheck")
+	TransitionsType transitionsToCheck;
 
 	@Parameter(names = "-anomalyProbability")
 	double anomalyProbability;
 
-	@Parameter(names = "-warningProbability")
-	double warningProbability;
-
 	@Parameter(names = "-mergeStrategy")
-	MergeStrategy mergeStrategy;
+	PTAOrdering mergeStrategy;
 
 	@Parameter(names = "-splittingStrategy")
 	EventsCreationStrategy splittingStrategy;
@@ -49,7 +46,8 @@ public class ButlaFactory implements LearnerFactory {
 	@Override
 	public ModelLearner create() {
 
-		final ModelLearner learner = new ButlaPdtaLearner(bandwidth, alpha, check, anomalyProbability, warningProbability, mergeStrategy, splittingStrategy,
+		final ModelLearner learner = new ButlaPdtaLearner(bandwidth, alpha, transitionsToCheck, anomalyProbability, anomalyProbability, mergeStrategy,
+				splittingStrategy,
 				formelVariant);
 		return learner;
 	}

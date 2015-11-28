@@ -14,14 +14,12 @@ package sadl.detectors;
 import gnu.trove.list.TDoubleList;
 import sadl.constants.ProbabilityAggregationMethod;
 import sadl.input.TimedWord;
-import sadl.models.PTA.SubEvent;
 import sadl.models.pdta.PDTA;
 import sadl.models.pdta.PDTAState;
 import sadl.models.pdta.PDTATransition;
+import sadl.models.pta.SubEvent;
 
 public class AnodaDetector extends AnomalyDetector {
-
-	protected PDTA pdrta;
 
 	public AnodaDetector(ProbabilityAggregationMethod aggType) {
 		super(aggType);
@@ -29,17 +27,22 @@ public class AnodaDetector extends AnomalyDetector {
 
 	@Override
 	public boolean isAnomaly(TimedWord word) {
-		if (pdrta == null) {
-			pdrta = (PDTA) super.model;
-		}
 
-		PDTAState currentState = pdrta.getRoot();
+		final PDTA pdta = (PDTA) super.model;
+
+		PDTAState currentState = pdta.getRoot();
 
 		for (int i = 0; i < word.length(); i++) {
 			final String eventSymbol = word.getSymbol(i);
 			final double time = word.getTimeValue(i);
 
 			final PDTATransition transition = currentState.getTransition(eventSymbol, time);
+
+			if (transition == null) {
+				// System.out.println("ERROR: (" + currentState.getId() + ")");
+				return true;
+			}
+
 			final SubEvent event = transition.getEvent();
 
 			if (event.hasWarning(time)) {

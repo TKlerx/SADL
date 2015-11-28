@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.models.PTA;
+package sadl.models.pta;
 
 import java.util.Collection;
 
@@ -21,11 +21,15 @@ public class PTATransition {
 	protected PTAState target;
 	protected int count;
 
-	protected boolean removed = false; // TODO REMOVE
+	protected boolean removed = false;
 
 	private static int idCounter = 0;
 
 	public PTATransition(PTAState source, PTAState target, SubEvent event, int count) {
+
+		if (source == null || target == null || event == null) {
+			throw new IllegalArgumentException();
+		}
 
 		this.id = idCounter++;
 		this.source = source;
@@ -70,14 +74,14 @@ public class PTATransition {
 		return count;
 	}
 
-	public boolean isRemoved() {
+	public boolean exists() {
 
-		return removed;
+		return !removed;
 	}
 
-	public void incrementCount(int count) {
+	public void incrementCount(int addCount) {
 
-		this.count += count;
+		this.count += addCount;
 	}
 
 	@Override

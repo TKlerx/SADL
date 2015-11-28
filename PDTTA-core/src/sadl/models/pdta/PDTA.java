@@ -31,8 +31,9 @@ import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.AutomatonModel;
 import sadl.interfaces.ProbabilisticModel;
-import sadl.models.PTA.Event;
-import sadl.models.PTA.SubEvent;
+import sadl.models.pta.Event;
+import sadl.models.pta.HalfClosedInterval;
+import sadl.models.pta.SubEvent;
 
 public class PDTA implements AutomatonModel, ProbabilisticModel {
 
@@ -78,6 +79,11 @@ public class PDTA implements AutomatonModel, ProbabilisticModel {
 		return root;
 	}
 
+	public HashMap<Integer, PDTAState> getStates() {
+
+		return states;
+	}
+
 	public TimedInput generateRandomSequences(boolean allowAnomaly, int count) {
 
 		final LinkedList<TimedWord> words = new LinkedList<>();
@@ -118,7 +124,15 @@ public class PDTA implements AutomatonModel, ProbabilisticModel {
 			if (nextTransition != null) {
 				final SubEvent event = nextTransition.getEvent();
 				final String eventSymbol = event.getEvent().getSymbol();
-				final double time = event.generateRandomTime(allowAnomaly);
+				HalfClosedInterval allowedInterval;
+
+				if (allowAnomaly) {
+					allowedInterval = new HalfClosedInterval(0.0, Double.POSITIVE_INFINITY);
+				} else {
+					allowedInterval = nextTransition.getInterval();
+				}
+
+				final double time = event.generateRandomTime(allowedInterval);
 				symbols.add(eventSymbol);
 				timeValues.add((int) time);
 
@@ -165,20 +179,20 @@ public class PDTA implements AutomatonModel, ProbabilisticModel {
 				final Event randomEvent = eventsArray[random.nextInt(eventsArray.length)];
 				final SubEvent randomSubEvent = randomEvent.getRandomSubEvent();
 				symbols.add(randomSubEvent.getEvent().getSymbol());
-				timeValues.add((int) randomSubEvent.generateRandomTime(false));
+				timeValues.add((int) randomSubEvent.generateRandomTime(randomSubEvent.getAnomalyBounds()));
 			}
 		}
 
 		final TimedWord wordAnomaly = new TimedWord(symbols, timeValues, ClassLabel.ANOMALY);
 
-		if (this.hasAnomalie(wordAnomaly)) {
+		if (this.hasAnomaly(wordAnomaly)) {
 			return wordAnomaly;
 		} else {
 			return generateAnomalyWord(anomaliesMaxCount);
 		}
 	}
 
-	public boolean hasAnomalie(TimedWord word) {
+	public boolean hasAnomaly(TimedWord word) {
 
 		PDTAState currentState = root;
 

@@ -9,7 +9,7 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.models.PTA;
+package sadl.models.pta;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -53,9 +53,38 @@ public class PTAState implements Cloneable {
 		return pta;
 	}
 
+	public int getId() {
+
+		return id;
+	}
+
+	public PTAState isMergedWith() {
+
+		if (!mergedWith.exists()) {
+			mergedWith = mergedWith.isMergedWith();
+		}
+
+		return mergedWith;
+	}
+
+	public void setMergedWith(PTAState state) {
+
+		this.mergedWith = state;
+	}
+
 	public PTATransition getTransition(String symbol) {
 
 		return outTransitions.get(symbol);
+	}
+
+	public Collection<LinkedHashMap<Integer, PTATransition>> getInTransitions() {
+
+		return inTransitions.values();
+	}
+
+	public Collection<PTATransition> getOutTransitions() {
+
+		return outTransitions.values();
 	}
 
 	public String getWord() {
@@ -112,6 +141,18 @@ public class PTAState implements Cloneable {
 		return sum;
 	}
 
+	public int getEndCount() {
+
+		final int inTransitionsCount = getInTransitionsCount();
+		final int outTransitionsCount = getOutTransitionsCount();
+
+		if (inTransitionsCount < outTransitionsCount) {
+			return 0;
+		}
+
+		return inTransitionsCount - outTransitionsCount;
+	}
+
 	public int getOutTransitionsCount(String eventSymbol) {
 
 		final PTATransition transition = outTransitions.get(eventSymbol);
@@ -130,26 +171,23 @@ public class PTAState implements Cloneable {
 
 	public double getEndProbability() {
 
-		final int inTransitionsCount = this.getInTransitionsCount();
 		final int outTransitionsCount = this.getOutTransitionsCount();
-		final int endCount = inTransitionsCount - outTransitionsCount;
+		final int endCount = this.getEndCount();
 
-		if (endCount <= 0) {
-			return 0.0d;
-		} else if (outTransitionsCount == 0) {
+		if (outTransitionsCount == 0) {
 			return 1.0d;
 		}
 
-		return (double) endCount / outTransitionsCount;
+		return (double) endCount / (outTransitionsCount + endCount);
 	}
 
-	public boolean isRemoved() {
+	public boolean exists() {
 
 		if (mergedWith == null) {
-			return false;
+			return true;
 		}
 
-		return true;
+		return false;
 	}
 
 	public boolean isMarked() {
@@ -164,11 +202,11 @@ public class PTAState implements Cloneable {
 
 	public static void merge(PTAState firstState, PTAState secondState, EventsCreationStrategy strategy) {
 
-		if (firstState.isRemoved()) {
+		if (!firstState.exists()) {
 			firstState = firstState.isMergedWith();
 		}
 
-		if (secondState.isRemoved()) {
+		if (!secondState.exists()) {
 			secondState = secondState.isMergedWith();
 		}
 
@@ -213,10 +251,10 @@ public class PTAState implements Cloneable {
 
 		PTATransition.remove(transitionsToRemove);
 		PTATransition.add(transitionsToAdd);
-		secondState.mergedWith = firstState;
+		secondState.setMergedWith(firstState);
 		PTAState.merge(statesToMerge, strategy);
 
-		if (strategy == EventsCreationStrategy.SplitEventsIsolateCriticalAreasMergeInProcess) {
+		if (strategy == EventsCreationStrategy.IsolateCriticalAreasMergeInProcess) {
 			firstState.removeCriticalTransitions();
 		}
 	}
@@ -231,46 +269,31 @@ public class PTAState implements Cloneable {
 			if (event instanceof SubEventCriticalArea) {
 				final SubEventCriticalArea criticalEvent = (SubEventCriticalArea) event;
 
-				if (transition.getCount() > criticalEvent.getAlmostSurelyCount()) {
+				final SubEvent leftEvent = criticalEvent.getPreviousSubEvent();
+				final SubEvent rightEvent = criticalEvent.getNextSubEvent();
+				final PTATransition leftEventTransition = outTransitions.get(leftEvent.getSymbol());
+				final PTATransition rightEventTransition = outTransitions.get(rightEvent.getSymbol());
 
-					final SubEvent leftEvent = criticalEvent.getPreviousSubEvent();
-					final SubEvent rightEvent = criticalEvent.getNextSubEvent();
-					final PTATransition leftEventTransition = outTransitions.get(leftEvent.getSymbol());
-					final PTATransition rightEventTransition = outTransitions.get(rightEvent.getSymbol());
-
-					if (leftEventTransition == null) {
-						if (rightEventTransition != null) {
-							transitionsToRemove.add(transition);
-							statesToMerge.add(new Pair<>(rightEventTransition.target, transition.target));
-						}
-					} else if (rightEventTransition == null) {
+				if (leftEventTransition == null && transition.getCount() * 0.1 > criticalEvent.getAlmostSurelyCountPrev()) {
+					if (rightEventTransition != null) {
+						transitionsToRemove.add(transition);
+						statesToMerge.add(new Pair<>(rightEventTransition.target, transition.target));
+					}
+				} else if (rightEventTransition == null && transition.getCount() * 0.1 > criticalEvent.getAlmostSurelyCountNext()) {
+					if (leftEventTransition != null) {
 						transitionsToRemove.add(transition);
 						statesToMerge.add(new Pair<>(leftEventTransition.target, transition.target));
 					}
 				}
-
 			}
+
 		}
 
-		PTATransition.remove(transitionsToRemove);
-		PTAState.merge(statesToMerge, EventsCreationStrategy.SplitEventsIsolateCriticalAreasMergeInProcess);
-	}
-
-	public int getId() {
-
-		return id;
-	}
-
-	public PTAState isMergedWith() {
-
-		if (mergedWith.isRemoved()) {
-			return mergedWith.isMergedWith();
+		if (!transitionsToRemove.isEmpty()) {
+			PTATransition.remove(transitionsToRemove);
+			PTAState.merge(statesToMerge, EventsCreationStrategy.IsolateCriticalAreasMergeInProcess);
 		}
-
-		return mergedWith;
 	}
-
-
 
 	public static void merge(Collection<Pair<PTAState, PTAState>> statesToMerge, EventsCreationStrategy strategy) {
 		for (final Pair<PTAState, PTAState> statePair : statesToMerge) {
