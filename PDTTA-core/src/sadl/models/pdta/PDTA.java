@@ -125,10 +125,10 @@ public class PDTA implements AutomatonModel, Model {
 			if (nextTransition != null) {
 				final SubEvent event = nextTransition.getEvent();
 				final String eventSymbol = event.getEvent().getSymbol();
-				HalfClosedInterval<Double> allowedInterval;
+				HalfClosedInterval allowedInterval;
 
 				if (allowAnomaly) {
-					allowedInterval = new HalfClosedInterval<>(0.0, Double.POSITIVE_INFINITY);
+					allowedInterval = new HalfClosedInterval(0.0, Double.POSITIVE_INFINITY);
 				} else {
 					allowedInterval = nextTransition.getInterval();
 				}

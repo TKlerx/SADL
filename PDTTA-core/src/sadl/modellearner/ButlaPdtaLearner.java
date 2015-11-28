@@ -210,7 +210,7 @@ public class ButlaPdtaLearner implements ModelLearner, CompatibilityChecker {
 			}
 
 			eventsMap.put(eventSysbol, event);
-			System.out.println("Created event: " + event);
+			// System.out.println("Created event: " + event);
 		}
 
 		return eventsMap;

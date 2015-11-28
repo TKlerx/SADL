@@ -18,10 +18,10 @@ public class PDTATransition {
 
 	protected SubEvent event;
 	protected PDTAState target;
-	protected HalfClosedInterval<Double> interval;
+	protected HalfClosedInterval interval;
 	protected double propability;
 
-	PDTATransition(SubEvent event, PDTAState target, HalfClosedInterval<Double> interval, double probability) {
+	PDTATransition(SubEvent event, PDTAState target, HalfClosedInterval interval, double probability) {
 
 		if (event == null) {
 			throw new IllegalArgumentException("Event is empty");
@@ -55,7 +55,7 @@ public class PDTATransition {
 		return propability;
 	}
 
-	public HalfClosedInterval<Double> getInterval() {
+	public HalfClosedInterval getInterval() {
 
 		return interval;
 	}

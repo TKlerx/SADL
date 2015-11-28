@@ -34,9 +34,6 @@ public class ButlaFactory implements LearnerFactory {
 	@Parameter(names = "-anomalyProbability")
 	double anomalyProbability;
 
-	@Parameter(names = "-warningProbability")
-	double warningProbability;
-
 	@Parameter(names = "-mergeStrategy")
 	PTAOrdering mergeStrategy;
 
@@ -49,7 +46,7 @@ public class ButlaFactory implements LearnerFactory {
 	@Override
 	public ModelLearner create() {
 
-		final ModelLearner learner = new ButlaPdtaLearner(bandwidth, alpha, transitionsToCheck, anomalyProbability, warningProbability, mergeStrategy,
+		final ModelLearner learner = new ButlaPdtaLearner(bandwidth, alpha, transitionsToCheck, anomalyProbability, anomalyProbability, mergeStrategy,
 				splittingStrategy,
 				formelVariant);
 		return learner;
