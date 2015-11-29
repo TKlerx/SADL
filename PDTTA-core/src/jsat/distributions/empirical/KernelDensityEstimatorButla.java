@@ -39,6 +39,8 @@ public class KernelDensityEstimatorButla {
 	protected double startX;
 	protected double endX;
 
+	protected KDEFormelVariant kdeFormelVariant;
+
 	public static final double DEFAULT_BANDWIDTH = 50d;
 	public static final double DEFAULT_MIN_SEARCH_ACCURACY = 0.25d;
 
@@ -69,6 +71,7 @@ public class KernelDensityEstimatorButla {
 		this.X = dataPoints.arrayCopy();
 		this.minSearchStep = minSearchStep;
 		this.minSearchAccuracy = minSearchAccuracy;
+		this.kdeFormelVariant = formelVariant;
 
 		if (Precision.equals(bandwidth, 0)) {
 			bandwidth = MyKernelDensityEstimator.BandwithGuassEstimate(dataPoints);
@@ -294,7 +297,14 @@ public class KernelDensityEstimatorButla {
 		double lastX = startX;
 		double lastValue = kernelDerivationFunction.f(lastX);
 
-		for (double x = lastX + minSearchStep; x < endX; x = x + minSearchStep) {
+		double step;
+		if (kdeFormelVariant == KDEFormelVariant.OriginalKDE) {
+			step = minSearchStep;
+		} else {
+			step = 1.0d;
+		}
+
+		for (double x = lastX + step; x < endX; x = x + step) {
 			final double newValue = kernelDerivationFunction.f(x);
 
 			if (lastValue < 0 && newValue > 0) {
@@ -303,6 +313,12 @@ public class KernelDensityEstimatorButla {
 
 			lastX = x;
 			lastValue = newValue;
+
+			if (kdeFormelVariant == KDEFormelVariant.ButlaBandwidthNotSquared || kdeFormelVariant == KDEFormelVariant.OriginalButlaVariableBandwidth) {
+				step = x * 0.05d / 4.0;
+			} else if (kdeFormelVariant == KDEFormelVariant.ButlaBandwidthSquared) {
+				step = Math.pow(x * 0.05d, 2) / 4.0;
+			}
 		}
 
 		return pointList.toArray(new Double[0]);
