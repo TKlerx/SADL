@@ -157,7 +157,6 @@ public class SmacRun {
 		gobbler.start();
 		logger.info("Starting new SmacRun with commands={}", jc.getUnknownOptions());
 		MasterSeed.setSeed(Long.parseLong(mainParams.get(4)));
-		// TODO log all quality metrics?! true pos, true neg, fp, fn, runtime, memory consumption (like in batchrunner with sigar) for every runs
 
 		// TODO Try to use this again
 		// final Pair<TimedInput, TimedInput> inputs = IoUtils.readTrainTestFile(inputSeqs);

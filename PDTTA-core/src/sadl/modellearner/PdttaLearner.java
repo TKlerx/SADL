@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,12 +33,14 @@ import jsat.linear.DenseVector;
 import jsat.linear.Vec;
 import sadl.constants.MergeTest;
 import sadl.input.TimedInput;
+import sadl.input.TimedWord;
 import sadl.interfaces.ModelLearner;
 import sadl.interfaces.TauEstimator;
 import sadl.models.PDFA;
 import sadl.models.PDTTA;
 import sadl.structure.Transition;
 import sadl.structure.ZeroProbTransition;
+import sadl.utils.Settings;
 
 /**
  * 
@@ -154,7 +157,7 @@ public class PdttaLearner implements ModelLearner {
 		final Map<ZeroProbTransition, TDoubleList> result = new HashMap<>();
 		// TODO check why parallelism destroys determinism
 		final Lock l = new ReentrantLock();
-		trainingSequences.getWords().parallelStream().forEach(word -> {
+		final Consumer<? super TimedWord> f = word -> {
 			int currentState = -1;
 			int followingState = -1;
 			currentState = pdfa.getStartState();
@@ -168,7 +171,12 @@ public class PdttaLearner implements ModelLearner {
 				l.unlock();
 				currentState = followingState;
 			}
-		});
+		};
+		if (Settings.isParallel()) {
+			trainingSequences.getWords().parallelStream().forEach(f);
+		} else {
+			trainingSequences.getWords().stream().forEach(f);
+		}
 		return result;
 	}
 
@@ -210,7 +218,12 @@ public class PdttaLearner implements ModelLearner {
 	protected Map<ZeroProbTransition, ContinuousDistribution> fit(Map<ZeroProbTransition, TDoubleList> timeValueBuckets) {
 		// parallel (does not destroy determinism)
 		final Map<ZeroProbTransition, ContinuousDistribution> result = Collections.synchronizedMap(new HashMap<>());
-		timeValueBuckets.keySet().parallelStream().forEach(t -> result.put(t, fitDistribution(timeValueBuckets.get(t))));
+		final Consumer<ZeroProbTransition> f = t -> result.put(t, fitDistribution(timeValueBuckets.get(t)));
+		if (Settings.isParallel()) {
+			timeValueBuckets.keySet().parallelStream().forEach(f);
+		} else {
+			timeValueBuckets.keySet().stream().forEach(f);
+		}
 		return result;
 	}
 

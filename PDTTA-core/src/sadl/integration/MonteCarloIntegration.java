@@ -24,6 +24,7 @@ import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.SingleValueDistribution;
 import sadl.integration.MonteCarloPoint.MonteCarloPointComparator;
 import sadl.utils.MasterSeed;
+import sadl.utils.Settings;
 
 public class MonteCarloIntegration implements Serializable {
 	private static final long serialVersionUID = -7798039596284260123L;
@@ -75,7 +76,12 @@ public class MonteCarloIntegration implements Serializable {
 		}
 		logger.debug("Rejected {} points", pointsRejected);
 		logger.debug("Accepted {} points", pointsFound);
-		Arrays.parallelSort(integral, new MonteCarloPointComparator());
+		if (Settings.isParallel()) {
+			Arrays.parallelSort(integral, new MonteCarloPointComparator());
+		} else {
+			Arrays.sort(integral, new MonteCarloPointComparator());
+		}
+
 		// Collections.sort(integral2);
 		// integral2.sort((m1, m2) -> Double.compare(m1.getX(), m2.getX()));
 		preprocessed = true;

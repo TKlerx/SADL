@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.IntConsumer;
 import java.util.stream.IntStream;
 
 import org.apache.commons.math3.util.Pair;
@@ -143,10 +144,15 @@ public abstract class AnomalyDetector {
 		final boolean[] result = new boolean[testSequences.size()];
 
 		// parallelism does not destroy determinism
-		IntStream.range(0, testSequences.size()).parallel().forEach(i -> {
+		final IntConsumer f = (i -> {
 			final TimedWord s = testSequences.get(i);
 			result[i] = isAnomaly(s);
 		});
+		if (Settings.isParallel()) {
+			IntStream.range(0, testSequences.size()).parallel().forEach(f);
+		} else {
+			IntStream.range(0, testSequences.size()).forEach(f);
+		}
 		return result;
 	}
 

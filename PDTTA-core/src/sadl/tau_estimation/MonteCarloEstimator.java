@@ -14,7 +14,9 @@ package sadl.tau_estimation;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import jsat.distributions.ContinuousDistribution;
 import sadl.integration.MonteCarloIntegration;
 import sadl.interfaces.TauEstimator;
+import sadl.utils.Settings;
 
 public class MonteCarloEstimator implements TauEstimator, Serializable {
 	private static Logger logger = LoggerFactory.getLogger(MonteCarloEstimator.class);
@@ -50,9 +53,14 @@ public class MonteCarloEstimator implements TauEstimator, Serializable {
 			mcs.put(d, mc);
 			logger.debug("Preprocessed {} Monte Carlo Intervals.", mcs.size());
 		}
-		mcs.entrySet().parallelStream().forEach(e -> {
+		final Consumer<? super Entry<ContinuousDistribution, MonteCarloIntegration>> f = e -> {
 			e.getValue().preprocess(e.getKey(), numberOfSteps);
-		});
+		};
+		if (Settings.isParallel()) {
+			mcs.entrySet().parallelStream().forEach(f);
+		} else {
+			mcs.entrySet().stream().forEach(f);
+		}
 	}
 
 	@Override
