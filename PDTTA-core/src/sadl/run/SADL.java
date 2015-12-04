@@ -51,7 +51,8 @@ public class SADL {
 
 	@Parameter
 	private final List<String> mainParams = new ArrayList<>();
-
+	@Parameter(names = "-parallel", arity = 1)
+	boolean parallel = true;
 	@Parameter(names = "-debug")
 	boolean debug = false;
 	static boolean crash = false;
@@ -61,7 +62,6 @@ public class SADL {
 				logger.error("Not enough params!");
 				System.exit(1);
 			}
-			// FIXME parse MasterSeed
 
 			// final String[] reducedArgs = Arrays.copyOfRange(args, 1, args.length);
 
@@ -79,10 +79,9 @@ public class SADL {
 
 			jc.parse(args);
 
-			// TODO Debug param has to be in front of commands: JCommander specific
-			if (main.debug) {
-				Settings.setDebug(main.debug);
-			}
+			// TODO Debug/parallel param has to be in front of commands: JCommander specific
+			Settings.setDebug(main.debug);
+			Settings.setParallel(main.parallel);
 
 			switch (jc.getParsedCommand()) {
 				case test:

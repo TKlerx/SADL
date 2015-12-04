@@ -11,18 +11,17 @@
 
 package sadl.models.pdta;
 
-import org.apache.commons.lang3.Range;
-
-import sadl.models.PTA.SubEvent;
+import sadl.models.pta.HalfClosedInterval;
+import sadl.models.pta.SubEvent;
 
 public class PDTATransition {
 
 	protected SubEvent event;
 	protected PDTAState target;
-	protected Range<Double> interval;
+	protected HalfClosedInterval interval;
 	protected double propability;
 
-	PDTATransition(SubEvent event, PDTAState target, Range<Double> interval, double probability) {
+	PDTATransition(SubEvent event, PDTAState target, HalfClosedInterval interval, double probability) {
 
 		if (event == null) {
 			throw new IllegalArgumentException("Event is empty");
@@ -30,7 +29,7 @@ public class PDTATransition {
 			throw new IllegalArgumentException("Target is empty");
 		} else if (interval == null) {
 			throw new IllegalArgumentException("Interval is empty");
-		} else if (Double.isNaN(probability) || probability < 0.0d || probability > 1.0d) {
+		} else if (Double.isNaN(probability) || probability <= 0.0d || probability > 1.0d) {
 			throw new IllegalArgumentException("Probability wrong parameter: " + probability);
 		}
 
@@ -56,11 +55,14 @@ public class PDTATransition {
 		return propability;
 	}
 
-	public boolean inInterval(double value) {
-		final double min = interval.getMinimum();
-		final double max = interval.getMaximum();
+	public HalfClosedInterval getInterval() {
 
-		if (min == value || (min < value && value < max)) {
+		return interval;
+	}
+
+	public boolean inInterval(double value) {
+
+		if (interval.contains(value)) {
 			return true;
 		}
 

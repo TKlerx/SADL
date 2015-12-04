@@ -1,18 +1,18 @@
 #BUTLA parameters
 
-alpha [0,1] [0.05]
-check {	Incoming, Outgoing, Both} [Incoming]
-anomalyProbability [0,1] [0.05]
+alpha [0.0001,0.9999] [0.05]
+transitionsToCheck {Incoming, Outgoing, Both} [Incoming]
+anomalyProbability [0.00000001,0.9999] [0.05]
 
-warningProbability [0,1] [0.05]
+#warningProbability [0.00000001,0.9999] [0.05]
 #forbidden:
-{warningProbability < anomalyProbability}
+#{warningProbability > anomalyProbability}
 
-mergeStrategy {TopDown, BottonUp} [BottonUp]
-splittingStrategy {	DontSplitEvents, SplitEvents, SplitEventsIsolateCriticalAreasMergeInProcess, SplitEventsIsolateCriticalAreasMergeAfter} [SplitEvents]
+mergeStrategy {TopDown, BottomUp} [BottomUp]
+splittingStrategy {	DontSplitEvents, SplitEvents, IsolateCriticalAreas, IsolateCriticalAreasMergeInProcess, IsolateCriticalAreasMergeAfter} [SplitEvents]
 formelVariant {	OriginalKDE, OriginalButlaVariableBandwidth, ButlaBandwidthSquared, ButlaBandwidthNotSquared} [OriginalKDE]
 
-bandwidth [0,100] [0]
+bandwidth [10000,1000000] [20000]
 bandwidth | formelVariant in {OriginalKDE}
 
 
@@ -74,4 +74,4 @@ dbScanEps[0,1] [0.05]
 dbScanEps | detectorMethod in {DBSCAN}
 
 dbScanThreshold[0,1] [0.05]
-dbScanEps | detectorMethod in {DBSCAN}
+dbScanThreshold | detectorMethod in {DBSCAN}

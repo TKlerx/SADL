@@ -48,6 +48,8 @@ import sadl.oneclassclassifier.LibSvmClassifier;
 import sadl.oneclassclassifier.OneClassClassifier;
 import sadl.oneclassclassifier.ThresholdClassifier;
 import sadl.oneclassclassifier.clustering.DbScanClassifier;
+import sadl.oneclassclassifier.clustering.GMeansClassifier;
+import sadl.oneclassclassifier.clustering.XMeansClassifier;
 import sadl.run.factories.LearnerFactory;
 import sadl.run.factories.learn.ButlaFactory;
 import sadl.run.factories.learn.PdttaFactory;
@@ -62,6 +64,7 @@ public class SmacRun {
 	}
 
 	private static final Logger logger = LoggerFactory.getLogger(SmacRun.class);
+
 
 	/*
 	 * ################### SMAC Params ###################
@@ -132,8 +135,8 @@ public class SmacRun {
 	@Parameter(names = "-scalingMethod")
 	ScalingMethod scalingMethod = ScalingMethod.NONE;
 
-	@Parameter(names = "-distanceMetric", description = "Which distance metric to use for DBSCAN")
-	DistanceMethod dbScanDistanceMethod = DistanceMethod.EUCLIDIAN;
+	@Parameter(names = "-distanceMetric", description = "Which distance metric to use for clustering")
+	DistanceMethod clusteringDistanceMethod = DistanceMethod.EUCLIDIAN;
 
 	@Parameter(names = "-dbScanEps")
 	private double dbscan_eps;
@@ -143,6 +146,12 @@ public class SmacRun {
 
 	@Parameter(names = "-dbScanThreshold")
 	private double dbscan_threshold = -1;
+
+	@Parameter(names = "-gmeansThreshold")
+	private final double gmeans_threshold = -1;
+
+	@Parameter(names = "-xmeansThreshold")
+	private final double xmeans_threshold = -1;
 
 	@Parameter(names = "-skipFirstElement", arity = 1)
 	boolean skipFirstElement = false;
@@ -157,7 +166,6 @@ public class SmacRun {
 		gobbler.start();
 		logger.info("Starting new SmacRun with commands={}", jc.getUnknownOptions());
 		MasterSeed.setSeed(Long.parseLong(mainParams.get(4)));
-		// TODO log all quality metrics?! true pos, true neg, fp, fn, runtime, memory consumption (like in batchrunner with sigar) for every runs
 
 		// TODO Try to use this again
 		// final Pair<TimedInput, TimedInput> inputs = IoUtils.readTrainTestFile(inputSeqs);
@@ -204,7 +212,11 @@ public class SmacRun {
 			if (dbscan_threshold < 0) {
 				dbscan_threshold = dbscan_eps;
 			}
-			classifier = new DbScanClassifier(dbscan_eps, dbscan_n, dbscan_threshold, dbScanDistanceMethod, scalingMethod);
+			classifier = new DbScanClassifier(dbscan_eps, dbscan_n, dbscan_threshold, clusteringDistanceMethod, scalingMethod);
+		} else if (detectorMethod == DetectorMethod.GMEANS) {
+			classifier = new GMeansClassifier(scalingMethod, gmeans_threshold, clusteringDistanceMethod);
+		} else if (detectorMethod == DetectorMethod.XMEANS) {
+			classifier = new XMeansClassifier(scalingMethod, xmeans_threshold, clusteringDistanceMethod);
 		} else {
 			classifier = null;
 		}
@@ -258,6 +270,7 @@ public class SmacRun {
 		return result;
 	}
 
+	@SuppressWarnings("unused")
 	@Deprecated
 	private Pair<Algoname, Path> extractAlgoAndInput() {
 

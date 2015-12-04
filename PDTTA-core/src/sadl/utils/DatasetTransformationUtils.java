@@ -29,6 +29,7 @@ import jsat.linear.DenseVector;
  *
  */
 public class DatasetTransformationUtils {
+	@SuppressWarnings("unused")
 	private static Logger logger = LoggerFactory.getLogger(DatasetTransformationUtils.class);
 
 	public static DataSet<SimpleDataSet> doublesToDataSet(List<double[]> doubleVectors) {
@@ -48,6 +49,14 @@ public class DatasetTransformationUtils {
 			dataPoints.add(dp);
 		}
 		final ClassificationDataSet result = new ClassificationDataSet(dataPoints, classValue);
+		return result;
+	}
+
+	public static List<double[]> dataPointsToArray(List<DataPoint> dataPoints) {
+		final List<double[]> result = new ArrayList<>(dataPoints.size());
+		for (final DataPoint sample : dataPoints) {
+			result.add(sample.getNumericalValues().arrayCopy());
+		}
 		return result;
 	}
 

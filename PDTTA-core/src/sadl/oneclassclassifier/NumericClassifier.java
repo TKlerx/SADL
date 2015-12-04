@@ -37,11 +37,15 @@ public abstract class NumericClassifier implements OneClassClassifier {
 	private static Logger logger = LoggerFactory.getLogger(NumericClassifier.class);
 	Path classificationTrainFile = Paths.get("classificationTrain.csv");
 	Path classificationTestFile = Paths.get("classificationTest.csv");
-
 	Scaling filter = null;
+	private final ScalingMethod scalingMethod;
+
+	public ScalingMethod getScalingMethod() {
+		return scalingMethod;
+	}
 
 	public NumericClassifier(ScalingMethod scalingMethod) {
-
+		this.scalingMethod = scalingMethod;
 		if (scalingMethod == ScalingMethod.NORMALIZE) {
 			final Normalizer n = new Normalizer();
 			setFilter(n);
@@ -117,7 +121,7 @@ public abstract class NumericClassifier implements OneClassClassifier {
 	 * Checks whether the provided test sample is an outlier. The test sample are already scaled.
 	 * 
 	 * @param scaledTestSample
-	 * @return
+	 * @return true iff the sample is an outlier
 	 */
 	protected abstract boolean isOutlierScaled(double[] scaledTestSample);
 

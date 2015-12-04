@@ -202,9 +202,19 @@ public class ExperimentResult {
 	public String toString() {
 		return "ExperimentResult [truePositives=" + truePositives + ", trueNegatives=" + trueNegatives + ", falsePositives=" + falsePositives
 				+ ", falseNegatives=" + falseNegatives + ", executionTimeTraining=" + DurationFormatUtils.formatDurationHMS(executionTimeTraining)
-				+ ", executionTimeTesting=" + DurationFormatUtils.formatDurationHMS(executionTimeTesting)
- + ", numberOfStates=" + numberOfStates
+				+ ", executionTimeTesting=" + DurationFormatUtils.formatDurationHMS(executionTimeTesting) + ", numberOfStates=" + numberOfStates
 				+ ", maxMemoryUsage=" + maxMemoryUsage + "(MB), minMemoryUsage=" + minMemoryUsage + "(MB), avgMemoryUsage=" + avgMemoryUsage + "(MB)]";
+	}
+
+	public ExperimentResult combine(ExperimentResult other) {
+		final ExperimentResult result = new ExperimentResult(this.truePositives + other.truePositives, this.trueNegatives + other.trueNegatives,
+				this.falsePositives + other.falsePositives, this.falseNegatives + other.falseNegatives);
+		result.setMaxMemoryUsage(Math.max(this.getMaxMemoryUsage(), other.getMaxMemoryUsage()));
+		result.setMinMemoryUsage(Math.min(this.getMinMemoryUsage(), other.getMinMemoryUsage()));
+		result.setExecutionTimeTraining(this.getExecutionTimeTraining() + other.getExecutionTimeTraining());
+		result.setExecutionTimeTesting(this.getExecutionTimeTesting() + other.getExecutionTimeTesting());
+		result.setNumberOfStates(Math.max(this.getNumberOfStates(), other.getNumberOfStates()));
+		return result;
 	}
 
 

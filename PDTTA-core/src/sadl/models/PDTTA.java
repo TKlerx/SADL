@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.IntConsumer;
 import java.util.stream.IntStream;
 
 import org.apache.commons.math3.util.Pair;
@@ -35,6 +36,7 @@ import sadl.interfaces.TauEstimator;
 import sadl.structure.Transition;
 import sadl.structure.ZeroProbTransition;
 import sadl.tau_estimation.IdentityEstimator;
+import sadl.utils.Settings;
 
 /**
  * A Probabilistic Deterministic Timed-Transition Automaton (PDTTA).
@@ -143,7 +145,7 @@ public class PDTTA extends PDFA {
 			currentState = t.getToState();
 		}
 		list.fill(0, traversedTransitions.size(), 0);
-		IntStream.range(0, traversedTransitions.size()).parallel().forEach(i -> {
+		final IntConsumer f = i -> {
 			final Transition t = traversedTransitions.get(i);
 			if (t == null) {
 				list.set(i, 0);
@@ -156,7 +158,12 @@ public class PDTTA extends PDFA {
 			} else {
 				list.set(i, tauEstimator.estimateTau(d, ts.getTimeValue(i)));
 			}
-		});
+		};
+		if (Settings.isParallel()) {
+			IntStream.range(0, traversedTransitions.size()).parallel().forEach(f);
+		} else {
+			IntStream.range(0, traversedTransitions.size()).forEach(f);
+		}
 		return list;
 	}
 
