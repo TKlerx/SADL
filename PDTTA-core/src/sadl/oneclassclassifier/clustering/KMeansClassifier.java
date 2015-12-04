@@ -20,8 +20,6 @@ import org.slf4j.LoggerFactory;
 import jsat.classifiers.DataPoint;
 import jsat.clustering.SeedSelectionMethods.SeedSelection;
 import jsat.clustering.kmeans.HamerlyKMeans;
-import jsat.clustering.kmeans.KMeans;
-import jsat.clustering.kmeans.XMeans;
 import jsat.linear.DenseVector;
 import jsat.linear.Vec;
 import jsat.linear.distancemetrics.DistanceMetric;
@@ -38,13 +36,15 @@ import sadl.utils.MasterSeed;
  * @author Timo Klerx
  *
  */
-public class XMeansClassifier extends NumericClassifier {
-	private static Logger logger = LoggerFactory.getLogger(XMeansClassifier.class);
+public class KMeansClassifier extends NumericClassifier {
+	private static Logger logger = LoggerFactory.getLogger(KMeansClassifier.class);
 
 	private final double distanceThreshold;
 	private DistanceMetric dm;
 
-	public XMeansClassifier(ScalingMethod scalingMethod, double distanceThreshold, DistanceMethod distanceMethod) {
+	private final int k;
+
+	public KMeansClassifier(ScalingMethod scalingMethod, int k, double distanceThreshold, DistanceMethod distanceMethod) {
 		super(scalingMethod);
 		this.distanceThreshold = distanceThreshold;
 		if (distanceMethod == DistanceMethod.EUCLIDIAN) {
@@ -52,6 +52,7 @@ public class XMeansClassifier extends NumericClassifier {
 		} else if (distanceMethod == DistanceMethod.MANHATTAN) {
 			dm = new ManhattanDistance();
 		}
+		this.k = k;
 	}
 
 	@Override
@@ -71,15 +72,17 @@ public class XMeansClassifier extends NumericClassifier {
 
 	private List<Vec> means = new ArrayList<>();
 
+
 	@Override
 	public void trainModelScaled(List<double[]> trainSamples) {
-		final KMeans init = new HamerlyKMeans(dm, SeedSelection.KPP, MasterSeed.nextRandom());
-		final XMeans gMeans = new XMeans(init);
-		gMeans.setStoreMeans(true);
-		final List<List<DataPoint>> clusterResult = gMeans.cluster(DatasetTransformationUtils.doublesToDataSet(trainSamples));
-		means = gMeans.getMeans();
+		final SeedSelection ss = SeedSelection.KPP;
+		// TODO create parent class for kMeans clustering, that is shared by kMeans, gMeans, xMeans
+		final HamerlyKMeans kMeans = new HamerlyKMeans(dm, ss, MasterSeed.nextRandom());
+		kMeans.setStoreMeans(true);
+		final List<List<DataPoint>> clusterResult = kMeans.cluster(DatasetTransformationUtils.doublesToDataSet(trainSamples), k);
+		means = kMeans.getMeans();
 		final int clusterCount = clusterResult.size();
-		logger.info("XMeans found {} many clusters.", clusterCount);
+		logger.info("There are {} many clusters.", clusterCount);
 		int count = 0;
 		for (int i = 0; i < clusterCount; i++) {
 			logger.info("Cluster {} has {} many points.", i, clusterResult.get(i).size());

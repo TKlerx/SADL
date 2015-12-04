@@ -78,7 +78,7 @@ public class DbScanClassifier extends NumericClassifier {
 		final DataSet<?> dataSet = DatasetTransformationUtils.doublesToDataSet(data);
 		clusterResult = MyDBSCAN.createClusterListFromAssignmentArray(dbscan.cluster(dataSet, eps, n, pointCats), dataSet);
 		final int clusterCount = clusterResult.size();
-		logger.info("There are {} many clusters.", clusterCount);
+		logger.info("DBSCAN found {} many clusters.", clusterCount);
 		int count = 0;
 		for (int i = 0; i < clusterCount; i++) {
 			logger.info("Cluster {} has {} many points.", i, clusterResult.get(i).size());
