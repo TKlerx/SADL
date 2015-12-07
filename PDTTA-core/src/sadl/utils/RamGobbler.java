@@ -63,9 +63,11 @@ public class RamGobbler extends Thread {
 			try {
 				try {
 					final int currentRamNeeded = (int) s.getProcMem(pid).getResident() / 1000000;
-					minRam = Math.min(minRam, currentRamNeeded);
-					maxRam = Math.max(maxRam, currentRamNeeded);
-					updateMean(currentRamNeeded);
+					if (currentRamNeeded > 0) {
+						minRam = Math.min(minRam, currentRamNeeded);
+						maxRam = Math.max(maxRam, currentRamNeeded);
+						updateMean(currentRamNeeded);
+					}
 
 				} catch (final SigarException e) {
 					logger.error("Unexpected exception occured.", e);
