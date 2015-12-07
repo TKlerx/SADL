@@ -43,7 +43,7 @@ import sadl.detectors.featureCreators.MinimalFeatureCreator;
 import sadl.detectors.featureCreators.SmallFeatureCreator;
 import sadl.detectors.featureCreators.UberFeatureCreator;
 import sadl.experiments.ExperimentResult;
-import sadl.interfaces.ModelLearner;
+import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.oneclassclassifier.LibSvmClassifier;
 import sadl.oneclassclassifier.OneClassClassifier;
 import sadl.oneclassclassifier.ThresholdClassifier;
@@ -53,6 +53,7 @@ import sadl.oneclassclassifier.clustering.XMeansClassifier;
 import sadl.run.factories.LearnerFactory;
 import sadl.run.factories.learn.ButlaFactory;
 import sadl.run.factories.learn.PdttaFactory;
+import sadl.run.factories.learn.PetriNetFactory;
 import sadl.run.factories.learn.RTIFactory;
 import sadl.utils.MasterSeed;
 import sadl.utils.RamGobbler;
@@ -222,7 +223,7 @@ public class SmacRun {
 		}
 		anomalyDetector = new VectorDetector(aggType, featureCreator, classifier, aggregateSublists);
 
-		final ModelLearner learner = getLearner(Algoname.getAlgoname(mainParams.get(0)), jc);
+		final ProbabilisticModelLearner learner = getLearner(Algoname.getAlgoname(mainParams.get(0)), jc);
 		final AnomalyDetection detection;
 		if (detectorMethod == DetectorMethod.ANODA) {
 			detection = new AnomalyDetection(new AnodaDetector(aggType), learner);
@@ -292,7 +293,7 @@ public class SmacRun {
 		return Pair.of(algo, input);
 	}
 
-	private ModelLearner getLearner(Algoname algoName, JCommander jc) {
+	private ProbabilisticModelLearner getLearner(Algoname algoName, JCommander jc) {
 
 		LearnerFactory lf = null;
 
@@ -302,6 +303,9 @@ public class SmacRun {
 				break;
 			case PDTTA:
 				lf = new PdttaFactory();
+				break;
+			case PETRI_NET:
+				lf = new PetriNetFactory();
 				break;
 			case BUTLA:
 				lf = new ButlaFactory();
@@ -319,11 +323,11 @@ public class SmacRun {
 		subjc.parse(subOptions);
 
 		@SuppressWarnings("null")
-		final ModelLearner ml = lf.create();
+		final ProbabilisticModelLearner ml = lf.create();
 		return ml;
 	}
 
-	protected void smacErrorAbort() {
+	protected static void smacErrorAbort() {
 		System.out.println("Result for SMAC: CRASHED, 0, 0, 0, 0");
 		System.exit(1);
 	}

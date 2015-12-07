@@ -9,17 +9,20 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.constants;
+package sadl.models.petri_nets;
 
-public enum Algoname {
-	RTI, PDTTA, BUTLA, PETRI_NET;
+import org.apache.commons.math3.util.Pair;
 
-	public static Algoname getAlgoname(String string) {
-		for (final Algoname loopAlg : Algoname.values()) {
-			if (loopAlg.name().equalsIgnoreCase(string)) {
-				return loopAlg;
-			}
-		}
+import gnu.trove.list.TDoubleList;
+import sadl.input.TimedWord;
+import sadl.interfaces.ProbabilisticModel;
+
+public class PetriNet implements ProbabilisticModel {
+
+	@Override
+	public Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord s) {
+		// TODO Auto-generated method stub
 		return null;
 	}
+
 }

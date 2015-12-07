@@ -26,7 +26,12 @@ import sadl.input.TimedWord;
  *
  */
 public interface ProbabilisticModel extends Model {
-
+	// FIXME write javadoc
+	/**
+	 * 
+	 * @param s
+	 * @return
+	 */
 	Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord s);
 
 	default Map<String, Function<TimedWord, Pair<TDoubleList, TDoubleList>>> getAvailableCalcMethods() {

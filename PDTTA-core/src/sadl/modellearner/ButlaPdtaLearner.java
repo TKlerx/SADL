@@ -28,7 +28,7 @@ import sadl.constants.TransitionsType;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.CompatibilityChecker;
-import sadl.interfaces.ModelLearner;
+import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.models.pdta.PDTA;
 import sadl.models.pta.Event;
 import sadl.models.pta.EventGenerator;
@@ -36,7 +36,7 @@ import sadl.models.pta.PTA;
 import sadl.models.pta.PTAState;
 import sadl.models.pta.SubEvent;
 
-public class ButlaPdtaLearner implements ModelLearner, CompatibilityChecker {
+public class ButlaPdtaLearner implements ProbabilisticModelLearner, CompatibilityChecker {
 
 	EventGenerator eventGenerator;
 	double a;

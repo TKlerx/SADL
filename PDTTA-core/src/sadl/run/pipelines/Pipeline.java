@@ -57,7 +57,7 @@ import sadl.detectors.threshold.FullThresholdDetector;
 import sadl.experiments.ExperimentResult;
 import sadl.input.TimedInput;
 import sadl.interfaces.ProbabilisticModel;
-import sadl.interfaces.ModelLearner;
+import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.modellearner.PdttaLearner;
 import sadl.oneclassclassifier.LibSvmClassifier;
 import sadl.oneclassclassifier.clustering.DbScanClassifier;
@@ -272,7 +272,7 @@ public class Pipeline implements Serializable {
 			trainInput = TimedInput.parse(trainFile);
 			testInput = TimedInput.parse(testFile);
 		}
-		final ModelLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0,
+		final ProbabilisticModelLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0,
 				null);
 		final ProbabilisticModel model = learner.train(trainInput);
 		final AnomalyDetection detection = new AnomalyDetection(pdttaDetector, model);

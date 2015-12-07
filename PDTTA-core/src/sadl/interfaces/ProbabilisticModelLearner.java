@@ -9,17 +9,16 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.constants;
+package sadl.interfaces;
 
-public enum Algoname {
-	RTI, PDTTA, BUTLA, PETRI_NET;
+import sadl.input.TimedInput;
 
-	public static Algoname getAlgoname(String string) {
-		for (final Algoname loopAlg : Algoname.values()) {
-			if (loopAlg.name().equalsIgnoreCase(string)) {
-				return loopAlg;
-			}
-		}
-		return null;
-	}
+/**
+ * 
+ * @author Timo Klerx
+ *
+ */
+public interface ProbabilisticModelLearner extends ModelLearner {
+	@Override
+	public ProbabilisticModel train(TimedInput trainingSequences);
 }

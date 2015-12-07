@@ -46,7 +46,7 @@ import sadl.detectors.featureCreators.MinimalFeatureCreator;
 import sadl.detectors.featureCreators.SmallFeatureCreator;
 import sadl.experiments.ExperimentResult;
 import sadl.interfaces.ProbabilisticModel;
-import sadl.interfaces.ModelLearner;
+import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.modellearner.rtiplus.SearchingPDRTALearner;
 import sadl.modellearner.rtiplus.SimplePDRTALearner;
 import sadl.modellearner.rtiplus.SimplePDRTALearner.DistributionCheckType;
@@ -249,7 +249,7 @@ public class RTISmacPipeline implements Serializable {
 		}
 		anomalyDetector = new VectorDetector(aggType, featureCreator, classifier);
 
-		final ModelLearner learner;
+		final ProbabilisticModelLearner learner;
 		if (!greedy) {
 			learner = new SimplePDRTALearner(sig, hist, tester, distrCheck, splitPos, boolOps, stepsDir);
 		} else {

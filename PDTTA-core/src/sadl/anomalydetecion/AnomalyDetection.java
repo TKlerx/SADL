@@ -25,7 +25,7 @@ import sadl.detectors.AnomalyDetector;
 import sadl.evaluation.Evaluation;
 import sadl.experiments.ExperimentResult;
 import sadl.input.TimedInput;
-import sadl.interfaces.ModelLearner;
+import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.interfaces.ProbabilisticModel;
 import sadl.interfaces.TrainableDetector;
 import sadl.utils.IoUtils;
@@ -35,7 +35,7 @@ public class AnomalyDetection {
 
 	private static Logger logger = LoggerFactory.getLogger(AnomalyDetection.class);
 	private final AnomalyDetector anomalyDetector;
-	ModelLearner learner;
+	ProbabilisticModelLearner learner;
 	ProbabilisticModel learnedModel;
 
 
@@ -43,14 +43,14 @@ public class AnomalyDetection {
 		return anomalyDetector;
 	}
 
-	public ModelLearner getLearner() {
+	public ProbabilisticModelLearner getLearner() {
 		return learner;
 	}
 
 	public ProbabilisticModel getLearnedModel() {
 		return learnedModel;
 	}
-	public AnomalyDetection(AnomalyDetector anomalyDetector, ModelLearner learner) {
+	public AnomalyDetection(AnomalyDetector anomalyDetector, ProbabilisticModelLearner learner) {
 		super();
 		this.anomalyDetector = anomalyDetector;
 		this.learner = learner;

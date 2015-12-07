@@ -55,92 +55,111 @@ public class LibSvmClassifierTest {
 
 	@Test
 	public void testLibSvmClassifier() throws URISyntaxException, IOException {
-		final PdttaLearner learner = new PdttaLearner(0.05, false);
-		final FeatureCreator featureCreator = new UberFeatureCreator();
-		final LibSvmClassifier classifier = new LibSvmClassifier(1, 0.2, 0.1, 1, 0.001, 3, ScalingMethod.NONE);
-		final VectorDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, featureCreator, classifier, false);
-		final AnomalyDetection detection = new AnomalyDetection(detector, learner);
-		final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
-		final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
-		final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
-		final ExperimentResult expected = new ExperimentResult(420, 4055, 478, 47);
-		assertEquals(expected, actual);
+		final String osName = System.getProperty("os.name");
+		if (osName.toLowerCase().contains("linux")) {
+			final PdttaLearner learner = new PdttaLearner(0.05, false);
+			final FeatureCreator featureCreator = new UberFeatureCreator();
+			final LibSvmClassifier classifier = new LibSvmClassifier(1, 0.2, 0.1, 1, 0.001, 3, ScalingMethod.NONE);
+			final VectorDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, featureCreator, classifier, false);
+			final AnomalyDetection detection = new AnomalyDetection(detector, learner);
+			final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
+			final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
+			final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
+			final ExperimentResult expected = new ExperimentResult(420, 4055, 478, 47);
+			assertEquals(expected, actual);
+		}
 	}
 
 	@Test
 	public void testSomClassifier() throws URISyntaxException, IOException {
-		final PdttaLearner learner = new PdttaLearner(0.05, false);
-		final FeatureCreator featureCreator = new UberFeatureCreator();
-		final NumericClassifier classifier = new SomClassifier(ScalingMethod.NORMALIZE, 10, 10);
-		final VectorDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, featureCreator, classifier, false);
-		final AnomalyDetection detection = new AnomalyDetection(detector, learner);
-		final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
-		final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
-		final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
-		// TODO correct experimentresult
-		final ExperimentResult expected = new ExperimentResult(420, 4055, 478, 47);
-		assertEquals(expected, actual);
+		final String osName = System.getProperty("os.name");
+		if (osName.toLowerCase().contains("linux")) {
+			final PdttaLearner learner = new PdttaLearner(0.05, false);
+			final FeatureCreator featureCreator = new UberFeatureCreator();
+			final NumericClassifier classifier = new SomClassifier(ScalingMethod.NORMALIZE, 10, 10);
+			final VectorDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, featureCreator, classifier, false);
+			final AnomalyDetection detection = new AnomalyDetection(detector, learner);
+			final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
+			final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
+			final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
+			// TODO correct experimentresult
+			final ExperimentResult expected = new ExperimentResult(420, 4055, 478, 47);
+			assertEquals(expected, actual);
+		}
 	}
 
 	@Test
 	public void testKMeansClassifier() throws URISyntaxException, IOException {
-		final PdttaLearner learner = new PdttaLearner(0.05, false);
-		final FeatureCreator featureCreator = new UberFeatureCreator();
-		final NumericClassifier classifier = new KMeansClassifier(ScalingMethod.NORMALIZE, 10, 0.05, DistanceMethod.EUCLIDIAN);
-		final VectorDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, featureCreator, classifier, false);
-		final AnomalyDetection detection = new AnomalyDetection(detector, learner);
-		final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
-		final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
-		final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
-		// TODO correct experimentresult
-		final ExperimentResult expected = new ExperimentResult(420, 4055, 478, 47);
-		assertEquals(expected, actual);
+		final String osName = System.getProperty("os.name");
+		if (osName.toLowerCase().contains("linux")) {
+			final PdttaLearner learner = new PdttaLearner(0.05, false);
+			final FeatureCreator featureCreator = new UberFeatureCreator();
+			final NumericClassifier classifier = new KMeansClassifier(ScalingMethod.NORMALIZE, 10, 0.05, DistanceMethod.EUCLIDIAN);
+			final VectorDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, featureCreator, classifier, false);
+			final AnomalyDetection detection = new AnomalyDetection(detector, learner);
+			final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
+			final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
+			final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
+			// TODO correct experimentresult
+			final ExperimentResult expected = new ExperimentResult(420, 4055, 478, 47);
+			assertEquals(expected, actual);
+		}
 	}
 
 	@Test
 	public void testGMeansClassifier() throws URISyntaxException, IOException {
-		final PdttaLearner learner = new PdttaLearner(0.05, false);
-		final FeatureCreator featureCreator = new UberFeatureCreator();
-		final NumericClassifier classifier = new GMeansClassifier(ScalingMethod.NORMALIZE, 0.05, DistanceMethod.EUCLIDIAN);
-		final VectorDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, featureCreator, classifier, false);
-		final AnomalyDetection detection = new AnomalyDetection(detector, learner);
-		final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
-		final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
-		final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
-		// TODO correct experimentresult
-		final ExperimentResult expected = new ExperimentResult(420, 4055, 478, 47);
-		assertEquals(expected, actual);
+		final String osName = System.getProperty("os.name");
+		if (osName.toLowerCase().contains("linux")) {
+			final PdttaLearner learner = new PdttaLearner(0.05, false);
+			final FeatureCreator featureCreator = new UberFeatureCreator();
+			final NumericClassifier classifier = new GMeansClassifier(ScalingMethod.NORMALIZE, 0.05, DistanceMethod.EUCLIDIAN);
+			final VectorDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, featureCreator, classifier, false);
+			final AnomalyDetection detection = new AnomalyDetection(detector, learner);
+			final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
+			final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
+			final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
+			// TODO correct experimentresult
+			final ExperimentResult expected = new ExperimentResult(420, 4055, 478, 47);
+			assertEquals(expected, actual);
+		}
 	}
 
 	@Test
 	public void testXMeansClassifier() throws URISyntaxException, IOException {
-		final PdttaLearner learner = new PdttaLearner(0.05, false);
-		final FeatureCreator featureCreator = new UberFeatureCreator();
-		final NumericClassifier classifier = new XMeansClassifier(ScalingMethod.NORMALIZE, 0.05, DistanceMethod.EUCLIDIAN);
-		final VectorDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, featureCreator, classifier, false);
-		final AnomalyDetection detection = new AnomalyDetection(detector, learner);
-		final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
-		final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
-		final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
-		// TODO correct experimentresult
-		final ExperimentResult expected = new ExperimentResult(420, 4055, 478, 47);
-		assertEquals(expected, actual);
+		final String osName = System.getProperty("os.name");
+		if (osName.toLowerCase().contains("linux")) {
+			final PdttaLearner learner = new PdttaLearner(0.05, false);
+			final FeatureCreator featureCreator = new UberFeatureCreator();
+			final NumericClassifier classifier = new XMeansClassifier(ScalingMethod.NORMALIZE, 0.05, DistanceMethod.EUCLIDIAN);
+			final VectorDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, featureCreator, classifier, false);
+			final AnomalyDetection detection = new AnomalyDetection(detector, learner);
+			final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
+			final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
+			final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
+			// TODO correct experimentresult
+			final ExperimentResult expected = new ExperimentResult(420, 4055, 478, 47);
+			assertEquals(expected, actual);
+		}
 	}
 
 	@Test
 	public void testClusteredClassifier() throws URISyntaxException, IOException {
-		final PdttaLearner learner = new PdttaLearner(0.05, false);
-		final FeatureCreator featureCreator = new UberFeatureCreator();
-		final NumericClassifier classifier = new ClusteredClassifier(ScalingMethod.NORMALIZE,
-				new GMeans(new HamerlyKMeans(new EuclideanDistance(), SeedSelection.KPP, MasterSeed.nextRandom())));
-		final VectorDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, featureCreator, classifier, false);
-		final AnomalyDetection detection = new AnomalyDetection(detector, learner);
-		final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
-		final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
-		final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
-		// TODO correct experimentresult
-		final ExperimentResult expected = new ExperimentResult(420, 4055, 478, 47);
-		assertEquals(expected, actual);
+		final String osName = System.getProperty("os.name");
+		if (osName.toLowerCase().contains("linux")) {
+			final PdttaLearner learner = new PdttaLearner(0.05, false);
+			final FeatureCreator featureCreator = new UberFeatureCreator();
+			final NumericClassifier classifier = new ClusteredClassifier(ScalingMethod.NORMALIZE,
+					new GMeans(new HamerlyKMeans(new EuclideanDistance(), SeedSelection.KPP, MasterSeed.nextRandom())));
+			final VectorDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, featureCreator, classifier, false);
+			final AnomalyDetection detection = new AnomalyDetection(detector, learner);
+			final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
+			final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
+			final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
+			// TODO correct experimentresult
+			final ExperimentResult expected = new ExperimentResult(420, 4055, 478, 47);
+			assertEquals(expected, actual);
+		} else {
+			System.out.println("Did not do any test because OS is not linux and treba cannot be loaded.");
+		}
 	}
-
 }

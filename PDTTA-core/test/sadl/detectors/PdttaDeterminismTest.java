@@ -49,61 +49,68 @@ public class PdttaDeterminismTest {
 
 	@Test
 	public void svmDeterminismTest() throws IOException, URISyntaxException {
-		double fMeasure = -1;
-		final boolean firstRun = true;
-		for (int i = 1; i <= 10; i++) {
-			final Pair<TimedInput, TimedInput> trainTest = IoUtils
-					.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt")
-							.toURI()));
-			Settings.setDebug(false);
-			final PdttaLearner learner = new PdttaLearner(0.05, false);
-			final AnomalyDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, new UberFeatureCreator(),
-					new LibSvmClassifier(1, 0.2, 0.1, 1, 0.001, 3, ScalingMethod.NORMALIZE));
+		final String osName = System.getProperty("os.name");
+		if (osName.toLowerCase().contains("linux")) {
+			double fMeasure = -1;
+			final boolean firstRun = true;
+			for (int i = 1; i <= 10; i++) {
+				final Pair<TimedInput, TimedInput> trainTest = IoUtils
+						.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt")
+								.toURI()));
+				Settings.setDebug(false);
+				final PdttaLearner learner = new PdttaLearner(0.05, false);
+				final AnomalyDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, new UberFeatureCreator(),
+						new LibSvmClassifier(1, 0.2, 0.1, 1, 0.001, 3, ScalingMethod.NORMALIZE));
 
-			final AnomalyDetection detection = new AnomalyDetection(detector, learner);
+				final AnomalyDetection detection = new AnomalyDetection(detector, learner);
 
-			final ExperimentResult result = detection.trainTest(trainTest.getKey(), trainTest.getValue());
+				final ExperimentResult result = detection.trainTest(trainTest.getKey(), trainTest.getValue());
 
-			if (firstRun) {
-				fMeasure = result.getFMeasure();
-			} else {
-				if (!Precision.equals(fMeasure, result.getFMeasure())) {
-					fail("Failed for run " + i + " because in previous runs fMeasure=" + fMeasure + "; now fMeasure=" + result.getFMeasure());
+				if (firstRun) {
+					fMeasure = result.getFMeasure();
+				} else {
+					if (!Precision.equals(fMeasure, result.getFMeasure())) {
+						fail("Failed for run " + i + " because in previous runs fMeasure=" + fMeasure + "; now fMeasure=" + result.getFMeasure());
+					}
 				}
-			}
 
+			}
 		}
 	}
 
 	@Test
 	public void thresholdDeterminismTest() throws IOException, URISyntaxException {
-		double fMeasure = -1;
-		final boolean firstRun = true;
-		for (int i = 1; i <= 10; i++) {
-			final Pair<TimedInput, TimedInput> trainTest = IoUtils
-					.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI()));
-			Settings.setDebug(false);
-			final PdttaLearner learner = new PdttaLearner(0.05, false);
+		final String osName = System.getProperty("os.name");
+		if (osName.toLowerCase().contains("linux")) {
+			double fMeasure = -1;
+			final boolean firstRun = true;
+			for (int i = 1; i <= 10; i++) {
+				final Pair<TimedInput, TimedInput> trainTest = IoUtils
+						.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI()));
+				Settings.setDebug(false);
+				final PdttaLearner learner = new PdttaLearner(0.05, false);
 
-			final SmallFeatureCreator featureCreator = new SmallFeatureCreator();
-			final ThresholdClassifier classifier = new ThresholdClassifier(Math.exp(-5), Math.exp(-8), 0.01, 0.001);
+				final SmallFeatureCreator featureCreator = new SmallFeatureCreator();
+				final ThresholdClassifier classifier = new ThresholdClassifier(Math.exp(-5), Math.exp(-8), 0.01, 0.001);
 
-			final VectorDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, featureCreator, classifier);
+				final VectorDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, featureCreator, classifier);
 
 
-			final AnomalyDetection detection = new AnomalyDetection(detector, learner);
+				final AnomalyDetection detection = new AnomalyDetection(detector, learner);
 
-			final ExperimentResult result = detection.trainTest(trainTest.getKey(), trainTest.getValue());
+				final ExperimentResult result = detection.trainTest(trainTest.getKey(), trainTest.getValue());
 
-			if (firstRun) {
-				fMeasure = result.getFMeasure();
-			} else {
-				if (!Precision.equals(fMeasure, result.getFMeasure())) {
-					fail("Failed for run " + i + " because in previous runs fMeasure=" + fMeasure + "; now fMeasure=" + result.getFMeasure());
+				if (firstRun) {
+					fMeasure = result.getFMeasure();
+				} else {
+					if (!Precision.equals(fMeasure, result.getFMeasure())) {
+						fail("Failed for run " + i + " because in previous runs fMeasure=" + fMeasure + "; now fMeasure=" + result.getFMeasure());
+					}
 				}
-			}
 
+			}
+		} else {
+			System.out.println("Did not do any test because OS is not linux and treba cannot be loaded.");
 		}
 	}
-
 }

@@ -12,7 +12,7 @@
 package sadl.modellearner;
 
 import sadl.input.TimedInput;
-import sadl.interfaces.ModelLearner;
+import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.models.PDFA;
 
 /**
@@ -20,7 +20,7 @@ import sadl.models.PDFA;
  * @author Timo Klerx
  *
  */
-public interface PdfaLearner extends ModelLearner {
+public interface PdfaLearner extends ProbabilisticModelLearner {
 	@Override
 	public PDFA train(TimedInput trainingSequences);
 }
