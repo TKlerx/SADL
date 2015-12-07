@@ -34,7 +34,7 @@ import sadl.oneclassclassifier.clustering.XMeansClassifier;
 import sadl.utils.IoUtils;
 import sadl.utils.MasterSeed;
 
-public class LibSvmClassifierTest {
+public class NumericClassifierTest {
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
@@ -76,14 +76,14 @@ public class LibSvmClassifierTest {
 		if (osName.toLowerCase().contains("linux")) {
 			final PdttaLearner learner = new PdttaLearner(0.05, false);
 			final FeatureCreator featureCreator = new UberFeatureCreator();
-			final NumericClassifier classifier = new SomClassifier(ScalingMethod.NORMALIZE, 10, 10);
+			final NumericClassifier classifier = new SomClassifier(ScalingMethod.NORMALIZE, 10, 10, 0.1);
 			final VectorDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, featureCreator, classifier, false);
 			final AnomalyDetection detection = new AnomalyDetection(detector, learner);
 			final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
 			final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
 			final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
 			// TODO correct experimentresult
-			final ExperimentResult expected = new ExperimentResult(420, 4055, 478, 47);
+			final ExperimentResult expected = new ExperimentResult(0, 4533, 0, 467);
 			assertEquals(expected, actual);
 		}
 	}
@@ -101,7 +101,7 @@ public class LibSvmClassifierTest {
 			final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
 			final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
 			// TODO correct experimentresult
-			final ExperimentResult expected = new ExperimentResult(420, 4055, 478, 47);
+			final ExperimentResult expected = new ExperimentResult(467, 370, 4163, 0);
 			assertEquals(expected, actual);
 		}
 	}
@@ -119,7 +119,7 @@ public class LibSvmClassifierTest {
 			final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
 			final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
 			// TODO correct experimentresult
-			final ExperimentResult expected = new ExperimentResult(420, 4055, 478, 47);
+			final ExperimentResult expected = new ExperimentResult(467, 4204, 329, 0);
 			assertEquals(expected, actual);
 		}
 	}
@@ -137,7 +137,7 @@ public class LibSvmClassifierTest {
 			final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
 			final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
 			// TODO correct experimentresult
-			final ExperimentResult expected = new ExperimentResult(420, 4055, 478, 47);
+			final ExperimentResult expected = new ExperimentResult(467, 4238, 295, 0);
 			assertEquals(expected, actual);
 		}
 	}
@@ -156,7 +156,7 @@ public class LibSvmClassifierTest {
 			final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
 			final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
 			// TODO correct experimentresult
-			final ExperimentResult expected = new ExperimentResult(420, 4055, 478, 47);
+			final ExperimentResult expected = new ExperimentResult(134, 163, 4370, 333);
 			assertEquals(expected, actual);
 		} else {
 			System.out.println("Did not do any test because OS is not linux and treba cannot be loaded.");

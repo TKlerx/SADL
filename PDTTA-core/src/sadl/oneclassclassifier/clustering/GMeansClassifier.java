@@ -57,7 +57,8 @@ public class GMeansClassifier extends NumericClassifier {
 	@Override
 	public boolean isOutlierScaled(double[] toEvaluate) {
 		// check distance to the next center
-		// does not make sense to check for the next point because all points belong to a cluster (not like in DBScan where noise points exist)
+		// it does not make sense and is thus not done to check for the next point because all points belong to a cluster (not like in DBScan where noise points
+		// exist)
 
 		final Vec sample = new DenseVector(toEvaluate);
 		for (final Vec v : means) {
