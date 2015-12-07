@@ -2,10 +2,12 @@ paramfile = rti+/params.pcs
 runObj = QUALITY
 # 100 hours algo run-time
 cutoffTime = 360000
-# 20 days run-time
+# 20 days smac run-time
 # wallclock-limit = 1728000
-# 14 days run-time
+# 14 days smac run-time
 wallclock-limit = 1209600
+#7 days smac run-time
+wallclock-limit = 604800
 deterministic = 1
 instance_file = instances/train
 test_instance_file = instances/test

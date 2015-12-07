@@ -79,7 +79,7 @@ public class SADL {
 
 			jc.parse(args);
 
-			// TODO Debug/parallel param has to be in front of commands: JCommander specific
+			// Debug/parallel param has to be in front of commands: JCommander specific
 			Settings.setDebug(main.debug);
 			Settings.setParallel(main.parallel);
 

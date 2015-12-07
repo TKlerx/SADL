@@ -38,7 +38,6 @@ public class UberFeatureCreator extends FullFeatureCreator {
 		result.add(eventDiffs.min());
 		result.add(eventDiffs.max());
 
-		// TODO what happens if timeLikelihoods is empty or just contains one value?
 		double stdDev = timeStat.getStandardDeviation();
 		if (Double.isNaN(stdDev) || Double.isInfinite(stdDev)) {
 			stdDev = AnomalyDetector.ILLEGAL_VALUE;
