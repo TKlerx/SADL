@@ -16,7 +16,7 @@ bandwidth [10000,1000000] [20000]
 bandwidth | formelVariant in {OriginalKDE}
 
 #Detector parameters
-detectorMethod {SVM,DBSCAN,THRESHOLD_AGG_ONLY, THRESHOLD_ALL, GMEANS,XMEANS,KMEANS} [SVM]
+detectorMethod {SVM,DBSCAN,THRESHOLD_SINGLE,THRESHOLD_AGG_ONLY, THRESHOLD_ALL, GMEANS,XMEANS,KMEANS} [SVM]
 # Must be tested first!
 # aggregateSublists {true,false} [false] 
 
@@ -24,7 +24,7 @@ skipFirstElement {true,false}[false]
 
 #Threshold parameters
 aggregatedEventThreshold [0,1] [0.00033]
-aggregatedEventThreshold | detectorMethod in {THRESHOLD_AGG_ONLY,THRESHOLD_ALL}
+aggregatedEventThreshold | detectorMethod in {THRESHOLD_SINGLE,THRESHOLD_AGG_ONLY,THRESHOLD_ALL}
 
 aggregatedTimeThreshold [0,1] [0.0067]
 aggregatedTimeThreshold | detectorMethod in {THRESHOLD_AGG_ONLY,THRESHOLD_ALL}

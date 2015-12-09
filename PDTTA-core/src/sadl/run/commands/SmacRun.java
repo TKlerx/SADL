@@ -37,6 +37,7 @@ import sadl.constants.ScalingMethod;
 import sadl.detectors.AnodaDetector;
 import sadl.detectors.AnomalyDetector;
 import sadl.detectors.VectorDetector;
+import sadl.detectors.featureCreators.AggregatedSingleFeatureCreator;
 import sadl.detectors.featureCreators.FeatureCreator;
 import sadl.detectors.featureCreators.FullFeatureCreator;
 import sadl.detectors.featureCreators.MinimalFeatureCreator;
@@ -173,7 +174,6 @@ public class SmacRun {
 	@Parameter(names = "-skipFirstElement", arity = 1)
 	boolean skipFirstElement = false;
 
-	private OneClassClassifier classifier;
 
 
 
@@ -196,6 +196,7 @@ public class SmacRun {
 
 		FeatureCreator featureCreator;
 		AnomalyDetector anomalyDetector;
+		OneClassClassifier classifier;
 		if (featureCreatorMethod == FeatureCreatorMethod.FULL) {
 			featureCreator = new FullFeatureCreator();
 		} else if (featureCreatorMethod == FeatureCreatorMethod.SMALL) {
@@ -209,6 +210,14 @@ public class SmacRun {
 		}
 		if (detectorMethod == DetectorMethod.SVM) {
 			classifier = new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu, svmKernelType, svmEps, svmDegree, scalingMethod);
+		} else if (detectorMethod == DetectorMethod.THRESHOLD_SINGLE) {
+			// only works with minimal feature creator
+			if (featureCreatorMethod != null && featureCreatorMethod != FeatureCreatorMethod.SINGLE) {
+				throw new IllegalArgumentException(
+						"Please do only specify " + FeatureCreatorMethod.SINGLE + " or no featureCreatorMethod for " + detectorMethod);
+			}
+			featureCreator = new AggregatedSingleFeatureCreator();
+			classifier = new ThresholdClassifier(aggregatedEventThreshold);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_AGG_ONLY) {
 			// only works with minimal feature creator
 			if (featureCreatorMethod != null && featureCreatorMethod != FeatureCreatorMethod.MINIMAL) {
