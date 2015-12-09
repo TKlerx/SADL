@@ -324,7 +324,7 @@ public class StateStatistic implements Serializable {
 		}
 
 		// LRT_FIX : Check if params or count.length (example in paper says count.length)
-		// Dues not work with param -> Degrees of Freedom for compared states may not be equal then
+		// Does not work with param -> Degrees of Freedom for compared states may not be equal then
 		if (params > 0) {
 			return new LikelihoodValue(ratio, count.length - 1);
 		} else {
@@ -629,7 +629,7 @@ public class StateStatistic implements Serializable {
 		// Minus 1 because sum of values is last item (not counting as parameter)
 		parameters = pooled[0].size() - 1;
 
-		// LRT_FIX : Thesis: parameters -1, Impl: parameters
+		// LRT_FIX : Thesis: parameters -1 only explained without pooling, Impl: parameters
 		// parameters--;
 
 		if (parameters >= 0) {

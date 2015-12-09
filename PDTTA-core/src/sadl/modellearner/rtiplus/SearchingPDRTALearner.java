@@ -17,7 +17,6 @@ import java.util.NavigableSet;
 import com.google.common.collect.TreeMultimap;
 
 import sadl.input.TimedInput;
-import sadl.interfaces.Model;
 import sadl.interfaces.ProbabilisticModel;
 import sadl.modellearner.rtiplus.boolop.OrOperator;
 import sadl.modellearner.rtiplus.tester.NaiveLikelihoodRatioTester;
@@ -46,7 +45,7 @@ public class SearchingPDRTALearner extends SimplePDRTALearner {
 
 		logger.info("RTI+: Building automaton from input sequences");
 
-		final boolean expand = distrCheckType.compareTo(DistributionCheckType.ALL) > 0;
+		final boolean expand = distrCheckType.compareTo(DistributionCheckType.STRICT) > 0;
 		final PDRTAInput in = new PDRTAInput(trainingSequences, histBinsStr, expand);
 		final PDRTA a = new PDRTA(in);
 
