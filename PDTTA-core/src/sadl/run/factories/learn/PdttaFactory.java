@@ -50,6 +50,9 @@ public class PdttaFactory implements LearnerFactory {
 	@Parameter(names = "-kdeBandwidth")
 	double kdeBandwidth;
 
+	@Parameter(names = "-kdeBandwidthEstimate")
+	boolean kdeBandwidthEstimate;
+
 	@Parameter(names = "-kdeKernelFunction")
 	KdeKernelFunction kdeKernelFunctionQualifier;
 	KernelFunction kdeKernelFunction;
@@ -86,7 +89,9 @@ public class PdttaFactory implements LearnerFactory {
 		} else {
 			tauEstimator = null;
 		}
-
+		if (kdeBandwidthEstimate) {
+			kdeBandwidth = -1;
+		}
 		final PdttaLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0,
 				tauEstimator);
 		return learner;

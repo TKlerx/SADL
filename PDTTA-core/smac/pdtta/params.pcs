@@ -1,7 +1,9 @@
 #PDTTA parameters
 mergeAlpha [0,1] [0.05]
 mergeTest {ALERGIA,CHI_SQUARED, LR, EXACT_M,BINOMIAL,EXACT_B,MDI} [ALERGIA]
-kdeBandwidth [0,1000] [0]
+kdeBandwidthEstimate {true, false} [true]
+kdeBandwidth [0.0000001,1000] [1]
+kdeBandwidth |kdeBandwidthEstimate in {false}
 kdeKernelFunction {BIWEIGHT, EPANECHNIKOV, GAUSS, TRIWEIGHT, UNIFORM, ESTIMATE} [ESTIMATE]
 smoothingPrior [0,1] [0]
 tauEstimation {DENSITY,MONTE_CARLO} [MONTE_CARLO]
