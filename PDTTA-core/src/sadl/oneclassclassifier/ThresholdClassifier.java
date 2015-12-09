@@ -19,9 +19,13 @@ public class ThresholdClassifier implements OneClassClassifier {
 
 	double aggEventThreshold, aggTimeThreshold, singleEventThreshold = Double.NaN, singleTimeThreshold = Double.NaN;
 
-	public ThresholdClassifier(double aggEventThreshold, double aggTimeThreshold) {
+	public ThresholdClassifier(double aggThreshold) {
 		super();
-		this.aggEventThreshold = aggEventThreshold;
+		this.aggEventThreshold = aggThreshold;
+	}
+
+	public ThresholdClassifier(double aggEventThreshold, double aggTimeThreshold) {
+		this(aggEventThreshold);
 		this.aggTimeThreshold = aggTimeThreshold;
 	}
 
@@ -43,7 +47,10 @@ public class ThresholdClassifier implements OneClassClassifier {
 	public boolean isOutlier(double[] testSample) {
 
 		// this is ugly but there is no better way!
-		if (testSample.length == 2 && Double.isNaN(singleEventThreshold) && Double.isNaN(singleTimeThreshold)) {
+		if (testSample.length == 1 && Double.isNaN(singleTimeThreshold) && Double.isNaN(singleEventThreshold) && Double.isNaN(singleTimeThreshold)) {
+			// only use aggregationThresholds. FeatureCreator should be MinimalFeatureCreator
+			return aggDecide(testSample[0]);
+		} else if (testSample.length == 2 && Double.isNaN(singleEventThreshold) && Double.isNaN(singleTimeThreshold)) {
 			// only use aggregationThresholds. FeatureCreator should be MinimalFeatureCreator
 			return aggDecide(testSample[0],testSample[1]);
 		} else if (testSample.length == 6) {
@@ -73,6 +80,10 @@ public class ThresholdClassifier implements OneClassClassifier {
 		} else {
 			return false;
 		}
+	}
+
+	protected boolean aggDecide(double agg) {
+		return agg <= aggEventThreshold;
 	}
 
 }
