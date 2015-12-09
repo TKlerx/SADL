@@ -44,11 +44,18 @@ public class ClusteredClassifier extends NumericClassifier {
 		int closestCluster = -1;
 		double minDistance = Double.MAX_VALUE;
 		for (int i = 0; i < clustering.getMeans().size(); i++) {
-			final double dist = dm.dist(sample, clustering.getMeans().get(i));
+			final Vec clusterVector = clustering.getMeans().get(i);
+			final double dist = dm.dist(sample, clusterVector);
 			if (dist < minDistance) {
-				closestCluster = i;
-				minDistance = dist;
+				if (classifiers[i] != null) {
+					closestCluster = i;
+					minDistance = dist;
+				}
 			}
+		}
+		if (closestCluster == -1) {
+			System.out.println();
+			System.out.println();
 		}
 		return classifiers[closestCluster].isOutlierScaled(scaledTestSample);
 	}
@@ -58,9 +65,13 @@ public class ClusteredClassifier extends NumericClassifier {
 		final List<List<DataPoint>> clusters = clustering.cluster(DatasetTransformationUtils.doublesToDataSet(scaledTrainSamples));
 		classifiers = new NumericClassifier[clusters.size()];
 		for (int i = 0; i < classifiers.length; i++) {
-			classifiers[i] = new SomClassifier(getScalingMethod(), 10, 10);
-			// classifiers[i] =new LibSvmClassifier(1, 0.2, 0.1, 1, 0.001, 3, getScalingMethod());
-			classifiers[i].train(DatasetTransformationUtils.dataPointsToArray(clusters.get(i)));
+			// classifiers[i] = new SomClassifier(getScalingMethod(), 10, 10, 0.1);
+			if (clusters.get(i).isEmpty()) {
+				classifiers[i] = null;
+			} else {
+				classifiers[i] = new LibSvmClassifier(1, 0.2, 0.1, 1, 0.001, 3, getScalingMethod());
+				classifiers[i].train(DatasetTransformationUtils.dataPointsToArray(clusters.get(i)));
+			}
 		}
 	}
 

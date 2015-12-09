@@ -75,6 +75,8 @@ public class PdttaDeterminismTest {
 				}
 
 			}
+		} else {
+			System.out.println("Did not do any test because OS is not linux and treba cannot be loaded.");
 		}
 	}
 

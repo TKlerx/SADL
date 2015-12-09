@@ -9,12 +9,12 @@ bop {AAA, AOO} [AAA]
 bop | em in {LRT, LRT_ADV, FM, FM_ADV}
 
 
-
 #Detector parameters
-detectorMethod {SVM,DBSCAN,THRESHOLD_AGG_ONLY, THRESHOLD_ALL} [SVM]
+detectorMethod {SVM,DBSCAN,THRESHOLD_AGG_ONLY, THRESHOLD_ALL, GMEANS,XMEANS,KMEANS} [SVM]
 # Must be tested first!
 # aggregateSublists {true,false} [false] 
 
+skipFirstElement {true,false}[false]
 
 #Threshold parameters
 aggregatedEventThreshold [0,1] [0.00033]
@@ -32,12 +32,16 @@ singleTimeThreshold | detectorMethod in {THRESHOLD_ALL}
 
 #vector detector parameters
 featureCreator {UBER,FULL,SMALL,MINIMAL} [FULL]
-featureCreator | detectorMethod in {SVM,DBSCAN}
+featureCreator | detectorMethod in {SVM,DBSCAN,GMEANS,KMEANS,XMEANS}
 
 scalingMethod {NONE,NORMALIZE,STANDARDIZE} [NORMALIZE]
-scalingMethod | detectorMethod in {SVM,DBSCAN}
+scalingMethod | detectorMethod in {SVM,DBSCAN,GMEANS,KMEANS,XMEANS}
 #forbidden because senseless
 {detectorMethod=DBSCAN,scalingMethod=NONE}
+{detectorMethod=GMEANS,scalingMethod=NONE}
+{detectorMethod=XMEANS,scalingMethod=NONE}
+{detectorMethod=KMEANS,scalingMethod=NONE}
+
 
 #svm parameters
 svmNu[0,1] [0.1]
@@ -67,4 +71,31 @@ dbScanEps[0,1] [0.05]
 dbScanEps | detectorMethod in {DBSCAN}
 
 dbScanThreshold[0,1] [0.05]
-dbScanEps | detectorMethod in {DBSCAN}
+dbScanThreshold | detectorMethod in {DBSCAN}
+
+
+#Gmeans parameter
+gmeansThreshold[0,1] [0.05]
+gmeansThreshold | detectorMethod in {GMEANS}
+
+gmeansMinPoints[0,100] [1]
+gmeansThreshold | detectorMethod in {GMEANS}
+
+
+#Xmeans parameter
+xmeansThreshold[0,1] [0.05]
+xmeansThreshold | detectorMethod in {XMEANS}
+
+xmeansMinPoints[0,100] [1]
+xmeansThreshold | detectorMethod in {XMEANS}
+
+
+# kMeans parameters
+kmeansThreshold[0,1] [0.05]
+kmeansThreshold | detectorMethod in {KMEANS}
+
+kmeansK[2,1000] [10]
+kmeansK | detectorMethod in {KMEANS}
+
+kmeansMinPoints[0,100] [1]
+kmeansThreshold | detectorMethod in {KMEANS}

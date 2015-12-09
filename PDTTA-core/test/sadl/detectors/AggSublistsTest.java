@@ -49,7 +49,6 @@ public class AggSublistsTest {
 	public void test() throws URISyntaxException, IOException {
 		final String osName = System.getProperty("os.name");
 		if (osName.toLowerCase().contains("linux")) {
-			// TODO write test for DB SCAN classifier
 			final PdttaLearner learner = new PdttaLearner(0.05, false);
 
 			final MinimalFeatureCreator featureCreator = new MinimalFeatureCreator();

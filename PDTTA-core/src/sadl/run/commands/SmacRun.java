@@ -49,6 +49,7 @@ import sadl.oneclassclassifier.OneClassClassifier;
 import sadl.oneclassclassifier.ThresholdClassifier;
 import sadl.oneclassclassifier.clustering.DbScanClassifier;
 import sadl.oneclassclassifier.clustering.GMeansClassifier;
+import sadl.oneclassclassifier.clustering.KMeansClassifier;
 import sadl.oneclassclassifier.clustering.XMeansClassifier;
 import sadl.run.factories.LearnerFactory;
 import sadl.run.factories.learn.ButlaFactory;
@@ -151,8 +152,23 @@ public class SmacRun {
 	@Parameter(names = "-gmeansThreshold")
 	private final double gmeans_threshold = -1;
 
+	@Parameter(names = "-gmeansMinPoints")
+	private final int gmeans_minPoints = 0;
+
 	@Parameter(names = "-xmeansThreshold")
 	private final double xmeans_threshold = -1;
+
+	@Parameter(names = "-xmeansMinPoints")
+	private final int xmeans_minPoints = 0;
+
+	@Parameter(names = "-kmeansThreshold")
+	private final double kmeans_threshold = -1;
+
+	@Parameter(names = "-kmeansMinPoints")
+	private final int kmeans_minPoints = 0;
+
+	@Parameter(names = "-kmeansK")
+	private final int kmeans_k = 2;
 
 	@Parameter(names = "-skipFirstElement", arity = 1)
 	boolean skipFirstElement = false;
@@ -210,14 +226,16 @@ public class SmacRun {
 			featureCreator = new SmallFeatureCreator();
 			classifier = new ThresholdClassifier(aggregatedEventThreshold, aggregatedTimeThreshold, singleEventThreshold, singleTimeThreshold);
 		} else if (detectorMethod == DetectorMethod.DBSCAN) {
-			if (dbscan_threshold < 0) {
+			if (dbscan_threshold <= 0) {
 				dbscan_threshold = dbscan_eps;
 			}
 			classifier = new DbScanClassifier(dbscan_eps, dbscan_n, dbscan_threshold, clusteringDistanceMethod, scalingMethod);
 		} else if (detectorMethod == DetectorMethod.GMEANS) {
-			classifier = new GMeansClassifier(scalingMethod, gmeans_threshold, clusteringDistanceMethod);
+			classifier = new GMeansClassifier(scalingMethod, gmeans_threshold, gmeans_minPoints, clusteringDistanceMethod);
 		} else if (detectorMethod == DetectorMethod.XMEANS) {
-			classifier = new XMeansClassifier(scalingMethod, xmeans_threshold, clusteringDistanceMethod);
+			classifier = new XMeansClassifier(scalingMethod, xmeans_threshold, xmeans_minPoints, clusteringDistanceMethod);
+		} else if (detectorMethod == DetectorMethod.KMEANS) {
+			classifier = new KMeansClassifier(scalingMethod, kmeans_k, kmeans_threshold, kmeans_minPoints, clusteringDistanceMethod);
 		} else {
 			classifier = null;
 		}

@@ -70,21 +70,16 @@ public abstract class NumericClassifier implements OneClassClassifier {
 
 	protected final List<double[]> scale(List<double[]> samples, boolean isTrainingData) {
 		if (filter != null) {
-			try {
-				if (isTrainingData) {
-					filter.setFeatureCount(samples.get(0).length);
-				}
-				final List<double[]> result;
-				if (isTrainingData) {
-					result = filter.train(samples);
-				} else {
-					result = filter.scale(samples);
-				}
-				return result;
-			} catch (final Exception e) {
-				logger.error("Unexpected exception", e);
-				throw new IllegalStateException(e);
+			if (isTrainingData) {
+				filter.setFeatureCount(samples.get(0).length);
 			}
+			final List<double[]> result;
+			if (isTrainingData) {
+				result = filter.train(samples);
+			} else {
+				result = filter.scale(samples);
+			}
+			return result;
 		} else {
 			return samples;
 		}

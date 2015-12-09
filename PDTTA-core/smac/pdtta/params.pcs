@@ -82,13 +82,22 @@ dbScanEps | detectorMethod in {DBSCAN}
 dbScanThreshold[0,1] [0.05]
 dbScanThreshold | detectorMethod in {DBSCAN}
 
+
 #Gmeans parameter
 gmeansThreshold[0,1] [0.05]
 gmeansThreshold | detectorMethod in {GMEANS}
 
+gmeansMinPoints[0,100] [1]
+gmeansThreshold | detectorMethod in {GMEANS}
+
+
 #Xmeans parameter
 xmeansThreshold[0,1] [0.05]
 xmeansThreshold | detectorMethod in {XMEANS}
+
+xmeansMinPoints[0,100] [1]
+xmeansThreshold | detectorMethod in {XMEANS}
+
 
 # kMeans parameters
 kmeansThreshold[0,1] [0.05]
@@ -96,3 +105,6 @@ kmeansThreshold | detectorMethod in {KMEANS}
 
 kmeansK[2,1000] [10]
 kmeansK | detectorMethod in {KMEANS}
+
+kmeansMinPoints[0,100] [1]
+kmeansThreshold | detectorMethod in {KMEANS}
