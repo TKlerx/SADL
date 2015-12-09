@@ -150,18 +150,6 @@ public class SmacRun {
 	@Parameter(names = "-dbScanThreshold")
 	private double dbscan_threshold = -1;
 
-	@Parameter(names = "-gmeansThreshold")
-	private final double gmeans_threshold = -1;
-
-	@Parameter(names = "-gmeansMinPoints")
-	private final int gmeans_minPoints = 0;
-
-	@Parameter(names = "-xmeansThreshold")
-	private final double xmeans_threshold = -1;
-
-	@Parameter(names = "-xmeansMinPoints")
-	private final int xmeans_minPoints = 0;
-
 	@Parameter(names = "-kmeansThreshold")
 	private final double kmeans_threshold = -1;
 
@@ -240,9 +228,9 @@ public class SmacRun {
 			}
 			classifier = new DbScanClassifier(dbscan_eps, dbscan_n, dbscan_threshold, clusteringDistanceMethod, scalingMethod);
 		} else if (detectorMethod == DetectorMethod.GMEANS) {
-			classifier = new GMeansClassifier(scalingMethod, gmeans_threshold, gmeans_minPoints, clusteringDistanceMethod);
+			classifier = new GMeansClassifier(scalingMethod, kmeans_threshold, kmeans_minPoints, clusteringDistanceMethod);
 		} else if (detectorMethod == DetectorMethod.XMEANS) {
-			classifier = new XMeansClassifier(scalingMethod, xmeans_threshold, xmeans_minPoints, clusteringDistanceMethod);
+			classifier = new XMeansClassifier(scalingMethod, kmeans_threshold, kmeans_minPoints, clusteringDistanceMethod);
 		} else if (detectorMethod == DetectorMethod.KMEANS) {
 			classifier = new KMeansClassifier(scalingMethod, kmeans_k, kmeans_threshold, kmeans_minPoints, clusteringDistanceMethod);
 		} else {
