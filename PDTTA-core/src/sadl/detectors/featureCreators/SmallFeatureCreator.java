@@ -13,6 +13,7 @@ package sadl.detectors.featureCreators;
 
 import gnu.trove.list.TDoubleList;
 import sadl.constants.ProbabilityAggregationMethod;
+import sadl.detectors.AnomalyDetector;
 
 /**
  * 
@@ -31,8 +32,8 @@ public class SmallFeatureCreator extends MinimalFeatureCreator {
 		final double timeMin;
 		if (timeLikelihoods.size() == 0) {
 			// happens if the first state is the final state
-			timeMax = Double.POSITIVE_INFINITY;
-			timeMin = Double.POSITIVE_INFINITY;
+			timeMax = AnomalyDetector.ILLEGAL_VALUE;
+			timeMin = AnomalyDetector.ILLEGAL_VALUE;
 		} else {
 			timeMax = timeLikelihoods.max();
 			timeMin = timeLikelihoods.min();

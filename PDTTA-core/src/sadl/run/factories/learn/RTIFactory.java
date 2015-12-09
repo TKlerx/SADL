@@ -14,7 +14,7 @@ package sadl.run.factories.learn;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
-import sadl.interfaces.ModelLearner;
+import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.modellearner.rtiplus.SearchingPDRTALearner;
 import sadl.modellearner.rtiplus.SimplePDRTALearner;
 import sadl.modellearner.rtiplus.SimplePDRTALearner.DistributionCheckType;
@@ -55,9 +55,9 @@ public class RTIFactory implements LearnerFactory {
 	String stepsDir = null;
 
 	@Override
-	public ModelLearner create() {
+	public ProbabilisticModelLearner create() {
 
-		ModelLearner ml = null;
+		ProbabilisticModelLearner ml = null;
 		if (searching) {
 			ml = new SearchingPDRTALearner(sig, hist, tester, distrCheck, splitPos, boolOps, stepsDir);
 		} else {

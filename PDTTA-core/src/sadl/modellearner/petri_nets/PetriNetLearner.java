@@ -9,17 +9,31 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.constants;
+package sadl.modellearner.petri_nets;
 
-public enum Algoname {
-	RTI, PDTTA, BUTLA, PETRI_NET;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-	public static Algoname getAlgoname(String string) {
-		for (final Algoname loopAlg : Algoname.values()) {
-			if (loopAlg.name().equalsIgnoreCase(string)) {
-				return loopAlg;
-			}
-		}
+import sadl.input.TimedInput;
+import sadl.interfaces.ProbabilisticModelLearner;
+import sadl.models.petri_nets.PetriNet;
+import sadl.run.factories.learn.PetriNetFactory;
+
+public class PetriNetLearner implements ProbabilisticModelLearner {
+	private static Logger logger = LoggerFactory.getLogger(PetriNetFactory.class);
+
+	public PetriNetLearner(double alpha) {
+		logger.info("Alpha has value {}", alpha);
+	}
+
+	public PetriNetLearner(double alpha, double param2) {
+		logger.info("alpha={}, param2={}", alpha, param2);
+	}
+
+	@Override
+	public PetriNet train(TimedInput trainingSequences) {
+		// TODO Auto-generated method stub
 		return null;
 	}
+
 }

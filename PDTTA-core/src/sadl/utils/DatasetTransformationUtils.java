@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import jsat.DataSet;
 import jsat.SimpleDataSet;
+import jsat.classifiers.CategoricalData;
 import jsat.classifiers.ClassificationDataSet;
 import jsat.classifiers.DataPoint;
 import jsat.linear.DenseVector;
@@ -42,14 +43,13 @@ public class DatasetTransformationUtils {
 		return result;
 	}
 
-	public static ClassificationDataSet doublesToClassificationDataSet(List<double[]> doubleVectors, int classValue) {
-		final List<DataPoint> dataPoints = new ArrayList<>(doubleVectors.size());
+	public static ClassificationDataSet doublesToClassificationDataSet(List<double[]> doubleVectors) {
+		// We create a new data set. This data set will have 2 dimensions so we can visualize it, and 4 target class values
+		final ClassificationDataSet dataSet = new ClassificationDataSet(doubleVectors.get(0).length, new CategoricalData[0], new CategoricalData(1));
 		for (final double[] sample : doubleVectors) {
-			final DataPoint dp = new DataPoint(new DenseVector(sample));
-			dataPoints.add(dp);
+			dataSet.addDataPoint(new DenseVector(sample), new int[0], 0);
 		}
-		final ClassificationDataSet result = new ClassificationDataSet(dataPoints, classValue);
-		return result;
+		return dataSet;
 	}
 
 	public static List<double[]> dataPointsToArray(List<DataPoint> dataPoints) {

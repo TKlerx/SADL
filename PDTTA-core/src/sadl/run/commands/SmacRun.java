@@ -37,22 +37,25 @@ import sadl.constants.ScalingMethod;
 import sadl.detectors.AnodaDetector;
 import sadl.detectors.AnomalyDetector;
 import sadl.detectors.VectorDetector;
+import sadl.detectors.featureCreators.AggregatedSingleFeatureCreator;
 import sadl.detectors.featureCreators.FeatureCreator;
 import sadl.detectors.featureCreators.FullFeatureCreator;
 import sadl.detectors.featureCreators.MinimalFeatureCreator;
 import sadl.detectors.featureCreators.SmallFeatureCreator;
 import sadl.detectors.featureCreators.UberFeatureCreator;
 import sadl.experiments.ExperimentResult;
-import sadl.interfaces.ModelLearner;
+import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.oneclassclassifier.LibSvmClassifier;
 import sadl.oneclassclassifier.OneClassClassifier;
 import sadl.oneclassclassifier.ThresholdClassifier;
 import sadl.oneclassclassifier.clustering.DbScanClassifier;
 import sadl.oneclassclassifier.clustering.GMeansClassifier;
+import sadl.oneclassclassifier.clustering.KMeansClassifier;
 import sadl.oneclassclassifier.clustering.XMeansClassifier;
 import sadl.run.factories.LearnerFactory;
 import sadl.run.factories.learn.ButlaFactory;
 import sadl.run.factories.learn.PdttaFactory;
+import sadl.run.factories.learn.PetriNetFactory;
 import sadl.run.factories.learn.RTIFactory;
 import sadl.utils.MasterSeed;
 import sadl.utils.RamGobbler;
@@ -114,6 +117,9 @@ public class SmacRun {
 	@Parameter(names = "-svmGamma")
 	double svmGamma;
 
+	@Parameter(names = "-svmGammaEstimate")
+	boolean svmGammaEstimate;
+
 	@Parameter(names = "-svmEps")
 	double svmEps;
 
@@ -147,16 +153,18 @@ public class SmacRun {
 	@Parameter(names = "-dbScanThreshold")
 	private double dbscan_threshold = -1;
 
-	@Parameter(names = "-gmeansThreshold")
-	private final double gmeans_threshold = -1;
+	@Parameter(names = "-kmeansThreshold")
+	private final double kmeans_threshold = -1;
 
-	@Parameter(names = "-xmeansThreshold")
-	private final double xmeans_threshold = -1;
+	@Parameter(names = "-kmeansMinPoints")
+	private final int kmeans_minPoints = 0;
+
+	@Parameter(names = "-kmeansK")
+	private final int kmeans_k = 2;
 
 	@Parameter(names = "-skipFirstElement", arity = 1)
 	boolean skipFirstElement = false;
 
-	private OneClassClassifier classifier;
 
 
 
@@ -179,6 +187,7 @@ public class SmacRun {
 
 		FeatureCreator featureCreator;
 		AnomalyDetector anomalyDetector;
+		OneClassClassifier classifier;
 		if (featureCreatorMethod == FeatureCreatorMethod.FULL) {
 			featureCreator = new FullFeatureCreator();
 		} else if (featureCreatorMethod == FeatureCreatorMethod.SMALL) {
@@ -191,7 +200,18 @@ public class SmacRun {
 			featureCreator = null;
 		}
 		if (detectorMethod == DetectorMethod.SVM) {
+			if (svmGammaEstimate) {
+				svmGamma = 0;
+			}
 			classifier = new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu, svmKernelType, svmEps, svmDegree, scalingMethod);
+		} else if (detectorMethod == DetectorMethod.THRESHOLD_SINGLE) {
+			// only works with minimal feature creator
+			if (featureCreatorMethod != null && featureCreatorMethod != FeatureCreatorMethod.SINGLE) {
+				throw new IllegalArgumentException(
+						"Please do only specify " + FeatureCreatorMethod.SINGLE + " or no featureCreatorMethod for " + detectorMethod);
+			}
+			featureCreator = new AggregatedSingleFeatureCreator();
+			classifier = new ThresholdClassifier(aggregatedEventThreshold);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_AGG_ONLY) {
 			// only works with minimal feature creator
 			if (featureCreatorMethod != null && featureCreatorMethod != FeatureCreatorMethod.MINIMAL) {
@@ -209,20 +229,22 @@ public class SmacRun {
 			featureCreator = new SmallFeatureCreator();
 			classifier = new ThresholdClassifier(aggregatedEventThreshold, aggregatedTimeThreshold, singleEventThreshold, singleTimeThreshold);
 		} else if (detectorMethod == DetectorMethod.DBSCAN) {
-			if (dbscan_threshold < 0) {
+			if (dbscan_threshold <= 0) {
 				dbscan_threshold = dbscan_eps;
 			}
 			classifier = new DbScanClassifier(dbscan_eps, dbscan_n, dbscan_threshold, clusteringDistanceMethod, scalingMethod);
 		} else if (detectorMethod == DetectorMethod.GMEANS) {
-			classifier = new GMeansClassifier(scalingMethod, gmeans_threshold, clusteringDistanceMethod);
+			classifier = new GMeansClassifier(scalingMethod, kmeans_threshold, kmeans_minPoints, clusteringDistanceMethod);
 		} else if (detectorMethod == DetectorMethod.XMEANS) {
-			classifier = new XMeansClassifier(scalingMethod, xmeans_threshold, clusteringDistanceMethod);
+			classifier = new XMeansClassifier(scalingMethod, kmeans_threshold, kmeans_minPoints, clusteringDistanceMethod);
+		} else if (detectorMethod == DetectorMethod.KMEANS) {
+			classifier = new KMeansClassifier(scalingMethod, kmeans_k, kmeans_threshold, kmeans_minPoints, clusteringDistanceMethod);
 		} else {
 			classifier = null;
 		}
 		anomalyDetector = new VectorDetector(aggType, featureCreator, classifier, aggregateSublists);
 
-		final ModelLearner learner = getLearner(Algoname.getAlgoname(mainParams.get(0)), jc);
+		final ProbabilisticModelLearner learner = getLearner(Algoname.getAlgoname(mainParams.get(0)), jc);
 		final AnomalyDetection detection;
 		if (detectorMethod == DetectorMethod.ANODA) {
 			detection = new AnomalyDetection(new AnodaDetector(aggType), learner);
@@ -292,7 +314,7 @@ public class SmacRun {
 		return Pair.of(algo, input);
 	}
 
-	private ModelLearner getLearner(Algoname algoName, JCommander jc) {
+	private ProbabilisticModelLearner getLearner(Algoname algoName, JCommander jc) {
 
 		LearnerFactory lf = null;
 
@@ -302,6 +324,9 @@ public class SmacRun {
 				break;
 			case PDTTA:
 				lf = new PdttaFactory();
+				break;
+			case PETRI_NET:
+				lf = new PetriNetFactory();
 				break;
 			case BUTLA:
 				lf = new ButlaFactory();
@@ -319,11 +344,11 @@ public class SmacRun {
 		subjc.parse(subOptions);
 
 		@SuppressWarnings("null")
-		final ModelLearner ml = lf.create();
+		final ProbabilisticModelLearner ml = lf.create();
 		return ml;
 	}
 
-	protected void smacErrorAbort() {
+	protected static void smacErrorAbort() {
 		System.out.println("Result for SMAC: CRASHED, 0, 0, 0, 0");
 		System.exit(1);
 	}

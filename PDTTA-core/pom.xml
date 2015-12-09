@@ -76,6 +76,7 @@
 				<executions>
 					<execution>
 						<id>attach-sources</id>
+						<phase>deploy</phase> 
 						<goals>
 							<goal>jar</goal>
 						</goals>
@@ -89,6 +90,7 @@
 				<executions>
 					<execution>
 						<id>attach-javadocs</id>
+						<phase>deploy</phase> 
 						<goals>
 							<goal>jar</goal>
 						</goals>
@@ -341,6 +343,11 @@
 		</pluginManagement>
 	</build>
 	<dependencies>
+		<dependency>
+			<groupId>com.opencsv</groupId>
+			<artifactId>opencsv</artifactId>
+			<version>3.6</version>
+		</dependency>
 		<dependency>
 			<groupId>net.sf.trove4j</groupId>
 			<artifactId>trove4j</artifactId>

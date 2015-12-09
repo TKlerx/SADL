@@ -1,7 +1,9 @@
 #PDTTA parameters
 mergeAlpha [0,1] [0.05]
 mergeTest {ALERGIA,CHI_SQUARED, LR, EXACT_M,BINOMIAL,EXACT_B,MDI} [ALERGIA]
-kdeBandwidth [0,1000] [0]
+kdeBandwidthEstimate {true, false} [true]
+kdeBandwidth [0.0000001,1000] [1]
+kdeBandwidth |kdeBandwidthEstimate in {false}
 kdeKernelFunction {BIWEIGHT, EPANECHNIKOV, GAUSS, TRIWEIGHT, UNIFORM, ESTIMATE} [ESTIMATE]
 smoothingPrior [0,1] [0]
 tauEstimation {DENSITY,MONTE_CARLO} [MONTE_CARLO]
@@ -19,7 +21,7 @@ mergeT0 [1,100] [3]i
 mergeT0 | mergeTest in {ALERGIA}
 
 #Detector parameters
-detectorMethod {SVM,DBSCAN,THRESHOLD_AGG_ONLY, THRESHOLD_ALL, GMEANS,XMEANS,KMEANS} [SVM]
+detectorMethod {SVM,DBSCAN,THRESHOLD_SINGLE,THRESHOLD_AGG_ONLY, THRESHOLD_ALL, GMEANS,XMEANS,KMEANS} [SVM]
 # Must be tested first!
 # aggregateSublists {true,false} [false] 
 
@@ -27,7 +29,7 @@ skipFirstElement {true,false}[false]
 
 #Threshold parameters
 aggregatedEventThreshold [0,1] [0.00033]
-aggregatedEventThreshold | detectorMethod in {THRESHOLD_AGG_ONLY,THRESHOLD_ALL}
+aggregatedEventThreshold | detectorMethod in {THRESHOLD_SINGLE,THRESHOLD_AGG_ONLY,THRESHOLD_ALL}
 
 aggregatedTimeThreshold [0,1] [0.0067]
 aggregatedTimeThreshold | detectorMethod in {THRESHOLD_AGG_ONLY,THRESHOLD_ALL}
@@ -56,8 +58,12 @@ scalingMethod | detectorMethod in {SVM,DBSCAN,GMEANS,KMEANS,XMEANS}
 svmNu[0,1] [0.1]
 svmNu| detectorMethod in {SVM}
 
+svmGammaEstimate {true,false} [true]
+svmGammaEstimate | detectorMethod in {SVM}
+
 svmGamma[0,10E15] [0]
 svmGamma | detectorMethod in {SVM}
+svmGamma | svmGammaEstimate in {false}
 
 svmEps[0,1] [0.001]
 svmEps| detectorMethod in {SVM}
@@ -82,17 +88,14 @@ dbScanEps | detectorMethod in {DBSCAN}
 dbScanThreshold[0,1] [0.05]
 dbScanThreshold | detectorMethod in {DBSCAN}
 
-#Gmeans parameter
-gmeansThreshold[0,1] [0.05]
-gmeansThreshold | detectorMethod in {GMEANS}
 
-#Xmeans parameter
-xmeansThreshold[0,1] [0.05]
-xmeansThreshold | detectorMethod in {XMEANS}
+#kMeans/xMeans/gMeans parameter
+kmeansThreshold[0,1] [0.05]
+kmeansThreshold | detectorMethod in {GMEANS,KMEANS,XMEANS}
+
+kmeansMinPoints[0,100] [1]
+kmeansThreshold | detectorMethod in {GMEANS,KMEANS,XMEANS}
 
 # kMeans parameters
-kmeansThreshold[0,1] [0.05]
-kmeansThreshold | detectorMethod in {KMEANS}
-
 kmeansK[2,1000] [10]
 kmeansK | detectorMethod in {KMEANS}

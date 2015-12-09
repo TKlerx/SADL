@@ -26,7 +26,12 @@ import sadl.input.TimedWord;
  *
  */
 public interface ProbabilisticModel extends Model {
-
+	/**
+	 * Calculates the symbol and time value probabilities for the given word. The first list contains the symbol probabilities and the second list the time
+	 * value probabilities.
+	 * @param s the timed word
+	 * @return the pair of symbol and time value probabilities
+	 */
 	Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord s);
 
 	default Map<String, Function<TimedWord, Pair<TDoubleList, TDoubleList>>> getAvailableCalcMethods() {

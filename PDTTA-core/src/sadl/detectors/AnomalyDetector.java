@@ -42,6 +42,7 @@ import sadl.utils.Settings;
  */
 public abstract class AnomalyDetector {
 	private static Logger logger = LoggerFactory.getLogger(AnomalyDetector.class);
+	public static final int ILLEGAL_VALUE = -1;
 
 	protected ProbabilityAggregationMethod aggType;
 	ProbabilisticModel model;
@@ -162,7 +163,7 @@ public abstract class AnomalyDetector {
 
 	public static double aggregate(TDoubleList list, ProbabilityAggregationMethod aggType) {
 		if (list.isEmpty()) {
-			return Double.POSITIVE_INFINITY;
+			return ILLEGAL_VALUE;
 		}
 		double result = -1;
 		if (aggType == ProbabilityAggregationMethod.MULTIPLY) {

@@ -1,12 +1,14 @@
 paramfile = pdtta/params.pcs
 runObj = QUALITY
-cutoffTime = 10000
-wallclock-limit = 432000
+#3 hours algorithm time
+cutoffTime = 10800
+#7 days smac run-time
+wallclock-limit = 604800
 deterministic = 1
 instance_file = instances/train
 test_instance_file = instances/test
 instance-suffix = txt
 test-instance-suffix = txt
-algo = java -XX:+HeapDumpOnOutOfMemoryError -jar run/pdtta/PDTTA-core-0.0.1-SNAPSHOT.jar smac PDTTA
+algo = java -Xmx2g -XX:+HeapDumpOnOutOfMemoryError -jar run/pdtta/PDTTA-core-0.0.1-SNAPSHOT.jar smac PDTTA
 num-test-instances = 10
 deterministic = true

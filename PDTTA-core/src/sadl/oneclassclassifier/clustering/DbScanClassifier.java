@@ -36,7 +36,6 @@ import sadl.utils.DatasetTransformationUtils;
  *
  */
 public class DbScanClassifier extends NumericClassifier {
-	// TODO write unit test for this
 	private static Logger logger = LoggerFactory.getLogger(DbScanClassifier.class);
 	DistanceMetric dm;
 	MyDBSCAN dbscan;
@@ -92,7 +91,6 @@ public class DbScanClassifier extends NumericClassifier {
 
 	@Override
 	protected boolean isOutlierScaled(double[] testSample) {
-		// TODO do not use eps here, because it we must use a real threshold for testing and not the eps boundary that we used for training
 		final List<? extends VecPaired<VecPaired<Vec, Integer>, Double>> neighbours = dbscan.getLastVectorCollection().search(new DenseVector(testSample),
 				threshold);
 		// check whether one of the points is a core point!

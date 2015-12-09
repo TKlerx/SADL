@@ -34,7 +34,7 @@ import jsat.linear.Vec;
 import sadl.constants.MergeTest;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
-import sadl.interfaces.ModelLearner;
+import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.interfaces.TauEstimator;
 import sadl.models.PDFA;
 import sadl.models.PDTTA;
@@ -47,7 +47,7 @@ import sadl.utils.Settings;
  * @author Timo Klerx
  *
  */
-public class PdttaLearner implements ModelLearner {
+public class PdttaLearner implements ProbabilisticModelLearner {
 	private static Logger logger = LoggerFactory.getLogger(PdttaLearner.class);
 	KernelFunction kdeKernelFunction;
 	double kdeBandwidth;

@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import sadl.input.TimedInput;
-import sadl.interfaces.ModelLearner;
+import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.interfaces.ProbabilisticModel;
 import sadl.modellearner.rtiplus.boolop.AndOperator;
 import sadl.modellearner.rtiplus.boolop.BooleanOperator;
@@ -62,7 +62,7 @@ import sadl.utils.Settings;
  * @author Fabian Witter
  *
  */
-public class SimplePDRTALearner implements ModelLearner {
+public class SimplePDRTALearner implements ProbabilisticModelLearner {
 
 	public enum OperationTesterType {
 		LRT, LRT_ADV, NAIVE_LRT, FM, FM_ADV

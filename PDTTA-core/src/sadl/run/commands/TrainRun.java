@@ -25,11 +25,15 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
+import sadl.constants.Algoname;
 import sadl.input.TimedInput;
 import sadl.interfaces.ProbabilisticModel;
-import sadl.interfaces.ModelLearner;
+import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.models.pdrta.PDRTA;
 import sadl.run.factories.LearnerFactory;
+import sadl.run.factories.learn.ButlaFactory;
+import sadl.run.factories.learn.PdttaFactory;
+import sadl.run.factories.learn.PetriNetFactory;
 import sadl.run.factories.learn.RTIFactory;
 import sadl.utils.IoUtils;
 
@@ -63,24 +67,33 @@ public class TrainRun {
 			System.exit(1);
 		}
 
-		final String algoName = mainParams.get(0);
+		final Algoname algoName = Algoname.getAlgoname(mainParams.get(0));
 
 		switch (algoName) {
-		case "rti+":
-			lf = new RTIFactory();
-			break;
-			// TODO Add other learning algorithms
-		default:
-			logger.error("Wrong algo param!");
-			System.exit(1);
-			break;
+			case RTI:
+				lf = new RTIFactory();
+				break;
+			case PDTTA:
+				lf = new PdttaFactory();
+				break;
+			case PETRI_NET:
+				lf = new PetriNetFactory();
+				break;
+			case BUTLA:
+				lf = new ButlaFactory();
+				break;
+				// TODO Add other learning algorithms
+			default:
+				logger.error("Unknown algo param {}!", algoName);
+				SmacRun.smacErrorAbort();
+				break;
 		}
 
 		final JCommander subjc = new JCommander(lf);
 		subjc.parse(jc.getUnknownOptions().toArray(new String[0]));
 
 		@SuppressWarnings("null")
-		final ModelLearner ml = lf.create();
+		final ProbabilisticModelLearner ml = lf.create();
 
 		if (!smacMode) {
 			try {
@@ -103,6 +116,20 @@ public class TrainRun {
 						final Path out2 = Paths.get(out.toAbsolutePath().toString() + ".gv");
 						try (final BufferedWriter bw = Files.newBufferedWriter(out2)) {
 							((PDRTA) m).toDOTLang(bw);
+						}
+						final String[] args = { "dot", "-Tpng", out2.toAbsolutePath().toString(), "-o", out.toAbsolutePath().toString() + ".png" };
+						Process pr = null;
+						try {
+							pr = Runtime.getRuntime().exec(args);
+						} catch (final Exception e) {
+							logger.warn("Could not create plot of PDRTA: {}", e.getMessage());
+						} finally {
+							if (pr != null) {
+								try {
+									pr.waitFor();
+								} catch (final InterruptedException e) {
+								}
+							}
 						}
 					}
 					IoUtils.serialize(m, out);

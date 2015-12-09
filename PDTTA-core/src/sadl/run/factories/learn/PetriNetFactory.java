@@ -9,17 +9,24 @@
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package sadl.constants;
+package sadl.run.factories.learn;
 
-public enum Algoname {
-	RTI, PDTTA, BUTLA, PETRI_NET;
+import com.beust.jcommander.Parameter;
 
-	public static Algoname getAlgoname(String string) {
-		for (final Algoname loopAlg : Algoname.values()) {
-			if (loopAlg.name().equalsIgnoreCase(string)) {
-				return loopAlg;
-			}
-		}
-		return null;
+import sadl.modellearner.petri_nets.PetriNetLearner;
+import sadl.run.factories.LearnerFactory;
+
+public class PetriNetFactory implements LearnerFactory {
+
+	@Parameter(names = "-alpha")
+	double alpha;
+
+	@Parameter(names = "-param2")
+	double param2;
+
+	@Override
+	public PetriNetLearner create() {
+		return new PetriNetLearner(alpha, param2);
 	}
+
 }
