@@ -58,8 +58,12 @@ scalingMethod | detectorMethod in {SVM,DBSCAN,GMEANS,KMEANS,XMEANS}
 svmNu[0,1] [0.1]
 svmNu| detectorMethod in {SVM}
 
+svmGammaEstimate {true,false} [true]
+svmGammaEstimate | detectorMethod in {SVM}
+
 svmGamma[0,10E15] [0]
 svmGamma | detectorMethod in {SVM}
+svmGamma | svmGammaEstimate in {false}
 
 svmEps[0,1] [0.001]
 svmEps| detectorMethod in {SVM}

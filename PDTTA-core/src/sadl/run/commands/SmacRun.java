@@ -117,6 +117,9 @@ public class SmacRun {
 	@Parameter(names = "-svmGamma")
 	double svmGamma;
 
+	@Parameter(names = "-svmGammaEstimate")
+	boolean svmGammaEstimate;
+
 	@Parameter(names = "-svmEps")
 	double svmEps;
 
@@ -197,6 +200,9 @@ public class SmacRun {
 			featureCreator = null;
 		}
 		if (detectorMethod == DetectorMethod.SVM) {
+			if (svmGammaEstimate) {
+				svmGamma = 0;
+			}
 			classifier = new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu, svmKernelType, svmEps, svmDegree, scalingMethod);
 		} else if (detectorMethod == DetectorMethod.THRESHOLD_SINGLE) {
 			// only works with minimal feature creator
