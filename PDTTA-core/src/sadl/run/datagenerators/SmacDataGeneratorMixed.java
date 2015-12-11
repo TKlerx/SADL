@@ -56,6 +56,7 @@ public class SmacDataGeneratorMixed implements Serializable {
 	private static final double ANOMALY_PERCENTAGE = 0.1;
 	private static final int TRAIN_SIZE = 10000;
 	private static final int TEST_SIZE = 5000;
+	private static final int SAMPLE_FILES = 20;
 
 	/**
 	 * @param args
@@ -81,6 +82,7 @@ public class SmacDataGeneratorMixed implements Serializable {
 				e.printStackTrace();
 			}
 		});
+		logger.info("Starting to learn TauPTA...");
 		int k = 0;
 		// parse timed sequences
 		final TimedInput trainingTimedSequences = TimedInput.parseAlt(Paths.get(dataString), 1);
@@ -115,7 +117,7 @@ public class SmacDataGeneratorMixed implements Serializable {
 		logger.info("After inserting all anomalies, normal PTA has {} states and {} transitions", pta.getNumberOfStates(), pta.getTransitionCount());
 		final TObjectIntMap<TauPTA> anomalyOccurences = new TObjectIntHashMap<>();
 		final Random anomalyChooser = MasterSeed.nextRandom();
-		while (k < 20) {
+		while (k < SAMPLE_FILES) {
 			trainSequences.clear();
 			testSequences.clear();
 			for (int i = 0; i < TRAIN_SIZE; i++) {
