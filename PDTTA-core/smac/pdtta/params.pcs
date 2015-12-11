@@ -62,8 +62,8 @@ svmGammaEstimate {true,false} [true]
 svmGammaEstimate | detectorMethod in {SVM}
 
 svmGamma[0,10E15] [0]
-svmGamma | detectorMethod in {SVM}
-svmGamma | svmGammaEstimate in {false}
+svmGamma | detectorMethod in {SVM} && svmGammaEstimate in {false}
+
 
 svmEps[0,1] [0.001]
 svmEps| detectorMethod in {SVM}
@@ -93,9 +93,9 @@ dbScanThreshold | detectorMethod in {DBSCAN}
 kmeansThreshold[0,1] [0.05]
 kmeansThreshold | detectorMethod in {GMEANS,KMEANS,XMEANS}
 
-kmeansMinPoints[0,100] [1]
-kmeansThreshold | detectorMethod in {GMEANS,KMEANS,XMEANS}
+kmeansMinPoints[0,100] [1]i
+kmeansMinPoints | detectorMethod in {GMEANS,KMEANS,XMEANS}
 
 # kMeans parameters
-kmeansK[2,1000] [10]
+kmeansK[2,1000] [10]i
 kmeansK | detectorMethod in {KMEANS}

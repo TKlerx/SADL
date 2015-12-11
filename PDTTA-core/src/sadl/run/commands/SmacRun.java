@@ -117,7 +117,7 @@ public class SmacRun {
 	@Parameter(names = "-svmGamma")
 	double svmGamma;
 
-	@Parameter(names = "-svmGammaEstimate")
+	@Parameter(names = "-svmGammaEstimate", arity = 1)
 	boolean svmGammaEstimate;
 
 	@Parameter(names = "-svmEps")

@@ -50,7 +50,7 @@ public class PdttaFactory implements LearnerFactory {
 	@Parameter(names = "-kdeBandwidth")
 	double kdeBandwidth;
 
-	@Parameter(names = "-kdeBandwidthEstimate")
+	@Parameter(names = "-kdeBandwidthEstimate", arity = 1)
 	boolean kdeBandwidthEstimate;
 
 	@Parameter(names = "-kdeKernelFunction")
