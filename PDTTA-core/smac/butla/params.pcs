@@ -89,7 +89,7 @@ kmeansThreshold[0,1] [0.05]
 kmeansThreshold | detectorMethod in {GMEANS,KMEANS,XMEANS}
 
 kmeansMinPoints[0,100] [1]i
-kmeansThreshold | detectorMethod in {GMEANS,KMEANS,XMEANS}
+kmeansMinPoints | detectorMethod in {GMEANS,KMEANS,XMEANS}
 
 # kMeans parameters
 kmeansK[2,1000] [10]i
