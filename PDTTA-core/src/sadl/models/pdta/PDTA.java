@@ -11,10 +11,6 @@
 
 package sadl.models.pdta;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.array.TDoubleArrayList;
-import gnu.trove.list.linked.TIntLinkedList;
-
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -27,16 +23,19 @@ import java.util.TreeMap;
 
 import org.apache.commons.math3.util.Pair;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.linked.TIntLinkedList;
 import sadl.constants.ClassLabel;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.AutomatonModel;
-import sadl.interfaces.Model;
+import sadl.interfaces.ProbabilisticModel;
 import sadl.models.pta.Event;
 import sadl.models.pta.HalfClosedInterval;
 import sadl.models.pta.SubEvent;
 
-public class PDTA implements AutomatonModel, Model {
+public class PDTA implements AutomatonModel, ProbabilisticModel {
 
 	PDTAState root;
 	HashMap<Integer, PDTAState> states;
@@ -258,5 +257,10 @@ public class PDTA implements AutomatonModel, Model {
 
 		writer.write("}");
 		writer.close();
+	}
+
+	@Override
+	public int getNumberOfStates() {
+		return states.size();
 	}
 }

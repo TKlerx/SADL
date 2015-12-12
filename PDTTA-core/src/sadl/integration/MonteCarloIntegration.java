@@ -24,6 +24,7 @@ import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.SingleValueDistribution;
 import sadl.integration.MonteCarloPoint.MonteCarloPointComparator;
 import sadl.utils.MasterSeed;
+import sadl.utils.Settings;
 
 public class MonteCarloIntegration implements Serializable {
 	private static final long serialVersionUID = -7798039596284260123L;
@@ -32,10 +33,12 @@ public class MonteCarloIntegration implements Serializable {
 	MonteCarloPoint[] integral;
 	boolean preprocessed = false;
 	private boolean singleValueDis = false;
-
-
+	final Random xRandom;
+	final Random yRandom;
 	public MonteCarloIntegration(int pointsToStore) {
 		this.pointsToStore = pointsToStore;
+		xRandom = MasterSeed.nextRandom();
+		yRandom = MasterSeed.nextRandom();
 	}
 
 	public void preprocess(ContinuousDistribution d, double stepSize, double xMin, double xMax) {
@@ -55,8 +58,7 @@ public class MonteCarloIntegration implements Serializable {
 		final double yMax = minMax.getRight();
 		final double xDiff = xMax - xMin;
 		final double yDiff = yMax - yMin;
-		final Random xRandom = MasterSeed.nextRandom();
-		final Random yRandom = MasterSeed.nextRandom();
+
 		int pointsFound = 0;
 		int pointsRejected = 0;
 		integral = new MonteCarloPoint[pointsToStore];
@@ -74,7 +76,12 @@ public class MonteCarloIntegration implements Serializable {
 		}
 		logger.debug("Rejected {} points", pointsRejected);
 		logger.debug("Accepted {} points", pointsFound);
-		Arrays.parallelSort(integral, new MonteCarloPointComparator());
+		if (Settings.isParallel()) {
+			Arrays.parallelSort(integral, new MonteCarloPointComparator());
+		} else {
+			Arrays.sort(integral, new MonteCarloPointComparator());
+		}
+
 		// Collections.sort(integral2);
 		// integral2.sort((m1, m2) -> Double.compare(m1.getX(), m2.getX()));
 		preprocessed = true;
@@ -117,6 +124,7 @@ public class MonteCarloIntegration implements Serializable {
 				return 0;
 			}
 		}
+		// x value of monte carlo point does not matter, we search for the pdf value
 		int foundIndex = Arrays.binarySearch(integral, new MonteCarloPoint(0, pdfValue));
 		if (foundIndex > 0) {
 			// Check whether there are the same pdf values right to the found one (is just done because of binary search)

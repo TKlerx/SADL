@@ -15,7 +15,7 @@ import sadl.constants.EventsCreationStrategy;
 import sadl.constants.KDEFormelVariant;
 import sadl.constants.PTAOrdering;
 import sadl.constants.TransitionsType;
-import sadl.interfaces.ModelLearner;
+import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.modellearner.ButlaPdtaLearner;
 import sadl.run.factories.LearnerFactory;
 
@@ -44,9 +44,9 @@ public class ButlaFactory implements LearnerFactory {
 	KDEFormelVariant formelVariant;
 
 	@Override
-	public ModelLearner create() {
+	public ProbabilisticModelLearner create() {
 
-		final ModelLearner learner = new ButlaPdtaLearner(bandwidth, alpha, transitionsToCheck, anomalyProbability, anomalyProbability, mergeStrategy,
+		final ProbabilisticModelLearner learner = new ButlaPdtaLearner(bandwidth, alpha, transitionsToCheck, anomalyProbability, anomalyProbability, mergeStrategy,
 				splittingStrategy,
 				formelVariant);
 		return learner;

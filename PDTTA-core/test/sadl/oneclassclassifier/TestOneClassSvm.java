@@ -26,7 +26,7 @@ import libsvm.svm_node;
 import libsvm.svm_parameter;
 import libsvm.svm_problem;
 import sadl.constants.ScalingMethod;
-import sadl.utils.Normalizer;
+import sadl.scaling.Normalizer;
 
 public class TestOneClassSvm {
 	public static final int TRAIN_SIZE = 1000;
@@ -63,7 +63,7 @@ public class TestOneClassSvm {
 		// final boolean[] wekaTestResult = wekaSvm.areAnomalies(test);
 		// final boolean[] libSvmTestResult = libSvm.areAnomalies(test);
 
-		final List<double[]> normalizedTest = norm.normalize(test);
+		final List<double[]> normalizedTest = norm.scale(test);
 		// List<double[]> normalizedTest = test;
 
 		try (BufferedWriter bw = Files.newBufferedWriter(Paths.get("train_svm_normalized.csv"), StandardCharsets.UTF_8)) {

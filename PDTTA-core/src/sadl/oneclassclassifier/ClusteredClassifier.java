@@ -11,7 +11,15 @@
 
 package sadl.oneclassclassifier;
 
+import java.util.List;
 
+import jsat.classifiers.DataPoint;
+import jsat.clustering.kmeans.KMeans;
+import jsat.linear.DenseVector;
+import jsat.linear.Vec;
+import jsat.linear.distancemetrics.DistanceMetric;
+import sadl.constants.ScalingMethod;
+import sadl.utils.DatasetTransformationUtils;
 
 /**
  * First cluster the instances and then use a one class classifier on each cluster
@@ -19,7 +27,52 @@ package sadl.oneclassclassifier;
  * @author Timo Klerx
  *
  */
-public class ClusteredClassifier {
+public class ClusteredClassifier extends NumericClassifier {
+	NumericClassifier[] classifiers;
+	private final KMeans clustering;
 
+	public ClusteredClassifier(ScalingMethod scalingMethod, KMeans clustering) {
+		super(scalingMethod);
+		this.clustering = clustering;
+		this.clustering.setStoreMeans(true);
+	}
+
+	@Override
+	protected boolean isOutlierScaled(double[] scaledTestSample) {
+		final DistanceMetric dm = clustering.getDistanceMetric();
+		final Vec sample = new DenseVector(scaledTestSample);
+		int closestCluster = -1;
+		double minDistance = Double.MAX_VALUE;
+		for (int i = 0; i < clustering.getMeans().size(); i++) {
+			final Vec clusterVector = clustering.getMeans().get(i);
+			final double dist = dm.dist(sample, clusterVector);
+			if (dist < minDistance) {
+				if (classifiers[i] != null) {
+					closestCluster = i;
+					minDistance = dist;
+				}
+			}
+		}
+		if (closestCluster == -1) {
+			System.out.println();
+			System.out.println();
+		}
+		return classifiers[closestCluster].isOutlierScaled(scaledTestSample);
+	}
+
+	@Override
+	protected void trainModelScaled(List<double[]> scaledTrainSamples) {
+		final List<List<DataPoint>> clusters = clustering.cluster(DatasetTransformationUtils.doublesToDataSet(scaledTrainSamples));
+		classifiers = new NumericClassifier[clusters.size()];
+		for (int i = 0; i < classifiers.length; i++) {
+			// classifiers[i] = new SomClassifier(getScalingMethod(), 10, 10, 0.1);
+			if (clusters.get(i).isEmpty()) {
+				classifiers[i] = null;
+			} else {
+				classifiers[i] = new LibSvmClassifier(1, 0.2, 0.1, 1, 0.001, 3, getScalingMethod());
+				classifiers[i].train(DatasetTransformationUtils.dataPointsToArray(clusters.get(i)));
+			}
+		}
+	}
 
 }

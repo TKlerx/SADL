@@ -38,7 +38,7 @@ import jsat.linear.Vec;
 import sadl.constants.MergeTest;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
-import sadl.interfaces.ModelLearner;
+import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.models.PDTTAold;
 import sadl.structure.ZeroProbTransition;
 import sadl.utils.IoUtils;
@@ -54,7 +54,7 @@ import treba.wfsa;
  *
  */
 @SuppressWarnings("all")
-public class PdttaLeanerOld implements ModelLearner {
+public class PdttaLeanerOld implements ProbabilisticModelLearner {
 	double mergeAlpha;
 	MergeTest mergeTest = MergeTest.ALERGIA;
 	boolean recursiveMergeTest;

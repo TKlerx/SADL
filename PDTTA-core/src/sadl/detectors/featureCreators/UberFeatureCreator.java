@@ -18,6 +18,7 @@ import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import jsat.math.OnLineStatistics;
 import sadl.constants.ProbabilityAggregationMethod;
+import sadl.detectors.AnomalyDetector;
 
 public class UberFeatureCreator extends FullFeatureCreator {
 	@SuppressWarnings("unused")
@@ -37,8 +38,11 @@ public class UberFeatureCreator extends FullFeatureCreator {
 		result.add(eventDiffs.min());
 		result.add(eventDiffs.max());
 
-		// TODO what happens if timeLikelihoods is empty or just contains one value?
-		result.add(timeStat.getStandardDeviation());
+		double stdDev = timeStat.getStandardDeviation();
+		if (Double.isNaN(stdDev) || Double.isInfinite(stdDev)) {
+			stdDev = AnomalyDetector.ILLEGAL_VALUE;
+		}
+		result.add(stdDev);
 		result.add(timeLikelihoods.size());
 		result.add(timeDiffs.min());
 		result.add(timeDiffs.max());
@@ -48,7 +52,7 @@ public class UberFeatureCreator extends FullFeatureCreator {
 
 	private TDoubleList calcDiffs(TDoubleList likelihoods) {
 		if (likelihoods.size() <= 1) {
-			return new TDoubleArrayList(new double[] { Double.POSITIVE_INFINITY });
+			return new TDoubleArrayList(new double[] { AnomalyDetector.ILLEGAL_VALUE });
 		} else {
 			final TDoubleList result = new TDoubleArrayList(likelihoods.size());
 			double last = likelihoods.get(0);

@@ -13,6 +13,8 @@ package sadl.utils;
 
 public class Settings {
 	private static boolean debug = false;
+	private static boolean parallel = true;
+
 
 	public static boolean isDebug() {
 		return Settings.debug;
@@ -20,6 +22,14 @@ public class Settings {
 
 	public static void setDebug(boolean debug) {
 		Settings.debug = debug;
+	}
+
+	public static void setParallel(boolean parallel) {
+		Settings.parallel = parallel;
+	}
+
+	public static boolean isParallel() {
+		return parallel;
 	}
 
 }

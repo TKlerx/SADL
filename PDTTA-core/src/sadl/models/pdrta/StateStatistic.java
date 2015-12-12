@@ -322,10 +322,9 @@ public class StateStatistic implements Serializable {
 				params++;
 			}
 		}
-		params--;
 
 		// LRT_FIX : Check if params or count.length (example in paper says count.length)
-		if (params >= 0) {
+		if (params > 0) {
 			return new LikelihoodValue(ratio, count.length - 1);
 		} else {
 			return new LikelihoodValue();
