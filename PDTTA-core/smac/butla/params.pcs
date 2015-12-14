@@ -16,7 +16,7 @@ bandwidth [10000,1000000] [20000]
 bandwidth | formelVariant in {OriginalKDE}
 
 #Detector parameters
-detectorMethod {SVM,DBSCAN,THRESHOLD_SINGLE,THRESHOLD_AGG_ONLY, THRESHOLD_ALL, GMEANS,XMEANS,KMEANS} [SVM]
+detectorMethod {SVM,DBSCAN,THRESHOLD_SINGLE,THRESHOLD_AGG_ONLY, THRESHOLD_ALL, GMEANS,XMEANS,KMEANS,ANODA} [ANODA]
 # Must be tested first!
 # aggregateSublists {true,false} [false] 
 
@@ -37,7 +37,7 @@ singleTimeThreshold | detectorMethod in {THRESHOLD_ALL}
 
 
 #vector detector parameters
-featureCreator {UBER,FULL,SMALL,MINIMAL} [FULL]
+featureCreator {UBER,FULL,SMALL,MINIMAL,SINGLE} [FULL]
 featureCreator | detectorMethod in {SVM,DBSCAN,GMEANS,KMEANS,XMEANS}
 
 scalingMethod {NONE,NORMALIZE,STANDARDIZE} [NORMALIZE]

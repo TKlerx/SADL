@@ -42,7 +42,7 @@ singleTimeThreshold | detectorMethod in {THRESHOLD_ALL}
 
 
 #vector detector parameters
-featureCreator {UBER,FULL,SMALL,MINIMAL} [FULL]
+featureCreator {UBER,FULL,SMALL,MINIMAL,SINGLE} [FULL]
 featureCreator | detectorMethod in {SVM,DBSCAN,GMEANS,KMEANS,XMEANS}
 
 scalingMethod {NONE,NORMALIZE,STANDARDIZE} [NORMALIZE]
