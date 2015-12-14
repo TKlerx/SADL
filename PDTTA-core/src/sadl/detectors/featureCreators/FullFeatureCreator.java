@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import gnu.trove.list.TDoubleList;
 import sadl.constants.ProbabilityAggregationMethod;
+import sadl.detectors.AnomalyDetector;
 
 /**
  * 
@@ -33,7 +34,7 @@ public class FullFeatureCreator extends SmallFeatureCreator {
 		final double timeMean;
 		if (timeLikelihoods.size() == 0) {
 			// happens if the first state is the final state
-			timeMean = Double.POSITIVE_INFINITY;
+			timeMean = AnomalyDetector.ILLEGAL_VALUE;
 		} else {
 			timeMean = timeLikelihoods.sum() / timeLikelihoods.size();
 		}

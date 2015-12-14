@@ -23,7 +23,6 @@ import jsat.distributions.empirical.kernelfunc.UniformKF;
 import sadl.constants.KdeKernelFunction;
 import sadl.constants.MergeTest;
 import sadl.constants.TauEstimation;
-import sadl.interfaces.ModelLearner;
 import sadl.interfaces.TauEstimator;
 import sadl.modellearner.PdttaLearner;
 import sadl.run.factories.LearnerFactory;
@@ -51,6 +50,9 @@ public class PdttaFactory implements LearnerFactory {
 	@Parameter(names = "-kdeBandwidth")
 	double kdeBandwidth;
 
+	@Parameter(names = "-kdeBandwidthEstimate", arity = 1)
+	boolean kdeBandwidthEstimate;
+
 	@Parameter(names = "-kdeKernelFunction")
 	KdeKernelFunction kdeKernelFunctionQualifier;
 	KernelFunction kdeKernelFunction;
@@ -65,7 +67,7 @@ public class PdttaFactory implements LearnerFactory {
 	int mcPointsToStore = 10000;
 
 	@Override
-	public ModelLearner create() {
+	public PdttaLearner create() {
 		if (kdeKernelFunctionQualifier == KdeKernelFunction.BIWEIGHT) {
 			kdeKernelFunction = BiweightKF.getInstance();
 		} else if (kdeKernelFunctionQualifier == KdeKernelFunction.EPANECHNIKOV) {
@@ -87,8 +89,10 @@ public class PdttaFactory implements LearnerFactory {
 		} else {
 			tauEstimator = null;
 		}
-
-		final ModelLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0,
+		if (kdeBandwidthEstimate) {
+			kdeBandwidth = -1;
+		}
+		final PdttaLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0,
 				tauEstimator);
 		return learner;
 	}

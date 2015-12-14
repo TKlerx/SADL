@@ -1,24 +1,24 @@
 #RTI+ parameters
-sig [0,1] [0.05]
-hist [1,100] [4]i
+sig [0,1] [0.5]
+hist [1,100] [15]i
 em {LRT, LRT_ADV, NAIVE_LRT, FM, FM_ADV} [LRT]
-ida {DISABLED, ALL_BORDER, ALL, MAD_BORDER, MAD, OUTLIER_BORDER, OUTLIER} [DISABLED]
+#ida {DISABLED, ALL_BORDER, ALL, MAD_BORDER, MAD, OUTLIER_BORDER, OUTLIER} [DISABLED]
 sp {LEFT, MIDDLE, RIGHT} [MIDDLE]
 
 bop {AAA, AOO} [AAA]
 bop | em in {LRT, LRT_ADV, FM, FM_ADV}
 
 
-
 #Detector parameters
-detectorMethod {SVM,DBSCAN,THRESHOLD_AGG_ONLY, THRESHOLD_ALL} [SVM]
+detectorMethod {SVM,DBSCAN,THRESHOLD_SINGLE,THRESHOLD_AGG_ONLY, THRESHOLD_ALL, GMEANS,XMEANS,KMEANS} [SVM]
 # Must be tested first!
 # aggregateSublists {true,false} [false] 
 
+skipFirstElement {true,false}[false]
 
 #Threshold parameters
 aggregatedEventThreshold [0,1] [0.00033]
-aggregatedEventThreshold | detectorMethod in {THRESHOLD_AGG_ONLY,THRESHOLD_ALL}
+aggregatedEventThreshold | detectorMethod in {THRESHOLD_SINGLE,THRESHOLD_AGG_ONLY,THRESHOLD_ALL}
 
 aggregatedTimeThreshold [0,1] [0.0067]
 aggregatedTimeThreshold | detectorMethod in {THRESHOLD_AGG_ONLY,THRESHOLD_ALL}
@@ -32,19 +32,26 @@ singleTimeThreshold | detectorMethod in {THRESHOLD_ALL}
 
 #vector detector parameters
 featureCreator {UBER,FULL,SMALL,MINIMAL} [FULL]
-featureCreator | detectorMethod in {SVM,DBSCAN}
+featureCreator | detectorMethod in {SVM,DBSCAN,GMEANS,KMEANS,XMEANS}
 
 scalingMethod {NONE,NORMALIZE,STANDARDIZE} [NORMALIZE]
-scalingMethod | detectorMethod in {SVM,DBSCAN}
+scalingMethod | detectorMethod in {SVM,DBSCAN,GMEANS,KMEANS,XMEANS}
 #forbidden because senseless
 {detectorMethod=DBSCAN,scalingMethod=NONE}
+{detectorMethod=GMEANS,scalingMethod=NONE}
+{detectorMethod=XMEANS,scalingMethod=NONE}
+{detectorMethod=KMEANS,scalingMethod=NONE}
+
 
 #svm parameters
 svmNu[0,1] [0.1]
 svmNu| detectorMethod in {SVM}
 
+svmGammaEstimate {true,false} [true]
+svmGammaEstimate | detectorMethod in {SVM}
+
 svmGamma[0,10E15] [0]
-svmGamma | detectorMethod in {SVM}
+svmGamma | detectorMethod in {SVM} && svmGammaEstimate in {false}
 
 svmEps[0,1] [0.001]
 svmEps| detectorMethod in {SVM}
@@ -67,4 +74,16 @@ dbScanEps[0,1] [0.05]
 dbScanEps | detectorMethod in {DBSCAN}
 
 dbScanThreshold[0,1] [0.05]
-dbScanEps | detectorMethod in {DBSCAN}
+dbScanThreshold | detectorMethod in {DBSCAN}
+
+
+#kMeans/xMeans/gMeans parameter
+kmeansThreshold[0,1] [0.05]
+kmeansThreshold | detectorMethod in {GMEANS,KMEANS,XMEANS}
+
+kmeansMinPoints[0,100] [1]i
+kmeansMinPoints | detectorMethod in {GMEANS,KMEANS,XMEANS}
+
+# kMeans parameters
+kmeansK[2,1000] [10]i
+kmeansK | detectorMethod in {KMEANS}

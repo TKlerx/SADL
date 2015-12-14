@@ -12,8 +12,11 @@
 package sadl.tau_estimation;
 
 import java.io.Serializable;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,12 +24,13 @@ import org.slf4j.LoggerFactory;
 import jsat.distributions.ContinuousDistribution;
 import sadl.integration.MonteCarloIntegration;
 import sadl.interfaces.TauEstimator;
+import sadl.utils.Settings;
 
 public class MonteCarloEstimator implements TauEstimator, Serializable {
 	private static Logger logger = LoggerFactory.getLogger(MonteCarloEstimator.class);
 
 	private static final long serialVersionUID = -4398919127157832777L;
-	Map<ContinuousDistribution, MonteCarloIntegration> mcs = new HashMap<>();
+	Map<ContinuousDistribution, MonteCarloIntegration> mcs = new ConcurrentHashMap<>();
 	int pointsToStore, numberOfSteps;
 
 	public MonteCarloEstimator(int numberOfSteps, int pointsToStore) {
@@ -37,15 +41,64 @@ public class MonteCarloEstimator implements TauEstimator, Serializable {
 
 	@Override
 	public double estimateTau(ContinuousDistribution d, double timeValue) {
-		MonteCarloIntegration mc = mcs.get(d);
-		if (mc == null) {
-			mc = new MonteCarloIntegration(pointsToStore);
-			mc.preprocess(d, numberOfSteps);
+		final MonteCarloIntegration mc = mcs.get(d);
+		final double result = mc.integrate(d.pdf(timeValue));
+		return result;
+	}
+
+	@Override
+	public void preprocess(Collection<ContinuousDistribution> values) {
+		for (final ContinuousDistribution d : values) {
+			final MonteCarloIntegration mc = new MonteCarloIntegration(pointsToStore);
 			mcs.put(d, mc);
 			logger.debug("Preprocessed {} Monte Carlo Intervals.", mcs.size());
 		}
-		final double result = mc.integrate(d.pdf(timeValue));
+		final Consumer<? super Entry<ContinuousDistribution, MonteCarloIntegration>> f = e -> {
+			e.getValue().preprocess(e.getKey(), numberOfSteps);
+		};
+		if (Settings.isParallel()) {
+			mcs.entrySet().parallelStream().forEach(f);
+		} else {
+			mcs.entrySet().stream().forEach(f);
+		}
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((mcs == null) ? 0 : mcs.hashCode());
+		result = prime * result + numberOfSteps;
+		result = prime * result + pointsToStore;
 		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final MonteCarloEstimator other = (MonteCarloEstimator) obj;
+		if (mcs == null) {
+			if (other.mcs != null) {
+				return false;
+			}
+		} else if (!mcs.equals(other.mcs)) {
+			return false;
+		}
+		if (numberOfSteps != other.numberOfSteps) {
+			return false;
+		}
+		if (pointsToStore != other.pointsToStore) {
+			return false;
+		}
+		return true;
 	}
 
 }

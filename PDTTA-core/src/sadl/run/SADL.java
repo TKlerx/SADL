@@ -51,17 +51,17 @@ public class SADL {
 
 	@Parameter
 	private final List<String> mainParams = new ArrayList<>();
-
+	@Parameter(names = "-parallel", arity = 1)
+	boolean parallel = true;
 	@Parameter(names = "-debug")
 	boolean debug = false;
-
+	static boolean crash = false;
 	public static void main(String[] args) throws Exception {
 		try {
 			if (args.length < 1) {
 				logger.error("Not enough params!");
 				System.exit(1);
 			}
-			// FIXME parse MasterSeed
 
 			// final String[] reducedArgs = Arrays.copyOfRange(args, 1, args.length);
 
@@ -79,56 +79,57 @@ public class SADL {
 
 			jc.parse(args);
 
-			// TODO Debug param has to be in front of commands: JCommander specific
-			if (main.debug) {
-				Settings.setDebug(main.debug);
-			}
+			// Debug/parallel param has to be in front of commands: JCommander specific
+			Settings.setDebug(main.debug);
+			Settings.setParallel(main.parallel);
 
 			switch (jc.getParsedCommand()) {
-			case test:
-				testRun.run();
-				break;
-			case train:
-				trainRun.run(jc.getCommands().get(train));
-				break;
-			case smac:
-				logger.info("Starting SMAC with params=" + Arrays.toString(args));
-				boolean fileExisted = true;
-				final ExperimentResult result = smacRun.run(jc.getCommands().get(smac));
-				final Path resultPath = Paths.get("result.csv");
-				if (!Files.exists(resultPath)) {
-					Files.createFile(resultPath);
-					fileExisted = false;
-				}
-				final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				case test:
+					testRun.run();
+					break;
+				case train:
+					trainRun.run(jc.getCommands().get(train));
+					break;
+				case smac:
+					logger.info("Starting SMAC with params=" + Arrays.toString(args));
+					boolean fileExisted = true;
+					final ExperimentResult result = smacRun.run(jc.getCommands().get(smac));
+					final Path resultPath = Paths.get("result.csv");
+					if (!Files.exists(resultPath)) {
+						Files.createFile(resultPath);
+						fileExisted = false;
+					}
+					final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-				try (BufferedWriter bw = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8, StandardOpenOption.APPEND)) {
-					if (!fileExisted) {
-						bw.append("time");
+					try (BufferedWriter bw = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8, StandardOpenOption.APPEND)) {
+						if (!fileExisted) {
+							bw.append("time");
+							bw.append(" ; ");
+							bw.append("arg array");
+							bw.append(" ; ");
+							bw.append(ExperimentResult.CsvHeader());
+							bw.append('\n');
+						}
+						bw.append(df.format(new Date()));
 						bw.append(" ; ");
-						bw.append("arg array");
-						bw.append(" ; ");
-						bw.append(ExperimentResult.CsvHeader());
+						bw.append(Arrays.toString(args));
+						bw.append("; ");
+						bw.append(result.toCsvString());
 						bw.append('\n');
 					}
-					bw.append(df.format(new Date()));
-					bw.append(" ; ");
-					bw.append(Arrays.toString(args));
-					bw.append("; ");
-					bw.append(result.toCsvString());
-					bw.append('\n');
-				}
-				break;
-			default:
-				// TODO Print usage
-				jc.usage();
-				logger.error("Wrong mode param!");
-				System.exit(1);
-				break;
+					break;
+				default:
+					// TODO Print usage
+					jc.usage();
+					logger.error("Wrong mode param!");
+					System.exit(1);
+					break;
 			}
 		} catch (final Exception e) {
 			logger.error("Unexpected exception with parameters" + Arrays.toString(args), e);
-			throw e;
+			crash = true;
+		} finally {
+			System.exit(crash ? 1 : 0);
 		}
 	}
 

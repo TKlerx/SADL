@@ -13,32 +13,36 @@ package sadl.oneclassclassifier.clustering;
 
 import java.util.List;
 
+import jsat.classifiers.DataPoint;
+import jsat.clustering.SeedSelectionMethods.SeedSelection;
+import jsat.clustering.kmeans.HamerlyKMeans;
+import jsat.clustering.kmeans.KMeans;
+import jsat.clustering.kmeans.XMeans;
+import jsat.linear.Vec;
+import jsat.utils.Pair;
+import sadl.constants.DistanceMethod;
 import sadl.constants.ScalingMethod;
-import sadl.oneclassclassifier.NumericClassifier;
+import sadl.utils.DatasetTransformationUtils;
+import sadl.utils.MasterSeed;
 
 /**
  * 
  * @author Timo Klerx
  *
  */
-public class XMeansClassifier extends NumericClassifier {
+public class XMeansClassifier extends KMeansBaseClustering {
 
-	public XMeansClassifier(ScalingMethod scalingMethod) {
-		super(scalingMethod);
-		// TODO Auto-generated constructor stub
+	public XMeansClassifier(ScalingMethod scalingMethod, double distanceThreshold, int minClusterPoints, final DistanceMethod distanceMethod) {
+		super(scalingMethod, distanceMethod, distanceThreshold, minClusterPoints);
 	}
 
 	@Override
-	public boolean isOutlierScaled(double[] toEvaluate) {
-		// TODO Auto-generated method stub
-		return false;
+	protected Pair<List<Vec>, List<List<DataPoint>>> cluster(List<double[]> trainSamples) {
+		final KMeans init = new HamerlyKMeans(getDistanceMetric(), SeedSelection.KPP, MasterSeed.nextRandom());
+		final XMeans xMeans = new XMeans(init);
+		xMeans.setStoreMeans(true);
+		final List<List<DataPoint>> clusterResult = xMeans.cluster(DatasetTransformationUtils.doublesToDataSet(trainSamples));
+		return new Pair<>(xMeans.getMeans(), clusterResult);
 	}
-
-	@Override
-	public void trainModelScaled(List<double[]> trainSamples) {
-		// TODO Auto-generated method stub
-
-	}
-
 
 }

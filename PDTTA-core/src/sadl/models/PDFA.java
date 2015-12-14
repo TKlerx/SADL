@@ -491,7 +491,8 @@ public class PDFA implements AutomatonModel, Serializable {
 		return START_STATE;
 	}
 
-	public int getStateCount() {
+	@Override
+	public int getNumberOfStates() {
 		return finalStateProbabilities.size();
 	}
 

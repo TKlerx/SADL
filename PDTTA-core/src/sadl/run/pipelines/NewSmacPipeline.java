@@ -56,7 +56,7 @@ import sadl.detectors.featureCreators.FullFeatureCreator;
 import sadl.detectors.featureCreators.MinimalFeatureCreator;
 import sadl.detectors.featureCreators.SmallFeatureCreator;
 import sadl.experiments.ExperimentResult;
-import sadl.interfaces.ModelLearner;
+import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.interfaces.TauEstimator;
 import sadl.modellearner.PdttaLearner;
 import sadl.oneclassclassifier.LibSvmClassifier;
@@ -288,7 +288,7 @@ public class NewSmacPipeline implements Serializable {
 			tauEstimator = null;
 		}
 
-		final ModelLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0,
+		final ProbabilisticModelLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0,
 				tauEstimator);
 		final AnomalyDetection detection = new AnomalyDetection(anomalyDetector, learner);
 		final ExperimentResult result = detection.trainTest(dataString);

@@ -13,27 +13,44 @@ package sadl.oneclassclassifier;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import jsat.classifiers.CategoricalResults;
+import jsat.classifiers.DataPoint;
 import jsat.classifiers.neuralnetwork.SOM;
+import jsat.linear.DenseVector;
 import sadl.constants.ScalingMethod;
 import sadl.utils.DatasetTransformationUtils;
 
+/**
+ * Uses a SOM to classify instances. Does not work at all.
+ * @author timo
+ *
+ */
 public class SomClassifier extends NumericClassifier {
-	SOM som;
+	@SuppressWarnings("unused")
+	private static Logger logger = LoggerFactory.getLogger(SomClassifier.class);
 
-	public SomClassifier(ScalingMethod scalingMethod, int height, int width) {
+	SOM som;
+	double threshold;
+
+	public SomClassifier(ScalingMethod scalingMethod, int height, int width, double probThreshold) {
 		super(scalingMethod);
 		som = new SOM(height, width);
+		this.threshold = probThreshold;
 	}
 
 	@Override
 	protected boolean isOutlierScaled(double[] scaledTestSample) {
-		// TODO Auto-generated method stub
-		return false;
+		final CategoricalResults result = som.classify(new DataPoint(new DenseVector(scaledTestSample)));
+		final double sampleProb = result.getProb(0);
+		return sampleProb < threshold;
 	}
 
 	@Override
 	protected void trainModelScaled(List<double[]> scaledTrainSamples) {
-		som.trainC(DatasetTransformationUtils.doublesToClassificationDataSet(scaledTrainSamples, 0));
+		som.trainC(DatasetTransformationUtils.doublesToClassificationDataSet(scaledTrainSamples));
 	}
 
 }

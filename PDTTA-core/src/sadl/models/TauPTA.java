@@ -296,7 +296,7 @@ public class TauPTA extends PDTTA {
 			final String nextEvent = s.getSymbol(i);
 			Transition t = getTransition(currentState, nextEvent);
 			if (t == null) {
-				t = addTransition(currentState, getStateCount(), nextEvent, NO_TRANSITION_PROBABILITY);
+				t = addTransition(currentState, getNumberOfStates(), nextEvent, NO_TRANSITION_PROBABILITY);
 				transitionCount.put(t.toZeroProbTransition(), 0);
 			}
 			transitionCount.increment(t.toZeroProbTransition());
@@ -738,11 +738,16 @@ public class TauPTA extends PDTTA {
 	}
 
 	private int changeTimeValue(int value, double factor) {
+		int result = 0;
 		if (r.nextBoolean()) {
-			return (int) (value * -factor);
+			result = (int) ((1 - factor) * value);
 		} else {
-			return (int) (value * factor);
+			result = (int) ((1 + factor) * value);
 		}
+		if (result < 0) {
+			result = (int) ((1 + factor) * value);
+		}
+		return result;
 	}
 
 	public Set<Transition> getAllTransitions() {

@@ -13,11 +13,7 @@ package sadl.interfaces;
 
 import sadl.input.TimedInput;
 
-/**
- * 
- * @author Timo Klerx
- *
- */
 public interface ModelLearner {
 	public Model train(TimedInput trainingSequences);
+
 }

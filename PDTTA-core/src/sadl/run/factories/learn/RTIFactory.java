@@ -14,8 +14,8 @@ package sadl.run.factories.learn;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 
-import sadl.interfaces.ModelLearner;
-import sadl.modellearner.rtiplus.GreedyPDRTALearner;
+import sadl.interfaces.ProbabilisticModelLearner;
+import sadl.modellearner.rtiplus.SearchingPDRTALearner;
 import sadl.modellearner.rtiplus.SimplePDRTALearner;
 import sadl.modellearner.rtiplus.SimplePDRTALearner.DistributionCheckType;
 import sadl.modellearner.rtiplus.SimplePDRTALearner.OperationTesterType;
@@ -36,8 +36,8 @@ public class RTIFactory implements LearnerFactory {
 	@Parameter(names = "-hist", required = true, arity = 1)
 	String hist;
 
-	@Parameter(names = "-greedy", arity = 0)
-	boolean greedy = false;
+	@Parameter(names = "-search", arity = 0)
+	boolean searching = false;
 
 	@Parameter(names = "-em", arity = 1)
 	OperationTesterType tester = OperationTesterType.LRT;
@@ -55,11 +55,11 @@ public class RTIFactory implements LearnerFactory {
 	String stepsDir = null;
 
 	@Override
-	public ModelLearner create() {
+	public ProbabilisticModelLearner create() {
 
-		ModelLearner ml = null;
-		if (greedy) {
-			ml = new GreedyPDRTALearner(sig, hist, tester, distrCheck, splitPos, boolOps, stepsDir);
+		ProbabilisticModelLearner ml = null;
+		if (searching) {
+			ml = new SearchingPDRTALearner(sig, hist, tester, distrCheck, splitPos, boolOps, stepsDir);
 		} else {
 			ml = new SimplePDRTALearner(sig, hist, tester, distrCheck, splitPos, boolOps, stepsDir);
 		}

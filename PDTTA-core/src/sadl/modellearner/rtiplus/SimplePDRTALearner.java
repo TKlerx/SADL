@@ -40,8 +40,8 @@ import org.slf4j.LoggerFactory;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import sadl.input.TimedInput;
-import sadl.interfaces.Model;
-import sadl.interfaces.ModelLearner;
+import sadl.interfaces.ProbabilisticModelLearner;
+import sadl.interfaces.ProbabilisticModel;
 import sadl.modellearner.rtiplus.boolop.AndOperator;
 import sadl.modellearner.rtiplus.boolop.BooleanOperator;
 import sadl.modellearner.rtiplus.boolop.OrOperator;
@@ -62,7 +62,7 @@ import sadl.utils.Settings;
  * @author Fabian Witter
  *
  */
-public class SimplePDRTALearner implements ModelLearner {
+public class SimplePDRTALearner implements ProbabilisticModelLearner {
 
 	public enum OperationTesterType {
 		LRT, LRT_ADV, NAIVE_LRT, FM, FM_ADV
@@ -117,24 +117,24 @@ public class SimplePDRTALearner implements ModelLearner {
 		}
 
 		switch (testerType) {
-		case LRT:
-			this.tester = new LikelihoodRatioTester(false);
-			break;
-		case LRT_ADV:
-			this.tester = new LikelihoodRatioTester(true);
-			break;
-		case NAIVE_LRT:
-			this.tester = new NaiveLikelihoodRatioTester();
-			break;
-		case FM:
-			this.tester = new FishersMethodTester(false);
-			break;
-		case FM_ADV:
-			this.tester = new FishersMethodTester(true);
-			break;
-		default:
-			this.tester = new LikelihoodRatioTester(false);
-			break;
+			case LRT:
+				this.tester = new LikelihoodRatioTester(false);
+				break;
+			case LRT_ADV:
+				this.tester = new LikelihoodRatioTester(true);
+				break;
+			case NAIVE_LRT:
+				this.tester = new NaiveLikelihoodRatioTester();
+				break;
+			case FM:
+				this.tester = new FishersMethodTester(false);
+				break;
+			case FM_ADV:
+				this.tester = new FishersMethodTester(true);
+				break;
+			default:
+				this.tester = new LikelihoodRatioTester(false);
+				break;
 		}
 	}
 
@@ -178,22 +178,22 @@ public class SimplePDRTALearner implements ModelLearner {
 		bOp = new BooleanOperator[c.length];
 		for (int i = 0; i < c.length; i++) {
 			switch (c[i]) {
-			case 'A':
-				bOp[i] = new AndOperator();
-				break;
-			case 'O':
-				bOp[i] = new OrOperator();
-				break;
-			default:
-				bOp[i] = new AndOperator();
-				logger.error("The symbol '{}' is not appropriate for boolean operator. Using default 'A'.", c[i]);
-				break;
+				case 'A':
+					bOp[i] = new AndOperator();
+					break;
+				case 'O':
+					bOp[i] = new OrOperator();
+					break;
+				default:
+					bOp[i] = new AndOperator();
+					logger.error("The symbol '{}' is not appropriate for boolean operator. Using default 'A'.", c[i]);
+					break;
 			}
 		}
 	}
 
 	@Override
-	public Model train(TimedInput trainingSequences) {
+	public ProbabilisticModel train(TimedInput trainingSequences) {
 
 		logger.info("RTI+: Building automaton from input sequences");
 
@@ -213,7 +213,7 @@ public class SimplePDRTALearner implements ModelLearner {
 		mainModel = a;
 		complete(a, sc);
 
-		logger.info("Final PDRTA contains {} states and {} transitions", a.getNumStates(), a.getSize());
+		logger.info("Final PDRTA contains {} states and {} transitions", a.getNumberOfStates(), a.getSize());
 		// TODO Check why Likelihood is 0.0 here
 		logger.info("Trained PDRTA with quality: Likelihood={} and AIC={}", Math.exp(NaiveLikelihoodRatioTester.calcLikelihood(a).getRatio()), calcAIC(a));
 
@@ -266,6 +266,7 @@ public class SimplePDRTALearner implements ModelLearner {
 	protected NavigableSet<Refinement> getMergeRefs(Transition t, StateColoring sc) {
 
 		final NavigableSet<Refinement> refs = new TreeSet<>();
+		//sequential
 		for (final PDRTAState r : sc) {
 			double score = tester.testMerge(r, t.target);
 			if (mainModel == t.ta) {
@@ -277,12 +278,29 @@ public class SimplePDRTALearner implements ModelLearner {
 				refs.add(ref);
 			}
 		}
+		//parallel (not yet checked for determinism)
+		// // final NavigableSet<Refinement> safeRefs = Collections.synchronizedNavigableSet(refs);
+		// sc.getRedStates().parallelStream().forEach(red -> {
+		// double score = tester.testMerge(red, t.target);
+		// if (mainModel == t.ta) {
+		// logger.trace("Score: {} (MERGE {} with {})", score, red.getIndex(), t.target.getIndex());
+		// }
+		// if (score > significance && score <= 1.0) {
+		// score = (score - significance) / (1.0 - significance);
+		// final Refinement ref = new Refinement(red, t.target, score, sc);
+		// l1.lock();
+		// refs.add(ref);
+		// l1.unlock();
+		// // safeRefs.add(ref);
+		// }
+		// });
 		return refs;
 	}
 
 	protected NavigableSet<Refinement> getSplitRefs(Transition t, StateColoring sc) {
 
 		final NavigableSet<Refinement> refs = new TreeSet<>();
+		//sequential
 		final Iterator<Integer> it = t.in.getTails().keySet().iterator();
 		if (it.hasNext()) {
 			int last = it.next();
@@ -290,18 +308,18 @@ public class SimplePDRTALearner implements ModelLearner {
 				final int cur = it.next();
 				int splitTime = -1;
 				switch (splitPos) {
-				case LEFT:
-					splitTime = last;
-					break;
-				case MIDDLE:
-					splitTime = (int) Math.rint(((cur - last) - 1) / 2.0) + last;
-					break;
-				case RIGHT:
-					splitTime = cur - 1;
-					break;
-				default:
-					splitTime = (int) Math.rint(((cur - last) - 1) / 2.0) + last;
-					break;
+					case LEFT:
+						splitTime = last;
+						break;
+					case MIDDLE:
+						splitTime = (int) Math.rint(((cur - last) - 1) / 2.0) + last;
+						break;
+					case RIGHT:
+						splitTime = cur - 1;
+						break;
+					default:
+						splitTime = (int) Math.rint(((cur - last) - 1) / 2.0) + last;
+						break;
 				}
 				double score = tester.testSplit(t.source, t.symAlphIdx, splitTime);
 				if (mainModel == t.ta) {
@@ -314,6 +332,45 @@ public class SimplePDRTALearner implements ModelLearner {
 				}
 				last = cur;
 			}
+			//parallel (not yet checked for determinism)
+			// final TIntList splitTimes = new TIntArrayList();
+			// if (it.hasNext()) {
+			// int last = it.next();
+			// while (it.hasNext()) {
+			// final int cur = it.next();
+			// int splitTime = -1;
+			// switch (splitPos) {
+			// case LEFT:
+			// splitTime = last;
+			// break;
+			// case MIDDLE:
+			// splitTime = (int) Math.rint(((cur - last) - 1) / 2.0) + last;
+			// break;
+			// case RIGHT:
+			// splitTime = cur - 1;
+			// break;
+			// default:
+			// splitTime = (int) Math.rint(((cur - last) - 1) / 2.0) + last;
+			// break;
+			// }
+			// splitTimes.add(splitTime);
+			// last = cur;
+			// }
+			// // final NavigableSet<Refinement> safeRefs = Collections.synchronizedNavigableSet(refs);
+			// Arrays.stream(splitTimes.toArray()).parallel().forEach(splitTime -> {
+			// double score = tester.testSplit(t.source, t.symAlphIdx, splitTime);
+			// if (mainModel == t.ta) {
+			// logger.trace("Score: {} (SPLIT {} @ ({},{}))", score, t.source.getIndex(), t.ta.getSymbol(t.symAlphIdx), splitTime);
+			// }
+			// if (score < significance && score >= 0) {
+			// score = (significance - score) / significance;
+			// final Refinement ref = new Refinement(t.source, t.symAlphIdx, splitTime, score, sc);
+			// l2.lock();
+			// refs.add(ref);
+			// l2.unlock();
+			// // safeRefs.add(ref);
+			// }
+			// });
 		}
 		return refs;
 	}
@@ -332,7 +389,7 @@ public class SimplePDRTALearner implements ModelLearner {
 				if (directory != null) {
 					draw(a, true, directory, counter);
 				}
-				logger.debug("Automaton contains {} states and {} transitions", a.getNumStates(), a.getSize());
+				logger.debug("Automaton contains {} states and {} transitions", a.getNumberOfStates(), a.getSize());
 				logger.debug("Found most visited transition  {}  containing {} tails", t.toString(), t.in.getTails().size());
 			}
 			counter++;
@@ -409,7 +466,7 @@ public class SimplePDRTALearner implements ModelLearner {
 			}
 		}
 
-		assert (a.getNumStates() == sc.getNumRedStates());
+		assert (a.getNumberOfStates() == sc.getNumRedStates());
 
 		a.checkConsistency();
 		if (directory != null) {

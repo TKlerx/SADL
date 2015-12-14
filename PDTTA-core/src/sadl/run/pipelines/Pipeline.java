@@ -56,8 +56,8 @@ import sadl.detectors.threshold.AggregatedThresholdDetector;
 import sadl.detectors.threshold.FullThresholdDetector;
 import sadl.experiments.ExperimentResult;
 import sadl.input.TimedInput;
-import sadl.interfaces.Model;
-import sadl.interfaces.ModelLearner;
+import sadl.interfaces.ProbabilisticModel;
+import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.modellearner.PdttaLearner;
 import sadl.oneclassclassifier.LibSvmClassifier;
 import sadl.oneclassclassifier.clustering.DbScanClassifier;
@@ -272,9 +272,9 @@ public class Pipeline implements Serializable {
 			trainInput = TimedInput.parse(trainFile);
 			testInput = TimedInput.parse(testFile);
 		}
-		final ModelLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0,
+		final ProbabilisticModelLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0,
 				null);
-		final Model model = learner.train(trainInput);
+		final ProbabilisticModel model = learner.train(trainInput);
 		final AnomalyDetection detection = new AnomalyDetection(pdttaDetector, model);
 		final ExperimentResult result = detection.test(testInput);
 		System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - result.getFMeasure()) + ", 0");

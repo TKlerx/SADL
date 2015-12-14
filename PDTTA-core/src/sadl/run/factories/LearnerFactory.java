@@ -13,18 +13,18 @@ package sadl.run.factories;
 
 import com.beust.jcommander.JCommander;
 
-import sadl.interfaces.ModelLearner;
+import sadl.interfaces.ProbabilisticModelLearner;
 
 public interface LearnerFactory {
 
 	@Deprecated
-	public default ModelLearner create(String[] args) {
+	public default ProbabilisticModelLearner create(String[] args) {
 		final JCommander jc = new JCommander(this);
 		jc.setAcceptUnknownOptions(true);
 		jc.parse(args);
 		return create();
 	}
 
-	public ModelLearner create();
+	public ProbabilisticModelLearner create();
 
 }

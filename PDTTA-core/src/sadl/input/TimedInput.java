@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
@@ -609,5 +610,7 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 		words = words.subList(0, (int) (words.size() * d));
 	}
 
-
+	public List<TimedWord> getWords() {
+		return Collections.unmodifiableList(words);
+	}
 }

@@ -12,7 +12,6 @@
 package sadl.utils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -20,13 +19,10 @@ import org.slf4j.LoggerFactory;
 
 import jsat.DataSet;
 import jsat.SimpleDataSet;
+import jsat.classifiers.CategoricalData;
 import jsat.classifiers.ClassificationDataSet;
 import jsat.classifiers.DataPoint;
 import jsat.linear.DenseVector;
-import weka.core.Attribute;
-import weka.core.DenseInstance;
-import weka.core.Instance;
-import weka.core.Instances;
 
 /**
  * 
@@ -34,71 +30,8 @@ import weka.core.Instances;
  *
  */
 public class DatasetTransformationUtils {
+	@SuppressWarnings("unused")
 	private static Logger logger = LoggerFactory.getLogger(DatasetTransformationUtils.class);
-
-	public static Instances trainingSetToInstances(List<double[]> trainingSet) {
-		final double[] sample = trainingSet.get(0);
-		final ArrayList<Attribute> fvWekaAttributes = new ArrayList<>(sample.length + 1);
-		for (int i = 0; i < sample.length; i++) {
-			fvWekaAttributes.add(new Attribute(Integer.toString(i)));
-		}
-
-		final ArrayList<String> classStrings = new ArrayList<>();
-		classStrings.add("normal");
-		final Attribute ClassAttribute = new Attribute("class", classStrings);
-
-		// Declare the feature vector
-		fvWekaAttributes.add(ClassAttribute);
-		final Instances result = new Instances("trainingSet", fvWekaAttributes, trainingSet.size());
-		result.setClass(ClassAttribute);
-		result.setClassIndex(fvWekaAttributes.size() - 1);
-		for (final double[] instance : trainingSet) {
-			final double[] newInstance = Arrays.copyOf(instance, instance.length + 1);
-			newInstance[newInstance.length - 1] = 0;
-			final Instance wekaInstance = new DenseInstance(1, newInstance);
-			wekaInstance.setDataset(result);
-			result.add(wekaInstance);
-		}
-		return result;
-	}
-
-	public static Instances testSetToInstances(List<double[]> testSet) {
-		if (testSet.size() == 0) {
-			logger.warn("TestSet has size 0");
-		}
-		final double[] sample = testSet.get(0);
-		final ArrayList<Attribute> fvWekaAttributes = new ArrayList<>(sample.length);
-		for (int i = 0; i < sample.length; i++) {
-			fvWekaAttributes.add(new Attribute(Integer.toString(i)));
-		}
-		final ArrayList<String> classStrings = new ArrayList<>();
-		classStrings.add("normal");
-		final Attribute ClassAttribute = new Attribute("class", classStrings);
-		fvWekaAttributes.add(ClassAttribute);
-
-		// Declare the feature vector
-		final Instances result = new Instances("testSet", fvWekaAttributes, testSet.size());
-		result.setClassIndex(fvWekaAttributes.size() - 1);
-		for (final double[] instance : testSet) {
-			final Instance wekaInstance = new DenseInstance(1, instance);
-			wekaInstance.setDataset(result);
-			result.add(wekaInstance);
-		}
-		return result;
-	}
-
-	public static List<double[]> instancesToDoubles(Instances instances, boolean chopClassAttribute) {
-		final List<double[]> result = new ArrayList<>();
-		for (int i = 0; i < instances.size(); i++) {
-			final Instance instance = instances.get(i);
-			double[] temp = instance.toDoubleArray();
-			if (chopClassAttribute) {
-				temp = Arrays.copyOfRange(temp, 0, temp.length - 1);
-			}
-			result.add(temp);
-		}
-		return result;
-	}
 
 	public static DataSet<SimpleDataSet> doublesToDataSet(List<double[]> doubleVectors) {
 		final List<DataPoint> dataPoints = new ArrayList<>(doubleVectors.size());
@@ -110,13 +43,20 @@ public class DatasetTransformationUtils {
 		return result;
 	}
 
-	public static ClassificationDataSet doublesToClassificationDataSet(List<double[]> doubleVectors, int classValue) {
-		final List<DataPoint> dataPoints = new ArrayList<>(doubleVectors.size());
+	public static ClassificationDataSet doublesToClassificationDataSet(List<double[]> doubleVectors) {
+		// We create a new data set. This data set will have 2 dimensions so we can visualize it, and 4 target class values
+		final ClassificationDataSet dataSet = new ClassificationDataSet(doubleVectors.get(0).length, new CategoricalData[0], new CategoricalData(1));
 		for (final double[] sample : doubleVectors) {
-			final DataPoint dp = new DataPoint(new DenseVector(sample));
-			dataPoints.add(dp);
+			dataSet.addDataPoint(new DenseVector(sample), new int[0], 0);
 		}
-		final ClassificationDataSet result = new ClassificationDataSet(dataPoints, classValue);
+		return dataSet;
+	}
+
+	public static List<double[]> dataPointsToArray(List<DataPoint> dataPoints) {
+		final List<double[]> result = new ArrayList<>(dataPoints.size());
+		for (final DataPoint sample : dataPoints) {
+			result.add(sample.getNumericalValues().arrayCopy());
+		}
 		return result;
 	}
 

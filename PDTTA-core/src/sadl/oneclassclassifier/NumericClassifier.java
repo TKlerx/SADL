@@ -22,13 +22,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sadl.constants.ScalingMethod;
-import sadl.utils.DatasetTransformationUtils;
+import sadl.interfaces.Scaling;
+import sadl.scaling.Normalizer;
+import sadl.scaling.Standardizer;
 import sadl.utils.IoUtils;
 import sadl.utils.Settings;
-import weka.core.Instances;
-import weka.filters.Filter;
-import weka.filters.unsupervised.attribute.Normalize;
-import weka.filters.unsupervised.attribute.Standardize;
 
 /**
  * 
@@ -39,16 +37,20 @@ public abstract class NumericClassifier implements OneClassClassifier {
 	private static Logger logger = LoggerFactory.getLogger(NumericClassifier.class);
 	Path classificationTrainFile = Paths.get("classificationTrain.csv");
 	Path classificationTestFile = Paths.get("classificationTest.csv");
+	Scaling filter = null;
+	private final ScalingMethod scalingMethod;
 
-	Filter filter = null;
+	public ScalingMethod getScalingMethod() {
+		return scalingMethod;
+	}
 
 	public NumericClassifier(ScalingMethod scalingMethod) {
-
+		this.scalingMethod = scalingMethod;
 		if (scalingMethod == ScalingMethod.NORMALIZE) {
-			final Normalize n = new Normalize();
+			final Normalizer n = new Normalizer();
 			setFilter(n);
 		} else if (scalingMethod == ScalingMethod.STANDARDIZE) {
-			final Standardize s = new Standardize();
+			final Standardizer s = new Standardizer();
 			setFilter(s);
 		} else if (scalingMethod == ScalingMethod.NONE) {
 			setFilter(null);
@@ -68,24 +70,22 @@ public abstract class NumericClassifier implements OneClassClassifier {
 
 	protected final List<double[]> scale(List<double[]> samples, boolean isTrainingData) {
 		if (filter != null) {
-			final Instances unscaledInstances = DatasetTransformationUtils.trainingSetToInstances(samples);
-			try {
-				if (isTrainingData) {
-					filter.setInputFormat(unscaledInstances);
-				}
-				final Instances scaledInstances = Filter.useFilter(unscaledInstances, filter);
-				final List<double[]> result = DatasetTransformationUtils.instancesToDoubles(scaledInstances, true);
-				return result;
-			} catch (final Exception e) {
-				logger.error("Unexpected exception", e);
-				throw new IllegalStateException(e);
+			if (isTrainingData) {
+				filter.setFeatureCount(samples.get(0).length);
 			}
+			final List<double[]> result;
+			if (isTrainingData) {
+				result = filter.train(samples);
+			} else {
+				result = filter.scale(samples);
+			}
+			return result;
 		} else {
 			return samples;
 		}
 	}
 
-	protected void setFilter(Filter f) {
+	protected void setFilter(Scaling f) {
 		filter = f;
 	}
 
@@ -116,7 +116,7 @@ public abstract class NumericClassifier implements OneClassClassifier {
 	 * Checks whether the provided test sample is an outlier. The test sample are already scaled.
 	 * 
 	 * @param scaledTestSample
-	 * @return
+	 * @return true iff the sample is an outlier
 	 */
 	protected abstract boolean isOutlierScaled(double[] scaledTestSample);
 

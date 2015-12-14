@@ -500,7 +500,7 @@ public class PDTTAold implements AutomatonModel, Serializable {
 		return START_STATE;
 	}
 
-	public int getStateCount() {
+	public int getNumberOfStates() {
 		return finalStateProbabilities.size();
 	}
 
