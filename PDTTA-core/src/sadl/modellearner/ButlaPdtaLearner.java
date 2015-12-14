@@ -212,7 +212,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			}
 
 			eventsMap.put(eventSysbol, event);
-			System.out.println("Created event: " + event);
+			// System.out.println("Created event: " + event);
 		}
 
 		return eventsMap;
