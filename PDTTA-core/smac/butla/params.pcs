@@ -16,7 +16,7 @@ bandwidth [10000,1000000] [20000]
 bandwidth | formelVariant in {OriginalKDE}
 
 #Detector parameters
-detectorMethod {SVM,DBSCAN,THRESHOLD_SINGLE,THRESHOLD_AGG_ONLY, THRESHOLD_ALL, GMEANS,XMEANS,KMEANS} [SVM]
+detectorMethod {SVM,DBSCAN,THRESHOLD_SINGLE,THRESHOLD_AGG_ONLY, THRESHOLD_ALL, GMEANS,XMEANS,KMEANS,ANODA} [ANODA]
 # Must be tested first!
 # aggregateSublists {true,false} [false] 
 
