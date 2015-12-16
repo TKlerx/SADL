@@ -74,7 +74,7 @@ public class Normalizer implements Scaling {
 			final double[] temp = new double[ds.length];
 			for (int i = 0; i < ds.length; i++) {
 				if (Precision.equals(scalingFactors[i], 0)) {
-					temp[1] = 1;
+					temp[i] = 1;
 				} else {
 					temp[i] = (ds[i] - mins[i]) / scalingFactors[i];
 				}
