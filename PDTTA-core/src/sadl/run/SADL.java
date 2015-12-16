@@ -27,14 +27,14 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
-
 import sadl.experiments.ExperimentResult;
 import sadl.run.commands.SmacRun;
 import sadl.run.commands.TestRun;
 import sadl.run.commands.TrainRun;
 import sadl.utils.Settings;
+
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
 
 /**
  * 
@@ -57,6 +57,7 @@ public class SADL {
 	boolean debug = false;
 	static boolean crash = false;
 	public static void main(String[] args) throws Exception {
+
 		try {
 			if (args.length < 1) {
 				logger.error("Not enough params!");
