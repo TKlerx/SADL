@@ -67,11 +67,9 @@ public class PDTA implements AutomatonModel, ProbabilisticModel {
 			probabilities1.add(currentTransition.getPropability());
 			probabilities2.add(currentTransition.getEvent().calculateProbability(time));
 		}
-
 		if (!anomaly) {
 			probabilities1.add(currentState.getEndProbability());
 		}
-
 		return new Pair<>(probabilities1, probabilities2);
 	}
 
