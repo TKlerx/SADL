@@ -196,6 +196,8 @@ public class SmacRun {
 			featureCreator = new MinimalFeatureCreator();
 		} else if (featureCreatorMethod == FeatureCreatorMethod.UBER) {
 			featureCreator = new UberFeatureCreator();
+		} else if (featureCreatorMethod == FeatureCreatorMethod.SINGLE) {
+			featureCreator = new AggregatedSingleFeatureCreator();
 		} else {
 			featureCreator = null;
 		}
@@ -242,13 +244,16 @@ public class SmacRun {
 		} else {
 			classifier = null;
 		}
-		anomalyDetector = new VectorDetector(aggType, featureCreator, classifier, aggregateSublists);
 
 		final ProbabilisticModelLearner learner = getLearner(Algoname.getAlgoname(mainParams.get(0)), jc);
 		final AnomalyDetection detection;
 		if (detectorMethod == DetectorMethod.ANODA) {
 			detection = new AnomalyDetection(new AnodaDetector(aggType), learner);
 		} else {
+			if (classifier == null || featureCreator == null) {
+				throw new IllegalStateException("classifier or featureCreator is null");
+			}
+			anomalyDetector = new VectorDetector(aggType, featureCreator, classifier, aggregateSublists);
 			detection = new AnomalyDetection(anomalyDetector, learner);
 		}
 		ExperimentResult result = null;
