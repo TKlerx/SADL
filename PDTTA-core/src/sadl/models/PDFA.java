@@ -622,7 +622,7 @@ public class PDFA implements AutomatonModel, Serializable {
 	protected TDoubleList computeEventLikelihoods(TimedWord s) {
 
 		final TDoubleList list = new TDoubleArrayList();
-		int currentState = 0;
+		int currentState = START_STATE;
 		for (int i = 0; i < s.length(); i++) {
 			final Transition t = getTransition(currentState, s.getSymbol(i));
 			// DONE this is crap, isnt it? why not return an empty list or null iff there is no transition for the given sequence? or at least put a '0' in the

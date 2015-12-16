@@ -11,6 +11,10 @@
 
 package sadl.models.pdta;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.linked.TIntLinkedList;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -23,9 +27,6 @@ import java.util.TreeMap;
 
 import org.apache.commons.math3.util.Pair;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.array.TDoubleArrayList;
-import gnu.trove.list.linked.TIntLinkedList;
 import sadl.constants.ClassLabel;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
@@ -48,14 +49,16 @@ public class PDTA implements AutomatonModel, ProbabilisticModel {
 		final TDoubleList probabilities2 = new TDoubleArrayList(s.length());
 
 		final PDTAState currentState = root;
+		boolean anomaly = false;
 
 		for (int i = 0; i < s.length(); i++) {
 			final String eventSymbol = s.getSymbol(i);
 			final double time = s.getTimeValue(i);
 
-			final PDTATransition currentTransition = currentState.getMostProbablyTransition(eventSymbol, time);
+			final PDTATransition currentTransition = currentState.getTransition(eventSymbol, time);
 
 			if (currentTransition == null) {
+				anomaly = true;
 				probabilities1.add(0.0);
 				probabilities2.add(0.0);
 				break;
@@ -63,6 +66,10 @@ public class PDTA implements AutomatonModel, ProbabilisticModel {
 
 			probabilities1.add(currentTransition.getPropability());
 			probabilities2.add(currentTransition.getEvent().calculateProbability(time));
+		}
+
+		if (!anomaly) {
+			probabilities1.add(currentState.getEndProbability());
 		}
 
 		return new Pair<>(probabilities1, probabilities2);
