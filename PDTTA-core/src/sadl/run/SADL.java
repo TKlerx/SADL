@@ -117,7 +117,7 @@ public class SADL {
 						bw.append(result.toCsvString());
 						bw.append('\n');
 					}
-					logger.info("Finished SMAC");
+					logger.info("Finished SMAC run.");
 					break;
 				default:
 					// TODO Print usage

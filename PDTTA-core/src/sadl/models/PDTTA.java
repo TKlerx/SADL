@@ -115,7 +115,7 @@ public class PDTTA extends PDFA {
 
 	protected TDoubleList computeTimeLikelihoods(TimedWord ts) {
 		final TDoubleList list = new TDoubleArrayList(ts.length());
-		int currentState = 0;
+		int currentState = START_STATE;
 		//sequential
 		// for (int i = 0; i < ts.length(); i++) {
 		// final Transition t = getTransition(currentState, ts.getSymbol(i));
