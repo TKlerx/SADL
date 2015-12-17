@@ -195,6 +195,9 @@ public abstract class AnomalyDetector {
 			}
 			result = Math.pow(result, 1.0 / list.size());
 		}
+		if (Double.isNaN(result)) {
+			throw new IllegalStateException("Result of probability aggregation must not be NaN");
+		}
 		return result;
 	}
 

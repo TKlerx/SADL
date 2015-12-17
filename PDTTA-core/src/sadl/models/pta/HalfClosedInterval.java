@@ -11,6 +11,7 @@
 
 package sadl.models.pta;
 
+import org.apache.commons.math3.util.Precision;
 
 public class HalfClosedInterval implements Cloneable {
 	protected double min;
@@ -108,8 +109,8 @@ public class HalfClosedInterval implements Cloneable {
 			return true;
 		}
 
-		if (contains(value.getMinimum()) || value.contains(min) || (contains(value.getMaximum()) && min != value.getMaximum())
-				|| (value.contains(max) && max != value.getMinimum())) {
+		if (contains(value.getMinimum()) || value.contains(min) || (contains(value.getMaximum()) && !Precision.equals(min, value.getMaximum()))
+				|| (value.contains(max) && !Precision.equals(max, value.getMinimum()))) {
 			return true;
 		}
 
@@ -122,7 +123,7 @@ public class HalfClosedInterval implements Cloneable {
 			return true;
 		}
 
-		if (contains(value.getMinimum()) && (contains(value.getMaximum()) || max == value.getMaximum())) {
+		if (contains(value.getMinimum()) && (contains(value.getMaximum()) || Precision.equals(max, value.getMaximum()))) {
 			return true;
 		}
 
@@ -160,7 +161,7 @@ public class HalfClosedInterval implements Cloneable {
 	@Override
 	public String toString() {
 
-		if (min == max) {
+		if (Precision.equals(min, max)) {
 			return "[" + min + ";" + max + "]";
 		}
 
@@ -168,8 +169,8 @@ public class HalfClosedInterval implements Cloneable {
 	}
 
 	@Override
-	public HalfClosedInterval clone() {
-
+	public HalfClosedInterval clone() throws CloneNotSupportedException {
+		super.clone();
 		return new HalfClosedInterval(min, max);
 	}
 

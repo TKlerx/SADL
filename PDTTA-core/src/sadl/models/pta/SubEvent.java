@@ -11,6 +11,8 @@
 
 package sadl.models.pta;
 
+import org.apache.commons.math3.util.Precision;
+
 import jsat.distributions.empirical.NormalRandomized;
 
 public class SubEvent {
@@ -258,7 +260,7 @@ public class SubEvent {
 
 	public double generateRandomTime(HalfClosedInterval allowedInterval) {
 
-		if (deviation == 0) {
+		if (Precision.equals(deviation, 0)) {
 			if (allowedInterval.contains(expectedValue)) {
 				return expectedValue;
 			} else {
@@ -286,8 +288,8 @@ public class SubEvent {
 
 	public double calculateProbability(double time) {
 
-		if (deviation == 0.0d){
-			if (time == expectedValue){
+		if (Precision.equals(deviation, 0.0d)) {
+			if (Precision.equals(time, expectedValue)) {
 				return 1.0d;
 			}
 			else{
@@ -296,12 +298,13 @@ public class SubEvent {
 		}
 
 		final double probability = normalFunction.cdf(time);
-
+		double result;
 		if (probability > 0.5d){
-			return (1 - probability) * 2.0d;
+			result = (1 - probability) * 2.0d;
+		} else {
+			result = probability * 2.0d;
 		}
-
-		return probability * 2.0d;
+		return result;
 	}
 
 	public boolean isolateLeftArea(double value) {

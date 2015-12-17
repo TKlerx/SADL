@@ -93,7 +93,7 @@ public class AggSublistsTest {
 			inputSets = IoUtils.readTrainTestFile(p);
 			inputSets.getKey().decreaseSamples(0.2);
 			final ExperimentResult actual4 = detection4.trainTest(inputSets.getKey(), inputSets.getValue());
-			final ExperimentResult expected4 = new ExperimentResult(467, 0, 4533, 0);
+			final ExperimentResult expected4 = new ExperimentResult(134, 0, 4533, 333);
 			assertEquals(expected4, actual4);
 		} else {
 			System.out.println("Did not do any test because OS is not linux and treba cannot be loaded.");

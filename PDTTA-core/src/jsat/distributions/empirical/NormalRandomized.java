@@ -19,17 +19,12 @@ public class NormalRandomized extends Normal {
 
 	private static final long serialVersionUID = 2926027478092427009L;
 
-	double mean;
-	double stndDev;
-
 	public NormalRandomized() {
 		super();
 	}
 
 	public NormalRandomized(double mean, double stndDev) {
 		super(mean, stndDev);
-		this.mean = mean;
-		this.stndDev = stndDev;
 	}
 
 	public double getRandomPoint() {
@@ -53,29 +48,7 @@ public class NormalRandomized extends Normal {
 				return 0.0;
 			}
 		}
-
-		final double result = cdf(x, mean, stndDev);
-
-		if (Double.isNaN(result)) {
-			if (x < mean) {
-				return 0.0;
-			} else {
-				return 1.0;
-			}
-		}
-
-		if (Double.isInfinite(result)) {
-			if (result > 0) {
-				return 1.0;
-			} else {
-				return 0.0;
-			}
-		}
-
-		if (result > 0.0) {
-			return Math.min(result, 1.0);
-		}
-
-		return Math.max(result, 0.0);
+		final double result = cdf(x, mean(), standardDeviation());
+		return result;
 	}
 }

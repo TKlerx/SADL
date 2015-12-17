@@ -11,8 +11,6 @@
 
 package sadl.modellearner;
 
-import gnu.trove.list.array.TIntArrayList;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -21,6 +19,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
+import gnu.trove.list.array.TIntArrayList;
 import sadl.constants.EventsCreationStrategy;
 import sadl.constants.KDEFormelVariant;
 import sadl.constants.PTAOrdering;
@@ -221,7 +220,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 	@Override
 	public boolean compatible(PTAState stateV, PTAState stateW) {
 
-		if (stateV == stateW) {
+		if (stateV.getId() == stateW.getId()) {
 			return true;
 		}
 
