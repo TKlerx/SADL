@@ -27,14 +27,14 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
+
 import sadl.experiments.ExperimentResult;
 import sadl.run.commands.SmacRun;
 import sadl.run.commands.TestRun;
 import sadl.run.commands.TrainRun;
 import sadl.utils.Settings;
-
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
 
 /**
  * 
@@ -127,9 +127,11 @@ public class SADL {
 					System.exit(1);
 					break;
 			}
-		} catch (final Exception e) {
+		} catch (final Throwable e) {
 			logger.error("Unexpected exception with parameters" + Arrays.toString(args), e);
+			e.printStackTrace();
 			crash = true;
+			Thread.sleep(1000);
 		} finally {
 			System.exit(crash ? 1 : 0);
 		}

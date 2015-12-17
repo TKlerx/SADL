@@ -52,8 +52,13 @@ public class EventGenerator {
 		int minIndex = 0;
 
 		for (int i = 0; i < minPoints.length; i++) {
-
-			final int maxIndex = Math.abs(Arrays.binarySearch(times, minPoints[i])) - 2;
+			int maxIndex = Math.abs(Arrays.binarySearch(times, minPoints[i])) - 2;
+			while (times[maxIndex + 1] < minPoints[i]) {
+				maxIndex++;
+			}
+			if (minIndex > maxIndex) {
+				continue;
+			}
 			final double expectedValue = calculateExpectedValue(minIndex, maxIndex, times);
 			final double deviation = calculateDeviation(minIndex, maxIndex, times, expectedValue);
 
