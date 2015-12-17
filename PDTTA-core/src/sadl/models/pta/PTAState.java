@@ -11,11 +11,12 @@
 
 package sadl.models.pta;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import jsat.utils.Pair;
 import sadl.constants.EventsCreationStrategy;
 
@@ -25,13 +26,13 @@ public class PTAState implements Cloneable {
 	protected PTA pta;
 	protected String word;
 	protected PTAState father;
-	protected LinkedHashMap<String, LinkedHashMap<Integer, PTATransition>> inTransitions = new LinkedHashMap<>();
+	protected LinkedHashMap<String, TIntObjectMap<PTATransition>> inTransitions = new LinkedHashMap<>();
 	protected LinkedHashMap<String, PTATransition> outTransitions = new LinkedHashMap<>();
 
 	protected PTAState mergedWith;
 	protected boolean marked = false;
 
-	protected HashMap<Integer, PTAState> compatibilityCheckingStates = new HashMap<>();
+	protected TIntObjectMap<PTAState> compatibilityCheckingStates = new TIntObjectHashMap<>();
 
 	private static int idCounter = 0;
 
@@ -43,7 +44,7 @@ public class PTAState implements Cloneable {
 
 		for (final Event event : pta.getEvents().values()) {
 			for (final SubEvent subEvent : event) {
-				inTransitions.put(subEvent.getSymbol(), new LinkedHashMap<Integer, PTATransition>());
+				inTransitions.put(subEvent.getSymbol(), new TIntObjectHashMap<>());
 			}
 		}
 	}
@@ -77,7 +78,7 @@ public class PTAState implements Cloneable {
 		return outTransitions.get(symbol);
 	}
 
-	public Collection<LinkedHashMap<Integer, PTATransition>> getInTransitions() {
+	public Collection<TIntObjectMap<PTATransition>> getInTransitions() {
 
 		return inTransitions.values();
 	}
@@ -106,8 +107,8 @@ public class PTAState implements Cloneable {
 	public int getInTransitionsCount() {
 
 		int sum = 0;
-		for (final LinkedHashMap<Integer, PTATransition> transitionsByEvent : inTransitions.values()) {
-			for (final PTATransition transition : transitionsByEvent.values()) {
+		for (final TIntObjectMap<PTATransition> transitionsByEvent : inTransitions.values()) {
+			for (final PTATransition transition : transitionsByEvent.valueCollection()) {
 				sum += transition.getCount();
 			}
 		}
@@ -117,14 +118,14 @@ public class PTAState implements Cloneable {
 
 	public int getInTransitionsCount(String eventSymbol) {
 
-		final LinkedHashMap<Integer, PTATransition> transitions = inTransitions.get(eventSymbol);
+		final TIntObjectMap<PTATransition> transitions = inTransitions.get(eventSymbol);
 
 		if (transitions == null) {
 			return 0;
 		}
 
 		int sum = 0;
-		for (final PTATransition transition : transitions.values()) {
+		for (final PTATransition transition : transitions.valueCollection()) {
 			sum += transition.getCount();
 		}
 
@@ -219,8 +220,8 @@ public class PTAState implements Cloneable {
 		final ArrayList<Pair<PTAState, PTAState>> statesToMerge = new ArrayList<>();
 
 		// Merge incoming transitions
-		for (final LinkedHashMap<Integer, PTATransition> secondStateEventInTransitions : secondState.inTransitions.values()) {
-			for (final PTATransition redundantInTransition : secondStateEventInTransitions.values()) {
+		for (final TIntObjectMap<PTATransition> secondStateEventInTransitions : secondState.inTransitions.values()) {
+			for (final PTATransition redundantInTransition : secondStateEventInTransitions.valueCollection()) {
 				transitionsToAdd.add(new PTATransition(redundantInTransition.getSource(), firstState, redundantInTransition.getEvent(), redundantInTransition
 						.getCount()));
 				transitionsToRemove.add(redundantInTransition);
@@ -302,7 +303,6 @@ public class PTAState implements Cloneable {
 	}
 
 	public static void setCompatibilityChecking(PTAState firstState, PTAState secondState) {
-
 		if (firstState.getId() < secondState.getId() ) {
 			firstState.compatibilityCheckingStates.put(secondState.getId(), secondState);
 		} else if (secondState.getId() < firstState.getId() ) {
@@ -312,9 +312,6 @@ public class PTAState implements Cloneable {
 	}
 
 	public static void unsetCompatibilityChecking(PTAState firstState, PTAState secondState) {
-
-		final PTAState removedState = null;
-
 		if (firstState.getId() < secondState.getId()) {
 			firstState.compatibilityCheckingStates.remove(secondState.getId());
 		} else if (secondState.getId() < firstState.getId()) {
@@ -341,8 +338,8 @@ public class PTAState implements Cloneable {
 
 		stringbuilder.append("State " + this.id + "(in: ");
 
-		for (final LinkedHashMap<Integer, PTATransition> transitions : inTransitions.values()) {
-			for (final PTATransition transition : transitions.values()) {
+		for (final TIntObjectMap<PTATransition> transitions : inTransitions.values()) {
+			for (final PTATransition transition : transitions.valueCollection()) {
 				stringbuilder.append(transition + " ");
 			}
 		}
