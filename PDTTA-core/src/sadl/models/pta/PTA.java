@@ -22,6 +22,9 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.ListIterator;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sadl.constants.PTAOrdering;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
@@ -29,6 +32,7 @@ import sadl.models.pdta.PDTA;
 import sadl.models.pdta.PDTAState;
 
 public class PTA {
+	private static Logger logger = LoggerFactory.getLogger(PTA.class);
 
 	protected PTAState root;
 	protected LinkedHashMap<Integer, PTAState> tails = new LinkedHashMap<>();
@@ -87,6 +91,7 @@ public class PTA {
 	public void addSequences(TimedInput timedSequences) {
 
 		if (timedSequences == null) {
+			logger.error("Unexpected exception occured.");
 			throw new IllegalArgumentException();
 		}
 
@@ -108,6 +113,7 @@ public class PTA {
 			final Event event = events.get(eventSymbol);
 
 			if (event == null){
+				logger.error("Event {} does not exist: {}", eventSymbol, sequence);
 				throw new IllegalArgumentException("Event " + eventSymbol + " not exists: " + sequence.toString());
 			}
 
@@ -140,6 +146,7 @@ public class PTA {
 			final Event event = events.get(eventSymbol);
 
 			if (event == null){
+				logger.error("Event {} does not exist: {}", eventSymbol, sequence);
 				throw new IllegalArgumentException("Event " + eventSymbol + " not exists: " + sequence.toString());
 			}
 
@@ -214,6 +221,7 @@ public class PTA {
 				currentTails = nextTails;
 			}
 		} else {
+			logger.error("Unexpected exception occured.");
 			throw new IllegalArgumentException();
 		}
 
@@ -268,31 +276,31 @@ public class PTA {
 
 	public void toGraphvizFile(Path resultPath) throws IOException {
 
-		final BufferedWriter writer = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8);
-		writer.write("digraph G {\n");
+		try (BufferedWriter writer = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8)) {
+			writer.write("digraph G {\n");
 
-		// write states
-		for (final PTAState state : states) {
-			if (state.exists()) {
-				writer.write(Integer.toString(state.getId()));
-				writer.write(" [shape=circle, label=\"" + Integer.toString(state.getId()) + "\"");
+			// write states
+			for (final PTAState state : states) {
+				if (state.exists()) {
+					writer.write(Integer.toString(state.getId()));
+					writer.write(" [shape=circle, label=\"" + Integer.toString(state.getId()) + "\"");
 
-				if (tails.containsKey(state.getId())) {
-					writer.write(", color=red");
+					if (tails.containsKey(state.getId())) {
+						writer.write(", color=red");
+					}
+
+					writer.write("]\n");
 				}
-
-				writer.write("]\n");
 			}
-		}
 
-		for (final PTATransition transition : transitions) {
-			if (transition.exists()) {
-				writer.write(Integer.toString(transition.getSource().getId()) + "->" + Integer.toString(transition.getTarget().getId()) + " [label=<"
-						+ transition.getEvent().getSymbol() + "(" + transition.getCount() + ")>;];\n");
+			for (final PTATransition transition : transitions) {
+				if (transition.exists()) {
+					writer.write(Integer.toString(transition.getSource().getId()) + "->" + Integer.toString(transition.getTarget().getId()) + " [label=<"
+							+ transition.getEvent().getSymbol() + "(" + transition.getCount() + ")>;];\n");
+				}
 			}
+			writer.write("}");
 		}
-		writer.write("}");
-		writer.close();
 	}
 
 	private void cleanUp(){

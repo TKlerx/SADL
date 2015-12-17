@@ -15,7 +15,7 @@
 	</Appenders>
 	<Loggers>
 		<!-- <Logger name="sadl.integration" level="debug"/> -->
-		<Logger name="sadl" level="info">
+		<Logger name="sadl" level="trace">
 			<AppenderRef ref="console" />
 			<AppenderRef ref="infoFileAppender" />
 			<AppenderRef ref="errFileAppender" />

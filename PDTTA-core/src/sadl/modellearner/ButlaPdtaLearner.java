@@ -19,6 +19,9 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import gnu.trove.list.array.TIntArrayList;
 import sadl.constants.EventsCreationStrategy;
 import sadl.constants.KDEFormelVariant;
@@ -36,6 +39,7 @@ import sadl.models.pta.PTAState;
 import sadl.models.pta.SubEvent;
 
 public class ButlaPdtaLearner implements ProbabilisticModelLearner, CompatibilityChecker {
+	private static Logger logger = LoggerFactory.getLogger(ButlaPdtaLearner.class);
 
 	EventGenerator eventGenerator;
 	double a;
@@ -72,20 +76,23 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 
 	@Override
 	public PDTA train(TimedInput TimedTrainingSequences) {
-
+		logger.debug("Starting to learn PDTA with BUTLA...");
 		final HashMap<String, LinkedList<Double>> eventToTimelistMap = mapEventsToTimes(TimedTrainingSequences);
 		final HashMap<String, Event> eventsMap = generateSubEvents(eventToTimelistMap);
 
 		try {
+			logger.debug("Starting to build PTA ...");
 			final PTA pta = new PTA(eventsMap, TimedTrainingSequences);
 			// pta.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\output.gv"));
-
+			logger.trace("Built PTA.");
+			logger.trace("Starting to merge compatible states...");
 			mergeCompatibleStates(pta, pta.getStatesOrdered(mergeStrategy));
 
 			if (splittingStrategy == EventsCreationStrategy.IsolateCriticalAreasMergeAfter) {
 				pta.mergeTransitionsInCriticalAreas();
 			}
-
+			logger.debug("Merged compatible states.");
+			logger.info("Learned PDTA with BUTLA");
 			// pta.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\in-out.gv"));
 			return pta.toPDTA();
 		} catch (final Exception e) {
@@ -101,7 +108,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 	 * @return
 	 */
 	public HashMap<String, LinkedList<Double>> mapEventsToTimes(TimedInput timedEventSequences) {
-
+		logger.trace("Starting to gather time values...");
 		final HashMap<String, LinkedList<Double>> eventTimesMap = new HashMap<>(timedEventSequences.getSymbols().length);
 
 		for (final TimedWord word : timedEventSequences) {
@@ -121,7 +128,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 				}
 			}
 		}
-
+		logger.info("Gathered time values.");
 		return eventTimesMap;
 
 	}
@@ -190,7 +197,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 	}
 
 	public HashMap<String, Event> generateSubEvents(Map<String, LinkedList<Double>> eventTimesMap) {
-
+		logger.debug("Starting to generate subevents...");
 		final Set<String> eventSymbolsSet = eventTimesMap.keySet();
 		final HashMap<String, Event> eventsMap = new HashMap<>(eventSymbolsSet.size());
 
@@ -213,7 +220,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			eventsMap.put(eventSysbol, event);
 			// System.out.println("Created event: " + event);
 		}
-
+		logger.debug("Generated subevents.");
 		return eventsMap;
 	}
 
