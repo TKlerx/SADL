@@ -47,13 +47,35 @@ public class NormalRandomized extends Normal {
 	public double cdf(double x) {
 
 		if (Double.isInfinite(x)) {
-			if (x > 0) {
+			if (x > 0.0) {
 				return 1.0;
 			} else {
 				return 0.0;
 			}
 		}
 
-		return cdf(x, mean, stndDev);
+		final double result = cdf(x, mean, stndDev);
+
+		if (Double.isNaN(result)) {
+			if (x < mean) {
+				return 0.0;
+			} else {
+				return 1.0;
+			}
+		}
+
+		if (Double.isInfinite(result)) {
+			if (result > 0) {
+				return 1.0;
+			} else {
+				return 0.0;
+			}
+		}
+
+		if (result > 0.0) {
+			return Math.min(result, 1.0);
+		}
+
+		return Math.max(result, 0.0);
 	}
 }
