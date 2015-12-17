@@ -16,15 +16,17 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.ArrayList;
 import java.util.ListIterator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import sadl.constants.PTAOrdering;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
@@ -247,7 +249,7 @@ public class PTA {
 
 	public PDTA toPDTA() {
 
-		final HashMap<Integer, PDTAState> pdtaStates = new HashMap<>();
+		final TIntObjectMap<PDTAState> pdtaStates = new TIntObjectHashMap<>();
 
 		for (final ListIterator<PTAState> iterator = states.listIterator(); iterator.hasNext();) {
 			final PTAState ptaState = iterator.next();

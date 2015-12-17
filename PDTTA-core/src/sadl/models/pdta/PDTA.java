@@ -11,22 +11,22 @@
 
 package sadl.models.pdta;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.array.TDoubleArrayList;
-import gnu.trove.list.linked.TIntLinkedList;
-
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Random;
 import java.util.TreeMap;
 
 import org.apache.commons.math3.util.Pair;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.linked.TIntLinkedList;
+import gnu.trove.map.TIntObjectMap;
 import sadl.constants.ClassLabel;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
@@ -39,7 +39,7 @@ import sadl.models.pta.SubEvent;
 public class PDTA implements AutomatonModel, ProbabilisticModel {
 
 	PDTAState root;
-	HashMap<Integer, PDTAState> states;
+	TIntObjectMap<PDTAState> states;
 	HashMap<String, Event> events;
 
 	@Override
@@ -70,7 +70,7 @@ public class PDTA implements AutomatonModel, ProbabilisticModel {
 		return new Pair<>(probabilities1, probabilities2);
 	}
 
-	public PDTA(PDTAState root, HashMap<Integer, PDTAState> states, HashMap<String, Event> events) {
+	public PDTA(PDTAState root, TIntObjectMap<PDTAState> states, HashMap<String, Event> events) {
 		this.root = root;
 		this.states = states;
 		this.events = events;
@@ -81,7 +81,7 @@ public class PDTA implements AutomatonModel, ProbabilisticModel {
 		return root;
 	}
 
-	public HashMap<Integer, PDTAState> getStates() {
+	public TIntObjectMap<PDTAState> getStates() {
 
 		return states;
 	}
@@ -235,7 +235,7 @@ public class PDTA implements AutomatonModel, ProbabilisticModel {
 		writer.write("digraph G {\n");
 
 		// write states
-		for (final PDTAState state : states.values()) {
+		for (final PDTAState state : states.valueCollection()) {
 
 			writer.write(Integer.toString(state.getId()));
 			writer.write(" [shape=");
@@ -248,7 +248,7 @@ public class PDTA implements AutomatonModel, ProbabilisticModel {
 			writer.write("]\n");
 		}
 
-		for (final PDTAState state : states.values()) {
+		for (final PDTAState state : states.valueCollection()) {
 			for (final TreeMap<Double, PDTATransition> transitions : state.getTransitions().values()) {
 				for (final PDTATransition transition : transitions.values()) {
 					writer.write(Integer.toString(state.getId()) + "->" + Integer.toString(transition.getTarget().getId()) + " [label=<"
