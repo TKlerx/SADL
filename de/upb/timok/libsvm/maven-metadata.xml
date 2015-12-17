@@ -3,10 +3,9 @@
   <groupId>de.upb.timok</groupId>
   <artifactId>libsvm</artifactId>
   <versioning>
-    <release>2.8</release>
     <versions>
-      <version>2.8</version>
+      <version>3.22-SNAPSHOT</version>
     </versions>
-    <lastUpdated>20151123120810</lastUpdated>
+    <lastUpdated>20151217121015</lastUpdated>
   </versioning>
 </metadata>
