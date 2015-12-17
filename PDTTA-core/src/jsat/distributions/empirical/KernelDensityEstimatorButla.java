@@ -12,11 +12,11 @@
 package jsat.distributions.empirical;
 
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 
 import org.apache.commons.math3.util.Precision;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
 import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.empirical.kernelfunc.GaussKF;
 import jsat.linear.DenseVector;
@@ -320,9 +320,9 @@ public class KernelDensityEstimatorButla {
 		this.minSearchAccuracy = accuracy;
 	}
 
-	public Double[] getMinima() {
+	public double[] getMinima() {
 
-		final List<Double> pointList = new LinkedList<>();
+		final TDoubleList pointList = new TDoubleArrayList();
 
 		double lastX = startX;
 		double lastValue = kernelDerivationFunction.f(lastX);
@@ -350,7 +350,7 @@ public class KernelDensityEstimatorButla {
 			}
 		}
 
-		return pointList.toArray(new Double[0]);
+		return pointList.toArray();
 	}
 
 }

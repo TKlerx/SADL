@@ -43,7 +43,7 @@ public class EventGenerator {
 		Arrays.sort(times);
 
 		final KernelDensityEstimatorButla kde = new KernelDensityEstimatorButla(times, formel, bandwidth);
-		final Double[] minPoints = kde.getMinima();
+		final double[] minPoints = kde.getMinima();
 		final TreeMap<Double, SubEvent> subEvents = new TreeMap<>();
 
 		final Event event = new Event(symbol, subEvents);

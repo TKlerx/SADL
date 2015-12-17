@@ -16,23 +16,30 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.TreeMap;
 
+import sadl.utils.MasterSeed;
+
 public class Event implements Iterable<SubEvent> {
 
 	protected String symbol;
 	protected TreeMap<Double, SubEvent> subEvents;
 
 	// protected double[] times;
-
+	Random rand;
 	public Event(String symbol, TreeMap<Double, SubEvent> subEvents) {
 
 		this.symbol = symbol;
 		// this.times = times; // TODO remove?
 		this.subEvents = subEvents;
+		rand = MasterSeed.nextRandom();
 	}
 
 	public String getSymbol() {
 
 		return symbol;
+	}
+
+	public int getSubEventCount() {
+		return subEvents.size();
 	}
 
 	public SubEvent getSubEventByTime(double time) {
@@ -53,9 +60,7 @@ public class Event implements Iterable<SubEvent> {
 	}
 
 	public SubEvent getRandomSubEvent() {
-
-		final Random random = new Random();
-		return (SubEvent) subEvents.values().toArray()[random.nextInt(subEvents.size())];
+		return (SubEvent) subEvents.values().toArray()[rand.nextInt(subEvents.size())];
 	}
 
 

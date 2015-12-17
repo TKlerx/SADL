@@ -84,8 +84,8 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			logger.debug("Starting to build PTA ...");
 			final PTA pta = new PTA(eventsMap, TimedTrainingSequences);
 			// pta.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\output.gv"));
-			logger.trace("Built PTA.");
-			logger.trace("Starting to merge compatible states...");
+			logger.debug("Built PTA.");
+			logger.debug("Starting to merge compatible states...");
 			mergeCompatibleStates(pta, pta.getStatesOrdered(mergeStrategy));
 
 			if (splittingStrategy == EventsCreationStrategy.IsolateCriticalAreasMergeAfter) {
@@ -108,7 +108,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 	 * @return
 	 */
 	public HashMap<String, LinkedList<Double>> mapEventsToTimes(TimedInput timedEventSequences) {
-		logger.trace("Starting to gather time values...");
+		logger.debug("Starting to gather time values...");
 		final HashMap<String, LinkedList<Double>> eventTimesMap = new HashMap<>(timedEventSequences.getSymbols().length);
 
 		for (final TimedWord word : timedEventSequences) {
@@ -128,7 +128,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 				}
 			}
 		}
-		logger.info("Gathered time values.");
+		logger.debug("Gathered time values.");
 		return eventTimesMap;
 
 	}
@@ -197,10 +197,11 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 	}
 
 	public HashMap<String, Event> generateSubEvents(Map<String, LinkedList<Double>> eventTimesMap) {
-		logger.debug("Starting to generate subevents...");
 		final Set<String> eventSymbolsSet = eventTimesMap.keySet();
 		final HashMap<String, Event> eventsMap = new HashMap<>(eventSymbolsSet.size());
-
+		logger.debug("There are {} events", eventSymbolsSet.size());
+		logger.debug("Starting to generate subevents...");
+		int subEventCount = 0;
 		for (final String eventSysbol : eventSymbolsSet) {
 			final List<Double> timeList = eventTimesMap.get(eventSysbol);
 			Event event = null;
@@ -215,12 +216,16 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 					|| splittingStrategy == EventsCreationStrategy.IsolateCriticalAreasMergeInProcess
 					|| splittingStrategy == EventsCreationStrategy.IsolateCriticalAreasMergeAfter) {
 				event = eventGenerator.generateSplittedEventWithIsolatedCriticalArea(eventSysbol, listToDoubleArray(timeList));
+			} else {
+				throw new IllegalStateException("SplittingStrategy " + splittingStrategy + " not allowed for BUTLA");
 			}
 
 			eventsMap.put(eventSysbol, event);
 			// System.out.println("Created event: " + event);
+			subEventCount += event.getSubEventCount();
 		}
 		logger.debug("Generated subevents.");
+		logger.debug("There are {} subevents.", subEventCount);
 		return eventsMap;
 	}
 

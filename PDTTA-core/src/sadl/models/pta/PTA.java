@@ -94,9 +94,13 @@ public class PTA {
 			logger.error("Unexpected exception occured.");
 			throw new IllegalArgumentException();
 		}
-
+		int i = 0;
 		for (final TimedWord sequence : timedSequences) {
 			this.addSequence(sequence);
+			if (i % 100 == 0) {
+				logger.trace("Added {} sequences to the PTA.", i);
+			}
+			i++;
 		}
 
 	}
@@ -303,8 +307,11 @@ public class PTA {
 		}
 	}
 
-	private void cleanUp(){
-
+	public void cleanUp() {
+		// TODO cleanUp seems buggy. Maybe because not done recursively?
+		logger.trace("#####Clearning up the PTA...");
+		logger.trace("Before CleanUp there are {} many states in the PTA", states.size());
+		logger.trace("Before CleanUp there are {} many transitions in the PTA", transitions.size());
 		for (final Iterator<PTAState> statesIterator = states.iterator(); statesIterator.hasNext();) {
 			final PTAState state = statesIterator.next();
 
@@ -328,6 +335,9 @@ public class PTA {
 				transitionsIterator.remove();
 			}
 		}
+		logger.trace("After CleanUp there are {} many states in the PTA", states.size());
+		logger.trace("After CleanUp there are {} many transitions in the PTA", transitions.size());
+		logger.trace("Cleaned up the PTA.");
 
 	}
 
