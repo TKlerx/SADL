@@ -143,7 +143,7 @@ public class NumericClassifierTest {
 			final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
 			final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
 			final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
-			final ExperimentResult expected = new ExperimentResult(467, 4204, 329, 0);
+			final ExperimentResult expected = new ExperimentResult(467, 4216, 317, 0);
 			assertEquals(expected, actual);
 		} else {
 			System.out.println("Did not do any test because OS is not linux and treba cannot be loaded.");
@@ -182,7 +182,7 @@ public class NumericClassifierTest {
 			final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
 			final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
 			final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
-			final ExperimentResult expected = new ExperimentResult(134, 163, 4370, 333);
+			final ExperimentResult expected = new ExperimentResult(381, 2, 4531, 86);
 			assertEquals(expected, actual);
 		} else {
 			System.out.println("Did not do any test because OS is not linux and treba cannot be loaded.");

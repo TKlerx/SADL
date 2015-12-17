@@ -19,17 +19,12 @@ public class NormalRandomized extends Normal {
 
 	private static final long serialVersionUID = 2926027478092427009L;
 
-	double mean;
-	double stndDev;
-
 	public NormalRandomized() {
 		super();
 	}
 
 	public NormalRandomized(double mean, double stndDev) {
 		super(mean, stndDev);
-		this.mean = mean;
-		this.stndDev = stndDev;
 	}
 
 	public double getRandomPoint() {
@@ -53,7 +48,7 @@ public class NormalRandomized extends Normal {
 				return 0.0;
 			}
 		}
-
-		return cdf(x, mean, stndDev);
+		final double result = cdf(x, mean(), standardDeviation());
+		return result;
 	}
 }

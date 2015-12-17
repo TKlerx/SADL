@@ -363,11 +363,17 @@
 			<artifactId>commons-math3</artifactId>
 			<version>3.5</version>
 		</dependency>
-		<dependency>
+		 <dependency>
 			<groupId>de.upb.timok</groupId>
 			<artifactId>libsvm</artifactId>
-			<version>2.8</version>
-		</dependency>
+			<version>3.21-SNAPSHOT</version>
+		</dependency> 
+		<!--<dependency>
+			<groupId>tw.edu.ntu.csie</groupId>
+			<artifactId>libsvm</artifactId>
+			<version>3.17</version>
+		</dependency> -->
+		
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-slf4j-impl</artifactId>
@@ -391,7 +397,7 @@
 		<dependency>
 			<groupId>com.edwardraff</groupId>
 			<artifactId>JSAT</artifactId>
-			<version>0.0.2</version>
+			<version>0.0.3-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>de.upb.timok</groupId>
