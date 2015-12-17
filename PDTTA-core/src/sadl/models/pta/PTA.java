@@ -19,7 +19,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.ListIterator;
 
 import org.slf4j.Logger;
@@ -39,8 +39,8 @@ public class PTA {
 	protected HashMap<String, Event> events;
 	protected int depth = 0;
 
-	protected LinkedList<PTAState> states = new LinkedList<>();
-	protected LinkedList<PTATransition> transitions = new LinkedList<>();
+	protected ArrayList<PTAState> states = new ArrayList<>();
+	protected ArrayList<PTATransition> transitions = new ArrayList<>();
 
 	protected boolean statesMerged = false;
 
@@ -68,12 +68,12 @@ public class PTA {
 		return tails;
 	}
 
-	public LinkedList<PTAState> getStates() {
+	public ArrayList<PTAState> getStates() {
 
 		return states;
 	}
 
-	public void setStates(LinkedList<PTAState> states) {
+	public void setStates(ArrayList<PTAState> states) {
 
 		this.states = states;
 	}
@@ -176,12 +176,12 @@ public class PTA {
 
 	}
 
-	public LinkedList<PTAState> getStatesOrdered(PTAOrdering order) {
+	public ArrayList<PTAState> getStatesOrdered(PTAOrdering order) {
 
-		final LinkedList<PTAState> orderedStates = new LinkedList<>();
+		final ArrayList<PTAState> orderedStates = new ArrayList<>();
 
 		if (order == PTAOrdering.TopDown) {
-			LinkedList<PTAState> heads = new LinkedList<>();
+			ArrayList<PTAState> heads = new ArrayList<>();
 
 			for (final PTATransition transition : root.getOutTransitions()) {
 				final PTAState state = transition.getTarget();
@@ -191,7 +191,7 @@ public class PTA {
 			while (!heads.isEmpty()) {
 				orderedStates.addAll(heads);
 
-				final LinkedList<PTAState> nextHeads = new LinkedList<>();
+				final ArrayList<PTAState> nextHeads = new ArrayList<>();
 
 				for (final PTAState headState : heads) {
 					for (final PTATransition transition : headState.getOutTransitions()) {

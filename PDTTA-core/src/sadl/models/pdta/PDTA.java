@@ -21,7 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.TreeMap;
 
@@ -88,7 +88,7 @@ public class PDTA implements AutomatonModel, ProbabilisticModel {
 
 	public TimedInput generateRandomSequences(boolean allowAnomaly, int count) {
 
-		final LinkedList<TimedWord> words = new LinkedList<>();
+		final ArrayList<TimedWord> words = new ArrayList<>();
 
 		for (int i = 0; i < count; i++) {
 
@@ -101,7 +101,7 @@ public class PDTA implements AutomatonModel, ProbabilisticModel {
 
 	public TimedInput generateAnomalySequences(int eventAnomaliesCount, int count) {
 
-		final LinkedList<TimedWord> words = new LinkedList<>();
+		final ArrayList<TimedWord> words = new ArrayList<>();
 
 		for (int i = 0; i < count; i++) {
 
@@ -114,7 +114,7 @@ public class PDTA implements AutomatonModel, ProbabilisticModel {
 
 	public TimedWord generateRandomWord(boolean allowAnomaly) {
 
-		final LinkedList<String> symbols = new LinkedList<>();
+		final ArrayList<String> symbols = new ArrayList<>();
 		final TIntLinkedList timeValues = new TIntLinkedList();
 
 		PDTAState currentState = root;
@@ -160,7 +160,7 @@ public class PDTA implements AutomatonModel, ProbabilisticModel {
 		final Random random = new Random();
 		final Event eventsArray[] = events.values().toArray(new Event[0]);
 
-		final LinkedList<String> symbols = new LinkedList<>();
+		final ArrayList<String> symbols = new ArrayList<>();
 		final TIntLinkedList timeValues = new TIntLinkedList();
 
 		while (anomaliesMaxCount > 0){

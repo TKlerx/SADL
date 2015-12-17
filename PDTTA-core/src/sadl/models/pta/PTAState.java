@@ -14,7 +14,7 @@ package sadl.models.pta;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
+import java.util.ArrayList;
 
 import jsat.utils.Pair;
 import sadl.constants.EventsCreationStrategy;
@@ -214,9 +214,9 @@ public class PTAState implements Cloneable {
 			return;
 		}
 
-		LinkedList<PTATransition> transitionsToAdd = new LinkedList<>();
-		LinkedList<PTATransition> transitionsToRemove = new LinkedList<>();
-		final LinkedList<Pair<PTAState, PTAState>> statesToMerge = new LinkedList<>();
+		ArrayList<PTATransition> transitionsToAdd = new ArrayList<>();
+		ArrayList<PTATransition> transitionsToRemove = new ArrayList<>();
+		final ArrayList<Pair<PTAState, PTAState>> statesToMerge = new ArrayList<>();
 
 		// Merge incoming transitions
 		for (final LinkedHashMap<Integer, PTATransition> secondStateEventInTransitions : secondState.inTransitions.values()) {
@@ -230,8 +230,8 @@ public class PTAState implements Cloneable {
 		PTATransition.remove(transitionsToRemove);
 		PTATransition.add(transitionsToAdd);
 
-		transitionsToAdd = new LinkedList<>();
-		transitionsToRemove = new LinkedList<>();
+		transitionsToAdd = new ArrayList<>();
+		transitionsToRemove = new ArrayList<>();
 
 		// Merge outgoing transitions
 		for (final PTATransition redundantTransition : secondState.outTransitions.values()) {
@@ -261,8 +261,8 @@ public class PTAState implements Cloneable {
 
 	public void removeCriticalTransitions(){
 
-		final LinkedList<PTATransition> transitionsToRemove = new LinkedList<>();
-		final LinkedList<Pair<PTAState,PTAState>> statesToMerge = new LinkedList<>();
+		final ArrayList<PTATransition> transitionsToRemove = new ArrayList<>();
+		final ArrayList<Pair<PTAState,PTAState>> statesToMerge = new ArrayList<>();
 
 		for (final PTATransition transition : outTransitions.values()) {
 			final SubEvent event = transition.getEvent();

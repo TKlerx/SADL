@@ -13,7 +13,6 @@ package sadl.modellearner;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -22,6 +21,8 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 import sadl.constants.EventsCreationStrategy;
 import sadl.constants.KDEFormelVariant;
@@ -77,7 +78,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 	@Override
 	public PDTA train(TimedInput TimedTrainingSequences) {
 		logger.debug("Starting to learn PDTA with BUTLA...");
-		final HashMap<String, LinkedList<Double>> eventToTimelistMap = mapEventsToTimes(TimedTrainingSequences);
+		final HashMap<String, TDoubleList> eventToTimelistMap = mapEventsToTimes(TimedTrainingSequences);
 		final HashMap<String, Event> eventsMap = generateSubEvents(eventToTimelistMap);
 
 		try {
@@ -107,9 +108,9 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 	 *            Sequences of timed events.
 	 * @return
 	 */
-	public HashMap<String, LinkedList<Double>> mapEventsToTimes(TimedInput timedEventSequences) {
+	public HashMap<String, TDoubleList> mapEventsToTimes(TimedInput timedEventSequences) {
 		logger.debug("Starting to gather time values...");
-		final HashMap<String, LinkedList<Double>> eventTimesMap = new HashMap<>(timedEventSequences.getSymbols().length);
+		final HashMap<String, TDoubleList> eventTimesMap = new HashMap<>(timedEventSequences.getSymbols().length);
 
 		for (final TimedWord word : timedEventSequences) {
 			if (!word.isAnomaly()) {
@@ -117,10 +118,10 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 					final String event = word.getSymbol(i);
 					final double time = word.getTimeValue(i);
 
-					LinkedList<Double> timeList = eventTimesMap.get(event);
+					TDoubleList timeList = eventTimesMap.get(event);
 
 					if (timeList == null) {
-						timeList = new LinkedList<>();
+						timeList = new TDoubleArrayList();
 						eventTimesMap.put(event, timeList);
 					}
 
@@ -135,7 +136,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 
 	public void mergeCompatibleStates(PTA pta, List<PTAState> statesOrdering) {
 
-		final LinkedList<PTAState> workedOffStates = new LinkedList<>();
+		final ArrayList<PTAState> workedOffStates = new ArrayList<>();
 
 		outerloop: for (final PTAState state : statesOrdering) {
 
@@ -170,10 +171,10 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 
 	public TimedInput splitEventsInTimedSequences(TimedInput timedSequences) {
 
-		final HashMap<String, LinkedList<Double>> eventToTimelistMap = mapEventsToTimes(timedSequences);
+		final HashMap<String, TDoubleList> eventToTimelistMap = mapEventsToTimes(timedSequences);
 		final HashMap<String, Event> eventsMap = generateSubEvents(eventToTimelistMap);
 
-		final LinkedList<TimedWord> words = new LinkedList<>();
+		final ArrayList<TimedWord> words = new ArrayList<>();
 
 		for (final TimedWord word : timedSequences) {
 
@@ -196,26 +197,26 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 		return new TimedInput(words);
 	}
 
-	public HashMap<String, Event> generateSubEvents(Map<String, LinkedList<Double>> eventTimesMap) {
+	public HashMap<String, Event> generateSubEvents(Map<String, TDoubleList> eventTimesMap) {
 		final Set<String> eventSymbolsSet = eventTimesMap.keySet();
 		final HashMap<String, Event> eventsMap = new HashMap<>(eventSymbolsSet.size());
 		logger.debug("There are {} events", eventSymbolsSet.size());
 		logger.debug("Starting to generate subevents...");
 		int subEventCount = 0;
 		for (final String eventSysbol : eventSymbolsSet) {
-			final List<Double> timeList = eventTimesMap.get(eventSysbol);
+			final TDoubleList timeList = eventTimesMap.get(eventSysbol);
 			Event event = null;
 
 			if (splittingStrategy == EventsCreationStrategy.SplitEvents) {
-				event = eventGenerator.generateSplittedEvent(eventSysbol, listToDoubleArray(timeList));
+				event = eventGenerator.generateSplittedEvent(eventSysbol, timeList.toArray());
 			} else if (splittingStrategy == EventsCreationStrategy.DontSplitEvents) {
-				event = eventGenerator.generateNotSplittedEvent(eventSysbol, listToDoubleArray(timeList));
+				event = eventGenerator.generateNotSplittedEvent(eventSysbol, timeList.toArray());
 			} else if (splittingStrategy == EventsCreationStrategy.NotTimedEvents) {
-				event = eventGenerator.generateNotTimedEvent(eventSysbol, listToDoubleArray(timeList));
+				event = eventGenerator.generateNotTimedEvent(eventSysbol, timeList.toArray());
 			} else if (splittingStrategy == EventsCreationStrategy.IsolateCriticalAreas
 					|| splittingStrategy == EventsCreationStrategy.IsolateCriticalAreasMergeInProcess
 					|| splittingStrategy == EventsCreationStrategy.IsolateCriticalAreasMergeAfter) {
-				event = eventGenerator.generateSplittedEventWithIsolatedCriticalArea(eventSysbol, listToDoubleArray(timeList));
+				event = eventGenerator.generateSplittedEventWithIsolatedCriticalArea(eventSysbol, timeList.toArray());
 			} else {
 				throw new IllegalStateException("SplittingStrategy " + splittingStrategy + " not allowed for BUTLA");
 			}

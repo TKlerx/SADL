@@ -13,7 +13,7 @@ package sadl.models.pta;
 
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
@@ -150,7 +150,7 @@ public class EventGenerator {
 	public Event generateSplittedEventWithIsolatedCriticalArea(String symbol, double[] times) {
 
 		final Event event = generateSplittedEvent(symbol, times);
-		final LinkedList<SubEventCriticalArea> criticalAreas = new LinkedList<>();
+		final ArrayList<SubEventCriticalArea> criticalAreas = new ArrayList<>();
 		final TreeMap<Double, SubEvent> newSubEvents = new TreeMap<>();
 		final Event newEvent = new Event(symbol, newSubEvents);
 
