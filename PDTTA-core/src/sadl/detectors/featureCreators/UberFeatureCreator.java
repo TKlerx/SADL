@@ -33,16 +33,20 @@ public class UberFeatureCreator extends FullFeatureCreator {
 		final TDoubleList eventDiffs = calcDiffs(eventLikelihoods);
 		final TDoubleList timeDiffs = calcDiffs(timeLikelihoods);
 
-		result.add(eventStat.getStandardDeviation());
+		double eventStdDev = eventStat.getStandardDeviation();
+		if (Double.isNaN(eventStdDev) || Double.isInfinite(eventStdDev)) {
+			eventStdDev = AnomalyDetector.ILLEGAL_VALUE;
+		}
+		result.add(eventStdDev);
 		result.add(eventLikelihoods.size());
 		result.add(eventDiffs.min());
 		result.add(eventDiffs.max());
 
-		double stdDev = timeStat.getStandardDeviation();
-		if (Double.isNaN(stdDev) || Double.isInfinite(stdDev)) {
-			stdDev = AnomalyDetector.ILLEGAL_VALUE;
+		double timeStdDev = timeStat.getStandardDeviation();
+		if (Double.isNaN(timeStdDev) || Double.isInfinite(timeStdDev)) {
+			timeStdDev = AnomalyDetector.ILLEGAL_VALUE;
 		}
-		result.add(stdDev);
+		result.add(timeStdDev);
 		result.add(timeLikelihoods.size());
 		result.add(timeDiffs.min());
 		result.add(timeDiffs.max());

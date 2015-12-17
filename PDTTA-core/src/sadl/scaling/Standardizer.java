@@ -20,6 +20,7 @@ import jsat.math.OnLineStatistics;
 import sadl.interfaces.Scaling;
 
 public class Standardizer implements Scaling {
+	private static final int ABNORMAL_STANDARD_DEVIATION = 0;
 	double mus[];
 	double sigmas[];
 	@Override
@@ -43,6 +44,9 @@ public class Standardizer implements Scaling {
 		for (int i = 0; i < os.length; i++) {
 			mus[i] = os[i].getMean();
 			sigmas[i] = os[i].getStandardDeviation();
+			if (Double.isNaN(sigmas[i])) {
+				sigmas[i] = ABNORMAL_STANDARD_DEVIATION;
+			}
 		}
 		trained = true;
 		return scale(input);
@@ -57,8 +61,8 @@ public class Standardizer implements Scaling {
 		for (final double[] ds : input) {
 			final double[] temp = new double[ds.length];
 			for (int i = 0; i < ds.length; i++) {
-				if (Precision.equals(0, sigmas[i])) {
-					temp[i] = 1;
+				if (Precision.equals(ABNORMAL_STANDARD_DEVIATION, sigmas[i])) {
+					temp[i] = mus[i];
 				} else {
 					temp[i] = (ds[i] - mus[i]) / sigmas[i];
 				}
