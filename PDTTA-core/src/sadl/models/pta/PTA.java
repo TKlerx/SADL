@@ -100,7 +100,7 @@ public class PTA {
 		for (final TimedWord sequence : timedSequences) {
 			this.addSequence(sequence);
 			if (i % 100 == 0) {
-				logger.trace("Added {} sequences to the PTA.", i);
+				logger.trace("Added {} sequences to the PTA (size={}).", i, getStates().size());
 			}
 			i++;
 		}

@@ -85,7 +85,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			logger.debug("Starting to build PTA ...");
 			final PTA pta = new PTA(eventsMap, TimedTrainingSequences);
 			// pta.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\output.gv"));
-			logger.debug("Built PTA.");
+			logger.debug("Built PTA ({} states).", pta.getStates().size());
 			logger.debug("Starting to merge compatible states...");
 			mergeCompatibleStates(pta, pta.getStatesOrdered(mergeStrategy));
 
