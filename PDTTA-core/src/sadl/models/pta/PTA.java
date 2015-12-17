@@ -125,7 +125,8 @@ public class PTA {
 				tails.remove(currentState.id);
 				addTail = true;
 
-				final PTAState nextState = new PTAState(currentState.getWord() + eventSymbol, currentState, this);
+				// final PTAState nextState = new PTAState(currentState.getWord() + eventSymbol, currentState, this);
+				final PTAState nextState = new PTAState("", currentState, this);
 
 				final PTATransition newTransition = new PTATransition(currentState, nextState, subEvent, 1);
 				newTransition.add();
@@ -146,13 +147,13 @@ public class PTA {
 			final Event event = events.get(eventSymbol);
 
 			if (event == null){
-				logger.error("Event {} does not exist: {}", eventSymbol, sequence);
 				throw new IllegalArgumentException("Event " + eventSymbol + " not exists: " + sequence.toString());
 			}
 
 			final SubEvent subEvent = event.getSubEventByTime(time);
 
-			final PTAState nextState = new PTAState(currentState.getWord() + eventSymbol, currentState, this);
+			// final PTAState nextState = new PTAState(currentState.getWord() + eventSymbol, currentState, this);
+			final PTAState nextState = new PTAState("", currentState, this);
 
 			final PTATransition newTransition = new PTATransition(currentState, nextState, subEvent, 1);
 			// newTransition.addTimeValue(time);

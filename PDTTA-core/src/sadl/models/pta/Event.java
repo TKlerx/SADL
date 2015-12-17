@@ -35,6 +35,11 @@ public class Event implements Iterable<SubEvent> {
 		return symbol;
 	}
 
+	public int getSubEventsCount() {
+
+		return subEvents.size();
+	}
+
 	public SubEvent getSubEventByTime(double time) {
 
 		final Entry<Double, SubEvent> subEventEntry = subEvents.floorEntry(time);

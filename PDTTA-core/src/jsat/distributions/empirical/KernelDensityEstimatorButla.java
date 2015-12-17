@@ -15,18 +15,18 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.commons.math3.util.Precision;
-
 import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.empirical.kernelfunc.GaussKF;
 import jsat.linear.DenseVector;
 import jsat.linear.Vec;
 import jsat.math.Function;
 import jsat.math.optimization.GoldenSearch;
+
+import org.apache.commons.math3.util.Precision;
+
 import sadl.constants.KDEFormelVariant;
 
 public class KernelDensityEstimatorButla {
-
 	protected Vec dataPoints;
 	protected double[] X;
 	protected Function kernelPdfFunction;

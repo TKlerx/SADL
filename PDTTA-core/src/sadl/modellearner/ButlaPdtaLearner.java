@@ -11,6 +11,8 @@
 
 package sadl.modellearner;
 
+import gnu.trove.list.array.TIntArrayList;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -22,7 +24,6 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import gnu.trove.list.array.TIntArrayList;
 import sadl.constants.EventsCreationStrategy;
 import sadl.constants.KDEFormelVariant;
 import sadl.constants.PTAOrdering;
@@ -217,8 +218,11 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 				event = eventGenerator.generateSplittedEventWithIsolatedCriticalArea(eventSysbol, listToDoubleArray(timeList));
 			}
 
-			eventsMap.put(eventSysbol, event);
-			// System.out.println("Created event: " + event);
+			if (event != null) {
+				logger.debug("Splitted event " + eventSysbol + " into " + event.getSubEventsCount() + " subevents.");
+				eventsMap.put(eventSysbol, event);
+			}
+
 		}
 		logger.debug("Generated subevents.");
 		return eventsMap;
