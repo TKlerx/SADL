@@ -47,7 +47,7 @@ public class NormalRandomized extends Normal {
 	public double cdf(double x) {
 
 		if (Double.isInfinite(x)) {
-			if (x > 0) {
+			if (x > 0.0) {
 				return 1.0;
 			} else {
 				return 0.0;
@@ -66,13 +66,13 @@ public class NormalRandomized extends Normal {
 
 		if (Double.isInfinite(result)) {
 			if (result > 0) {
-				return 1;
+				return 1.0;
 			} else {
-				return 0;
+				return 0.0;
 			}
 		}
 
-		if (result > 0) {
+		if (result > 0.0) {
 			return Math.min(result, 1.0);
 		}
 

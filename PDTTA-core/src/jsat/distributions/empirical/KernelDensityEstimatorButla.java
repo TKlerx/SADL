@@ -157,7 +157,7 @@ public class KernelDensityEstimatorButla {
 				}
 			};
 
-			startX = dataPoints.get(0);
+			startX = Math.max(dataPoints.get(0), 1.0);
 			endX = dataPoints.get(dataPoints.length() - 1);
 
 		} else if (formelVariant == KDEFormelVariant.ButlaBandwidthNotSquared) {
@@ -226,7 +226,7 @@ public class KernelDensityEstimatorButla {
 				}
 			};
 
-			startX = dataPoints.get(0);
+			startX = Math.max(dataPoints.get(0), 1.0);
 			endX = dataPoints.get(dataPoints.length() - 1);
 
 		} else if (formelVariant == KDEFormelVariant.ButlaBandwidthSquared) {
@@ -294,7 +294,7 @@ public class KernelDensityEstimatorButla {
 				}
 			};
 
-			startX = dataPoints.get(0);
+			startX = Math.max(dataPoints.get(0), 1.0);
 			endX = dataPoints.get(dataPoints.length() - 1);
 		}
 	}
