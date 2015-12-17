@@ -109,8 +109,8 @@ public class HalfClosedInterval implements Cloneable {
 			return true;
 		}
 
-		if (contains(value.getMinimum()) || value.contains(min) || (contains(value.getMaximum()) && min != value.getMaximum())
-				|| (value.contains(max) && max != value.getMinimum())) {
+		if (contains(value.getMinimum()) || value.contains(min) || (contains(value.getMaximum()) && !Precision.equals(min, value.getMaximum()))
+				|| (value.contains(max) && !Precision.equals(max, value.getMinimum()))) {
 			return true;
 		}
 

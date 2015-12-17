@@ -15,15 +15,14 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.commons.math3.util.Precision;
+
 import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.empirical.kernelfunc.GaussKF;
 import jsat.linear.DenseVector;
 import jsat.linear.Vec;
 import jsat.math.Function;
 import jsat.math.optimization.GoldenSearch;
-
-import org.apache.commons.math3.util.Precision;
-
 import sadl.constants.KDEFormelVariant;
 
 public class KernelDensityEstimatorButla {
@@ -117,7 +116,7 @@ public class KernelDensityEstimatorButla {
 
 					for (int i = Math.max(0, from); i < Math.min(X.length, to + 1); i++) {
 						final double ti = dataPoints.get(i);
-						if (ti != 0) {
+						if (!Precision.equals(ti, 0)) {
 							sum += Math.exp(-Math.pow(t - ti, 2) / (2 * 0.05 * ti)) / (Math.sqrt(2.0 * Math.PI) * 0.05 * ti);
 						}
 					}
@@ -148,7 +147,7 @@ public class KernelDensityEstimatorButla {
 
 					for (int i = Math.max(0, from); i < Math.min(X.length, to + 1); i++) {
 						final double ti = dataPoints.get(i);
-						if (ti != 0) {
+						if (!Precision.equals(ti, 0)) {
 							sum += (-79.7885 * Math.exp(-10 * Math.pow(t - ti, 2) / ti) * (Math.pow(ti, 2) + 0.1 * ti - Math.pow(t, 2))) / Math.pow(ti, 3);
 						}
 					}
@@ -184,7 +183,7 @@ public class KernelDensityEstimatorButla {
 
 					for (int i = Math.max(0, from); i < Math.min(X.length, to + 1); i++) {
 						final double ti = X[i];
-						if (ti != 0) {
+						if (!Precision.equals(ti, 0)) {
 							sum += Math.exp(-Math.pow(t - ti, 2) / (2 * Math.pow(0.05 * ti, 2))) / (Math.sqrt(2.0 * Math.PI) * 0.05 * ti);
 						}
 					}
@@ -215,7 +214,7 @@ public class KernelDensityEstimatorButla {
 
 					for (int i = Math.max(0, from); i < Math.min(X.length, to + 1); i++) {
 						final double ti = dataPoints.get(i);
-						if (ti != 0) {
+						if (!Precision.equals(ti, 0)) {
 							sum += ((-7.97885 * Math.pow(ti, 2) - 3191.54 * ti * t + 3191.54 * Math.pow(t, 2)) * Math.exp(-200 * Math.pow(t - ti, 2)
 									/ Math.pow(ti, 2)))
 									/ Math.pow(ti, 4);
@@ -253,7 +252,7 @@ public class KernelDensityEstimatorButla {
 
 					for (int i = Math.max(0, from); i < Math.min(X.length, to + 1); i++) {
 						final double ti = dataPoints.get(i);
-						if (ti != 0) {
+						if (!Precision.equals(ti, 0)) {
 							sum += Math.exp(-Math.pow(t - ti, 2) / (2 * 0.05 * ti)) / (Math.sqrt(2.0 * Math.PI * 0.05 * ti));
 						}
 					}
@@ -284,7 +283,7 @@ public class KernelDensityEstimatorButla {
 
 					for (int i = Math.max(0, from); i < Math.min(X.length, to + 1); i++) {
 						final double ti = dataPoints.get(i);
-						if (ti != 0) {
+						if (!Precision.equals(ti, 0)) {
 							sum += (Math.exp(-10 * Math.pow(t - ti, 2) / ti) * (-17.8412 * Math.pow(ti, 2) - 0.892062 * ti + 17.8412 * Math.pow(t, 2)))
 									/ Math.sqrt(Math.pow(ti, 5));
 						}
@@ -330,7 +329,7 @@ public class KernelDensityEstimatorButla {
 
 		double step = minSearchStep;
 
-		if (kdeFormelVariant != KDEFormelVariant.OriginalKDE && X[0] == 0.0) {
+		if (kdeFormelVariant != KDEFormelVariant.OriginalKDE && Precision.equals(X[0], 0.0)) {
 			pointList.add(0.5);
 		}
 

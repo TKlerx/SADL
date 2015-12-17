@@ -205,7 +205,7 @@ public class PTA {
 
 				for (final PTAState tailState : currentTails.values()) {
 					final PTAState fatherState = tailState.getFatherState();
-					if (fatherState != root && !fatherState.isMarked()) {
+					if (fatherState.getId() != root.getId() && !fatherState.isMarked()) {
 						nextTails.putIfAbsent(fatherState.getId(), fatherState);
 						fatherState.mark();
 					}

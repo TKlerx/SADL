@@ -366,7 +366,7 @@
 		 <dependency>
 			<groupId>de.upb.timok</groupId>
 			<artifactId>libsvm</artifactId>
-			<version>3.21-SNAPSHOT</version>
+			<version>3.22-SNAPSHOT</version>
 		</dependency> 
 		<!--<dependency>
 			<groupId>tw.edu.ntu.csie</groupId>
