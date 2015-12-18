@@ -41,40 +41,6 @@ public class PTATransition {
 		this.count = count;
 	}
 
-	// public void add() {
-	// final String eventSymbol = event.getSymbol();
-	// LinkedHashMap<Integer, PTATransition> eventInTransition;
-	//
-	// if (target.inTransitions.containsKey(eventSymbol)) {
-	// eventInTransition = target.inTransitions.get(eventSymbol);
-	//
-	// } else {
-	// eventInTransition = new LinkedHashMap<>();
-	// target.inTransitions.putIfAbsent(eventSymbol, eventInTransition);
-	// }
-	//
-	// final PTATransition redundantOutTransition = source.outTransitions.put(eventSymbol, this);
-	// final PTATransition redundantInTransition = eventInTransition.put(source.getId(), this);
-	// target.pta.transitions.add(this);
-	//
-	// if (redundantOutTransition != null || redundantInTransition != null) {
-	// throw new IllegalArgumentException("Transition already exists.");
-	// }
-	// }
-	// public void remove() {
-	// final String eventSymbol = event.getSymbol();
-	// final LinkedHashMap<Integer, PTATransition> eventInTransition = target.inTransitions.get(eventSymbol);
-	//
-	// if (source.outTransitions.remove(eventSymbol) == null | eventInTransition.remove(source.getId()) == null) {
-	// throw new RuntimeException();
-	// }
-	//
-	// if (eventInTransition.isEmpty()) {
-	// target.inTransitions.remove(eventSymbol);
-	// }
-	// removed = true;
-	// }
-
 	public void add() {
 		final String eventSymbol = event.getSymbol();
 		TIntObjectMap<PTATransition> eventInTransition;

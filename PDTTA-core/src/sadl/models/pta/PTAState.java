@@ -72,10 +72,6 @@ public class PTAState implements Cloneable {
 		return outTransitions.get(symbol);
 	}
 
-	public void addTransition(SubEvent event, PTAState target) {
-
-	}
-
 	public Collection<TIntObjectMap<PTATransition>> getInTransitions() {
 
 		return inTransitions.values();
