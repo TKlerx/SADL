@@ -44,15 +44,15 @@ public class KernelDensityEstimatorButla {
 	public static final double DEFAULT_MIN_SEARCH_ACCURACY = 0.25d;
 
 	public KernelDensityEstimatorButla(double[] dataPoints, KDEFormelVariant formelVariant) {
-		this(new DenseVector(dataPoints), formelVariant, DEFAULT_BANDWIDTH, DEFAULT_BANDWIDTH / 4.0, DEFAULT_MIN_SEARCH_ACCURACY);
+		this(new DenseVector(dataPoints), formelVariant);
 	}
 
 	public KernelDensityEstimatorButla(Vec dataPoints, KDEFormelVariant formelVariant) {
-		this(dataPoints, formelVariant, DEFAULT_BANDWIDTH, DEFAULT_BANDWIDTH / 4.0, DEFAULT_MIN_SEARCH_ACCURACY);
+		this(dataPoints, formelVariant, MyKernelDensityEstimator.BandwithGuassEstimate(dataPoints));
 	}
 
 	public KernelDensityEstimatorButla(double[] dataPoints, KDEFormelVariant formelVariant, double bandwidth) {
-		this(new DenseVector(dataPoints), formelVariant, bandwidth, bandwidth / 4.0, DEFAULT_MIN_SEARCH_ACCURACY);
+		this(new DenseVector(dataPoints), formelVariant, bandwidth);
 	}
 
 	public KernelDensityEstimatorButla(Vec dataPoints, KDEFormelVariant formelVariant, double bandwidth) {
@@ -76,6 +76,7 @@ public class KernelDensityEstimatorButla {
 
 		if (Precision.equals(bandwidth, 0)) {
 			bandwidth = MyKernelDensityEstimator.BandwithGuassEstimate(dataPoints);
+			this.minSearchStep = bandwidth / 4.0;
 		}
 
 		if (this.minSearchStep < 0.0001) {

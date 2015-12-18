@@ -18,6 +18,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,6 +73,16 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 		this.a = a;
 		this.transitionsToCheck = transitionsToCheck;
 		this.mergeStrategy = mergeStrategy;
+		this.splittingStrategy = splittingStrategy;
+	}
+
+	public ButlaPdtaLearner(EventsCreationStrategy splittingStrategy, KDEFormelVariant formelVariant) {
+		this.eventGenerator = new EventGenerator(0, 0, 0, formelVariant);
+		this.splittingStrategy = splittingStrategy;
+	}
+
+	public ButlaPdtaLearner(double bandwidth, EventsCreationStrategy splittingStrategy, KDEFormelVariant formelVariant) {
+		this.eventGenerator = new EventGenerator(bandwidth, 0, 0, formelVariant);
 		this.splittingStrategy = splittingStrategy;
 	}
 
@@ -169,31 +180,27 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 		pta.setStates(workedOffStates);
 	}
 
-	public TimedInput splitEventsInTimedSequences(TimedInput timedSequences) {
-
+	public Pair<TimedInput, Map<String, Event>> splitEventsInTimedSequences(TimedInput timedSequences) {
 		final HashMap<String, TDoubleList> eventToTimelistMap = mapEventsToTimes(timedSequences);
 		final HashMap<String, Event> eventsMap = generateSubEvents(eventToTimelistMap);
+		return Pair.create(getSplitInputForMapping(timedSequences, eventsMap), eventsMap);
+	}
 
+	public TimedInput getSplitInputForMapping(TimedInput timedSequences, final Map<String, Event> eventsMap) {
 		final ArrayList<TimedWord> words = new ArrayList<>();
 
 		for (final TimedWord word : timedSequences) {
-
 			final ArrayList<String> symbols = new ArrayList<>();
 			final TIntArrayList timeValues = new TIntArrayList();
-
 			for (int i = 0; i < word.length(); i++) {
 				final String eventSymbol = word.getSymbol(i);
 				final double time = word.getTimeValue(i);
-
 				final String subEventSymbol = eventsMap.get(eventSymbol).getSubEventByTime(time).getSymbol();
-
 				symbols.add(subEventSymbol);
 				timeValues.add((int) time);
 			}
-
 			words.add(new TimedWord(symbols, timeValues, word.getLabel()));
 		}
-
 		return new TimedInput(words);
 	}
 
