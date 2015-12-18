@@ -12,7 +12,9 @@
 package sadl.models.pta;
 
 import java.util.Collection;
-import java.util.LinkedHashMap;
+
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 
 public class PTATransition {
 
@@ -41,13 +43,13 @@ public class PTATransition {
 
 	public void add() {
 		final String eventSymbol = event.getSymbol();
-		LinkedHashMap<Integer, PTATransition> eventInTransition;
+		TIntObjectMap<PTATransition> eventInTransition;
 
 		if (target.inTransitions.containsKey(eventSymbol)) {
 			eventInTransition = target.inTransitions.get(eventSymbol);
 
 		} else {
-			eventInTransition = new LinkedHashMap<>();
+			eventInTransition = new TIntObjectHashMap<>();
 			target.inTransitions.putIfAbsent(eventSymbol, eventInTransition);
 		}
 
@@ -62,7 +64,7 @@ public class PTATransition {
 
 	public void remove() {
 		final String eventSymbol = event.getSymbol();
-		final LinkedHashMap<Integer, PTATransition> eventInTransition = target.inTransitions.get(eventSymbol);
+		final TIntObjectMap<PTATransition> eventInTransition = target.inTransitions.get(eventSymbol);
 
 		if (source.outTransitions.remove(eventSymbol) == null | eventInTransition.remove(source.getId()) == null) {
 			throw new RuntimeException();
@@ -71,7 +73,6 @@ public class PTATransition {
 		if (eventInTransition.isEmpty()) {
 			target.inTransitions.remove(eventSymbol);
 		}
-
 		removed = true;
 	}
 

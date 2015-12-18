@@ -41,33 +41,34 @@ public class AnodaTest {
 	}
 
 	@Test
-	public void testAnoda() throws IOException, URISyntaxException {
-		final ButlaPdtaLearner learner = new ButlaPdtaLearner(1000, 0.05, TransitionsType.Incoming, 0.05, 0.05, PTAOrdering.BottomUp,
-				EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalButlaVariableBandwidth);
+	public void testAnodaOriginalKDE() throws IOException, URISyntaxException {
+		final ButlaPdtaLearner learner = new ButlaPdtaLearner(10000, 0.05, TransitionsType.Incoming, 0.05, 0.05, PTAOrdering.BottomUp,
+				EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
 		final AnodaDetector anoda = new AnodaDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY);
 
 		final AnomalyDetection detection = new AnomalyDetection(anoda, learner);
-		ExperimentResult expected = new ExperimentResult(467, 4428, 105, 0);
+		ExperimentResult expected = new ExperimentResult(463, 2906, 1627, 4);
 		Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
 		ExperimentResult actual = detection.trainTest(p);
+		detection.getLearnedModel();
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(51, 4386, 119, 444);
+		expected = new ExperimentResult(0, 2882, 1623, 495);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type2.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(466, 4391, 123, 20);
+		expected = new ExperimentResult(374, 2923, 1591, 112);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type3.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(523, 4335, 142, 0);
+		expected = new ExperimentResult(523, 2831, 1646, 0);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type4.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(293, 4420, 118, 169);
+		expected = new ExperimentResult(373, 2867, 1671, 89);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type5.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);

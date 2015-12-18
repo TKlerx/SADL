@@ -11,9 +11,9 @@
 
 package sadl.models.pta;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
@@ -40,10 +40,11 @@ public class EventGenerator {
 
 	public Event generateSplittedEvent(String symbol, double[] times) {
 
-		Arrays.sort(times);
+		Arrays.parallelSort(times);
 
-		final KernelDensityEstimatorButla kde = new KernelDensityEstimatorButla(times, formel, bandwidth);
-		final Double[] minPoints = kde.getMinima();
+		final KernelDensityEstimatorButla kde;
+		kde = new KernelDensityEstimatorButla(times, formel, bandwidth);
+		final double[] minPoints = kde.getMinima();
 		final TreeMap<Double, SubEvent> subEvents = new TreeMap<>();
 
 		final Event event = new Event(symbol, subEvents);
@@ -110,7 +111,7 @@ public class EventGenerator {
 		final TreeMap<Double, SubEvent> subEvents = new TreeMap<>();
 		final Event event = new Event(symbol, subEvents);
 
-		Arrays.sort(times);
+		Arrays.parallelSort(times);
 		final double expectedValue = calculateExpectedValue(0, times.length - 1, times);
 		final double deviation = calculateDeviation(0, times.length - 1, times, expectedValue);
 
@@ -133,7 +134,7 @@ public class EventGenerator {
 		final TreeMap<Double, SubEvent> subEvents = new TreeMap<>();
 		final Event event = new Event(symbol, subEvents);
 
-		Arrays.sort(times);
+		Arrays.parallelSort(times);
 		final double expectedValue = calculateExpectedValue(0, times.length - 1, times);
 		final double deviation = calculateDeviation(0, times.length - 1, times, expectedValue);
 
@@ -150,7 +151,7 @@ public class EventGenerator {
 	public Event generateSplittedEventWithIsolatedCriticalArea(String symbol, double[] times) {
 
 		final Event event = generateSplittedEvent(symbol, times);
-		final LinkedList<SubEventCriticalArea> criticalAreas = new LinkedList<>();
+		final ArrayList<SubEventCriticalArea> criticalAreas = new ArrayList<>();
 		final TreeMap<Double, SubEvent> newSubEvents = new TreeMap<>();
 		final Event newEvent = new Event(symbol, newSubEvents);
 

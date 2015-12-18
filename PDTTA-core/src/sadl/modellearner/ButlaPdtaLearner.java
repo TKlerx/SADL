@@ -11,19 +11,20 @@
 
 package sadl.modellearner;
 
-import gnu.trove.list.array.TIntArrayList;
-
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.array.TIntArrayList;
 import sadl.constants.EventsCreationStrategy;
 import sadl.constants.KDEFormelVariant;
 import sadl.constants.PTAOrdering;
@@ -75,18 +76,28 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 		this.splittingStrategy = splittingStrategy;
 	}
 
+	public ButlaPdtaLearner(EventsCreationStrategy splittingStrategy, KDEFormelVariant formelVariant) {
+		this.eventGenerator = new EventGenerator(0, 0, 0, formelVariant);
+		this.splittingStrategy = splittingStrategy;
+	}
+
+	public ButlaPdtaLearner(double bandwidth, EventsCreationStrategy splittingStrategy, KDEFormelVariant formelVariant) {
+		this.eventGenerator = new EventGenerator(bandwidth, 0, 0, formelVariant);
+		this.splittingStrategy = splittingStrategy;
+	}
+
 	@Override
 	public PDTA train(TimedInput TimedTrainingSequences) {
 		logger.debug("Starting to learn PDTA with BUTLA...");
-		final HashMap<String, LinkedList<Double>> eventToTimelistMap = mapEventsToTimes(TimedTrainingSequences);
+		final HashMap<String, TDoubleList> eventToTimelistMap = mapEventsToTimes(TimedTrainingSequences);
 		final HashMap<String, Event> eventsMap = generateSubEvents(eventToTimelistMap);
 
 		try {
 			logger.debug("Starting to build PTA ...");
 			final PTA pta = new PTA(eventsMap, TimedTrainingSequences);
 			// pta.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\output.gv"));
-			logger.trace("Built PTA with " + pta.getStates().size() + " states.");
-			logger.trace("Starting to merge compatible states...");
+			logger.debug("Built PTA ({} states).", pta.getStates().size());
+			logger.debug("Starting to merge compatible states...");
 			mergeCompatibleStates(pta, pta.getStatesOrdered(mergeStrategy));
 
 			if (splittingStrategy == EventsCreationStrategy.IsolateCriticalAreasMergeAfter) {
@@ -109,9 +120,9 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 	 *            Sequences of timed events.
 	 * @return
 	 */
-	public HashMap<String, LinkedList<Double>> mapEventsToTimes(TimedInput timedEventSequences) {
-		logger.trace("Starting to gather time values...");
-		final HashMap<String, LinkedList<Double>> eventTimesMap = new HashMap<>(timedEventSequences.getSymbols().length);
+	public HashMap<String, TDoubleList> mapEventsToTimes(TimedInput timedEventSequences) {
+		logger.debug("Starting to gather time values...");
+		final HashMap<String, TDoubleList> eventTimesMap = new HashMap<>(timedEventSequences.getSymbols().length);
 
 		for (final TimedWord word : timedEventSequences) {
 			if (!word.isAnomaly()) {
@@ -119,10 +130,10 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 					final String event = word.getSymbol(i);
 					final double time = word.getTimeValue(i);
 
-					LinkedList<Double> timeList = eventTimesMap.get(event);
+					TDoubleList timeList = eventTimesMap.get(event);
 
 					if (timeList == null) {
-						timeList = new LinkedList<>();
+						timeList = new TDoubleArrayList();
 						eventTimesMap.put(event, timeList);
 					}
 
@@ -130,14 +141,14 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 				}
 			}
 		}
-		logger.info("Gathered time values.");
+		logger.debug("Gathered time values.");
 		return eventTimesMap;
 
 	}
 
 	public void mergeCompatibleStates(PTA pta, List<PTAState> statesOrdering) {
 
-		final LinkedList<PTAState> workedOffStates = new LinkedList<>();
+		final ArrayList<PTAState> workedOffStates = new ArrayList<>();
 
 		outerloop: for (final PTAState state : statesOrdering) {
 
@@ -170,62 +181,64 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 		pta.setStates(workedOffStates);
 	}
 
-	public TimedInput splitEventsInTimedSequences(TimedInput timedSequences) {
-
-		final HashMap<String, LinkedList<Double>> eventToTimelistMap = mapEventsToTimes(timedSequences);
+	public Pair<TimedInput, Map<String, Event>> splitEventsInTimedSequences(TimedInput timedSequences) {
+		final HashMap<String, TDoubleList> eventToTimelistMap = mapEventsToTimes(timedSequences);
 		final HashMap<String, Event> eventsMap = generateSubEvents(eventToTimelistMap);
+		return Pair.create(getSplitInputForMapping(timedSequences, eventsMap), eventsMap);
+	}
 
-		final LinkedList<TimedWord> words = new LinkedList<>();
+	public TimedInput getSplitInputForMapping(TimedInput timedSequences, final Map<String, Event> eventsMap) {
+		final ArrayList<TimedWord> words = new ArrayList<>();
 
 		for (final TimedWord word : timedSequences) {
-
 			final ArrayList<String> symbols = new ArrayList<>();
 			final TIntArrayList timeValues = new TIntArrayList();
-
 			for (int i = 0; i < word.length(); i++) {
 				final String eventSymbol = word.getSymbol(i);
 				final double time = word.getTimeValue(i);
-
 				final String subEventSymbol = eventsMap.get(eventSymbol).getSubEventByTime(time).getSymbol();
-
 				symbols.add(subEventSymbol);
 				timeValues.add((int) time);
 			}
-
 			words.add(new TimedWord(symbols, timeValues, word.getLabel()));
 		}
-
 		return new TimedInput(words);
 	}
 
-	public HashMap<String, Event> generateSubEvents(Map<String, LinkedList<Double>> eventTimesMap) {
-		logger.debug("Starting to generate subevents...");
+	public HashMap<String, Event> generateSubEvents(Map<String, TDoubleList> eventTimesMap) {
 		final Set<String> eventSymbolsSet = eventTimesMap.keySet();
 		final HashMap<String, Event> eventsMap = new HashMap<>(eventSymbolsSet.size());
-
+		logger.debug("There are {} events", eventSymbolsSet.size());
+		logger.debug("Starting to generate subevents...");
+		int subEventCount = 0;
 		for (final String eventSysbol : eventSymbolsSet) {
-			final List<Double> timeList = eventTimesMap.get(eventSysbol);
+			final TDoubleList timeList = eventTimesMap.get(eventSysbol);
 			Event event = null;
 
 			if (splittingStrategy == EventsCreationStrategy.SplitEvents) {
-				event = eventGenerator.generateSplittedEvent(eventSysbol, listToDoubleArray(timeList));
+				event = eventGenerator.generateSplittedEvent(eventSysbol, timeList.toArray());
 			} else if (splittingStrategy == EventsCreationStrategy.DontSplitEvents) {
-				event = eventGenerator.generateNotSplittedEvent(eventSysbol, listToDoubleArray(timeList));
+				event = eventGenerator.generateNotSplittedEvent(eventSysbol, timeList.toArray());
 			} else if (splittingStrategy == EventsCreationStrategy.NotTimedEvents) {
-				event = eventGenerator.generateNotTimedEvent(eventSysbol, listToDoubleArray(timeList));
+				event = eventGenerator.generateNotTimedEvent(eventSysbol, timeList.toArray());
 			} else if (splittingStrategy == EventsCreationStrategy.IsolateCriticalAreas
 					|| splittingStrategy == EventsCreationStrategy.IsolateCriticalAreasMergeInProcess
 					|| splittingStrategy == EventsCreationStrategy.IsolateCriticalAreasMergeAfter) {
-				event = eventGenerator.generateSplittedEventWithIsolatedCriticalArea(eventSysbol, listToDoubleArray(timeList));
+				event = eventGenerator.generateSplittedEventWithIsolatedCriticalArea(eventSysbol, timeList.toArray());
+			} else {
+				throw new IllegalStateException("SplittingStrategy " + splittingStrategy + " not allowed for BUTLA");
 			}
 
+			eventsMap.put(eventSysbol, event);
+			// System.out.println("Created event: " + event);
 			if (event != null) {
-				logger.debug("Splitted event " + eventSysbol + " into " + event.getSubEventsCount() + " subevents.");
+				logger.debug("Splitted event {} into {} subevents.", eventSysbol, event.getSubEventsCount());
+				subEventCount += event.getSubEventsCount();
 				eventsMap.put(eventSysbol, event);
 			}
-
 		}
 		logger.debug("Generated subevents.");
+		logger.debug("There are {} subevents.", subEventCount);
 		return eventsMap;
 	}
 

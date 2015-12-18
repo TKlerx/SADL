@@ -233,13 +233,16 @@ struct wfsa *wfsa_init(int num_states, int alphabet_size) {
     struct wfsa *fsm;
     fsm = malloc(sizeof(struct wfsa));
     if (fsm == NULL) {
-	fprintf(stderr, "Out of memory. Fatal.\n"); exit(1);
+    	fprintf(stderr,"Tried to allocate %d bytes for the fsm\n",sizeof(struct wfsa));
+		fprintf(stderr, "Out of memory. Fatal.\n"); exit(1);
     }
     fsm->num_states = num_states;
     fsm->alphabet_size = alphabet_size;
     fsm->state_table = calloc(num_states * num_states * alphabet_size, sizeof(PROB));
     if (fsm->state_table == NULL) {
-	fprintf(stderr, "Out of memory. Fatal.\n"); exit(1);
+        fprintf(stderr,"Tried to allocate %d bytes for the state table\n",num_states * num_states * alphabet_size*sizeof(PROB));
+        fprintf(stderr,"numOfStates=%d,alphSize=%d,sizeof(PROB)=%d (num_states * num_states * alphabet_size * sizeof(PROB))\n",num_states,alphabet_size,sizeof(PROB));
+		fprintf(stderr, "Out of memory. Fatal.\n"); exit(1);
     }
     fsm->final_table = calloc(num_states, sizeof(PROB));
     return(fsm);

@@ -16,15 +16,17 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.ListIterator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import sadl.constants.PTAOrdering;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
@@ -39,8 +41,8 @@ public class PTA {
 	protected HashMap<String, Event> events;
 	protected int depth = 0;
 
-	protected LinkedList<PTAState> states = new LinkedList<>();
-	protected LinkedList<PTATransition> transitions = new LinkedList<>();
+	protected ArrayList<PTAState> states = new ArrayList<>();
+	protected ArrayList<PTATransition> transitions = new ArrayList<>();
 
 	protected boolean statesMerged = false;
 
@@ -68,12 +70,12 @@ public class PTA {
 		return tails;
 	}
 
-	public LinkedList<PTAState> getStates() {
+	public ArrayList<PTAState> getStates() {
 
 		return states;
 	}
 
-	public void setStates(LinkedList<PTAState> states) {
+	public void setStates(ArrayList<PTAState> states) {
 
 		this.states = states;
 	}
@@ -94,9 +96,13 @@ public class PTA {
 			logger.error("Unexpected exception occured.");
 			throw new IllegalArgumentException();
 		}
-
+		int i = 0;
 		for (final TimedWord sequence : timedSequences) {
 			this.addSequence(sequence);
+			if (i % 100 == 0) {
+				logger.trace("Added {} sequences to the PTA (size={}).", i, getStates().size());
+			}
+			i++;
 		}
 
 	}
@@ -173,12 +179,12 @@ public class PTA {
 
 	}
 
-	public LinkedList<PTAState> getStatesOrdered(PTAOrdering order) {
+	public ArrayList<PTAState> getStatesOrdered(PTAOrdering order) {
 
-		final LinkedList<PTAState> orderedStates = new LinkedList<>();
+		final ArrayList<PTAState> orderedStates = new ArrayList<>();
 
 		if (order == PTAOrdering.TopDown) {
-			LinkedList<PTAState> heads = new LinkedList<>();
+			ArrayList<PTAState> heads = new ArrayList<>();
 
 			for (final PTATransition transition : root.getOutTransitions()) {
 				final PTAState state = transition.getTarget();
@@ -188,7 +194,7 @@ public class PTA {
 			while (!heads.isEmpty()) {
 				orderedStates.addAll(heads);
 
-				final LinkedList<PTAState> nextHeads = new LinkedList<>();
+				final ArrayList<PTAState> nextHeads = new ArrayList<>();
 
 				for (final PTAState headState : heads) {
 					for (final PTATransition transition : headState.getOutTransitions()) {
@@ -244,7 +250,7 @@ public class PTA {
 
 	public PDTA toPDTA() {
 
-		final HashMap<Integer, PDTAState> pdtaStates = new HashMap<>();
+		final TIntObjectMap<PDTAState> pdtaStates = new TIntObjectHashMap<>();
 
 		for (final ListIterator<PTAState> iterator = states.listIterator(); iterator.hasNext();) {
 			final PTAState ptaState = iterator.next();
@@ -304,8 +310,11 @@ public class PTA {
 		}
 	}
 
-	private void cleanUp(){
-
+	public void cleanUp() {
+		// TODO cleanUp seems buggy. Maybe because not done recursively?
+		logger.trace("#####Clearning up the PTA...");
+		logger.trace("Before CleanUp there are {} many states in the PTA", states.size());
+		logger.trace("Before CleanUp there are {} many transitions in the PTA", transitions.size());
 		for (final Iterator<PTAState> statesIterator = states.iterator(); statesIterator.hasNext();) {
 			final PTAState state = statesIterator.next();
 
@@ -329,6 +338,9 @@ public class PTA {
 				transitionsIterator.remove();
 			}
 		}
+		logger.trace("After CleanUp there are {} many states in the PTA", states.size());
+		logger.trace("After CleanUp there are {} many transitions in the PTA", transitions.size());
+		logger.trace("Cleaned up the PTA.");
 
 	}
 

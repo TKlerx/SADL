@@ -12,18 +12,17 @@
 package jsat.distributions.empirical;
 
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 
+import org.apache.commons.math3.util.Precision;
+
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
 import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.empirical.kernelfunc.GaussKF;
 import jsat.linear.DenseVector;
 import jsat.linear.Vec;
 import jsat.math.Function;
 import jsat.math.optimization.GoldenSearch;
-
-import org.apache.commons.math3.util.Precision;
-
 import sadl.constants.KDEFormelVariant;
 
 public class KernelDensityEstimatorButla {
@@ -44,15 +43,15 @@ public class KernelDensityEstimatorButla {
 	public static final double DEFAULT_MIN_SEARCH_ACCURACY = 0.25d;
 
 	public KernelDensityEstimatorButla(double[] dataPoints, KDEFormelVariant formelVariant) {
-		this(new DenseVector(dataPoints), formelVariant, DEFAULT_BANDWIDTH, DEFAULT_BANDWIDTH / 4.0, DEFAULT_MIN_SEARCH_ACCURACY);
+		this(new DenseVector(dataPoints), formelVariant);
 	}
 
 	public KernelDensityEstimatorButla(Vec dataPoints, KDEFormelVariant formelVariant) {
-		this(dataPoints, formelVariant, DEFAULT_BANDWIDTH, DEFAULT_BANDWIDTH / 4.0, DEFAULT_MIN_SEARCH_ACCURACY);
+		this(dataPoints, formelVariant, MyKernelDensityEstimator.BandwithGuassEstimate(dataPoints));
 	}
 
 	public KernelDensityEstimatorButla(double[] dataPoints, KDEFormelVariant formelVariant, double bandwidth) {
-		this(new DenseVector(dataPoints), formelVariant, bandwidth, bandwidth / 4.0, DEFAULT_MIN_SEARCH_ACCURACY);
+		this(new DenseVector(dataPoints), formelVariant, bandwidth);
 	}
 
 	public KernelDensityEstimatorButla(Vec dataPoints, KDEFormelVariant formelVariant, double bandwidth) {
@@ -76,6 +75,7 @@ public class KernelDensityEstimatorButla {
 
 		if (Precision.equals(bandwidth, 0)) {
 			bandwidth = MyKernelDensityEstimator.BandwithGuassEstimate(dataPoints);
+			this.minSearchStep = bandwidth / 4.0;
 		}
 
 		if (this.minSearchStep < 0.0001) {
@@ -320,9 +320,9 @@ public class KernelDensityEstimatorButla {
 		this.minSearchAccuracy = accuracy;
 	}
 
-	public Double[] getMinima() {
+	public double[] getMinima() {
 
-		final List<Double> pointList = new LinkedList<>();
+		final TDoubleList pointList = new TDoubleArrayList();
 
 		double lastX = startX;
 		double lastValue = kernelDerivationFunction.f(lastX);
@@ -350,7 +350,7 @@ public class KernelDensityEstimatorButla {
 			}
 		}
 
-		return pointList.toArray(new Double[0]);
+		return pointList.toArray();
 	}
 
 }
