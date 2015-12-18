@@ -38,7 +38,8 @@ public class Event implements Iterable<SubEvent> {
 		return symbol;
 	}
 
-	public int getSubEventCount() {
+	public int getSubEventsCount() {
+
 		return subEvents.size();
 	}
 

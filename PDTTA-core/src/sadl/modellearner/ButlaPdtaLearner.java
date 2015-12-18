@@ -104,9 +104,10 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 				pta.mergeTransitionsInCriticalAreas();
 			}
 			logger.debug("Merged compatible states.");
-			logger.info("Learned PDTA with BUTLA");
 			// pta.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\in-out.gv"));
-			return pta.toPDTA();
+			final PDTA pdta = pta.toPDTA();
+			logger.info("Learned PDTA (" + pdta.getNumberOfStates() + " states) with BUTLA");
+			return pdta;
 		} catch (final Exception e) {
 			e.printStackTrace();
 			return null;
@@ -230,7 +231,11 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 
 			eventsMap.put(eventSysbol, event);
 			// System.out.println("Created event: " + event);
-			subEventCount += event.getSubEventCount();
+			if (event != null) {
+				logger.debug("Splitted event {} into {} subevents.", eventSysbol, event.getSubEventsCount());
+				subEventCount += event.getSubEventsCount();
+				eventsMap.put(eventSysbol, event);
+			}
 		}
 		logger.debug("Generated subevents.");
 		logger.debug("There are {} subevents.", subEventCount);

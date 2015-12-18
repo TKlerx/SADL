@@ -26,7 +26,6 @@ import jsat.math.optimization.GoldenSearch;
 import sadl.constants.KDEFormelVariant;
 
 public class KernelDensityEstimatorButla {
-
 	protected Vec dataPoints;
 	protected double[] X;
 	protected Function kernelPdfFunction;
