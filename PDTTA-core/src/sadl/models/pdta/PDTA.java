@@ -263,6 +263,7 @@ public class PDTA implements AutomatonModel, ProbabilisticModel {
 
 	@Override
 	public int getNumberOfStates() {
+
 		return states.size();
 	}
 }

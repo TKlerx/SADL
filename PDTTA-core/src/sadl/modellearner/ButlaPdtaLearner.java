@@ -85,7 +85,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			logger.debug("Starting to build PTA ...");
 			final PTA pta = new PTA(eventsMap, TimedTrainingSequences);
 			// pta.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\output.gv"));
-			logger.trace("Built PTA.");
+			logger.trace("Built PTA with " + pta.getStates().size() + " states.");
 			logger.trace("Starting to merge compatible states...");
 			mergeCompatibleStates(pta, pta.getStatesOrdered(mergeStrategy));
 
@@ -93,9 +93,10 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 				pta.mergeTransitionsInCriticalAreas();
 			}
 			logger.debug("Merged compatible states.");
-			logger.info("Learned PDTA with BUTLA");
 			// pta.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\in-out.gv"));
-			return pta.toPDTA();
+			final PDTA pdta = pta.toPDTA();
+			logger.info("Learned PDTA (" + pdta.getNumberOfStates() + " states) with BUTLA");
+			return pdta;
 		} catch (final Exception e) {
 			e.printStackTrace();
 			return null;

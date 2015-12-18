@@ -12,6 +12,7 @@
 package sadl.models.pta;
 
 import java.util.Collection;
+import java.util.LinkedHashMap;
 
 public class PTATransition {
 
@@ -40,17 +41,37 @@ public class PTATransition {
 
 	public void add() {
 		final String eventSymbol = event.getSymbol();
+		LinkedHashMap<Integer, PTATransition> eventInTransition;
 
-		source.outTransitions.put(eventSymbol, this);
-		target.inTransitions.get(eventSymbol).put(source.getId(), this);
+		if (target.inTransitions.containsKey(eventSymbol)) {
+			eventInTransition = target.inTransitions.get(eventSymbol);
 
+		} else {
+			eventInTransition = new LinkedHashMap<>();
+			target.inTransitions.putIfAbsent(eventSymbol, eventInTransition);
+		}
+
+		final PTATransition redundantOutTransition = source.outTransitions.put(eventSymbol, this);
+		final PTATransition redundantInTransition = eventInTransition.put(source.getId(), this);
 		target.pta.transitions.add(this);
+
+		if (redundantOutTransition != null || redundantInTransition != null) {
+			throw new IllegalArgumentException("Transition already exists.");
+		}
 	}
 
 	public void remove() {
 		final String eventSymbol = event.getSymbol();
-		source.outTransitions.remove(eventSymbol);
-		target.inTransitions.get(eventSymbol).remove(source.getId());
+		final LinkedHashMap<Integer, PTATransition> eventInTransition = target.inTransitions.get(eventSymbol);
+
+		if (source.outTransitions.remove(eventSymbol) == null | eventInTransition.remove(source.getId()) == null) {
+			throw new RuntimeException();
+		}
+
+		if (eventInTransition.isEmpty()) {
+			target.inTransitions.remove(eventSymbol);
+		}
+
 		removed = true;
 	}
 

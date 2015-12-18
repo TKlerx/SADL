@@ -40,12 +40,6 @@ public class PTAState implements Cloneable {
 		this.word = word;
 		this.father = father;
 		this.pta = pta;
-
-		for (final Event event : pta.getEvents().values()) {
-			for (final SubEvent subEvent : event) {
-				inTransitions.put(subEvent.getSymbol(), new LinkedHashMap<Integer, PTATransition>());
-			}
-		}
 	}
 
 	public PTA getPTA() {
@@ -75,6 +69,10 @@ public class PTAState implements Cloneable {
 	public PTATransition getTransition(String symbol) {
 
 		return outTransitions.get(symbol);
+	}
+
+	public void addTransition(SubEvent event, PTAState target) {
+
 	}
 
 	public Collection<LinkedHashMap<Integer, PTATransition>> getInTransitions() {
@@ -141,6 +139,17 @@ public class PTAState implements Cloneable {
 		return sum;
 	}
 
+	public int getOutTransitionsCount(String eventSymbol) {
+
+		final PTATransition transition = outTransitions.get(eventSymbol);
+
+		if (transition == null) {
+			return 0;
+		} else {
+			return transition.getCount();
+		}
+	}
+
 	public int getEndCount() {
 
 		final int inTransitionsCount = getInTransitionsCount();
@@ -151,17 +160,6 @@ public class PTAState implements Cloneable {
 		}
 
 		return inTransitionsCount - outTransitionsCount;
-	}
-
-	public int getOutTransitionsCount(String eventSymbol) {
-
-		final PTATransition transition = outTransitions.get(eventSymbol);
-
-		if (transition == null) {
-			return 0;
-		} else {
-			return transition.getCount();
-		}
 	}
 
 	public PTAState getFatherState() {
@@ -312,8 +310,6 @@ public class PTAState implements Cloneable {
 	}
 
 	public static void unsetCompatibilityChecking(PTAState firstState, PTAState secondState) {
-
-		final PTAState removedState = null;
 
 		if (firstState.getId() < secondState.getId()) {
 			firstState.compatibilityCheckingStates.remove(secondState.getId());
