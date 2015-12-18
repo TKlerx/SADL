@@ -41,7 +41,7 @@ public class AnodaTest {
 	}
 
 	@Test
-	public void testAnoda() throws IOException, URISyntaxException {
+	public void testAnodaOriginalKDE() throws IOException, URISyntaxException {
 		final ButlaPdtaLearner learner = new ButlaPdtaLearner(10000, 0.05, TransitionsType.Incoming, 0.05, 0.05, PTAOrdering.BottomUp,
 				EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
 		final AnodaDetector anoda = new AnodaDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY);
