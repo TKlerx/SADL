@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.ListIterator;
 
 import org.slf4j.Logger;
@@ -41,8 +42,8 @@ public class PTA {
 	protected HashMap<String, Event> events;
 	protected int depth = 0;
 
-	protected ArrayList<PTAState> states = new ArrayList<>();
-	protected ArrayList<PTATransition> transitions = new ArrayList<>();
+	protected List<PTAState> states = new ArrayList<>();
+	protected List<PTATransition> transitions = new ArrayList<>();
 
 	protected boolean statesMerged = false;
 
@@ -70,7 +71,7 @@ public class PTA {
 		return tails;
 	}
 
-	public ArrayList<PTAState> getStates() {
+	public List<PTAState> getStates() {
 
 		return states;
 	}
@@ -310,8 +311,8 @@ public class PTA {
 		}
 	}
 
-	public void cleanUp() {
-		// TODO cleanUp seems buggy. Maybe because not done recursively?
+	@SuppressWarnings("unused")
+	private void cleanUp() {
 		logger.trace("#####Clearning up the PTA...");
 		logger.trace("Before CleanUp there are {} many states in the PTA", states.size());
 		logger.trace("Before CleanUp there are {} many transitions in the PTA", transitions.size());

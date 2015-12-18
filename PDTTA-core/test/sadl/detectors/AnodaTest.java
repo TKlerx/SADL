@@ -12,6 +12,8 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sadl.anomalydetecion.AnomalyDetection;
 import sadl.constants.EventsCreationStrategy;
@@ -23,6 +25,7 @@ import sadl.experiments.ExperimentResult;
 import sadl.modellearner.ButlaPdtaLearner;
 
 public class AnodaTest {
+	private static Logger logger = LoggerFactory.getLogger(AnodaTest.class);
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
@@ -42,6 +45,7 @@ public class AnodaTest {
 
 	@Test
 	public void testAnodaOriginalKDE() throws IOException, URISyntaxException {
+		logger.info("Starting Anoda Original KDE test...");
 		final ButlaPdtaLearner learner = new ButlaPdtaLearner(10000, 0.05, TransitionsType.Incoming, 0.05, 0.05, PTAOrdering.BottomUp,
 				EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
 		final AnodaDetector anoda = new AnodaDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY);
@@ -72,6 +76,50 @@ public class AnodaTest {
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type5.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
+		logger.info("Finished Anoda Original KDE test.");
+
+	}
+
+	@Test
+	public void testAnodaOriginalButla() throws IOException, URISyntaxException {
+		logger.info("Starting Anoda Original BUTLA test...");
+		final ButlaPdtaLearner learner = new ButlaPdtaLearner(10000, 0.05, TransitionsType.Incoming, 0.05, 0.05, PTAOrdering.BottomUp,
+				EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalButlaVariableBandwidth);
+		final AnodaDetector anoda = new AnodaDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY);
+
+		final AnomalyDetection detection = new AnomalyDetection(anoda, learner);
+		ExperimentResult expected = new ExperimentResult(463, 2906, 1627, 4);
+		Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
+		ExperimentResult actual = detection.trainTest(p);
+		detection.getLearnedModel();
+		System.out.println(actual);
+		// assertEquals(expected, actual);
+
+		expected = new ExperimentResult(0, 2882, 1623, 495);
+		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type2.txt").toURI());
+		actual = detection.trainTest(p);
+		System.out.println(actual);
+		// assertEquals(expected, actual);
+
+		expected = new ExperimentResult(374, 2923, 1591, 112);
+		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type3.txt").toURI());
+		actual = detection.trainTest(p);
+		System.out.println(actual);
+		// assertEquals(expected, actual);
+
+		expected = new ExperimentResult(523, 2831, 1646, 0);
+		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type4.txt").toURI());
+		actual = detection.trainTest(p);
+		System.out.println(actual);
+		// assertEquals(expected, actual);
+
+		expected = new ExperimentResult(373, 2867, 1671, 89);
+		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type5.txt").toURI());
+		actual = detection.trainTest(p);
+		System.out.println(actual);
+		// assertEquals(expected, actual);
+
+		logger.info("Starting Anoda Original BUTLA test...");
 	}
 
 }

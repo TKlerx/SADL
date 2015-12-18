@@ -18,7 +18,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.math3.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -184,7 +184,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 	public Pair<TimedInput, Map<String, Event>> splitEventsInTimedSequences(TimedInput timedSequences) {
 		final HashMap<String, TDoubleList> eventToTimelistMap = mapEventsToTimes(timedSequences);
 		final HashMap<String, Event> eventsMap = generateSubEvents(eventToTimelistMap);
-		return Pair.create(getSplitInputForMapping(timedSequences, eventsMap), eventsMap);
+		return Pair.of(getSplitInputForMapping(timedSequences, eventsMap), eventsMap);
 	}
 
 	public TimedInput getSplitInputForMapping(TimedInput timedSequences, final Map<String, Event> eventsMap) {

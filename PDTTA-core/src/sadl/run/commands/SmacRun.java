@@ -17,6 +17,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -31,7 +32,9 @@ import sadl.anomalydetecion.AnomalyDetection;
 import sadl.constants.Algoname;
 import sadl.constants.DetectorMethod;
 import sadl.constants.DistanceMethod;
+import sadl.constants.EventsCreationStrategy;
 import sadl.constants.FeatureCreatorMethod;
+import sadl.constants.KDEFormelVariant;
 import sadl.constants.ProbabilityAggregationMethod;
 import sadl.constants.ScalingMethod;
 import sadl.detectors.AnodaDetector;
@@ -44,7 +47,10 @@ import sadl.detectors.featureCreators.MinimalFeatureCreator;
 import sadl.detectors.featureCreators.SmallFeatureCreator;
 import sadl.detectors.featureCreators.UberFeatureCreator;
 import sadl.experiments.ExperimentResult;
+import sadl.input.TimedInput;
 import sadl.interfaces.ProbabilisticModelLearner;
+import sadl.modellearner.ButlaPdtaLearner;
+import sadl.models.pta.Event;
 import sadl.oneclassclassifier.LibSvmClassifier;
 import sadl.oneclassclassifier.OneClassClassifier;
 import sadl.oneclassclassifier.ThresholdClassifier;
@@ -57,6 +63,7 @@ import sadl.run.factories.learn.ButlaFactory;
 import sadl.run.factories.learn.PdttaFactory;
 import sadl.run.factories.learn.PetriNetFactory;
 import sadl.run.factories.learn.RTIFactory;
+import sadl.utils.IoUtils;
 import sadl.utils.MasterSeed;
 import sadl.utils.RamGobbler;
 
@@ -165,7 +172,14 @@ public class SmacRun {
 	@Parameter(names = "-skipFirstElement", arity = 1)
 	boolean skipFirstElement = false;
 
+	@Parameter(names = "-butlaPreprocessing", arity = 1)
+	boolean applyButlaPreprocessing = false;
 
+	@Parameter(names = "-butlaPreprocessingBandwidthEstimate", arity = 1)
+	boolean butlaPreprocessingBandwidthEstimate = false;
+
+	@Parameter(names = "-butlaPreprocessingBandwidth")
+	double butlaPreprocessingBandwidth = 10000;
 
 
 	@SuppressWarnings("null")
@@ -258,7 +272,22 @@ public class SmacRun {
 		}
 		ExperimentResult result = null;
 		try {
-			result = detection.trainTest(Paths.get(mainParams.get(1)), skipFirstElement);
+			final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(Paths.get(mainParams.get(1)), skipFirstElement);
+			TimedInput trainSet = trainTest.getKey();
+			TimedInput testSet = trainTest.getValue();
+			if (applyButlaPreprocessing) {
+				double bandwidth;
+				if (butlaPreprocessingBandwidthEstimate) {
+					bandwidth = 0;
+				} else {
+					bandwidth = butlaPreprocessingBandwidth;
+				}
+				final ButlaPdtaLearner butla = new ButlaPdtaLearner(bandwidth, EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
+				final Pair<TimedInput, Map<String, Event>> pair = butla.splitEventsInTimedSequences(trainSet);
+				trainSet = pair.getKey();
+				testSet = butla.getSplitInputForMapping(testSet, pair.getValue());
+			}
+			result = detection.trainTest(trainSet, testSet);
 		} catch (final IOException e) {
 			logger.error("Error when loading input from file: " + e.getMessage());
 			smacErrorAbort();

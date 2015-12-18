@@ -35,7 +35,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 
-import org.apache.commons.math3.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -124,7 +124,7 @@ public class IoUtils {
 				ex.shutdownNow();
 				throw new IOException("The provided file " + trainTestFile + " does not contain the separator " + SmacDataGenerator.TRAIN_TEST_SEP);
 			}
-			final Pair<TimedInput, TimedInput> result = new Pair<>(trainWorker.get(), testWorker.get());
+			final Pair<TimedInput, TimedInput> result = Pair.of(trainWorker.get(), testWorker.get());
 			return result;
 		} catch (final IOException | InterruptedException | ExecutionException e) {
 			logger.error("Unexpected exception!", e);

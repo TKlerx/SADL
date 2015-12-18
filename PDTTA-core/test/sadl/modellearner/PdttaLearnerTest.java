@@ -7,7 +7,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 
 import org.apache.commons.lang3.SerializationUtils;
-import org.apache.commons.math3.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;

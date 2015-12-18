@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
-import org.apache.commons.math3.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 
 import sadl.anomalydetecion.AnomalyDetection;
@@ -43,9 +43,9 @@ public class PdttaWithPreprocessingTest {
 			final ButlaPdtaLearner butla = new ButlaPdtaLearner(20000, EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
 			// final ButlaPdtaLearner butla = new ButlaPdtaLearner(EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
 
-			final Pair<TimedInput, Map<String, Event>> pair = butla.splitEventsInTimedSequences(trainTest.getFirst());
-			final TimedInput splittedTrainSet = pair.getFirst();
-			final Map<String, Event> eventMapping = pair.getSecond();
+			final Pair<TimedInput, Map<String, Event>> pair = butla.splitEventsInTimedSequences(trainTest.getKey());
+			final TimedInput splittedTrainSet = pair.getKey();
+			final Map<String, Event> eventMapping = pair.getValue();
 			final PDTTA model = learner.train(splittedTrainSet);
 			detector.setModel(model);
 			final AnomalyDetection detection = new AnomalyDetection(detector, model);
