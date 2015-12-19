@@ -296,7 +296,7 @@ public class TauPTA extends PDTTA {
 			final String nextEvent = s.getSymbol(i);
 			Transition t = getTransition(currentState, nextEvent);
 			if (t == null) {
-				t = addTransition(currentState, getNumberOfStates(), nextEvent, NO_TRANSITION_PROBABILITY);
+				t = addTransition(currentState, getStateCount(), nextEvent, NO_TRANSITION_PROBABILITY);
 				transitionCount.put(t.toZeroProbTransition(), 0);
 			}
 			transitionCount.increment(t.toZeroProbTransition());

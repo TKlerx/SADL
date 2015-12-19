@@ -31,12 +31,11 @@ import sadl.constants.ClassLabel;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.AutomatonModel;
-import sadl.interfaces.ProbabilisticModel;
 import sadl.models.pta.Event;
 import sadl.models.pta.HalfClosedInterval;
 import sadl.models.pta.SubEvent;
 
-public class PDTA implements AutomatonModel, ProbabilisticModel {
+public class PDTA implements AutomatonModel {
 
 	PDTAState root;
 	TIntObjectMap<PDTAState> states;
@@ -231,39 +230,50 @@ public class PDTA implements AutomatonModel, ProbabilisticModel {
 	}
 
 	public void toGraphvizFile(Path resultPath) throws IOException {
-		final BufferedWriter writer = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8);
-		writer.write("digraph G {\n");
+		try (BufferedWriter writer = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8)) {
+			writer.write("digraph G {\n");
 
-		// write states
-		for (final PDTAState state : states.valueCollection()) {
+			// write states
+			for (final PDTAState state : states.valueCollection()) {
 
-			writer.write(Integer.toString(state.getId()));
-			writer.write(" [shape=");
+				writer.write(Integer.toString(state.getId()));
+				writer.write(" [shape=");
 
-			if (state.isFinalState()) {
-				writer.write("double");
+				if (state.isFinalState()) {
+					writer.write("double");
+				}
+
+				writer.write("circle, label=\"" + Integer.toString(state.getId()) + "\"");
+				writer.write("]\n");
 			}
 
-			writer.write("circle, label=\"" + Integer.toString(state.getId()) + "\"");
-			writer.write("]\n");
-		}
-
-		for (final PDTAState state : states.valueCollection()) {
-			for (final TreeMap<Double, PDTATransition> transitions : state.getTransitions().values()) {
-				for (final PDTATransition transition : transitions.values()) {
-					writer.write(Integer.toString(state.getId()) + "->" + Integer.toString(transition.getTarget().getId()) + " [label=<"
-							+ transition.getEvent().getSymbol() + ">;];\n");
+			for (final PDTAState state : states.valueCollection()) {
+				for (final TreeMap<Double, PDTATransition> transitions : state.getTransitions().values()) {
+					for (final PDTATransition transition : transitions.values()) {
+						writer.write(Integer.toString(state.getId()) + "->" + Integer.toString(transition.getTarget().getId()) + " [label=<"
+								+ transition.getEvent().getSymbol() + ">;];\n");
+					}
 				}
 			}
-		}
 
-		writer.write("}");
-		writer.close();
+			writer.write("}");
+		}
 	}
 
 	@Override
-	public int getNumberOfStates() {
-
+	public int getStateCount() {
 		return states.size();
 	}
+
+	@Override
+	public int getTransitionCount() {
+		int result = 0;
+		for (final PDTAState state : states.valueCollection()) {
+			for (final TreeMap<Double, PDTATransition> transitions : state.getTransitions().values()) {
+				result += transitions.size();
+			}
+		}
+		return result;
+	}
+
 }

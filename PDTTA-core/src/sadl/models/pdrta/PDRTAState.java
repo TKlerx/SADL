@@ -44,7 +44,7 @@ public class PDRTAState implements Serializable {
 			intervals.add(Interval.createInitialIntervalMap(ta.getMinTimeDelay(), ta.getMaxTimeDelay()));
 		}
 		stat = StateStatistic.initStat(ta.getAlphSize(), ta.getHistSizes());
-		index = automaton.addState(this, automaton.getNumberOfStates());
+		index = automaton.addState(this, automaton.getStateCount());
 	}
 
 	protected PDRTAState(PDRTA ta, int idx, StateStatistic st) {

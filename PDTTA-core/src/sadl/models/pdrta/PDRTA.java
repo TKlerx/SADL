@@ -254,7 +254,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 	}
 
 	@Override
-	public int getNumberOfStates() {
+	public int getStateCount() {
 		return states.size();
 	}
 
@@ -715,6 +715,29 @@ public class PDRTA implements AutomatonModel, Serializable {
 		m.put("histogramPobs", this::calculateProbabilities);
 		m.put("transitionProbs", this::calculateProbsTrans);
 		return m;
+	}
+
+	@Override
+	public int getTransitionCount() {
+		int result = 0;
+		final Queue<PDRTAState> q = new ArrayDeque<>();
+		final Set<PDRTAState> found = new HashSet<>();
+		q.add(root);
+		found.add(root);
+		while (!q.isEmpty()) {
+			final PDRTAState s = q.remove();
+			for (int i = 0; i < input.getAlphSize(); i++) {
+				final Set<Entry<Integer, Interval>> ins = s.getIntervals(i).entrySet();
+				for (final Entry<Integer, Interval> eIn : ins) {
+					final Interval in = eIn.getValue();
+					final PDRTAState t = in.getTarget();
+					if (t != null) {
+						result++;
+					}
+				}
+			}
+		}
+		return result;
 	}
 
 }

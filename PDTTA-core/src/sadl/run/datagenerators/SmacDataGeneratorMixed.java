@@ -98,7 +98,7 @@ public class SmacDataGeneratorMixed implements Serializable {
 		// System.out.println(outputDir.resolve(p));
 		// ps.waitFor();
 		logger.info("Finished TauPTA creation.");
-		logger.info("Before inserting anomalies, normal PTA has {} states and {} transitions",pta.getNumberOfStates(),pta.getTransitionCount());
+		logger.info("Before inserting anomalies, normal PTA has {} states and {} transitions",pta.getStateCount(),pta.getTransitionCount());
 		final List<TauPTA> abnormalPtas = new ArrayList<>();
 		for (final AnomalyInsertionType type : AnomalyInsertionType.values()) {
 			if (type != AnomalyInsertionType.NONE && type != AnomalyInsertionType.ALL) {
@@ -109,12 +109,12 @@ public class SmacDataGeneratorMixed implements Serializable {
 				if (type == AnomalyInsertionType.TYPE_TWO) {
 					anomaly.removeAbnormalSequences(pta);
 				}
-				logger.info("After inserting anomaly type {}, normal PTA has {} states and {} transitions", type, pta.getNumberOfStates(),
+				logger.info("After inserting anomaly type {}, normal PTA has {} states and {} transitions", type, pta.getStateCount(),
 						pta.getTransitionCount());
 
 			}
 		}
-		logger.info("After inserting all anomalies, normal PTA has {} states and {} transitions", pta.getNumberOfStates(), pta.getTransitionCount());
+		logger.info("After inserting all anomalies, normal PTA has {} states and {} transitions", pta.getStateCount(), pta.getTransitionCount());
 		final TObjectIntMap<TauPTA> anomalyOccurences = new TObjectIntHashMap<>();
 		final Random anomalyChooser = MasterSeed.nextRandom();
 		while (k < SAMPLE_FILES) {

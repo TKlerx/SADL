@@ -213,7 +213,7 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 		mainModel = a;
 		complete(a, sc);
 
-		logger.info("Final PDRTA contains {} states and {} transitions", a.getNumberOfStates(), a.getSize());
+		logger.info("Final PDRTA contains {} states and {} transitions", a.getStateCount(), a.getSize());
 		// TODO Check why Likelihood is 0.0 here
 		logger.info("Trained PDRTA with quality: Likelihood={} and AIC={}", Math.exp(NaiveLikelihoodRatioTester.calcLikelihood(a).getRatio()), calcAIC(a));
 
@@ -389,7 +389,7 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 				if (directory != null) {
 					draw(a, true, directory, counter);
 				}
-				logger.debug("Automaton contains {} states and {} transitions", a.getNumberOfStates(), a.getSize());
+				logger.debug("Automaton contains {} states and {} transitions", a.getStateCount(), a.getSize());
 				logger.debug("Found most visited transition  {}  containing {} tails", t.toString(), t.in.getTails().size());
 			}
 			counter++;
@@ -466,7 +466,7 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 			}
 		}
 
-		assert (a.getNumberOfStates() == sc.getNumRedStates());
+		assert (a.getStateCount() == sc.getNumRedStates());
 
 		a.checkConsistency();
 		if (directory != null) {

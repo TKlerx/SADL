@@ -236,6 +236,7 @@ public class PDFA implements AutomatonModel, Serializable {
 		this.abnormalFinalStates = pdfa.abnormalFinalStates;
 	}
 
+	@Override
 	public int getTransitionCount() {
 		return transitions.size();
 	}
@@ -492,7 +493,7 @@ public class PDFA implements AutomatonModel, Serializable {
 	}
 
 	@Override
-	public int getNumberOfStates() {
+	public int getStateCount() {
 		return finalStateProbabilities.size();
 	}
 
