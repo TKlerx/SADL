@@ -15,6 +15,7 @@ import sadl.constants.PTAOrdering;
 import sadl.constants.TransitionsType;
 import sadl.input.TimedInput;
 import sadl.interfaces.AutomatonModel;
+import sadl.models.pdta.PDTA;
 import sadl.utils.IoUtils;
 
 public class TrebaButlaLearnerTest {
@@ -27,13 +28,14 @@ public class TrebaButlaLearnerTest {
 		final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
 		Pair<TimedInput, TimedInput> input = IoUtils.readTrainTestFile(p);
 
-		final AutomatonModel pdta = butla.train(input.getKey());
+		final PDTA pdta = butla.train(input.getKey());
 
 		input = IoUtils.readTrainTestFile(p);
 		final AutomatonModel pdfa = treba.train(input.getKey());
 
 		assertEquals(pdta.getStateCount(), pdfa.getStateCount());
 		assertEquals(pdta.getTransitionCount(), pdfa.getTransitionCount());
+		assertEquals(pdfa, pdta.toPDFA());
 
 	}
 

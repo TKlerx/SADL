@@ -31,6 +31,7 @@ import sadl.constants.ClassLabel;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.AutomatonModel;
+import sadl.models.PDFA;
 import sadl.models.pta.Event;
 import sadl.models.pta.HalfClosedInterval;
 import sadl.models.pta.SubEvent;
@@ -274,6 +275,11 @@ public class PDTA implements AutomatonModel {
 			}
 		}
 		return result;
+	}
+
+	public PDFA toPDFA() {
+		// TODO implement
+		return null;
 	}
 
 }
