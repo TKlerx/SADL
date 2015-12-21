@@ -607,7 +607,7 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	}
 
 	public void decreaseSamples(double d) {
-		words = words.subList(0, (int) (words.size() * d));
+		words = new ArrayList<>(words.subList(0, (int) (words.size() * d)));
 	}
 
 	public List<TimedWord> getWords() {
