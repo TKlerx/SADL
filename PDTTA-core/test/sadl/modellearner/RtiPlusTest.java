@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.apache.commons.lang3.SerializationUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -51,12 +52,37 @@ public class RtiPlusTest {
 			final SimplePDRTALearner l1 = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.ALL, SplitPosition.MIDDLE, "AAO",
 					null);
 			final ProbabilisticModel p1 = l1.train(ti1);
+			for (int j = 0; j < 10; j++) {
+				final SimplePDRTALearner l2 = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.ALL, SplitPosition.MIDDLE, "AAO",
+						null);
+				final ProbabilisticModel p2 = l2.train(ti2);
 
-			final SimplePDRTALearner l2 = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.ALL, SplitPosition.MIDDLE, "AAO",
+				assertEquals("PDRTAs for files " + i + " are not equal", p2, p1);
+			}
+		}
+	}
+
+	@Test
+	public void testDeterminismBig() throws URISyntaxException, IOException {
+
+		for (int i = 1; i <= 5; i++) {
+			final Pair<TimedInput, TimedInput> traintestSet = IoUtils
+					.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type" + i + ".txt").toURI()));
+
+			final TimedInput ti1 = traintestSet.getKey();
+			ti1.decreaseSamples(0.01);
+			final TimedInput ti2 = SerializationUtils.clone(ti1);
+
+			final SimplePDRTALearner l1 = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.ALL, SplitPosition.MIDDLE, "AAO",
 					null);
-			final ProbabilisticModel p2 = l2.train(ti2);
+			final ProbabilisticModel p1 = l1.train(ti1);
+			for (int j = 0; j < 10; j++) {
+				final SimplePDRTALearner l2 = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.ALL, SplitPosition.MIDDLE, "AAO",
+						null);
+				final ProbabilisticModel p2 = l2.train(ti2);
 
-			assertEquals("PDRTAs for files " + i + " are not equal", p2, p1);
+				assertEquals("PDRTAs for files " + i + " are not equal", p2, p1);
+			}
 		}
 	}
 
