@@ -40,8 +40,8 @@ import org.slf4j.LoggerFactory;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import sadl.input.TimedInput;
-import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.interfaces.ProbabilisticModel;
+import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.modellearner.rtiplus.boolop.AndOperator;
 import sadl.modellearner.rtiplus.boolop.BooleanOperator;
 import sadl.modellearner.rtiplus.boolop.OrOperator;
@@ -69,7 +69,7 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 	}
 
 	public enum DistributionCheckType {
-		DISABLED, ALL_BORDER, ALL, MAD_BORDER, MAD, OUTLIER_BORDER, OUTLIER
+		DISABLED, STRICT_BORDER, STRICT, MAD_BORDER, MAD, OUTLIER_BORDER, OUTLIER
 	}
 
 	public enum SplitPosition {
@@ -197,7 +197,7 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 
 		logger.info("RTI+: Building automaton from input sequences");
 
-		final boolean expand = distrCheckType.compareTo(DistributionCheckType.ALL) > 0;
+		final boolean expand = distrCheckType.compareTo(DistributionCheckType.STRICT) > 0;
 		final PDRTAInput in = new PDRTAInput(trainingSequences, histBinsStr, expand);
 		final PDRTA a = new PDRTA(in);
 
@@ -539,7 +539,7 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 		int tolerance;
 		if (type.equals(DistributionCheckType.DISABLED)) {
 			return Collections.emptyList();
-		} else if (type.equals(DistributionCheckType.ALL_BORDER) || type.equals(DistributionCheckType.ALL)) {
+		} else if (type.equals(DistributionCheckType.STRICT_BORDER) || type.equals(DistributionCheckType.STRICT)) {
 			tolerance = 0;
 		} else if (type.equals(DistributionCheckType.MAD_BORDER) || type.equals(DistributionCheckType.MAD)) {
 			tolerance = getToleranceMAD(in, PDRTA.getMinData());

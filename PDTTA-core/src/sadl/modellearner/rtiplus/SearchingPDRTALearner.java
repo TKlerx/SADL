@@ -45,7 +45,7 @@ public class SearchingPDRTALearner extends SimplePDRTALearner {
 
 		logger.info("RTI+: Building automaton from input sequences");
 
-		final boolean expand = distrCheckType.compareTo(DistributionCheckType.ALL) > 0;
+		final boolean expand = distrCheckType.compareTo(DistributionCheckType.STRICT) > 0;
 		final PDRTAInput in = new PDRTAInput(trainingSequences, histBinsStr, expand);
 		final PDRTA a = new PDRTA(in);
 
@@ -53,7 +53,7 @@ public class SearchingPDRTALearner extends SimplePDRTALearner {
 		logger.info("Parameters are: significance={} distrCheckType={}", significance, distrCheckType);
 		logger.info("Histogram Bins are: {}", a.getHistBinsString());
 
-		logger.info("*** Performing greedy RTI+ ***");
+		logger.info("*** Performing searching RTI+ ***");
 		startTime = System.currentTimeMillis();
 		final StateColoring sc = new StateColoring(a);
 		sc.setRed(a.getRoot());

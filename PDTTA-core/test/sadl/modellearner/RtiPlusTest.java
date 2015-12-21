@@ -49,14 +49,14 @@ public class RtiPlusTest {
 			final TimedInput ti1 = TimedInput.parse(Paths.get(this.getClass().getResource("/pdrta/test_" + i + ".inp").toURI()));
 			final TimedInput ti2 = SerializationUtils.clone(ti1);
 
-			final SimplePDRTALearner l1 = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.ALL, SplitPosition.MIDDLE, "AAO",
+			final SimplePDRTALearner l1 = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.STRICT, SplitPosition.MIDDLE, "AAO",
 					null);
 			final ProbabilisticModel p1 = l1.train(ti1);
 			for (int j = 0; j < 10; j++) {
-				final SimplePDRTALearner l2 = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.ALL, SplitPosition.MIDDLE, "AAO",
+				final SimplePDRTALearner l2 = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.STRICT, SplitPosition.MIDDLE,
+						"AAO",
 						null);
 				final ProbabilisticModel p2 = l2.train(ti2);
-
 				assertEquals("PDRTAs for files " + i + " are not equal", p2, p1);
 			}
 		}
@@ -73,11 +73,12 @@ public class RtiPlusTest {
 			ti1.decreaseSamples(0.01);
 			final TimedInput ti2 = SerializationUtils.clone(ti1);
 
-			final SimplePDRTALearner l1 = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.ALL, SplitPosition.MIDDLE, "AAO",
+			final SimplePDRTALearner l1 = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.STRICT, SplitPosition.MIDDLE, "AAO",
 					null);
+
 			final ProbabilisticModel p1 = l1.train(ti1);
 			for (int j = 0; j < 10; j++) {
-				final SimplePDRTALearner l2 = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.ALL, SplitPosition.MIDDLE, "AAO",
+				final SimplePDRTALearner l2 = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.STRICT, SplitPosition.MIDDLE, "AAO",
 						null);
 				final ProbabilisticModel p2 = l2.train(ti2);
 
@@ -94,12 +95,12 @@ public class RtiPlusTest {
 			final TimedInput ti1 = TimedInput.parse(Paths.get(this.getClass().getResource("/pdrta/test_" + i + ".inp").toURI()));
 			final TimedInput ti2 = SerializationUtils.clone(ti1);
 
-			final SimplePDRTALearner l1 = new SimplePDRTALearner(0.05, "4", OperationTesterType.NAIVE_LRT, DistributionCheckType.ALL, SplitPosition.MIDDLE,
+			final SimplePDRTALearner l1 = new SimplePDRTALearner(0.05, "4", OperationTesterType.NAIVE_LRT, DistributionCheckType.STRICT, SplitPosition.MIDDLE,
 					"AOO",
 					"/home/fabian/sadl_rti_test/" + i + "/");
 			final ProbabilisticModel p1 = l1.train(ti1);
 
-			final SimplePDRTALearner l2 = new SimplePDRTALearner(0.05, "4", OperationTesterType.NAIVE_LRT, DistributionCheckType.ALL, SplitPosition.MIDDLE,
+			final SimplePDRTALearner l2 = new SimplePDRTALearner(0.05, "4", OperationTesterType.NAIVE_LRT, DistributionCheckType.STRICT, SplitPosition.MIDDLE,
 					"AOO", null);
 			final ProbabilisticModel p2 = l2.train(ti2);
 
@@ -114,7 +115,8 @@ public class RtiPlusTest {
 
 			final TimedInput ti = TimedInput.parse(Paths.get(this.getClass().getResource("/pdrta/test_" + i + ".inp").toURI()));
 
-			final SimplePDRTALearner l = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.ALL,SplitPosition.MIDDLE, "AOO", null);
+			final SimplePDRTALearner l = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.STRICT, SplitPosition.MIDDLE, "AOO",
+					null);
 			final ProbabilisticModel p = l.train(ti);
 
 			final Path path = Paths.get(this.getClass().getResource("/pdrta/pdrta_" + i + ".aut").toURI());
@@ -132,7 +134,8 @@ public class RtiPlusTest {
 
 			final TimedInput ti = TimedInput.parse(Paths.get(this.getClass().getResource("/pdrta/test_" + i + ".inp").toURI()));
 
-			final SimplePDRTALearner l = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.ALL,SplitPosition.MIDDLE, "AOO", null);
+			final SimplePDRTALearner l = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.STRICT, SplitPosition.MIDDLE, "AOO",
+					null);
 			final ProbabilisticModel pdrta = l.train(ti);
 
 			// Deserialize

@@ -209,7 +209,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 	public HashMap<String, Event> generateSubEvents(Map<String, TDoubleList> eventTimesMap) {
 		final Set<String> eventSymbolsSet = eventTimesMap.keySet();
 		final HashMap<String, Event> eventsMap = new HashMap<>(eventSymbolsSet.size());
-		logger.debug("There are {} events", eventSymbolsSet.size());
+		logger.info("There are {} events", eventSymbolsSet.size());
 		logger.debug("Starting to generate subevents...");
 		int subEventCount = 0;
 		for (final String eventSysbol : eventSymbolsSet) {
@@ -239,7 +239,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			}
 		}
 		logger.debug("Generated subevents.");
-		logger.debug("There are {} subevents.", subEventCount);
+		logger.info("There are {} subevents.", subEventCount);
 		return eventsMap;
 	}
 
