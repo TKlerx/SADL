@@ -30,7 +30,7 @@ public class PDTAState {
 	protected double sumProbabilities = 0.0d;
 	Random rand;
 
-	public PDTAState(int id, double endProbability) {
+	public PDTAState(int id, double endProbability) { // TODO check root endProbability
 		rand = MasterSeed.nextRandom();
 		if (Double.isNaN(endProbability) || endProbability < 0.0d || endProbability > 1.0d) {
 			throw new IllegalArgumentException("Wrong parameter endProbability: " + endProbability);
@@ -78,6 +78,11 @@ public class PDTAState {
 		}
 
 		return null;
+	}
+
+	public double getEndProbability() {
+
+		return endProbability;
 	}
 
 	public PDTATransition getMostProbablyTransition(String eventSymbol, double time) {

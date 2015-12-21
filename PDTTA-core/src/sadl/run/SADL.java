@@ -57,6 +57,7 @@ public class SADL {
 	boolean debug = false;
 	static boolean crash = false;
 	public static void main(String[] args) throws Exception {
+
 		try {
 			if (args.length < 1) {
 				logger.error("Not enough params!");
@@ -117,6 +118,7 @@ public class SADL {
 						bw.append(result.toCsvString());
 						bw.append('\n');
 					}
+					logger.info("Finished SMAC run.");
 					break;
 				default:
 					// TODO Print usage
@@ -125,9 +127,11 @@ public class SADL {
 					System.exit(1);
 					break;
 			}
-		} catch (final Exception e) {
+		} catch (final Throwable e) {
 			logger.error("Unexpected exception with parameters" + Arrays.toString(args), e);
+			e.printStackTrace();
 			crash = true;
+			Thread.sleep(1000);
 		} finally {
 			System.exit(crash ? 1 : 0);
 		}

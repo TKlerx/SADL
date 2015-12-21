@@ -16,8 +16,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Random;
 import java.util.TreeMap;
 
@@ -26,19 +26,20 @@ import org.apache.commons.math3.util.Pair;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.linked.TIntLinkedList;
+import gnu.trove.map.TIntObjectMap;
 import sadl.constants.ClassLabel;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.AutomatonModel;
-import sadl.interfaces.ProbabilisticModel;
+import sadl.models.PDFA;
 import sadl.models.pta.Event;
 import sadl.models.pta.HalfClosedInterval;
 import sadl.models.pta.SubEvent;
 
-public class PDTA implements AutomatonModel, ProbabilisticModel {
+public class PDTA implements AutomatonModel {
 
 	PDTAState root;
-	HashMap<Integer, PDTAState> states;
+	TIntObjectMap<PDTAState> states;
 	HashMap<String, Event> events;
 
 	@Override
@@ -53,22 +54,23 @@ public class PDTA implements AutomatonModel, ProbabilisticModel {
 			final String eventSymbol = s.getSymbol(i);
 			final double time = s.getTimeValue(i);
 
-			final PDTATransition currentTransition = currentState.getMostProbablyTransition(eventSymbol, time);
+			final PDTATransition currentTransition = currentState.getTransition(eventSymbol, time);
 
 			if (currentTransition == null) {
 				probabilities1.add(0.0);
 				probabilities2.add(0.0);
-				break;
+				return new Pair<>(probabilities1, probabilities2);
 			}
 
 			probabilities1.add(currentTransition.getPropability());
 			probabilities2.add(currentTransition.getEvent().calculateProbability(time));
 		}
 
+		probabilities1.add(currentState.getEndProbability());
 		return new Pair<>(probabilities1, probabilities2);
 	}
 
-	public PDTA(PDTAState root, HashMap<Integer, PDTAState> states, HashMap<String, Event> events) {
+	public PDTA(PDTAState root, TIntObjectMap<PDTAState> states, HashMap<String, Event> events) {
 		this.root = root;
 		this.states = states;
 		this.events = events;
@@ -79,14 +81,14 @@ public class PDTA implements AutomatonModel, ProbabilisticModel {
 		return root;
 	}
 
-	public HashMap<Integer, PDTAState> getStates() {
+	public TIntObjectMap<PDTAState> getStates() {
 
 		return states;
 	}
 
 	public TimedInput generateRandomSequences(boolean allowAnomaly, int count) {
 
-		final LinkedList<TimedWord> words = new LinkedList<>();
+		final ArrayList<TimedWord> words = new ArrayList<>();
 
 		for (int i = 0; i < count; i++) {
 
@@ -99,7 +101,7 @@ public class PDTA implements AutomatonModel, ProbabilisticModel {
 
 	public TimedInput generateAnomalySequences(int eventAnomaliesCount, int count) {
 
-		final LinkedList<TimedWord> words = new LinkedList<>();
+		final ArrayList<TimedWord> words = new ArrayList<>();
 
 		for (int i = 0; i < count; i++) {
 
@@ -112,7 +114,7 @@ public class PDTA implements AutomatonModel, ProbabilisticModel {
 
 	public TimedWord generateRandomWord(boolean allowAnomaly) {
 
-		final LinkedList<String> symbols = new LinkedList<>();
+		final ArrayList<String> symbols = new ArrayList<>();
 		final TIntLinkedList timeValues = new TIntLinkedList();
 
 		PDTAState currentState = root;
@@ -158,7 +160,7 @@ public class PDTA implements AutomatonModel, ProbabilisticModel {
 		final Random random = new Random();
 		final Event eventsArray[] = events.values().toArray(new Event[0]);
 
-		final LinkedList<String> symbols = new LinkedList<>();
+		final ArrayList<String> symbols = new ArrayList<>();
 		final TIntLinkedList timeValues = new TIntLinkedList();
 
 		while (anomaliesMaxCount > 0){
@@ -229,38 +231,55 @@ public class PDTA implements AutomatonModel, ProbabilisticModel {
 	}
 
 	public void toGraphvizFile(Path resultPath) throws IOException {
-		final BufferedWriter writer = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8);
-		writer.write("digraph G {\n");
+		try (BufferedWriter writer = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8)) {
+			writer.write("digraph G {\n");
 
-		// write states
-		for (final PDTAState state : states.values()) {
+			// write states
+			for (final PDTAState state : states.valueCollection()) {
 
-			writer.write(Integer.toString(state.getId()));
-			writer.write(" [shape=");
+				writer.write(Integer.toString(state.getId()));
+				writer.write(" [shape=");
 
-			if (state.isFinalState()) {
-				writer.write("double");
+				if (state.isFinalState()) {
+					writer.write("double");
+				}
+
+				writer.write("circle, label=\"" + Integer.toString(state.getId()) + "\"");
+				writer.write("]\n");
 			}
 
-			writer.write("circle, label=\"" + Integer.toString(state.getId()) + "\"");
-			writer.write("]\n");
-		}
-
-		for (final PDTAState state : states.values()) {
-			for (final TreeMap<Double, PDTATransition> transitions : state.getTransitions().values()) {
-				for (final PDTATransition transition : transitions.values()) {
-					writer.write(Integer.toString(state.getId()) + "->" + Integer.toString(transition.getTarget().getId()) + " [label=<"
-							+ transition.getEvent().getSymbol() + ">;];\n");
+			for (final PDTAState state : states.valueCollection()) {
+				for (final TreeMap<Double, PDTATransition> transitions : state.getTransitions().values()) {
+					for (final PDTATransition transition : transitions.values()) {
+						writer.write(Integer.toString(state.getId()) + "->" + Integer.toString(transition.getTarget().getId()) + " [label=<"
+								+ transition.getEvent().getSymbol() + ">;];\n");
+					}
 				}
 			}
-		}
 
-		writer.write("}");
-		writer.close();
+			writer.write("}");
+		}
 	}
 
 	@Override
-	public int getNumberOfStates() {
+	public int getStateCount() {
 		return states.size();
 	}
+
+	@Override
+	public int getTransitionCount() {
+		int result = 0;
+		for (final PDTAState state : states.valueCollection()) {
+			for (final TreeMap<Double, PDTATransition> transitions : state.getTransitions().values()) {
+				result += transitions.size();
+			}
+		}
+		return result;
+	}
+
+	public PDFA toPDFA() {
+		// TODO implement
+		return null;
+	}
+
 }

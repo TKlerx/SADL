@@ -52,6 +52,10 @@ public class Normalizer implements Scaling {
 	public List<double[]> train(List<double[]> input) {
 		for (final double[] ds : input) {
 			for (int i = 0; i < ds.length; i++) {
+				if (Double.isNaN(ds[i])) {
+					throw new IllegalStateException(
+							"NaN is not allowed as an input value for scaling at with list index=" + input.indexOf(ds) + " and array index=" + i);
+				}
 				mins[i] = Math.min(mins[i], ds[i]);
 				maxs[i] = Math.max(maxs[i], ds[i]);
 			}
@@ -74,7 +78,7 @@ public class Normalizer implements Scaling {
 			final double[] temp = new double[ds.length];
 			for (int i = 0; i < ds.length; i++) {
 				if (Precision.equals(scalingFactors[i], 0)) {
-					temp[1] = 1;
+					temp[i] = 1;
 				} else {
 					temp[i] = (ds[i] - mins[i]) / scalingFactors[i];
 				}

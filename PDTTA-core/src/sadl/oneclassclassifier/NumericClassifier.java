@@ -136,7 +136,8 @@ public abstract class NumericClassifier implements OneClassClassifier {
 				logger.error("Unexpected exception", e);
 			}
 		}
-		trainModelScaled(scale(trainingSamples, true));
+		final List<double[]> scaledSamples = scale(trainingSamples, true);
+		trainModelScaled(scaledSamples);
 	}
 
 }

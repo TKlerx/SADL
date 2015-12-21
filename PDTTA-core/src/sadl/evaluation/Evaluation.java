@@ -71,7 +71,7 @@ public class Evaluation {
 		final ExperimentResult expResult = new ExperimentResult(truePos, trueNeg, falsePos, falseNeg);
 
 		if (model instanceof AutomatonModel) {
-			expResult.setNumberOfStates(((AutomatonModel) model).getNumberOfStates());
+			expResult.setNumberOfStates(((AutomatonModel) model).getStateCount());
 		}
 
 		return expResult;

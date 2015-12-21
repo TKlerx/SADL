@@ -17,7 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.apache.commons.lang3.time.StopWatch;
-import org.apache.commons.math3.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,8 +25,8 @@ import sadl.detectors.AnomalyDetector;
 import sadl.evaluation.Evaluation;
 import sadl.experiments.ExperimentResult;
 import sadl.input.TimedInput;
-import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.interfaces.ProbabilisticModel;
+import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.interfaces.TrainableDetector;
 import sadl.utils.IoUtils;
 

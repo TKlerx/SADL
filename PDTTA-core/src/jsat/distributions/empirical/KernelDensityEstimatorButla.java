@@ -12,22 +12,20 @@
 package jsat.distributions.empirical;
 
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 
+import org.apache.commons.math3.util.Precision;
+
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
 import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.empirical.kernelfunc.GaussKF;
 import jsat.linear.DenseVector;
 import jsat.linear.Vec;
 import jsat.math.Function;
 import jsat.math.optimization.GoldenSearch;
-
-import org.apache.commons.math3.util.Precision;
-
 import sadl.constants.KDEFormelVariant;
 
 public class KernelDensityEstimatorButla {
-
 	protected Vec dataPoints;
 	protected double[] X;
 	protected Function kernelPdfFunction;
@@ -39,19 +37,21 @@ public class KernelDensityEstimatorButla {
 	protected double startX;
 	protected double endX;
 
-	public static final double DEFAULT_BANDWIDTH = 0.6d;
+	protected KDEFormelVariant kdeFormelVariant;
+
+	public static final double DEFAULT_BANDWIDTH = 50d;
 	public static final double DEFAULT_MIN_SEARCH_ACCURACY = 0.25d;
 
 	public KernelDensityEstimatorButla(double[] dataPoints, KDEFormelVariant formelVariant) {
-		this(new DenseVector(dataPoints), formelVariant, DEFAULT_BANDWIDTH, DEFAULT_BANDWIDTH / 4.0, DEFAULT_MIN_SEARCH_ACCURACY);
+		this(new DenseVector(dataPoints), formelVariant);
 	}
 
 	public KernelDensityEstimatorButla(Vec dataPoints, KDEFormelVariant formelVariant) {
-		this(dataPoints, formelVariant, DEFAULT_BANDWIDTH, DEFAULT_BANDWIDTH / 4.0, DEFAULT_MIN_SEARCH_ACCURACY);
+		this(dataPoints, formelVariant, MyKernelDensityEstimator.BandwithGuassEstimate(dataPoints));
 	}
 
 	public KernelDensityEstimatorButla(double[] dataPoints, KDEFormelVariant formelVariant, double bandwidth) {
-		this(new DenseVector(dataPoints), formelVariant, bandwidth, bandwidth / 4.0, DEFAULT_MIN_SEARCH_ACCURACY);
+		this(new DenseVector(dataPoints), formelVariant, bandwidth);
 	}
 
 	public KernelDensityEstimatorButla(Vec dataPoints, KDEFormelVariant formelVariant, double bandwidth) {
@@ -65,12 +65,21 @@ public class KernelDensityEstimatorButla {
 
 	public KernelDensityEstimatorButla(Vec dataPoints, KDEFormelVariant formelVariant, double bandwidth, double minSearchStep, double minSearchAccuracy) {
 
+		// TODO check
+
 		this.dataPoints = dataPoints.sortedCopy();
 		this.X = dataPoints.arrayCopy();
 		this.minSearchStep = minSearchStep;
 		this.minSearchAccuracy = minSearchAccuracy;
+		this.kdeFormelVariant = formelVariant;
+
 		if (Precision.equals(bandwidth, 0)) {
 			bandwidth = MyKernelDensityEstimator.BandwithGuassEstimate(dataPoints);
+			this.minSearchStep = bandwidth / 4.0;
+		}
+
+		if (this.minSearchStep < 0.0001) {
+			this.minSearchStep = 50d;
 		}
 
 		if (formelVariant == KDEFormelVariant.OriginalKDE) {
@@ -100,12 +109,16 @@ public class KernelDensityEstimatorButla {
 					double sum = 0.0d;
 
 					final double maxH = Math.pow(X[X.length - 1] * 0.05, 2);
-					final int from = Arrays.binarySearch(X, t - maxH * 13);
-					final int to = Arrays.binarySearch(X, t + maxH * 13);
+					int from = Arrays.binarySearch(X, t - maxH * 13);
+					int to = Arrays.binarySearch(X, t + maxH * 13);
+					from = from < 0 ? -from - 1 : from;
+					to = to < 0 ? -to - 1 : to;
 
 					for (int i = Math.max(0, from); i < Math.min(X.length, to + 1); i++) {
 						final double ti = dataPoints.get(i);
-						sum += Math.exp(-Math.pow(t - ti, 2) / (2 * 0.05 * ti)) / (Math.sqrt(2.0 * Math.PI) * 0.05 * ti);
+						if (!Precision.equals(ti, 0)) {
+							sum += Math.exp(-Math.pow(t - ti, 2) / (2 * 0.05 * ti)) / (Math.sqrt(2.0 * Math.PI) * 0.05 * ti);
+						}
 					}
 
 					return sum / dataPoints.length();
@@ -127,19 +140,23 @@ public class KernelDensityEstimatorButla {
 					double sum = 0.0d;
 
 					final double maxH = Math.pow(X[X.length - 1] * 0.05, 2);
-					final int from = Arrays.binarySearch(X, t - maxH * 13);
-					final int to = Arrays.binarySearch(X, t + maxH * 13);
+					int from = Arrays.binarySearch(X, t - maxH * 13);
+					int to = Arrays.binarySearch(X, t + maxH * 13);
+					from = from < 0 ? -from - 1 : from;
+					to = to < 0 ? -to - 1 : to;
 
 					for (int i = Math.max(0, from); i < Math.min(X.length, to + 1); i++) {
 						final double ti = dataPoints.get(i);
-						sum += (-79.7885 * Math.exp(-10 * Math.pow(t - ti, 2) / ti) * (Math.pow(ti, 2) + 0.1 * ti - Math.pow(t, 2))) / Math.pow(ti, 3);
+						if (!Precision.equals(ti, 0)) {
+							sum += (-79.7885 * Math.exp(-10 * Math.pow(t - ti, 2) / ti) * (Math.pow(ti, 2) + 0.1 * ti - Math.pow(t, 2))) / Math.pow(ti, 3);
+						}
 					}
 
 					return sum / dataPoints.length();
 				}
 			};
 
-			startX = dataPoints.get(0);
+			startX = Math.max(dataPoints.get(0), 1.0);
 			endX = dataPoints.get(dataPoints.length() - 1);
 
 		} else if (formelVariant == KDEFormelVariant.ButlaBandwidthNotSquared) {
@@ -159,12 +176,16 @@ public class KernelDensityEstimatorButla {
 					double sum = 0.0d;
 
 					final double maxH = Math.pow(X[X.length - 1] * 0.05, 2);
-					final int from = Arrays.binarySearch(X, t - maxH * 13);
-					final int to = Arrays.binarySearch(X, t + maxH * 13);
+					int from = Arrays.binarySearch(X, t - maxH * 13);
+					int to = Arrays.binarySearch(X, t + maxH * 13);
+					from = from < 0 ? -from - 1 : from;
+					to = to < 0 ? -to - 1 : to;
 
 					for (int i = Math.max(0, from); i < Math.min(X.length, to + 1); i++) {
 						final double ti = X[i];
-						sum += Math.exp(-Math.pow(t - ti, 2) / (2 * Math.pow(0.05 * ti, 2))) / (Math.sqrt(2.0 * Math.PI) * 0.05 * ti);
+						if (!Precision.equals(ti, 0)) {
+							sum += Math.exp(-Math.pow(t - ti, 2) / (2 * Math.pow(0.05 * ti, 2))) / (Math.sqrt(2.0 * Math.PI) * 0.05 * ti);
+						}
 					}
 
 					return sum / dataPoints.length();
@@ -186,21 +207,25 @@ public class KernelDensityEstimatorButla {
 					double sum = 0.0d;
 
 					final double maxH = Math.pow(X[X.length - 1] * 0.05, 2);
-					final int from = Arrays.binarySearch(X, t - 0.05 * maxH * 13);
-					final int to = Arrays.binarySearch(X, t + 0.05 * maxH * 13);
+					int from = Arrays.binarySearch(X, t - maxH * 13);
+					int to = Arrays.binarySearch(X, t + maxH * 13);
+					from = from < 0 ? -from - 1 : from;
+					to = to < 0 ? -to - 1 : to;
 
 					for (int i = Math.max(0, from); i < Math.min(X.length, to + 1); i++) {
 						final double ti = dataPoints.get(i);
-						sum += ((-7.97885 * Math.pow(ti, 2) - 3191.54 * ti * t + 3191.54 * Math.pow(t, 2)) * Math.exp(-200 * Math.pow(t - ti, 2)
-								/ Math.pow(ti, 2)))
-								/ Math.pow(ti, 4);
+						if (!Precision.equals(ti, 0)) {
+							sum += ((-7.97885 * Math.pow(ti, 2) - 3191.54 * ti * t + 3191.54 * Math.pow(t, 2)) * Math.exp(-200 * Math.pow(t - ti, 2)
+									/ Math.pow(ti, 2)))
+									/ Math.pow(ti, 4);
+						}
 					}
 
 					return sum / dataPoints.length();
 				}
 			};
 
-			startX = dataPoints.get(0);
+			startX = Math.max(dataPoints.get(0), 1.0);
 			endX = dataPoints.get(dataPoints.length() - 1);
 
 		} else if (formelVariant == KDEFormelVariant.ButlaBandwidthSquared) {
@@ -220,12 +245,16 @@ public class KernelDensityEstimatorButla {
 					double sum = 0.0d;
 
 					final double maxH = X[X.length - 1] * 0.05;
-					final int from = Arrays.binarySearch(X, t - 0.05 * maxH * 13);
-					final int to = Arrays.binarySearch(X, t + 0.05 * maxH * 13);
+					int from = Arrays.binarySearch(X, t - maxH * 13);
+					int to = Arrays.binarySearch(X, t + maxH * 13);
+					from = from < 0 ? -from - 1 : from;
+					to = to < 0 ? -to - 1 : to;
 
 					for (int i = Math.max(0, from); i < Math.min(X.length, to + 1); i++) {
 						final double ti = dataPoints.get(i);
-						sum += Math.exp(-Math.pow(t - ti, 2) / (2 * 0.05 * ti)) / (Math.sqrt(2.0 * Math.PI * 0.05 * ti));
+						if (!Precision.equals(ti, 0)) {
+							sum += Math.exp(-Math.pow(t - ti, 2) / (2 * 0.05 * ti)) / (Math.sqrt(2.0 * Math.PI * 0.05 * ti));
+						}
 					}
 
 					return sum / dataPoints.length();
@@ -247,22 +276,31 @@ public class KernelDensityEstimatorButla {
 					double sum = 0.0d;
 
 					final double maxH = X[X.length - 1] * 0.05;
-					final int from = Arrays.binarySearch(X, t - 0.05 * maxH * 13);
-					final int to = Arrays.binarySearch(X, t + 0.05 * maxH * 13);
+					int from = Arrays.binarySearch(X, t - maxH * 13);
+					int to = Arrays.binarySearch(X, t + maxH * 13);
+					from = from < 0 ? -from - 1 : from;
+					to = to < 0 ? -to - 1 : to;
 
 					for (int i = Math.max(0, from); i < Math.min(X.length, to + 1); i++) {
 						final double ti = dataPoints.get(i);
-						sum += (Math.exp(-10 * Math.pow(t - ti, 2) / ti) * (-17.8412 * Math.pow(ti, 2) - 0.892062 * ti + 17.8412 * Math.pow(t, 2)))
-								/ Math.sqrt(Math.pow(ti, 5));
+						if (!Precision.equals(ti, 0)) {
+							sum += (Math.exp(-10 * Math.pow(t - ti, 2) / ti) * (-17.8412 * Math.pow(ti, 2) - 0.892062 * ti + 17.8412 * Math.pow(t, 2)))
+									/ Math.sqrt(Math.pow(ti, 5));
+						}
 					}
 
 					return sum / dataPoints.length();
 				}
 			};
 
-			startX = dataPoints.get(0);
+			startX = Math.max(dataPoints.get(0), 1.0);
 			endX = dataPoints.get(dataPoints.length() - 1);
 		}
+	}
+
+	public double pdf(double x) {
+
+		return kernelPdfFunction.f(x);
 	}
 
 	public double prime(double x) {
@@ -282,14 +320,20 @@ public class KernelDensityEstimatorButla {
 		this.minSearchAccuracy = accuracy;
 	}
 
-	public Double[] getMinima() {
+	public double[] getMinima() {
 
-		final List<Double> pointList = new LinkedList<>();
+		final TDoubleList pointList = new TDoubleArrayList();
 
 		double lastX = startX;
 		double lastValue = kernelDerivationFunction.f(lastX);
 
-		for (double x = lastX + minSearchStep; x < endX; x = x + minSearchStep) {
+		double step = minSearchStep;
+
+		if (kdeFormelVariant != KDEFormelVariant.OriginalKDE && Precision.equals(X[0], 0.0)) {
+			pointList.add(0.5);
+		}
+
+		for (double x = lastX + step; x < endX; x = x + step) {
 			final double newValue = kernelDerivationFunction.f(x);
 
 			if (lastValue < 0 && newValue > 0) {
@@ -298,9 +342,15 @@ public class KernelDensityEstimatorButla {
 
 			lastX = x;
 			lastValue = newValue;
+
+			if (kdeFormelVariant == KDEFormelVariant.ButlaBandwidthNotSquared || kdeFormelVariant == KDEFormelVariant.OriginalButlaVariableBandwidth) {
+				step = x * 0.05d / 4.0;
+			} else if (kdeFormelVariant == KDEFormelVariant.ButlaBandwidthSquared) {
+				step = Math.pow(x * 0.05d, 2) / 4.0;
+			}
 		}
 
-		return pointList.toArray(new Double[0]);
+		return pointList.toArray();
 	}
 
 }

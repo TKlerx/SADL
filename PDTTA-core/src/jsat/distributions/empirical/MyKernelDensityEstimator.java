@@ -132,7 +132,7 @@ public class MyKernelDensityEstimator extends ContinuousDistribution
 		Xvar = S.variance();
 		Xskew = S.skewness();
 		X = S.arrayCopy();
-		Arrays.sort(X);
+		Arrays.parallelSort(X);
 		sumOFWeights = X.length;
 		weights = new double[0];
 	}

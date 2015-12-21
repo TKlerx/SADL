@@ -158,7 +158,7 @@ public class TrebaPdfaLearner implements PdfaLearner {
 		observations o = treba.observations_read(eventTrainFile.toString());
 		if (o == null) {
 			logger.error("Error reading observations file {}", eventTrainFile);
-			System.exit(1);
+			throw new IllegalStateException("Error reading observations file " + eventTrainFile);
 		}
 		o = treba.observations_sort(o);
 		o = treba.observations_uniq(o);
