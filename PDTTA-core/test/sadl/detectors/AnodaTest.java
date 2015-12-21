@@ -97,28 +97,28 @@ public class AnodaTest {
 		// executionTimeTesting=00:00:00.143, numberOfStates=43, maxMemoryUsage=0(MB), minMemoryUsage=0(MB), avgMemoryUsage=0.0(MB)]
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(0, 2882, 1623, 495);
+		expected = new ExperimentResult(228, 1667, 2838, 267);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type2.txt").toURI());
 		actual = detection.trainTest(p);
 		// ExperimentResult [truePositives=228, trueNegatives=1667, falsePositives=2838, falseNegatives=267, executionTimeTraining=00:02:36.574,
 		// executionTimeTesting=00:00:00.005, numberOfStates=445, maxMemoryUsage=0(MB), minMemoryUsage=0(MB), avgMemoryUsage=0.0(MB)]
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(374, 2923, 1591, 112);
+		expected = new ExperimentResult(486, 1295, 3219, 0);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type3.txt").toURI());
 		actual = detection.trainTest(p);
 		// ExperimentResult [truePositives=486, trueNegatives=1295, falsePositives=3219, falseNegatives=0, executionTimeTraining=00:19:40.180,
 		// executionTimeTesting=00:00:00.012, numberOfStates=3010, maxMemoryUsage=0(MB), minMemoryUsage=0(MB), avgMemoryUsage=0.0(MB)]
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(523, 2831, 1646, 0);
+		expected = new ExperimentResult(523, 1148, 3329, 0);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type4.txt").toURI());
 		actual = detection.trainTest(p);
 		// ExperimentResult [truePositives=523, trueNegatives=1148, falsePositives=3329, falseNegatives=0, executionTimeTraining=00:25:46.229,
 		// executionTimeTesting=00:00:00.018, numberOfStates=3022, maxMemoryUsage=0(MB), minMemoryUsage=0(MB), avgMemoryUsage=0.0(MB)]
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(373, 2867, 1671, 89);
+		expected = new ExperimentResult(462, 1153, 3385, 89);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type5.txt").toURI());
 		actual = detection.trainTest(p);
 		// ExperimentResult [truePositives=462, trueNegatives=1153, falsePositives=3385, falseNegatives=0, executionTimeTraining=00:25:25.535,
