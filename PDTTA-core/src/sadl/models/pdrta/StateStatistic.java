@@ -324,7 +324,11 @@ public class StateStatistic implements Serializable {
 		}
 
 		// LRT_FIX : Check if params or count.length (example in paper says count.length)
-		// Does not work with param -> Degrees of Freedom for compared states may not be equal then
+		// Does not work with params -> Degrees of Freedom for compared states may not be equal then
+		// *****
+		// Tested whether or not to subtract 1 of the degrees of freedom
+		// -> Results are equal and decided to use subtraction according to paper
+		// -> Contradiction with Verwer's implementation of LRT with pooling
 		if (params > 0) {
 			return new LikelihoodValue(ratio, count.length - 1);
 		} else {
