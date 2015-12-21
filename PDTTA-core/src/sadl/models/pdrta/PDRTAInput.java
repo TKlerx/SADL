@@ -50,6 +50,15 @@ public class PDRTAInput implements Serializable {
 		init();
 	}
 
+	private PDRTAInput(TimedInput inp, int[] histBorders, int minDelay, int maxDelay) {
+
+		this.inp = inp;
+		histoBorders = histBorders;
+		maxTimeDelay = maxDelay;
+		minTimeDelay = minDelay;
+		init();
+	}
+
 	private void init() {
 
 		checkBorders();
@@ -124,7 +133,8 @@ public class PDRTAInput implements Serializable {
 			}
 		}
 		if (err) {
-			throw new IllegalArgumentException("Wrong parameter: HISTOGRAM_BINS must be " + "a sequence of borders -b1-b2-...-bn- or the number of bins to use");
+			throw new IllegalArgumentException(
+					"Wrong parameter: HISTOGRAM_BINS must be " + "a sequence of borders -b1-b2-...-bn- or the number of bins to use");
 		}
 	}
 
@@ -337,8 +347,57 @@ public class PDRTAInput implements Serializable {
 	}
 
 	static PDRTAInput parse(List<String> data) {
-		// TODO Look for implementation in SVN
-		return null;
+
+		if (data.size() != 4) {
+			throw new IllegalArgumentException("Content is not correct!");
+		}
+
+		int min, max;
+		final String[] alph;
+		int[] borders;
+
+		if (data.get(0).startsWith("minTimeDelay=")) {
+			min = Integer.parseInt(data.get(0).substring(13));
+		} else {
+			throw new IllegalArgumentException("Content is not correct!");
+		}
+
+		if (data.get(1).startsWith("maxTimeDelay=")) {
+			max = Integer.parseInt(data.get(1).substring(13));
+		} else {
+			throw new IllegalArgumentException("Content is not correct!");
+		}
+
+		if (data.get(2).startsWith("alphabet={")) {
+			final String reduced = data.get(2).substring(10, data.get(2).length() - 1);
+			if (!reduced.matches("^(\\w+,)*\\w+$")) {
+				throw new IllegalArgumentException("Content is not correct!");
+			}
+			alph = reduced.split(",");
+		} else {
+			throw new IllegalArgumentException("Content is not correct!");
+		}
+
+		if (data.get(3).startsWith("histoborders={")) {
+			final String[] bo = data.get(3).substring(14, data.get(3).length() - 1).split(",");
+			if (bo.length == 1 && bo[0].equals("")) {
+				borders = new int[0];
+			} else {
+				borders = new int[bo.length];
+				for (int i = 0; i < bo.length; i++) {
+					try {
+						borders[i] = Integer.parseInt(bo[i]);
+					} catch (final NumberFormatException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		} else {
+			throw new IllegalArgumentException("Content is not correct!");
+		}
+
+		final TimedInput inp = new TimedInput(alph);
+		return new PDRTAInput(inp, borders, min, max);
 	}
 
 	@Override

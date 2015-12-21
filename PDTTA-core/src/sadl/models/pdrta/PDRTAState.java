@@ -133,6 +133,12 @@ public class PDRTAState implements Serializable {
 	public double getProbabilityTrans(int symAplhIdx, int timeDel) {
 
 		final Interval in = getInterval(symAplhIdx, timeDel);
+		return getProbabilityTrans(symAplhIdx, in);
+
+	}
+
+	public double getProbabilityTrans(int symAplhIdx, Interval in) {
+
 		if (in == null) {
 			return 0.0;
 		} else {
@@ -142,6 +148,10 @@ public class PDRTAState implements Serializable {
 
 	public int getTotalOutEvents() {
 		return stat.getTotalOutEvents();
+	}
+
+	public double getSequenceEndProb() {
+		return stat.getTailEndProb();
 	}
 
 	int getSymCount(int symAlphIdx) {

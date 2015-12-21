@@ -56,6 +56,7 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	private static final int parseStartAlt = 1;
 
 	public TimedInput(List<TimedWord> words) {
+
 		this.words.addAll(words);
 		for (final TimedWord w : words) {
 			if (w.getClass() == TimedWord.class) {
@@ -66,6 +67,14 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 					}
 				}
 			}
+		}
+	}
+
+	public TimedInput(String[] alphabet) {
+
+		for (int i = 0; i < alphabet.length; i++) {
+			this.alphabet.put(alphabet[i], i);
+			alphabetRev.add(alphabet[i]);
 		}
 	}
 
