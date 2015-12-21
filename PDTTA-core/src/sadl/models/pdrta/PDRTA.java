@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.function.Function;
 
 import org.apache.commons.math3.util.Pair;
@@ -35,6 +34,8 @@ import com.google.common.collect.TreeMultimap;
 
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import sadl.input.TimedWord;
 import sadl.interfaces.AutomatonModel;
 import sadl.modellearner.rtiplus.StateColoring;
@@ -52,7 +53,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 
 	private static final int minData = 10;
 
-	private final Map<Integer, PDRTAState> states;
+	private final TIntObjectMap<PDRTAState> states;
 	private final PDRTAState root;
 	private final PDRTAInput input;
 
@@ -96,11 +97,11 @@ public class PDRTA implements AutomatonModel, Serializable {
 	public PDRTA(PDRTA a) {
 
 		input = a.input;
-		states = new TreeMap<>();
-		for (final PDRTAState org : a.states.values()) {
+		states = new TIntObjectHashMap<>();
+		for (final PDRTAState org : a.states.valueCollection()) {
 			new PDRTAState(org, this);
 		}
-		for (final PDRTAState org : a.states.values()) {
+		for (final PDRTAState org : a.states.valueCollection()) {
 			for (int i = 0; i < input.getAlphSize(); i++) {
 				final Set<Entry<Integer, Interval>> ins = org.getIntervals(i).entrySet();
 				for (final Entry<Integer, Interval> eIn : ins) {
@@ -197,7 +198,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 	}
 
 	public Collection<PDRTAState> getStates() {
-		return states.values();
+		return states.valueCollection();
 	}
 
 	public void checkConsistency() {
@@ -261,7 +262,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 	public int getSize() {
 
 		int result = 0;
-		for (final PDRTAState s : states.values()) {
+		for (final PDRTAState s : states.valueCollection()) {
 			for (int i = 0; i < input.getAlphSize(); ++i) {
 				final Set<Entry<Integer, Interval>> es = s.getIntervals(i).entrySet();
 				for (final Entry<Integer, Interval> e : es) {
@@ -383,8 +384,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 			ap.append("\"\" -> 0;\n");
 
 			// Write states
-			for (final Entry<Integer, PDRTAState> eS : states.entrySet()) {
-				final PDRTAState s = eS.getValue();
+			for (final PDRTAState s : states.valueCollection()) {
 				if (found.contains(s)) {
 					ap.append(Integer.toString(s.getIndex()));
 					ap.append(" [ xlabel = \"");
@@ -448,7 +448,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 	public PDRTA(PDRTAInput in) {
 
 		input = in;
-		states = new TreeMap<>();
+		states = new TIntObjectHashMap<>();
 		root = new PDRTAState(this);
 		createTAPTA();
 	}
@@ -456,7 +456,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 	private PDRTA(TreeMultimap<Integer, String> trans, TreeMultimap<Integer, String> stats, PDRTAInput inp) {
 
 		input = inp;
-		states = new TreeMap<>();
+		states = new TIntObjectHashMap<>();
 
 		for (final Integer idx : trans.keySet()) {
 			final StateStatistic s = StateStatistic.reconstructStat(input.getAlphSize(), getHistSizes(), stats.get(idx));
@@ -623,17 +623,18 @@ public class PDRTA implements AutomatonModel, Serializable {
 		}
 		ap.append("}\n");
 		// Write symbol and time distributions for each state as comment
-		for (final Entry<Integer, PDRTAState> eS : states.entrySet()) {
-			if (found.contains(eS.getValue())) {
+		for (final int key : states.keys()) {
+			final PDRTAState s = states.get(key);
+			if (found.contains(s)) {
 				ap.append("// ");
-				ap.append(eS.getKey().toString());
+				ap.append(Integer.toString(key));
 				ap.append(" SYM ");
-				ap.append(eS.getValue().getStat().getSymbolProbsString());
+				ap.append(s.getStat().getSymbolProbsString());
 				ap.append("\n");
 				ap.append("// ");
-				ap.append(eS.getKey().toString());
+				ap.append(Integer.toString(key));
 				ap.append(" TIME ");
-				ap.append(eS.getValue().getStat().getTimeProbsString());
+				ap.append(s.getStat().getTimeProbsString());
 				ap.append("\n");
 			}
 		}
@@ -695,6 +696,9 @@ public class PDRTA implements AutomatonModel, Serializable {
 				return false;
 			}
 		} else if (!states.equals(other.states)) {
+			System.err.println("states are not equal.");
+			System.out.println("This.states.size=" + states.size());
+			System.out.println("other.states.size=" + other.states.size());
 			return false;
 		}
 		return true;
@@ -703,7 +707,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 	public void cleanUp() {
 
 		input.clear();
-		for (final PDRTAState s : states.values()) {
+		for (final PDRTAState s : states.valueCollection()) {
 			s.cleanUp();
 		}
 	}
