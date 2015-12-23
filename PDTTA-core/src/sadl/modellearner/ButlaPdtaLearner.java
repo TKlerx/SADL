@@ -154,7 +154,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 
 		final ArrayList<PTAState> workedOffStates = new ArrayList<>();
 
-		outerloop: for (final PTAState state : statesOrdering) {
+		outerloop: for (PTAState state : statesOrdering) {
 			// time2 = System.currentTimeMillis();
 
 			for (final ListIterator<PTAState> workedOffIterator = workedOffStates.listIterator(); workedOffIterator.hasNext();) {
@@ -162,6 +162,10 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 				final PTAState workedOffState = workedOffIterator.next();
 
 				if (!state.exists()) {
+					state = state.isMergedWith();
+				}
+
+				if (state.isMarked()) {
 					// sum3 += System.currentTimeMillis() - time2;
 					continue outerloop;
 				}
@@ -170,10 +174,6 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 					workedOffIterator.remove();
 					continue;
 				}
-
-				// if ((++i) % 10000 == 0) {
-				// System.out.println((double) sum1 / 1000 + " " + (double) sum2 / 1000 + " " + (double) sum3 / 1000);
-				// }
 
 				// time1 = System.currentTimeMillis();
 				if (compatible(workedOffState, state)) {
@@ -190,6 +190,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			}
 
 			if (state.exists()) {
+				state.mark();
 				workedOffStates.add(state);
 			}
 
@@ -250,7 +251,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			}
 
 			eventsMap.put(eventSysbol, event);
-			// System.out.println("Created event: " + event);
+
 			if (event != null) {
 				logger.debug("Splitted event {} into {} subevents.", eventSysbol, event.getSubEventsCount());
 				subEventCount += event.getSubEventsCount();
@@ -258,16 +259,12 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			}
 		}
 		logger.debug("Generated subevents.");
-		logger.debug("There are {} subevents.", subEventCount);
+		logger.info("There are {} subevents.", subEventCount);
 		return eventsMap;
 	}
 
 	@Override
 	public boolean compatible(PTAState stateV, PTAState stateW) {
-
-		if (!stateV.exists() || !stateW.exists()) {
-			throw new RuntimeException("");
-		}
 
 		if (stateV.getId() == stateW.getId()) {
 			return true;

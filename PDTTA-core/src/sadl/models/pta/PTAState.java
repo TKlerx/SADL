@@ -207,7 +207,10 @@ public class PTAState implements Cloneable {
 		marked = true;
 	}
 
-	// static int i = 0;
+	public void unmark() {
+
+		marked = false;
+	}
 
 	public static void merge(PTAState firstState, PTAState secondState, EventsCreationStrategy strategy) {
 
@@ -222,12 +225,6 @@ public class PTAState implements Cloneable {
 		if (firstState == secondState) {
 			return;
 		}
-
-		/*
-		 * if ((++i) % 1000 == 0) {
-		 * System.out.println("M:" + i);
-		 * }
-		 */
 
 		ArrayList<PTATransition> transitionsToAdd = new ArrayList<>();
 		ArrayList<PTATransition> transitionsToRemove = new ArrayList<>();

@@ -228,6 +228,11 @@ public class PTA {
 
 				currentTails = nextTails;
 			}
+
+			for (final PTAState state : orderedStates) {
+				state.unmark();
+			}
+
 		} else {
 			logger.error("Unexpected exception occured.");
 			throw new IllegalArgumentException();
