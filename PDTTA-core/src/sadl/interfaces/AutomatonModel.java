@@ -17,7 +17,17 @@ package sadl.interfaces;
  *
  */
 public interface AutomatonModel extends ProbabilisticModel {
+	/**
+	 * Returns the number of states in the automaton.
+	 * 
+	 * @return the number of states
+	 */
 	public int getStateCount();
 
+	/**
+	 * Returns the number of transitions in the automaton.
+	 * 
+	 * @return the number of transitions
+	 */
 	public int getTransitionCount();
 }

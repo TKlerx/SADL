@@ -11,11 +11,12 @@
 
 package sadl.modellearner;
 
-import gnu.trove.map.TObjectIntMap;
-
 import java.util.Set;
+import java.util.function.IntBinaryOperator;
 import java.util.stream.Collectors;
 
+import gnu.trove.map.TObjectIntMap;
+import sadl.constants.PTAOrdering;
 import sadl.input.TimedInput;
 import sadl.models.PDFA;
 import sadl.models.TauPTA;
@@ -31,6 +32,11 @@ public class Alergia implements PdfaLearner {
 	private final double alpha;
 	TauPTA pta;
 	TauPtaLearner learner = new TauPtaLearner();
+	PTAOrdering ordering = PTAOrdering.TopDown;
+	int mergeT0;
+	boolean recursiveMergeTest = false;
+
+	// TODO rewrite and don't use TauPTA but a FTA with frequencies instead! Not so much overhead. Compute probabilities at the end!
 
 	public Alergia(double alpha) {
 		this.alpha = alpha;
@@ -38,29 +44,66 @@ public class Alergia implements PdfaLearner {
 
 	@Override
 	public PDFA train(TimedInput trainingSequences) {
-		// TODO Auto-generated method stub
-		pta = learner.train(trainingSequences);
+		final IntBinaryOperator mergeTest = this::alergiaCompatibilityTest;
+		pta = learner.train(trainingSequences, false);
+		for (int j = PDFA.START_STATE; j < pta.getStateCount(); j++) {
+			iloop: for (int i = PDFA.START_STATE; i < j; i++) {
+				if (compatible(i, j, mergeTest)) {
+					pta.merge(i, j, false);
+					pta.determinize();
+					break iloop;
+				}
+			}
+		}
 		return null;
 	}
 
+	boolean compatible(int qu, int qv, IntBinaryOperator mergeTest) {
+		int i;
+		if (mergeTest.applyAsInt(qu, qv) == 0) {
+			return false;
+		}
+		if (!recursiveMergeTest) {
+			return true;
+		}
+		for (i = 0; i < pta.getAlphabet().getAlphSize(); i++) {
+			final String symbol = pta.getAlphabet().getSymbol(i);
+			final Transition t1 = pta.getTransition(qu, symbol);
+			final Transition t2 = pta.getTransition(qv, symbol);
+			final int t1Count = pta.getTransitionCount(t1.toZeroProbTransition());
+			final int t2Count = pta.getTransitionCount(t2.toZeroProbTransition());
+			if (t1Count > 0 && t2Count > 0) {
+				final int t1Succ = t1.getToState();
+				final int t2Succ = t2.getToState();
+				if (!compatible(t1Succ, t2Succ, mergeTest)) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
 	/**
-	 * true if states are compatible
+	 * checks if two states are compatible
 	 * 
 	 * @param qu
 	 * @param qv
-	 * @return
+	 * @return 1 if states are compatible, 0 if they are not.
 	 */
-	boolean alergiaCompatibilityTest(int qu, int qv) {
+	int alergiaCompatibilityTest(int qu, int qv) {
 		int f1, n1, f2, n2;
 		double gamma, bound;
 		f1 = learner.finalStateCount.get(qu);
 		n1 = totalFreq(learner.transitionCount, qu);
 		f2 = learner.finalStateCount.get(qv);
 		n2 = totalFreq(learner.transitionCount, qv);
+		if (n1 < mergeT0 || n2 < mergeT0) {
+			return 0;
+		}
 		gamma = Math.abs(((double) f1) / ((double) n1) - ((double) f2) / ((double) n2));
 		bound = ((Math.sqrt(1.0 / n1) + Math.sqrt(1.0 / n2)) * Math.sqrt(Math.log(2.0 / alpha))) / 1.41421356237309504880;
 		if (gamma > bound) {
-			return false;
+			return 0;
 		}
 
 		for (final String a : pta.getAlphabet().getSymbols()) {
@@ -71,10 +114,10 @@ public class Alergia implements PdfaLearner {
 			gamma = Math.abs(((double) f1) / ((double) n1) - ((double) f2) / ((double) n2));
 			bound = ((Math.sqrt(1.0 / n1) + Math.sqrt(1.0 / n2)) * Math.sqrt(Math.log(2.0 / alpha))) / 1.41421356237309504880;
 			if (gamma > bound) {
-				return false;
+				return 0;
 			}
 		}
-		return true;
+		return 1;
 	}
 
 	/**

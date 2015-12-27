@@ -59,6 +59,28 @@ public class TauPtaLearner extends PdttaLearner {
 
 	@Override
 	public TauPTA train(TimedInput trainingSequences) {
+		return train(trainingSequences, true);
+	}
+
+	private void addEventSequence(TauPTA pta, TimedWord s) {
+		int currentState = TauPTA.START_STATE;
+
+		for (int i = 0; i < s.length(); i++) {
+			final String nextEvent = s.getSymbol(i);
+			Transition t = pta.getTransition(currentState, nextEvent);
+			if (t == null) {
+				t = pta.addTransition(currentState, pta.getStateCount(), nextEvent, TauPTA.NO_TRANSITION_PROBABILITY);
+				transitionCount.put(t.toZeroProbTransition(), 0);
+			}
+			transitionCount.increment(t.toZeroProbTransition());
+			currentState = t.getToState();
+		}
+		// add final state count
+		finalStateCount.adjustOrPutValue(currentState, 1, 1);
+	}
+
+	public TauPTA train(TimedInput trainingSequences, boolean learnTime) {
+
 		transitionCount = new TObjectIntHashMap<>();
 		finalStateCount = new TIntIntHashMap();
 		trainingSequences = SerializationUtils.clone(trainingSequences);
@@ -73,7 +95,7 @@ public class TauPtaLearner extends PdttaLearner {
 		// remove transitions and ending states with less than X occurences
 		final double threshold = TauPTA.SEQUENCE_OMMIT_THRESHOLD * trainingSequences.size();
 		for (final int state : initialPta.getStates()) {
-			final List<Transition> stateTransitions = initialPta.getTransitions(state, false);
+			final List<Transition> stateTransitions = initialPta.getOutTransitions(state, false);
 			for (final Transition t : stateTransitions) {
 				if (transitionCount.get(t.toZeroProbTransition()) < threshold) {
 					initialPta.removeTimedTransition(t, false);
@@ -86,7 +108,7 @@ public class TauPtaLearner extends PdttaLearner {
 
 		// compute event probabilities from counts
 		for (final int state : initialPta.getStates()) {
-			final List<Transition> stateTransitions = initialPta.getTransitions(state, false);
+			final List<Transition> stateTransitions = initialPta.getOutTransitions(state, false);
 			int occurenceCount = 0;
 			for (final Transition t : stateTransitions) {
 				occurenceCount += transitionCount.get(t.toZeroProbTransition());
@@ -113,7 +135,7 @@ public class TauPtaLearner extends PdttaLearner {
 
 		// compute event probabilities from counts
 		for (final int state : newPta.getStates()) {
-			final List<Transition> stateTransitions = newPta.getTransitions(state, false);
+			final List<Transition> stateTransitions = newPta.getOutTransitions(state, false);
 			int occurenceCount = 0;
 			for (final Transition t : stateTransitions) {
 				occurenceCount += transitionCount.get(t.toZeroProbTransition());
@@ -125,62 +147,47 @@ public class TauPtaLearner extends PdttaLearner {
 			newPta.addFinalState(state, finalStateCount.get(state) / (double) occurenceCount);
 		}
 
-		// compute time probabilities
-		final Map<ZeroProbTransition, TDoubleList> timeValueBuckets = new HashMap<>();
-		for (final TimedWord s : trainingSequences) {
-			if (newPta.isInAutomaton(s)) {
-				int currentState = TauPTA.START_STATE;
-				for (int i = 0; i < s.length(); i++) {
-					final String nextEvent = s.getSymbol(i);
-					final Transition t = newPta.getTransition(currentState, nextEvent);
-					if (t == null) {
-						// this should never happen!
-						throw new IllegalStateException("Did not get a transition, but checked before that there must be transitions for this sequence " + s);
+		if (learnTime) {
+			// compute time probabilities
+			final Map<ZeroProbTransition, TDoubleList> timeValueBuckets = new HashMap<>();
+			for (final TimedWord s : trainingSequences) {
+				if (newPta.isInAutomaton(s)) {
+					int currentState = TauPTA.START_STATE;
+					for (int i = 0; i < s.length(); i++) {
+						final String nextEvent = s.getSymbol(i);
+						final Transition t = newPta.getTransition(currentState, nextEvent);
+						if (t == null) {
+							// this should never happen!
+							throw new IllegalStateException("Did not get a transition, but checked before that there must be transitions for this sequence " + s);
+						}
+						addTimeValue(timeValueBuckets, t.getFromState(), t.getToState(), t.getSymbol(), s.getTimeValue(i));
+						currentState = t.getToState();
 					}
-					addTimeValue(timeValueBuckets, t.getFromState(), t.getToState(), t.getSymbol(), s.getTimeValue(i));
-					currentState = t.getToState();
-				}
-			} else {
-				ommitedSequenceCount++;
-			}
-		}
-		logger.info("OmmitedSequenceCount={} out of {} sequences at a threshold of less than {} absolute occurences.", ommitedSequenceCount,
-				trainingSequences.size(), TauPTA.SEQUENCE_OMMIT_THRESHOLD * trainingSequences.size());
-		final Map<ZeroProbTransition, ContinuousDistribution> distributions = fit(timeValueBuckets);
-		newPta.setTransitionDistributions(distributions);
-		if (distributions.size() != newPta.getTransitionCount()) {
-			final List<Transition> missingDistributions = new ArrayList<>();
-			for (final Transition t : newPta.getAllTransitions()) {
-				if (distributions.get(t.toZeroProbTransition()) == null) {
-					missingDistributions.add(t.toZeroProbTransition());
+				} else {
+					ommitedSequenceCount++;
 				}
 			}
-			System.out.println(missingDistributions);
-			throw new IllegalStateException("It is not possible to more/less distributions than transitions (" + distributions.size() + "/"
-					+ newPta.getTransitionCount() + ").");
-			// compute what is missing in the distribution set
+			logger.info("OmmitedSequenceCount={} out of {} sequences at a threshold of less than {} absolute occurences.", ommitedSequenceCount,
+					trainingSequences.size(), TauPTA.SEQUENCE_OMMIT_THRESHOLD * trainingSequences.size());
+			final Map<ZeroProbTransition, ContinuousDistribution> distributions = fit(timeValueBuckets);
+			newPta.setTransitionDistributions(distributions);
+			if (distributions.size() != newPta.getTransitionCount()) {
+				final List<Transition> missingDistributions = new ArrayList<>();
+				for (final Transition t : newPta.getAllTransitions()) {
+					if (distributions.get(t.toZeroProbTransition()) == null) {
+						missingDistributions.add(t.toZeroProbTransition());
+					}
+				}
+				System.out.println(missingDistributions);
+				throw new IllegalStateException("It is not possible to more/less distributions than transitions (" + distributions.size() + "/"
+						+ newPta.getTransitionCount() + ").");
+				// compute what is missing in the distribution set
+			}
 		}
 		newPta.setAlphabet(trainingSequences);
 		newPta.makeImmutable();
 		return newPta;
+
 	}
-
-	private void addEventSequence(TauPTA pta, TimedWord s) {
-		int currentState = TauPTA.START_STATE;
-
-		for (int i = 0; i < s.length(); i++) {
-			final String nextEvent = s.getSymbol(i);
-			Transition t = pta.getTransition(currentState, nextEvent);
-			if (t == null) {
-				t = pta.addTransition(currentState, pta.getStateCount(), nextEvent, TauPTA.NO_TRANSITION_PROBABILITY);
-				transitionCount.put(t.toZeroProbTransition(), 0);
-			}
-			transitionCount.increment(t.toZeroProbTransition());
-			currentState = t.getToState();
-		}
-		// add final state count
-		finalStateCount.adjustOrPutValue(currentState, 1, 1);
-	}
-
 
 }
