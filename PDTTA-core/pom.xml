@@ -43,10 +43,10 @@
 				<enabled>true</enabled>
 			</snapshots>
 		</repository>
-		 <repository>
+		 <!-- <repository>
    			<id>edwardraff-repo</id>
     		<url>http://www.edwardraff.com/maven-repo/</url>
- 		 </repository>
+ 		 </repository> -->
 	</repositories>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
@@ -397,7 +397,7 @@
 		<dependency>
 			<groupId>com.edwardraff</groupId>
 			<artifactId>JSAT</artifactId>
-			<version>0.0.3-SNAPSHOT</version>
+			<version>0.0.3</version>
 		</dependency>
 		<dependency>
 			<groupId>de.upb.timok</groupId>
