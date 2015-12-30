@@ -236,6 +236,13 @@ public class PDFA implements AutomatonModel, Serializable {
 		this.abnormalFinalStates = pdfa.abnormalFinalStates;
 	}
 
+	protected PDFA(TimedInput alphabet, Set<Transition> transitions, TIntDoubleMap finalStateProbabilities, TIntSet abnormalFinalStates) {
+		this.alphabet = alphabet;
+		this.transitions = transitions;
+		this.finalStateProbabilities = finalStateProbabilities;
+		this.abnormalFinalStates = abnormalFinalStates;
+	}
+
 	@Override
 	public int getTransitionCount() {
 		return transitions.size();
@@ -686,7 +693,7 @@ public class PDFA implements AutomatonModel, Serializable {
 
 	@Override
 	public Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord s) {
-		return Pair.create(computeEventLikelihoods(s), null);
+		return Pair.create(computeEventLikelihoods(s), new TDoubleArrayList());
 	}
 
 

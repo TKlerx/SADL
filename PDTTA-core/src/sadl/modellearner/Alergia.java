@@ -18,8 +18,8 @@ import java.util.stream.Collectors;
 import gnu.trove.map.TObjectIntMap;
 import sadl.constants.PTAOrdering;
 import sadl.input.TimedInput;
+import sadl.models.FTA;
 import sadl.models.PDFA;
-import sadl.models.TauPTA;
 import sadl.structure.Transition;
 
 /**
@@ -30,13 +30,11 @@ import sadl.structure.Transition;
 public class Alergia implements PdfaLearner {
 
 	private final double alpha;
-	TauPTA pta;
-	TauPtaLearner learner = new TauPtaLearner();
+	FTA pta;
 	PTAOrdering ordering = PTAOrdering.TopDown;
-	int mergeT0;
-	boolean recursiveMergeTest = false;
+	int mergeT0 = 0;
+	boolean recursiveMergeTest = true;
 
-	// TODO rewrite and don't use TauPTA but a FTA with frequencies instead! Not so much overhead. Compute probabilities at the end!
 
 	public Alergia(double alpha) {
 		this.alpha = alpha;
@@ -45,17 +43,19 @@ public class Alergia implements PdfaLearner {
 	@Override
 	public PDFA train(TimedInput trainingSequences) {
 		final IntBinaryOperator mergeTest = this::alergiaCompatibilityTest;
-		pta = learner.train(trainingSequences, false);
-		for (int j = PDFA.START_STATE; j < pta.getStateCount(); j++) {
-			iloop: for (int i = PDFA.START_STATE; i < j; i++) {
-				if (compatible(i, j, mergeTest)) {
-					pta.merge(i, j, false);
-					pta.determinize();
-					break iloop;
+		pta = new FTA(trainingSequences);
+		if (ordering == PTAOrdering.TopDown) {
+			for (int j = PDFA.START_STATE; j < pta.getStateCount(); j++) {
+				iloop: for (int i = PDFA.START_STATE; i < j; i++) {
+					if (compatible(i, j, mergeTest)) {
+						pta.merge(i, j);
+						pta.determinize();
+						break iloop;
+					}
 				}
 			}
 		}
-		return null;
+		return pta.toPdfa();
 	}
 
 	boolean compatible(int qu, int qv, IntBinaryOperator mergeTest) {
@@ -70,13 +70,15 @@ public class Alergia implements PdfaLearner {
 			final String symbol = pta.getAlphabet().getSymbol(i);
 			final Transition t1 = pta.getTransition(qu, symbol);
 			final Transition t2 = pta.getTransition(qv, symbol);
-			final int t1Count = pta.getTransitionCount(t1.toZeroProbTransition());
-			final int t2Count = pta.getTransitionCount(t2.toZeroProbTransition());
-			if (t1Count > 0 && t2Count > 0) {
-				final int t1Succ = t1.getToState();
-				final int t2Succ = t2.getToState();
-				if (!compatible(t1Succ, t2Succ, mergeTest)) {
-					return false;
+			if (t1 != null && t2 != null) {
+				final int t1Count = pta.getTransitionCount(t1.toZeroProbTransition());
+				final int t2Count = pta.getTransitionCount(t2.toZeroProbTransition());
+				if (t1Count > 0 && t2Count > 0) {
+					final int t1Succ = t1.getToState();
+					final int t2Succ = t2.getToState();
+					if (!compatible(t1Succ, t2Succ, mergeTest)) {
+						return false;
+					}
 				}
 			}
 		}
@@ -93,10 +95,10 @@ public class Alergia implements PdfaLearner {
 	int alergiaCompatibilityTest(int qu, int qv) {
 		int f1, n1, f2, n2;
 		double gamma, bound;
-		f1 = learner.finalStateCount.get(qu);
-		n1 = totalFreq(learner.transitionCount, qu);
-		f2 = learner.finalStateCount.get(qv);
-		n2 = totalFreq(learner.transitionCount, qv);
+		f1 = pta.getFinalStateCount(qu);
+		n1 = totalFreq(pta.getTransitionCount(), qu);
+		f2 = pta.getFinalStateCount(qv);
+		n2 = totalFreq(pta.getTransitionCount(), qv);
 		if (n1 < mergeT0 || n2 < mergeT0) {
 			return 0;
 		}
@@ -107,10 +109,10 @@ public class Alergia implements PdfaLearner {
 		}
 
 		for (final String a : pta.getAlphabet().getSymbols()) {
-			f1 = symbolFreq(learner.transitionCount, qu, a);
-			n1 = totalFreq(learner.transitionCount, qu);
-			f2 = symbolFreq(learner.transitionCount, qv, a);
-			n2 = totalFreq(learner.transitionCount, qv);
+			f1 = symbolFreq(pta.getTransitionCount(), qu, a);
+			n1 = totalFreq(pta.getTransitionCount(), qu);
+			f2 = symbolFreq(pta.getTransitionCount(), qv, a);
+			n2 = totalFreq(pta.getTransitionCount(), qv);
 			gamma = Math.abs(((double) f1) / ((double) n1) - ((double) f2) / ((double) n2));
 			bound = ((Math.sqrt(1.0 / n1) + Math.sqrt(1.0 / n2)) * Math.sqrt(Math.log(2.0 / alpha))) / 1.41421356237309504880;
 			if (gamma > bound) {

@@ -2,14 +2,18 @@ package sadl.models;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 
+import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TObjectIntMap;
+import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import sadl.input.TimedInput;
@@ -20,7 +24,7 @@ public class FTA {
 	TObjectIntMap<Transition> transitionCount = new TObjectIntHashMap<>();
 	TIntIntMap finalStateCount = new TIntIntHashMap();
 	private final TimedInput input;
-	private Set<Transition> transitions;
+	private final Set<Transition> transitions = new HashSet<>();
 	private Logger logger;
 	int nextStateIndex = PDFA.START_STATE + 1;
 	public FTA(TimedInput input) {
@@ -53,6 +57,7 @@ public class FTA {
 			final String symbol = word.getSymbol(i);
 			Transition t = getTransition(currentState, symbol);
 			if (t == null) {
+				finalStateCount.put(nextStateIndex, 0);
 				t = addTransition(currentState, nextStateIndex, symbol, 0);
 			}
 			transitionCount.adjustOrPutValue(t.toZeroProbTransition(), 1, 1);
@@ -142,7 +147,6 @@ public class FTA {
 
 
 	public void determinize() {
-
 		final int[] states = finalStateCount.keys();
 		Arrays.sort(states);
 		for (final int state : states) {
@@ -158,7 +162,7 @@ public class FTA {
 
 	}
 
-	private TimedInput getAlphabet() {
+	public TimedInput getAlphabet() {
 		return input;
 	}
 
@@ -211,4 +215,46 @@ public class FTA {
 		return result;
 	}
 
+	public PDFA toPdfa() {
+		final Set<Transition> probTransitions = new HashSet<>();
+		final TIntDoubleMap finalStateProbabilities = new TIntDoubleHashMap();
+		final TIntIntMap stateOcurrenceCount = new TIntIntHashMap(finalStateCount.size());
+		for (final Transition t : transitions) {
+			final int value = transitionCount.get(t.toZeroProbTransition());
+			stateOcurrenceCount.adjustOrPutValue(t.getToState(), value, value);
+			if (t.getFromState() == PDFA.START_STATE) {
+				stateOcurrenceCount.adjustOrPutValue(PDFA.START_STATE, value, value);
+			}
+		}
+		for (final Transition t : transitions) {
+			final int stateVisits = stateOcurrenceCount.get(t.getFromState());
+			if (t.isStopTraversingTransition()) {
+				finalStateProbabilities.put(t.getFromState(), finalStateCount.get(t.getFromState()) / stateVisits);
+			} else {
+				final int transitionVisits = transitionCount.get(t.toZeroProbTransition());
+				probTransitions.add(new Transition(t.getFromState(), t.getToState(), t.getSymbol(), (double) transitionVisits / stateVisits));
+			}
+		}
+		return new PDFA(getAlphabet(), probTransitions, finalStateProbabilities, null);
+	}
+
+	public int getStateCount() {
+		return finalStateCount.size();
+	}
+
+	public int getTransitionCount(Transition transition) {
+		return transitionCount.get(transition);
+	}
+
+	public Collection<Transition> getAllTransitions() {
+		return transitions;
+	}
+
+	public int getFinalStateCount(int qu) {
+		return finalStateCount.get(qu);
+	}
+
+	public TObjectIntMap<Transition> getTransitionCount() {
+		return transitionCount;
+	}
 }
