@@ -55,6 +55,7 @@ import sadl.models.pdrta.PDRTA;
 import sadl.models.pdrta.PDRTAInput;
 import sadl.models.pdrta.PDRTAState;
 import sadl.models.pdrta.TimedTail;
+import sadl.utils.IoUtils;
 import sadl.utils.Settings;
 
 /**
@@ -484,21 +485,9 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 		} catch (final Exception e) {
 			logger.error("Not able to store PDRTA in Graphviz format: {}", e.getMessage());
 		}
-		final String[] args = { "dot", "-Tpng", gvFile.toAbsolutePath().toString(), "-o", pngFile.toAbsolutePath().toString() };
-		Process pr = null;
-		try {
-			pr = Runtime.getRuntime().exec(args);
-		} catch (final Exception e) {
-			logger.warn("Could not create plot of PDRTA: {}", e.getMessage());
-		} finally {
-			if (pr != null) {
-				try {
-					pr.waitFor();
-				} catch (final InterruptedException e) {
-				}
-			}
-		}
+		IoUtils.runGraphviz(gvFile, pngFile);
 	}
+
 
 	protected String getDuration(long start, long end) {
 

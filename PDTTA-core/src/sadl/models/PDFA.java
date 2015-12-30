@@ -240,7 +240,11 @@ public class PDFA implements AutomatonModel, Serializable {
 		this.alphabet = alphabet;
 		this.transitions = transitions;
 		this.finalStateProbabilities = finalStateProbabilities;
-		this.abnormalFinalStates = abnormalFinalStates;
+		if (abnormalFinalStates == null) {
+			this.abnormalFinalStates = new TIntHashSet();
+		} else {
+			this.abnormalFinalStates = abnormalFinalStates;
+		}
 	}
 
 	@Override

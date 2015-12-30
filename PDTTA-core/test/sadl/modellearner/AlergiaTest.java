@@ -19,11 +19,13 @@ import sadl.input.TimedInput;
 import sadl.models.PDFA;
 import sadl.oneclassclassifier.ThresholdClassifier;
 import sadl.utils.IoUtils;
+import sadl.utils.Settings;
 
 public class AlergiaTest {
 
 	@Test
-	public void test() throws URISyntaxException, IOException {
+	public void testBig() throws URISyntaxException, IOException {
+		Settings.setDebug(true);
 		final Alergia alergia = new Alergia(0.05);
 		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI()));
 		final PDFA pdfa = alergia.train(trainTest.getKey());
@@ -33,6 +35,24 @@ public class AlergiaTest {
 		final ExperimentResult expected = new ExperimentResult(467, 0, 4533, 0);
 		final ExperimentResult actual = detection.test(trainTest.getValue());
 		assertEquals(expected, actual);
+	}
+
+	@Test
+	public void testPaper0() throws URISyntaxException, IOException {
+		Settings.setDebug(true);
+		final Alergia alergia = new Alergia(0.05);
+		final TimedInput train = TimedInput.parse(Paths.get(this.getClass().getResource("/pdfa/alergia_0.inp").toURI()));
+		final PDFA pdfa = alergia.train(train);
+		assertEquals(2, pdfa.getStateCount());
+	}
+
+	@Test
+	public void testPaper1() throws URISyntaxException, IOException {
+		Settings.setDebug(true);
+		final Alergia alergia = new Alergia(0.05);
+		final TimedInput train = TimedInput.parse(Paths.get(this.getClass().getResource("/pdfa/alergia_1.inp").toURI()));
+		final PDFA pdfa = alergia.train(train);
+		assertEquals(2, pdfa.getStateCount());
 	}
 
 }

@@ -11,6 +11,9 @@
 
 package sadl.modellearner;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Set;
 import java.util.function.IntBinaryOperator;
 import java.util.stream.Collectors;
@@ -21,6 +24,8 @@ import sadl.input.TimedInput;
 import sadl.models.FTA;
 import sadl.models.PDFA;
 import sadl.structure.Transition;
+import sadl.utils.IoUtils;
+import sadl.utils.Settings;
 
 /**
  * 
@@ -40,6 +45,8 @@ public class Alergia implements PdfaLearner {
 		this.alpha = alpha;
 	}
 
+	int debugStepCounter = 0;
+
 	@Override
 	public PDFA train(TimedInput trainingSequences) {
 		final IntBinaryOperator mergeTest = this::alergiaCompatibilityTest;
@@ -48,8 +55,41 @@ public class Alergia implements PdfaLearner {
 			for (int j = PDFA.START_STATE; j < pta.getStateCount(); j++) {
 				iloop: for (int i = PDFA.START_STATE; i < j; i++) {
 					if (compatible(i, j, mergeTest)) {
+						if (Settings.isDebug()) {
+							try {
+								final String fileName = "pta_" + (debugStepCounter++) + "-before-merge";
+								final Path graphVizFile = Paths.get(fileName + ".gv");
+								pta.toPdfa().toGraphvizFile(graphVizFile, false);
+								final Path pngFile = Paths.get(fileName + ".png");
+								IoUtils.runGraphviz(graphVizFile, pngFile);
+							} catch (final IOException e) {
+								e.printStackTrace();
+							}
+						}
 						pta.merge(i, j);
+						if (Settings.isDebug()) {
+							try {
+								final String fileName = "pta_" + (debugStepCounter) + "-after-merge";
+								final Path graphVizFile = Paths.get(fileName + ".gv");
+								pta.toPdfa().toGraphvizFile(graphVizFile, false);
+								final Path pngFile = Paths.get(fileName + ".png");
+								IoUtils.runGraphviz(graphVizFile, pngFile);
+							} catch (final IOException e) {
+								e.printStackTrace();
+							}
+						}
 						pta.determinize();
+						if (Settings.isDebug()) {
+							try {
+								final String fileName = "pta_" + (debugStepCounter) + "-after-det";
+								final Path graphVizFile = Paths.get(fileName + ".gv");
+								pta.toPdfa().toGraphvizFile(graphVizFile, false);
+								final Path pngFile = Paths.get(fileName + ".png");
+								IoUtils.runGraphviz(graphVizFile, pngFile);
+							} catch (final IOException e) {
+								e.printStackTrace();
+							}
+						}
 						break iloop;
 					}
 				}

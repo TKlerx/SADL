@@ -61,6 +61,23 @@ public class IoUtils {
 		deleteFiles(paths);
 	}
 
+	public static void runGraphviz(final Path gvFile, final Path pngFile) {
+		final String[] args = { "dot", "-Tpng", gvFile.toAbsolutePath().toString(), "-o", pngFile.toAbsolutePath().toString() };
+		Process pr = null;
+		try {
+			pr = Runtime.getRuntime().exec(args);
+		} catch (final Exception e) {
+			logger.warn("Could not create plot of Model: {}", e.getMessage());
+		} finally {
+			if (pr != null) {
+				try {
+					pr.waitFor();
+				} catch (final InterruptedException e) {
+				}
+			}
+		}
+	}
+
 	public static void deleteFiles(Path[] paths) throws IOException {
 		for (final Path p : paths) {
 			if (!Files.deleteIfExists(p)) {

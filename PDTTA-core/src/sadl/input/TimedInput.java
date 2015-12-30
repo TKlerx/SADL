@@ -342,7 +342,7 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 					}
 					word.setLabel(label);
 				}
-
+				line = line.trim();
 				// Remove sequence prefix
 				line = line.replaceAll(seqPrefix, "");
 

@@ -1,3 +1,14 @@
+/**
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
+ * Copyright (C) 2013-2015  the original author or authors.
+ *
+ * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * SADL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package sadl.models;
 
 import java.util.ArrayList;
@@ -52,15 +63,17 @@ public class FTA {
 	}
 
 	private void add(TimedWord word) {
-		final int currentState = PDFA.START_STATE;
+		int currentState = PDFA.START_STATE;
 		for (int i = 0; i < word.length(); i++) {
 			final String symbol = word.getSymbol(i);
 			Transition t = getTransition(currentState, symbol);
 			if (t == null) {
 				finalStateCount.put(nextStateIndex, 0);
 				t = addTransition(currentState, nextStateIndex, symbol, 0);
+				nextStateIndex++;
 			}
 			transitionCount.adjustOrPutValue(t.toZeroProbTransition(), 1, 1);
+			currentState = t.getToState();
 		}
 		finalStateCount.adjustOrPutValue(currentState, 1, 1);
 	}
@@ -226,14 +239,17 @@ public class FTA {
 				stateOcurrenceCount.adjustOrPutValue(PDFA.START_STATE, value, value);
 			}
 		}
+		for (final int state : finalStateCount.keys()) {
+			final int value = finalStateCount.get(state);
+			stateOcurrenceCount.adjustOrPutValue(state, value, value);
+			final int stateVisits = stateOcurrenceCount.get(state);
+			finalStateProbabilities.put(state, (double) finalStateCount.get(state) / stateVisits);
+
+		}
 		for (final Transition t : transitions) {
 			final int stateVisits = stateOcurrenceCount.get(t.getFromState());
-			if (t.isStopTraversingTransition()) {
-				finalStateProbabilities.put(t.getFromState(), finalStateCount.get(t.getFromState()) / stateVisits);
-			} else {
-				final int transitionVisits = transitionCount.get(t.toZeroProbTransition());
-				probTransitions.add(new Transition(t.getFromState(), t.getToState(), t.getSymbol(), (double) transitionVisits / stateVisits));
-			}
+			final int transitionVisits = transitionCount.get(t.toZeroProbTransition());
+			probTransitions.add(new Transition(t.getFromState(), t.getToState(), t.getSymbol(), (double) transitionVisits / stateVisits));
 		}
 		return new PDFA(getAlphabet(), probTransitions, finalStateProbabilities, null);
 	}
