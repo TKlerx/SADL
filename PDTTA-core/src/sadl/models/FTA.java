@@ -15,12 +15,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.math3.util.Pair;
 import org.slf4j.Logger;
 
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TObjectIntMap;
@@ -39,7 +42,7 @@ public class FTA {
 
 	TIntIntMap finalStateCount = new TIntIntHashMap(11, 0.75f, -1, -1);
 	private final TimedInput input;
-	private final Set<ZeroProbTransition> transitions = new HashSet<>();
+	private final Set<ZeroProbTransition> transitions = new LinkedHashSet<>();
 	private final Logger logger = org.slf4j.LoggerFactory.getLogger(FTA.class);
 	int nextStateIndex = PDFA.START_STATE + 1;
 	TIntStack determinizeStack = new TIntArrayStack();
@@ -290,5 +293,16 @@ public class FTA {
 
 	public boolean containsState(int i) {
 		return finalStateCount.containsKey(i);
+	}
+
+	public TIntList getSuccessors(int state) {
+		final TIntList result = new TIntArrayList();
+		final Pair<List<Transition>, List<Transition>> succTransitions = getInOutTransitions(state, false);
+		for (final Transition outTransition : succTransitions.getValue()) {
+			if (outTransition.getToState() != state) {
+				result.add(outTransition.getToState());
+			}
+		}
+		return result;
 	}
 }
