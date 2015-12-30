@@ -12,8 +12,8 @@
 package sadl.models;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -27,17 +27,22 @@ import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
+import gnu.trove.stack.TIntStack;
+import gnu.trove.stack.array.TIntArrayStack;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.structure.Transition;
+import sadl.structure.ZeroProbTransition;
 
 public class FTA {
 	TObjectIntMap<Transition> transitionCount = new TObjectIntHashMap<>();
-	TIntIntMap finalStateCount = new TIntIntHashMap();
+
+	TIntIntMap finalStateCount = new TIntIntHashMap(11, 0.75f, -1, -1);
 	private final TimedInput input;
-	private final Set<Transition> transitions = new HashSet<>();
-	private Logger logger;
+	private final Set<ZeroProbTransition> transitions = new HashSet<>();
+	private final Logger logger = org.slf4j.LoggerFactory.getLogger(FTA.class);
 	int nextStateIndex = PDFA.START_STATE + 1;
+	TIntStack determinizeStack = new TIntArrayStack();
 	public FTA(TimedInput input) {
 		this.input = input;
 		for (final TimedWord word : input) {
@@ -80,7 +85,7 @@ public class FTA {
 
 	public Transition addTransition(int fromState, int toState, String symbol, double probability) {
 		final Transition t = new Transition(fromState, toState, symbol, probability);
-		transitions.add(t);
+		transitions.add(t.toZeroProbTransition());
 		return t;
 	}
 
@@ -93,6 +98,7 @@ public class FTA {
 	 *            the second state to merge
 	 */
 	public void merge(int i, int j) {
+		logger.debug("Merging state {} and {}", i, j);
 		final Pair<List<Transition>, List<Transition>> inOutI = getInOutTransitions(i, false);
 		final Pair<List<Transition>, List<Transition>> inOutJ = getInOutTransitions(j, false);
 		final List<Transition> inTransitionsI = inOutI.getKey();
@@ -126,6 +132,7 @@ public class FTA {
 			removeTransition(t);
 			final int jCount = transitionCount.remove(t.toZeroProbTransition());
 			final Transition newTrans = new Transition(t.getFromState(), i, t.getSymbol(), 0);
+			addTransition(newTrans);
 			transitionCount.adjustOrPutValue(newTrans.toZeroProbTransition(), jCount, jCount);
 		}
 		// outputs from j will be outputs from i
@@ -133,12 +140,20 @@ public class FTA {
 			removeTransition(t);
 			final int jCount = transitionCount.remove(t.toZeroProbTransition());
 			final Transition newTrans = new Transition(i, t.getToState(), t.getSymbol(), 0);
+			addTransition(newTrans);
 			transitionCount.adjustOrPutValue(newTrans.toZeroProbTransition(), jCount, jCount);
 		}
 		final int stopCount = finalStateCount.remove(j);
 		finalStateCount.adjustOrPutValue(i, stopCount, stopCount);
 		removeState(j);
+		determinizeStack.push(i);
 	}
+
+	private void addTransition(Transition newTrans) {
+		transitions.add(newTrans.toZeroProbTransition());
+
+	}
+
 	private void removeState(int j) {
 		// also remove all transitions from and to state j (at this point there should be no more such transitions)
 		for (final String symbol : getAlphabet().getSymbols()) {
@@ -147,7 +162,6 @@ public class FTA {
 				logger.error("Transition list not empty for state {} and symbol {}", j, symbol);
 			}
 		}
-
 	}
 
 	protected boolean removeTransition(Transition t) {
@@ -160,15 +174,18 @@ public class FTA {
 
 
 	public void determinize() {
-		final int[] states = finalStateCount.keys();
-		Arrays.sort(states);
-		for (final int state : states) {
+		while (determinizeStack.size() != 0) {
+			final int state = determinizeStack.pop();
 			for (final String event : getAlphabet().getSymbols()) {
 				final List<Transition> nonDetTransitions = getTransitions(state, event);
-				if (nonDetTransitions.size() == 2) {
+				Collections.sort(nonDetTransitions);
+				if (nonDetTransitions.size() >= 2) {
 					final int firstState = nonDetTransitions.get(0).getToState();
-					final int secondState = nonDetTransitions.get(1).getToState();
-					merge(firstState, secondState);
+					logger.debug("Found {} outgoing transititions for state {} and symbol {}", nonDetTransitions.size(), state, event);
+					for (int i = 1; i < nonDetTransitions.size(); i++) {
+						final int secondState = nonDetTransitions.get(i).getToState();
+						merge(firstState, secondState);
+					}
 				}
 			}
 		}
@@ -234,10 +251,7 @@ public class FTA {
 		final TIntIntMap stateOcurrenceCount = new TIntIntHashMap(finalStateCount.size());
 		for (final Transition t : transitions) {
 			final int value = transitionCount.get(t.toZeroProbTransition());
-			stateOcurrenceCount.adjustOrPutValue(t.getToState(), value, value);
-			if (t.getFromState() == PDFA.START_STATE) {
-				stateOcurrenceCount.adjustOrPutValue(PDFA.START_STATE, value, value);
-			}
+			stateOcurrenceCount.adjustOrPutValue(t.getFromState(), value, value);
 		}
 		for (final int state : finalStateCount.keys()) {
 			final int value = finalStateCount.get(state);
@@ -262,7 +276,7 @@ public class FTA {
 		return transitionCount.get(transition);
 	}
 
-	public Collection<Transition> getAllTransitions() {
+	public Collection<ZeroProbTransition> getAllTransitions() {
 		return transitions;
 	}
 
@@ -272,5 +286,9 @@ public class FTA {
 
 	public TObjectIntMap<Transition> getTransitionCount() {
 		return transitionCount;
+	}
+
+	public boolean containsState(int i) {
+		return finalStateCount.containsKey(i);
 	}
 }

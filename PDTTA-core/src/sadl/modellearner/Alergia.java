@@ -18,6 +18,8 @@ import java.util.Set;
 import java.util.function.IntBinaryOperator;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+
 import gnu.trove.map.TObjectIntMap;
 import sadl.constants.PTAOrdering;
 import sadl.input.TimedInput;
@@ -39,6 +41,7 @@ public class Alergia implements PdfaLearner {
 	PTAOrdering ordering = PTAOrdering.TopDown;
 	int mergeT0 = 0;
 	boolean recursiveMergeTest = true;
+	private final Logger logger = org.slf4j.LoggerFactory.getLogger(Alergia.class);
 
 
 	public Alergia(double alpha) {
@@ -49,15 +52,27 @@ public class Alergia implements PdfaLearner {
 
 	@Override
 	public PDFA train(TimedInput trainingSequences) {
+		logger.info("Starting to learn PDFA with ALERGIA (java)...");
+		int iterationCounter = 0;
 		final IntBinaryOperator mergeTest = this::alergiaCompatibilityTest;
 		pta = new FTA(trainingSequences);
 		if (ordering == PTAOrdering.TopDown) {
-			for (int j = PDFA.START_STATE; j < pta.getStateCount(); j++) {
+			for (int j = PDFA.START_STATE + 1; j < pta.getStateCount(); j++) {
+				logger.debug("starting Alergia iteration {}...", iterationCounter);
+				if (!pta.containsState(j)) {
+					iterationCounter++;
+					continue;
+				}
 				iloop: for (int i = PDFA.START_STATE; i < j; i++) {
+					if (!pta.containsState(i)) {
+						continue;
+					}
 					if (compatible(i, j, mergeTest)) {
+						final int stepValue = debugStepCounter;
+						debugStepCounter++;
 						if (Settings.isDebug()) {
 							try {
-								final String fileName = "pta_" + (debugStepCounter++) + "-before-merge";
+								final String fileName = "pta_" + (stepValue) + "-0";
 								final Path graphVizFile = Paths.get(fileName + ".gv");
 								pta.toPdfa().toGraphvizFile(graphVizFile, false);
 								final Path pngFile = Paths.get(fileName + ".png");
@@ -69,7 +84,7 @@ public class Alergia implements PdfaLearner {
 						pta.merge(i, j);
 						if (Settings.isDebug()) {
 							try {
-								final String fileName = "pta_" + (debugStepCounter) + "-after-merge";
+								final String fileName = "pta_" + (stepValue) + "-1";
 								final Path graphVizFile = Paths.get(fileName + ".gv");
 								pta.toPdfa().toGraphvizFile(graphVizFile, false);
 								final Path pngFile = Paths.get(fileName + ".png");
@@ -81,7 +96,7 @@ public class Alergia implements PdfaLearner {
 						pta.determinize();
 						if (Settings.isDebug()) {
 							try {
-								final String fileName = "pta_" + (debugStepCounter) + "-after-det";
+								final String fileName = "pta_" + (stepValue) + "-2";
 								final Path graphVizFile = Paths.get(fileName + ".gv");
 								pta.toPdfa().toGraphvizFile(graphVizFile, false);
 								final Path pngFile = Paths.get(fileName + ".png");
@@ -93,9 +108,13 @@ public class Alergia implements PdfaLearner {
 						break iloop;
 					}
 				}
+				logger.debug("Ended Alergia iteration {}.", iterationCounter);
+				iterationCounter++;
 			}
 		}
-		return pta.toPdfa();
+		final PDFA result = pta.toPdfa();
+		logger.info("Learned PDFA with ALERGIA (in java).");
+		return result;
 	}
 
 	boolean compatible(int qu, int qv, IntBinaryOperator mergeTest) {
