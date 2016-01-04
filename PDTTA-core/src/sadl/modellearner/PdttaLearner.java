@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,7 +8,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.modellearner;
 
 import java.io.IOException;
@@ -55,7 +54,11 @@ public class PdttaLearner implements ProbabilisticModelLearner {
 	private final TauEstimator tauEstimator;
 
 	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest) {
-		this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest), null, 0);
+		this(new AlergiaRedBlue(mergeAlpha, recursiveMergeTest), null, 0);
+	}
+
+	public PdttaLearner(PdfaLearner pdfaLearner) {
+		this(pdfaLearner, null, 0);
 	}
 
 	public PdttaLearner(PdfaLearner pdfaLearner, KernelFunction kdeKernelFunction, double kdeBandwidth) {

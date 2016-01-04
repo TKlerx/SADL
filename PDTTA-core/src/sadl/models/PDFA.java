@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,7 +8,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.models;
 
 import java.io.BufferedReader;
@@ -39,6 +38,8 @@ import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
+import gnu.trove.stack.TIntStack;
+import gnu.trove.stack.array.TIntArrayStack;
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.ClassLabel;
 import sadl.input.TimedInput;
@@ -236,7 +237,7 @@ public class PDFA implements AutomatonModel, Serializable {
 		this.abnormalFinalStates = pdfa.abnormalFinalStates;
 	}
 
-	protected PDFA(TimedInput alphabet, Set<Transition> transitions, TIntDoubleMap finalStateProbabilities, TIntSet abnormalFinalStates) {
+	public PDFA(TimedInput alphabet, Set<Transition> transitions, TIntDoubleMap finalStateProbabilities, TIntSet abnormalFinalStates) {
 		this.alphabet = alphabet;
 		this.transitions = transitions;
 		this.finalStateProbabilities = finalStateProbabilities;
@@ -556,6 +557,54 @@ public class PDFA implements AutomatonModel, Serializable {
 	protected void removeState(int i) {
 		checkImmutable();
 		finalStateProbabilities.remove(i);
+	}
+
+	public void cleanUp() {
+		logger.debug("{} states before cleanup", finalStateProbabilities.size());
+
+		final TIntSet reachableStates = new TIntHashSet(finalStateProbabilities.size());
+
+		final TIntStack stateStack = new TIntArrayStack();
+
+		stateStack.push(PDFA.START_STATE);
+
+		while (stateStack.size() != 0) {
+			final int currentState = stateStack.pop();
+			logger.trace("Processing state {}.", currentState);
+			reachableStates.add(currentState);
+			for (final String event : getAlphabet().getSymbols()) {
+				final Transition t = getTransition(currentState, event);
+				if (t != null && t.getProbability() > 0 && t.getToState() != currentState && !reachableStates.contains(t.getToState())) {
+					stateStack.push(t.getToState());
+				}
+			}
+		}
+		logger.debug("Found {} reachable states. Removing the others.", reachableStates.size());
+		final TIntSet statesToRemove = new TIntHashSet();
+		for (final int state : finalStateProbabilities.keys()) {
+			if (!reachableStates.contains(state)) {
+				statesToRemove.add(state);
+			}
+		}
+		for (final int state : statesToRemove.toArray()) {
+			finalStateProbabilities.remove(state);
+		}
+		if (finalStateProbabilities.size() != reachableStates.size()) {
+			final TIntSet missingStates = new TIntHashSet();
+			logger.error("Number of reachable states ({}) and all states ({}) must be the same", reachableStates.size(), finalStateProbabilities.size());
+			if (finalStateProbabilities.size() > reachableStates.size()) {
+				missingStates.addAll(finalStateProbabilities.keys());
+				missingStates.removeAll(reachableStates);
+				throw new IllegalStateException("The following states were not reachable, but final: " + missingStates);
+			} else {
+				missingStates.addAll(reachableStates);
+				missingStates.removeAll(finalStateProbabilities.keys());
+				throw new IllegalStateException("The following states were not final, but reachable: " + missingStates);
+
+			}
+
+		}
+		logger.debug("{} states after cleanup", finalStateProbabilities.size());
 	}
 
 	@Override

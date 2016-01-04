@@ -1,14 +1,15 @@
-<!-- This file is part of SADL, a library for learning all sorts of (timed) 
-	automata and performing sequence-based anomaly detection. Copyright (C) 2013-2015 
-	the original author or authors. SADL is free software: you can redistribute 
-	it and/or modify it under the terms of the GNU General Public License as 
-	published by the Free Software Foundation, either version 3 of the License, 
-	or (at your option) any later version. SADL is distributed in the hope that 
-	it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty 
-	of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General 
-	Public License for more details. You should have received a copy of the GNU 
-	General Public License along with SADL. If not, see <http://www.gnu.org/licenses/>. -->
+<!--
 
+    This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
+    Copyright (C) 2013-2016  the original author or authors.
+
+    SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+    SADL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
+
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
@@ -120,31 +121,37 @@
 				</executions>
 			</plugin>
 			<plugin>
-				<groupId>com.mycila.maven-license-plugin</groupId>
-				<artifactId>maven-license-plugin</artifactId>
-				<version>1.7.0</version>
-				<configuration>
-					<quiet>false</quiet>
-					<header>conf/license-header.txt</header>
-					<includes>
-						<include>src/**</include>
-						<include>pom.xml</include>
-					</includes>
-					<excludes>
-						<exclude>**/.git/**</exclude>
-						<!-- ignore files produced during a build -->
-						<exclude>**/target/**</exclude>
-					</excludes>
-					<useDefaultExcludes>false</useDefaultExcludes>
-				</configuration>
-				<executions>
-					<execution>
-						<phase>process-sources</phase>
-						<goals>
-							<goal>format</goal>
-						</goals>
-					</execution>
-				</executions>
+			    <groupId>com.mycila</groupId>
+			    <artifactId>license-maven-plugin</artifactId>
+			    <version>2.11</version>
+			    <configuration>
+			        <!-- <header>com/mycila/maven/plugin/license/templates/GPL-3.txt</header>-->
+			   		<header>conf/license-header.txt</header>
+			        <properties>
+			            <owner>Timo Klerx</owner>
+			            <email>tiklerx@gmail.com</email>
+			        </properties>
+			        <excludes>
+			            <exclude>license.txt</exclude>
+			            <exclude>**/README</exclude>
+			            <exclude>output/**</exclude>
+			            <exclude>smac/**</exclude>
+			            <exclude>**/*.csv</exclude>
+			           	<exclude>**/*.gv</exclude>
+			           	<exclude>sigar-native-lins/**</exclude>
+			            <exclude>resources/**</exclude>
+			            <exclude>bin/**</exclude>
+			            <exclude>assembly/**</exclude>
+			        </excludes>
+			    </configuration>
+			    <executions>
+			        <execution>
+			        	<phase>process-sources</phase>
+			            <goals>
+			                <goal>format</goal>
+			            </goals>
+			        </execution>
+			    </executions>
 			</plugin>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>

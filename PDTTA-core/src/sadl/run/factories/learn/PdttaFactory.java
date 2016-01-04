@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,7 +8,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.run.factories.learn;
 
 import com.beust.jcommander.Parameter;
@@ -21,9 +20,12 @@ import jsat.distributions.empirical.kernelfunc.KernelFunction;
 import jsat.distributions.empirical.kernelfunc.TriweightKF;
 import jsat.distributions.empirical.kernelfunc.UniformKF;
 import sadl.constants.KdeKernelFunction;
+import sadl.constants.MergeMethod;
 import sadl.constants.MergeTest;
 import sadl.constants.TauEstimation;
 import sadl.interfaces.TauEstimator;
+import sadl.modellearner.AlergiaRedBlue;
+import sadl.modellearner.PdfaLearner;
 import sadl.modellearner.PdttaLearner;
 import sadl.run.factories.LearnerFactory;
 import sadl.tau_estimation.IdentityEstimator;
@@ -46,6 +48,9 @@ public class PdttaFactory implements LearnerFactory {
 
 	@Parameter(names = "-mergeT0")
 	int mergeT0 = 3;
+
+	@Parameter(names = "-mergeMethod")
+	MergeMethod mergeMethod = MergeMethod.ALERGIA_PAPER;
 
 	@Parameter(names = "-kdeBandwidth")
 	double kdeBandwidth;
@@ -92,8 +97,8 @@ public class PdttaFactory implements LearnerFactory {
 		if (kdeBandwidthEstimate) {
 			kdeBandwidth = -1;
 		}
-		final PdttaLearner learner = new PdttaLearner(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, mergeT0,
-				tauEstimator);
+		final PdfaLearner pdfaLearner = new AlergiaRedBlue(mergeAlpha, recursiveMergeTest, mergeMethod, mergeT0);
+		final PdttaLearner learner = new PdttaLearner(pdfaLearner, kdeKernelFunction, kdeBandwidth, tauEstimator);
 		return learner;
 	}
 
