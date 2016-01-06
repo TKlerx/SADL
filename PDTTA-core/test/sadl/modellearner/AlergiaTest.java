@@ -44,6 +44,7 @@ import sadl.oneclassclassifier.ThresholdClassifier;
 import sadl.structure.Transition;
 import sadl.utils.IoUtils;
 import sadl.utils.MasterSeed;
+import utils.LibraryChecker;
 
 public class AlergiaTest {
 	private static Logger logger = LoggerFactory.getLogger(AlergiaTest.class);
@@ -103,7 +104,7 @@ public class AlergiaTest {
 		assertEquals(4, pdfaAlergia.getStateCount());
 
 		final String osName = System.getProperty("os.name");
-		if (osName.toLowerCase().contains("linux")) {
+		if (osName.toLowerCase().contains("linux") && LibraryChecker.trebaDepsInstalled()) {
 			final TrebaPdfaLearner treba = new TrebaPdfaLearner(0.05, true, MergeTest.ALERGIA, 0.0, 0);
 			final PDFA pdfaTreba = treba.train(trainTreba);
 			logger.info("Treba PDFA has {} states.", pdfaTreba.getStateCount());
@@ -129,7 +130,7 @@ public class AlergiaTest {
 		assertEquals(3, pdfaAlergia.getStateCount());
 
 		final String osName = System.getProperty("os.name");
-		if (osName.toLowerCase().contains("linux")) {
+		if (osName.toLowerCase().contains("linux") && LibraryChecker.trebaDepsInstalled()) {
 			final TrebaPdfaLearner treba = new TrebaPdfaLearner(0.8, false, MergeTest.ALERGIA, 0.0, 0);
 			final PDFA pdfaTreba = treba.train(trainTreba);
 			logger.info("Treba PDFA has {} states.", pdfaTreba.getStateCount());
@@ -288,7 +289,7 @@ public class AlergiaTest {
 	@Test
 	public void testTrebaBigNonRec() throws URISyntaxException, IOException {
 		final String osName = System.getProperty("os.name");
-		if (osName.toLowerCase().contains("linux")) {
+		if (osName.toLowerCase().contains("linux") && LibraryChecker.trebaDepsInstalled()) {
 			final TrebaPdfaLearner treba = new TrebaPdfaLearner(0.05, false, MergeTest.ALERGIA, 0.0, 0);
 			final Pair<TimedInput, TimedInput> trainTest = IoUtils
 					.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI()));
@@ -309,7 +310,7 @@ public class AlergiaTest {
 	@Test
 	public void testTrebaBigRec() throws URISyntaxException, IOException {
 		final String osName = System.getProperty("os.name");
-		if (osName.toLowerCase().contains("linux")) {
+		if (osName.toLowerCase().contains("linux") && LibraryChecker.trebaDepsInstalled()) {
 			final TrebaPdfaLearner treba = new TrebaPdfaLearner(0.05, true, MergeTest.ALERGIA, 0.0, 0);
 			final Pair<TimedInput, TimedInput> trainTest = IoUtils
 					.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI()));
@@ -330,7 +331,7 @@ public class AlergiaTest {
 	@Test
 	public void testTrebaSmallNonRec() throws URISyntaxException, IOException {
 		final String osName = System.getProperty("os.name");
-		if (osName.toLowerCase().contains("linux")) {
+		if (osName.toLowerCase().contains("linux") && LibraryChecker.trebaDepsInstalled()) {
 			final TrebaPdfaLearner treba = new TrebaPdfaLearner(0.8, false, MergeTest.ALERGIA, 0.0, 0);
 			final TimedInput trainTreba = TimedInput.parse(Paths.get(this.getClass().getResource("/pdfa/alergia_0.inp").toURI()));
 			final PDFA pdfaTreba = treba.train(trainTreba);
@@ -344,7 +345,7 @@ public class AlergiaTest {
 	@Test
 	public void testTrebaSmallRec() throws URISyntaxException, IOException {
 		final String osName = System.getProperty("os.name");
-		if (osName.toLowerCase().contains("linux")) {
+		if (osName.toLowerCase().contains("linux") && LibraryChecker.trebaDepsInstalled()) {
 			final TrebaPdfaLearner treba = new TrebaPdfaLearner(0.8, true, MergeTest.ALERGIA, 0.0, 0);
 			final TimedInput trainTreba = TimedInput.parse(Paths.get(this.getClass().getResource("/pdfa/alergia_0.inp").toURI()));
 			final PDFA pdfaTreba = treba.train(trainTreba);

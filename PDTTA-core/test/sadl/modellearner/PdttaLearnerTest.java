@@ -29,6 +29,7 @@ import sadl.interfaces.ProbabilisticModel;
 import sadl.utils.IoUtils;
 import sadl.utils.MasterSeed;
 import sadl.utils.Settings;
+import utils.LibraryChecker;
 
 public class PdttaLearnerTest {
 
@@ -52,7 +53,7 @@ public class PdttaLearnerTest {
 	@Test
 	public void oldNewLeanerTest() throws IOException, URISyntaxException {
 		final String osName = System.getProperty("os.name");
-		if (osName.toLowerCase().contains("linux")) {
+		if (osName.toLowerCase().contains("linux") && LibraryChecker.trebaDepsInstalled()) {
 			for (int i = 1; i <= 5; i++) {
 				final Pair<TimedInput, TimedInput> trainTest = IoUtils
 						.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type" + i + ".txt").toURI()));

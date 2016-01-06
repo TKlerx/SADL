@@ -14,6 +14,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
+import utils.LibraryChecker;
+
 public class trebaJNI {
 
 	private static boolean libraryLoaded = false;
@@ -22,7 +24,7 @@ public class trebaJNI {
 		try {
 			final String osName = System.getProperty("os.name");
 			Path p = null;
-			if (osName.toLowerCase().contains("linux")) {
+			if (osName.toLowerCase().contains("linux") && LibraryChecker.trebaDepsInstalled()) {
 				p = Paths.get("./native_libs/libtreba.so");
 				if (Files.notExists(p)) {
 					p = findLibrary();
@@ -55,8 +57,8 @@ public class trebaJNI {
 	}
 
 	protected static Path findLibrary() throws IOException {
-		Path rootDir = Paths.get(".");
-		Optional<Path> opt = Files.find(rootDir, 10, (p, attr) -> p.getFileName().toString().startsWith("treba")
+		final Path rootDir = Paths.get(".");
+		final Optional<Path> opt = Files.find(rootDir, 10, (p, attr) -> p.getFileName().toString().startsWith("treba")
 				&& p.getFileName().toString().endsWith(".so")).findFirst();
 		if (opt.isPresent()) {
 			// System.out.println(rootDir.resolve(opt.get()).normalize().toAbsolutePath());
@@ -67,7 +69,7 @@ public class trebaJNI {
 		}
 	}
 
-	public static void loadLibrary(Path p) {
+	public static void loadLibrary(final Path p) {
 		try {
 			System.load(p.toAbsolutePath().normalize().toString());
 			System.out.println("Loaded treba library.");
