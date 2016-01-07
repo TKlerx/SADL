@@ -54,7 +54,7 @@
 		<testSourceDirectory>test</testSourceDirectory>
 		<resources>
 			<resource>
-				<directory>conf</directory>
+				<directory>resources</directory>
 				<excludes>
 					<exclude>**/*.java</exclude>
 				</excludes>
@@ -62,7 +62,7 @@
 		</resources>
 		<testResources>
 			<testResource>
-				<directory>resources</directory>
+				<directory>testResources</directory>
 				<excludes>
 					<exclude>**/*.java</exclude>
 				</excludes>
@@ -126,7 +126,7 @@
 			    <version>2.11</version>
 			    <configuration>
 			        <!-- <header>com/mycila/maven/plugin/license/templates/GPL-3.txt</header>-->
-			   		<header>conf/license-header.txt</header>
+			   		<header>resources/license-header.txt</header>
 			        <properties>
 			            <owner>Timo Klerx</owner>
 			            <email>tiklerx@gmail.com</email>
@@ -136,11 +136,14 @@
 			            <exclude>**/README</exclude>
 			            <exclude>output/**</exclude>
 			            <exclude>smac/**</exclude>
+			            <exclude>data/**</exclude>
 			            <exclude>**/*.csv</exclude>
 			           	<exclude>**/*.gv</exclude>
+			           	<exclude>**/*.pdrta</exclude>
+			           	<exclude>**/*.args</exclude>
 			           	<exclude>sigar-native-libs/**</exclude>
 			           	<exclude>logs/**</exclude>
-			            <exclude>resources/**</exclude>
+			            <exclude>testResources/**</exclude>
 			            <exclude>bin/**</exclude>
 			            <exclude>assembly/**</exclude>
 			        </excludes>
