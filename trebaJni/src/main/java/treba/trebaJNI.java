@@ -22,9 +22,8 @@ public class trebaJNI {
 
 	static {
 		try {
-			final String osName = System.getProperty("os.name");
 			Path p = null;
-			if (osName.toLowerCase().contains("linux") && LibraryChecker.trebaDepsInstalled()) {
+			if (LibraryChecker.trebaDepsInstalled()) {
 				p = Paths.get("./native_libs/libtreba.so");
 				if (Files.notExists(p)) {
 					p = findLibrary();

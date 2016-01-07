@@ -24,7 +24,6 @@ import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.SerializationUtils;
-import org.apache.commons.math3.util.Pair;
 import org.apache.commons.math3.util.Precision;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -884,111 +883,5 @@ public class TauPTA extends PDTTA {
 			transitionCount.adjustValue(t.toZeroProbTransition(), -count);
 		}
 		logger.debug("Removed path" + s);
-	}
-
-	public int getTransitionCount(Transition t) {
-		return transitionCount.get(t.toZeroProbTransition());
-	}
-
-	public int getFinalStateCount(int state) {
-		return finalStateCount.get(state);
-	}
-
-	/**
-	 * Merges two states.
-	 * 
-	 * @param i
-	 *            the first state to merge
-	 * @param j
-	 *            the second state to merge
-	 */
-	public void merge(int i, int j, boolean deterministicMerge) {
-		final Pair<List<Transition>, List<Transition>> inOutI = getInOutTransitions(i, false);
-		final Pair<List<Transition>, List<Transition>> inOutJ = getInOutTransitions(j, false);
-		final List<Transition> inTransitionsI = inOutI.getKey();
-		final List<Transition> outTransitionsI = inOutI.getValue();
-		final List<Transition> inTransitionsJ = inOutJ.getKey();
-		final List<Transition> outTransitionsJ = inOutJ.getValue();
-
-		int iOutCount = 0;
-		for (final Transition t : outTransitionsI) {
-			iOutCount += transitionCount.get(t.toZeroProbTransition());
-		}
-		iOutCount += getFinalStateCount(i);
-
-		int jOutCount = 0;
-		for(final Transition t : outTransitionsJ){
-			jOutCount+=transitionCount.get(t.toZeroProbTransition());
-		}
-		jOutCount+=getFinalStateCount(j);
-
-		int iInCount = 0;
-		for (final Transition t : inTransitionsI) {
-			iInCount += transitionCount.get(t.toZeroProbTransition());
-		}
-
-		int jInCount = 0;
-		for(final Transition t : inTransitionsJ){
-			jInCount+=transitionCount.get(t.toZeroProbTransition());
-		}
-		for (final Transition t : inTransitionsJ) {
-			removeTimedTransition(t, false);
-		}
-		for (final Transition t : outTransitionsJ) {
-			final Transition newTrans = addTransition(i, t.getToState(), t.getSymbol(), t.getProbability());
-			final int count = transitionCount.remove(t.toZeroProbTransition());
-			transitionCount.put(newTrans.toZeroProbTransition(), count);
-			removeTimedTransition(t, false);
-		}
-
-
-		if(deterministicMerge){
-			for(final Transition t : inTransitionsJ){
-				final Transition iTransition = findInTransition(inTransitionsI,i,t.getSymbol());
-
-				Transition newTransition;
-				if(iTransition!=null){
-					// not trivial because probability has to be recomputed for the whole state i
-					newTransition = addTransition(t.getFromState(), i, t.getSymbol(), 0);
-				}else{
-					// trivial, because state i did not have any in transition similar to t
-					newTransition = addTransition(t.getFromState(), i, t.getSymbol(), t.getProbability());
-				}
-
-				transitionCount.adjustValue(iTransition.toZeroProbTransition(), (int) Math.round(t.getProbability() * jInCount));
-			}
-		}else{
-			for (final Transition t : inTransitionsJ) {
-				final Transition newTrans = addTransition(t.getFromState(), i, t.getSymbol(), t.getProbability());
-				final int count = transitionCount.remove(t.toZeroProbTransition());
-				transitionCount.put(newTrans.toZeroProbTransition(), count);
-			}
-		}
-		removeState(j);
-	}
-
-	private Transition findInTransition(List<Transition> inTransitions, int state, String symbol) {
-
-		return null;
-	}
-
-	private Transition findOutTransition(List<Transition> outTransitions, int state, String symbol) {
-
-		return null;
-	}
-
-	public void determinize() {
-		for (int state = START_STATE; state < getStateCount(); state++) {
-			for (int i = 0; i < getAlphabet().getAlphSize(); i++) {
-				final String event = getAlphabet().getSymbol(i);
-				final List<Transition> transitions = getTransitions(state, event);
-				if (transitions.size() == 2) {
-					final int firstState = transitions.get(0).getToState();
-					final int secondState = transitions.get(1).getToState();
-					merge(firstState, secondState, true);
-				}
-			}
-		}
-
 	}
 }

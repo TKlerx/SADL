@@ -12,7 +12,7 @@ public class LibraryChecker {
 		for (final String[] args : arguments) {
 			try {
 				final StringBuilder sb = getProcessOutput(args);
-				if (sb.indexOf(libName + ".so") > 0) {
+				if (sb.indexOf(libName + ".") > 0) {
 					return true;
 				}
 			} catch (final IOException e) {

@@ -35,20 +35,12 @@ public class NativeLibraryTest {
 
 	@Test
 	public void test() throws IOException {
-		final String osName = System.getProperty("os.name");
 		Path p = null;
-		if (osName.toLowerCase().contains("linux") && LibraryChecker.trebaDepsInstalled()) {
+		if (LibraryChecker.trebaDepsInstalled()) {
 			assertTrue(trebaJNI.isLibraryLoaded());
-		} else if (osName.toLowerCase().contains("windows")) {
 			try {
 				p = trebaJNI.findLibrary();
 				assertNotNull(p);
-				try {
-					trebaJNI.loadLibrary(p);
-					fail("not possible to load treba in windows");
-				} catch (final UnsatisfiedLinkError e) {
-					// expected
-				}
 			} catch (final IOException e) {
 				e.printStackTrace();
 				fail(e.getMessage());

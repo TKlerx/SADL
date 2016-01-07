@@ -138,7 +138,8 @@
 			            <exclude>smac/**</exclude>
 			            <exclude>**/*.csv</exclude>
 			           	<exclude>**/*.gv</exclude>
-			           	<exclude>sigar-native-lins/**</exclude>
+			           	<exclude>sigar-native-libs/**</exclude>
+			           	<exclude>logs/**</exclude>
 			            <exclude>resources/**</exclude>
 			            <exclude>bin/**</exclude>
 			            <exclude>assembly/**</exclude>

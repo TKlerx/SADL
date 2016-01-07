@@ -9,11 +9,12 @@ mergeMethod {ALERGIA_PAPER,TREBA} [ALERGIA_PAPER]
 
 butlaPreprocessing {true, false}[false]
 
-butlaPreprocessingBandwidthEstimate{true, false}[false]
-butlaPreprocessingBandwidthEstimate | butlaPreprocessing in {true}
+#butlaPreprocessingBandwidthEstimate{true, false}[false]
+#butlaPreprocessingBandwidthEstimate | butlaPreprocessing in {true}
 
 butlaPreprocessingBandwidth [10000,1000000] [20000]
-butlaPreprocessingBandwidth | butlaPreprocessingBandwidthEstimate in {false}
+#butlaPreprocessingBandwidth | butlaPreprocessingBandwidthEstimate in {false}
+butlaPreprocessingBandwidth | butlaPreprocessing in {true}
 
 mcNumberOfSteps [10,100000] [1000]i
 mcNumberOfSteps | tauEstimation in {MONTE_CARLO}

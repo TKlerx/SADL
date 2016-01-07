@@ -288,8 +288,7 @@ public class AlergiaTest {
 
 	@Test
 	public void testTrebaBigNonRec() throws URISyntaxException, IOException {
-		final String osName = System.getProperty("os.name");
-		if (osName.toLowerCase().contains("linux") && LibraryChecker.trebaDepsInstalled()) {
+		if (LibraryChecker.trebaDepsInstalled()) {
 			final TrebaPdfaLearner treba = new TrebaPdfaLearner(0.05, false, MergeTest.ALERGIA, 0.0, 0);
 			final Pair<TimedInput, TimedInput> trainTest = IoUtils
 					.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI()));
@@ -309,8 +308,7 @@ public class AlergiaTest {
 
 	@Test
 	public void testTrebaBigRec() throws URISyntaxException, IOException {
-		final String osName = System.getProperty("os.name");
-		if (osName.toLowerCase().contains("linux") && LibraryChecker.trebaDepsInstalled()) {
+		if (LibraryChecker.trebaDepsInstalled()) {
 			final TrebaPdfaLearner treba = new TrebaPdfaLearner(0.05, true, MergeTest.ALERGIA, 0.0, 0);
 			final Pair<TimedInput, TimedInput> trainTest = IoUtils
 					.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI()));
@@ -330,8 +328,7 @@ public class AlergiaTest {
 
 	@Test
 	public void testTrebaSmallNonRec() throws URISyntaxException, IOException {
-		final String osName = System.getProperty("os.name");
-		if (osName.toLowerCase().contains("linux") && LibraryChecker.trebaDepsInstalled()) {
+		if (LibraryChecker.trebaDepsInstalled()) {
 			final TrebaPdfaLearner treba = new TrebaPdfaLearner(0.8, false, MergeTest.ALERGIA, 0.0, 0);
 			final TimedInput trainTreba = TimedInput.parse(Paths.get(this.getClass().getResource("/pdfa/alergia_0.inp").toURI()));
 			final PDFA pdfaTreba = treba.train(trainTreba);
@@ -344,8 +341,7 @@ public class AlergiaTest {
 
 	@Test
 	public void testTrebaSmallRec() throws URISyntaxException, IOException {
-		final String osName = System.getProperty("os.name");
-		if (osName.toLowerCase().contains("linux") && LibraryChecker.trebaDepsInstalled()) {
+		if (LibraryChecker.trebaDepsInstalled()) {
 			final TrebaPdfaLearner treba = new TrebaPdfaLearner(0.8, true, MergeTest.ALERGIA, 0.0, 0);
 			final TimedInput trainTreba = TimedInput.parse(Paths.get(this.getClass().getResource("/pdfa/alergia_0.inp").toURI()));
 			final PDFA pdfaTreba = treba.train(trainTreba);
