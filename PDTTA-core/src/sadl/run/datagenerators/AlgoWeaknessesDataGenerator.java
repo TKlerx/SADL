@@ -12,8 +12,10 @@ package sadl.run.datagenerators;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -66,10 +68,14 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 	@Parameter(names = "-anomalyAmount", description = "Relative amount of anomaly sequences among the test sequences", arity = 1, required = true)
 	private double anomalyAmount;
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws URISyntaxException {
 
 		final AlgoWeaknessesDataGenerator awdg = new AlgoWeaknessesDataGenerator();
 		final JCommander jc = new JCommander(awdg);
+		if (args.length == 0) {
+			args = new String[] {
+					("@" + Paths.get(AlgoWeaknessesDataGenerator.class.getResource("/pdrta/algo_weaknesses/algo_weaknesses_data_generator.args").toURI())) };
+		}
 		jc.parse(args);
 		awdg.run();
 	}
@@ -124,9 +130,9 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 		}
 		try (BufferedWriter bw = Files.newBufferedWriter(outFile)) {
 			inpTrain.toFile(bw, true);
-			bw.append("\n");
+			bw.append('\n');
 			bw.append(SmacDataGenerator.TRAIN_TEST_SEP);
-			bw.append("\n");
+			bw.append('\n');
 			inpTestNeg.toFile(bw, true);
 			inpTestPos.toFile(bw, true);
 		} catch (final IOException e) {
@@ -150,11 +156,12 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 		PDRTAState s = a.getRoot();
 		while (s != null) {
 			final Pair<Integer, Integer> pair = samplePair(s);
-			symbols.add(a.getSymbol(pair.getLeft()));
-			delays.add(pair.getRight());
-			s = s.getTarget(pair.getLeft(), pair.getRight());
-			if (rndm.nextDouble() < s.getSequenceEndProb()) {
+			if (pair == null) {
 				s = null;
+			} else {
+				symbols.add(a.getSymbol(pair.getLeft()));
+				delays.add(pair.getRight());
+				s = s.getTarget(pair.getLeft(), pair.getRight());
 			}
 		}
 
@@ -173,10 +180,14 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 				}
 			}
 		}
+		transitions.add(new AlphIn(-1, null, s.getSequenceEndProb()));
 
 		Collections.sort(transitions, Collections.reverseOrder());
 		final int idx = drawInstance(transitions.stream().map(a -> a.prob).collect(Collectors.toList()));
 		final AlphIn trans = transitions.get(idx);
+		if (trans.symIdx == -1) {
+			return null;
+		}
 		return Pair.of(trans.symIdx, chooseUniform(trans.in.getBegin(), trans.in.getEnd()));
 	}
 

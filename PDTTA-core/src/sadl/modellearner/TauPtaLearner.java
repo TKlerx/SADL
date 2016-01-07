@@ -83,7 +83,7 @@ public class TauPtaLearner extends PdttaLearner {
 		finalStateCount.adjustOrPutValue(currentState, 1, 1);
 	}
 
-	public TauPTA train(TimedInput trainingSequences, boolean approximateProbabilities) {
+	public TauPTA train(TimedInput trainingSequences, boolean monteCarloPreprocessing) {
 
 		transitionCount = new TObjectIntHashMap<>();
 		finalStateCount = new TIntIntHashMap();
@@ -188,7 +188,7 @@ public class TauPtaLearner extends PdttaLearner {
 			// compute what is missing in the distribution set
 		}
 		newPta.setAlphabet(trainingSequences);
-		if (approximateProbabilities) {
+		if (monteCarloPreprocessing) {
 			newPta.preprocess();
 		}
 		newPta.makeImmutable();
