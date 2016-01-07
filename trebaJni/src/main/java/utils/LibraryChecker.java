@@ -16,7 +16,7 @@ public class LibraryChecker {
 					return true;
 				}
 			} catch (final IOException e) {
-				if (!e.getMessage().contains("Cannnot run")) {
+				if (!e.getMessage().contains("Cannot run")) {
 					System.err.println("Found strange exception:");
 					e.printStackTrace();
 					return false;
