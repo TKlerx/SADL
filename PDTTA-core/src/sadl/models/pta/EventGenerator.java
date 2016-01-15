@@ -69,7 +69,8 @@ public class EventGenerator {
 			final HalfClosedInterval warningInterval = new HalfClosedInterval(Math.max(0, expectedValue - differenceWarning), expectedValue
 					+ differenceWarning);
 
-			subEvents.put(minValue, new SubEvent(event, String.valueOf(i + 1), expectedValue, deviation, new HalfClosedInterval(minValue, minPoints[i]),
+			subEvents.put(new Double(minValue), new SubEvent(event, String.valueOf(i + 1), expectedValue, deviation,
+					new HalfClosedInterval(minValue, minPoints[i]),
 					anomalyInterval, warningInterval));
 			minValue = minPoints[i];
 			minIndex = maxIndex + 1;
@@ -86,7 +87,7 @@ public class EventGenerator {
 		final HalfClosedInterval warningInterval = new HalfClosedInterval(Math.max(0, expectedValue - differenceWarning), expectedValue
 				+ differenceWarning);
 
-		subEvents.put(minValue,
+		subEvents.put(new Double(minValue),
 				new SubEvent(event, String.valueOf(minPoints.length + 1), expectedValue, deviation, new HalfClosedInterval(minValue,
 						Double.POSITIVE_INFINITY),
 						anomalyInterval, warningInterval));
@@ -121,7 +122,7 @@ public class EventGenerator {
 		final HalfClosedInterval warningInterval = new HalfClosedInterval(Math.max(0, expectedValue - differenceWarning), expectedValue
 				+ differenceWarning);
 
-		subEvents.put(0.0, new SubEvent(event, String.valueOf(1), expectedValue, deviation, new HalfClosedInterval(0.0, Double.POSITIVE_INFINITY),
+		subEvents.put(new Double(0), new SubEvent(event, String.valueOf(1), expectedValue, deviation, new HalfClosedInterval(0.0, Double.POSITIVE_INFINITY),
 				anomalyInterval,
 				warningInterval));
 
@@ -140,7 +141,7 @@ public class EventGenerator {
 		final HalfClosedInterval anomalyInterval = new HalfClosedInterval(0.0, Double.POSITIVE_INFINITY);
 		final HalfClosedInterval warningInterval = new HalfClosedInterval(0.0, Double.POSITIVE_INFINITY);
 
-		subEvents.put(0.0, new SubEvent(event, String.valueOf(1), expectedValue, deviation, new HalfClosedInterval(0.0, Double.POSITIVE_INFINITY),
+		subEvents.put(new Double(0), new SubEvent(event, String.valueOf(1), expectedValue, deviation, new HalfClosedInterval(0.0, Double.POSITIVE_INFINITY),
 				anomalyInterval,
 				warningInterval));
 
@@ -215,12 +216,12 @@ public class EventGenerator {
 				}
 			}
 
-			newSubEvents.put(subEvent.getLeftBound(), subEvent);
+			newSubEvents.put(new Double(subEvent.getLeftBound()), subEvent);
 		}
 
 		for (final SubEventCriticalArea criticalArea : criticalAreas) {
 
-			newSubEvents.put(criticalArea.getLeftBound(), criticalArea);
+			newSubEvents.put(new Double(criticalArea.getLeftBound()), criticalArea);
 		}
 
 		return newEvent;

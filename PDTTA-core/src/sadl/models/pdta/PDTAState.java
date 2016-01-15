@@ -64,7 +64,7 @@ public class PDTAState {
 			return null;
 		}
 
-		final Entry<Double, PDTATransition> transitionEntry = eventTransitions.floorEntry(time);
+		final Entry<Double, PDTATransition> transitionEntry = eventTransitions.floorEntry(new Double(time));
 
 		if (transitionEntry == null) {
 			return null;
@@ -123,7 +123,7 @@ public class PDTAState {
 			return null;
 		}
 
-		final Entry<Double, PDTATransition> transitionEntry = transitionsProbability.floorEntry(random);
+		final Entry<Double, PDTATransition> transitionEntry = transitionsProbability.floorEntry(new Double(random));
 
 		if (transitionEntry == null) {
 			throw new IllegalStateException("No transition selected(" + random + ")" + this);
@@ -131,7 +131,7 @@ public class PDTAState {
 
 		final PDTATransition transition = transitionEntry.getValue();
 
-		if (transitionEntry.getKey() + transition.getPropability() < random) {
+		if (transitionEntry.getKey().doubleValue() + transition.getPropability() < random) {
 			throw new IllegalStateException("No transition selected.");
 		}
 
@@ -150,8 +150,8 @@ public class PDTAState {
 			transitions.put(eventSymbol, eventTransitions);
 		}
 
-		eventTransitions.put(interval.getMinimum(), transition);
-		transitionsProbability.put(sumProbabilities, transition);
+		eventTransitions.put(new Double(interval.getMinimum()), transition);
+		transitionsProbability.put(new Double(sumProbabilities), transition);
 		sumProbabilities += probability;
 
 		if (sumProbabilities > 1.0001d) {

@@ -123,16 +123,16 @@ public class Interval implements Serializable {
 				boolean full = true;
 				boolean empty = true;
 				for (int j = s; j <= e; j++) {
-					if (tails.containsKey(begin + j)) {
+					if (tails.containsKey(new Integer(begin + j))) {
 						empty = false;
 					} else {
 						full = false;
 					}
 				}
 				if (!empty && full) {
-					compl.add(begin + i);
+					compl.add(new Integer(begin + i));
 				} else if (!empty && !full) {
-					part.add(begin + i);
+					part.add(new Integer(begin + i));
 				}
 				pos += step;
 			}
@@ -145,9 +145,10 @@ public class Interval implements Serializable {
 		final StringBuilder sb = new StringBuilder();
 		sb.append(begin + "[");
 		for (int i = 0; i <= endIn; i++) {
-			if (compl.contains(begin + i)) {
+			final Integer integer = new Integer(begin + i);
+			if (compl.contains(integer)) {
 				sb.append("+");
-			} else if (part.contains(begin + i)) {
+			} else if (part.contains(integer)) {
 				sb.append("-");
 			} else {
 				sb.append(" ");
@@ -171,7 +172,7 @@ public class Interval implements Serializable {
 
 		final NavigableMap<Integer, Interval> map = new TreeMap<>();
 		final Interval in = new Interval(minTimeDelay, maxTimeDelay);
-		map.put(in.getEnd(), in);
+		map.put(new Integer(in.getEnd()), in);
 		return map;
 	}
 
@@ -208,7 +209,7 @@ public class Interval implements Serializable {
 		final Iterator<Entry<Integer, TimedTail>> itTails = tails.entries().iterator();
 		while (itTails.hasNext()) {
 			final Entry<Integer, TimedTail> eT = itTails.next();
-			if (eT.getKey() <= time) {
+			if (eT.getKey().intValue() <= time) {
 				newIn.tails.put(eT.getKey(), eT.getValue());
 				itTails.remove();
 				assert (!tails.containsEntry(eT.getKey(), eT.getValue()));
@@ -248,7 +249,7 @@ public class Interval implements Serializable {
 	 *            The {@link TimedTail} using this transition while training a {@link PDRTA}
 	 */
 	protected void addTail(TimedTail tail) {
-		tails.put(tail.getTimeDelay(), tail);
+		tails.put(new Integer(tail.getTimeDelay()), tail);
 	}
 
 	/**
@@ -270,7 +271,7 @@ public class Interval implements Serializable {
 	 */
 	public boolean containsTail(TimedTail tail) {
 		if (tail != null) {
-			return tails.containsEntry(tail.getTimeDelay(), tail);
+			return tails.containsEntry(new Integer(tail.getTimeDelay()), tail);
 		} else {
 			return false;
 		}

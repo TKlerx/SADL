@@ -94,7 +94,7 @@ public class DbScanClassifier extends NumericClassifier {
 				threshold);
 		// check whether one of the points is a core point!
 		for (final VecPaired<VecPaired<Vec, Integer>, Double> vecPaired : neighbours) {
-			final int dataSetIndex = vecPaired.getVector().getPair();
+			final int dataSetIndex = vecPaired.getVector().getPair().intValue();
 			final Vec v = vecPaired.getVector().getVector();
 			if (pointCats[dataSetIndex] != MyDBSCAN.NOISE) {
 				if (isCorePoint(v)) {
@@ -112,7 +112,7 @@ public class DbScanClassifier extends NumericClassifier {
 			return false;
 		}
 		for (final VecPaired<VecPaired<Vec, Integer>, Double> vecPaired : neighbours) {
-			final int dataSetIndex = vecPaired.getVector().getPair();
+			final int dataSetIndex = vecPaired.getVector().getPair().intValue();
 			if (pointCats[dataSetIndex] != MyDBSCAN.NOISE) {
 				nonNoisePoints++;
 				if (nonNoisePoints >= n) {

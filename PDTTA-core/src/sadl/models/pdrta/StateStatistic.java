@@ -247,8 +247,8 @@ public class StateStatistic implements Serializable {
 		final int[] part1SymCount = Arrays.copyOf(st.symbolCount, st.symbolCount.length);
 		final int[] part2SymCount = new int[st.symbolCount.length];
 		for (final Entry<Integer, Collection<TimedTail>> eCol : mSym.asMap().entrySet()) {
-			part1SymCount[eCol.getKey()] -= eCol.getValue().size();
-			part2SymCount[eCol.getKey()] += eCol.getValue().size();
+			part1SymCount[eCol.getKey().intValue()] -= eCol.getValue().size();
+			part2SymCount[eCol.getKey().intValue()] += eCol.getValue().size();
 		}
 
 		return calcInterimLRT(a, part1SymCount, part2SymCount, advancedPooling, cr);
@@ -282,8 +282,8 @@ public class StateStatistic implements Serializable {
 		final int[] part1TimeCount = Arrays.copyOf(st.timeCount, st.timeCount.length);
 		final int[] part2TimeCount = new int[st.timeCount.length];
 		for (final Entry<Integer, Collection<TimedTail>> eCol : mHist.asMap().entrySet()) {
-			part1TimeCount[eCol.getKey()] -= eCol.getValue().size();
-			part2TimeCount[eCol.getKey()] += eCol.getValue().size();
+			part1TimeCount[eCol.getKey().intValue()] -= eCol.getValue().size();
+			part2TimeCount[eCol.getKey().intValue()] += eCol.getValue().size();
 		}
 
 		return calcInterimLRT(a, part1TimeCount, part2TimeCount, advancedPooling, cr);

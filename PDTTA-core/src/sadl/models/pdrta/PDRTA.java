@@ -71,11 +71,11 @@ public class PDRTA implements AutomatonModel, Serializable {
 				} else if (line.matches("^// \\d.+")) {
 					line = line.substring(3);
 					final String start = line.split(" ", 2)[0];
-					final int idx = Integer.parseInt(start);
+					final Integer idx = Integer.valueOf(start);
 					stats.put(idx, new String(line));
 				} else if (line.matches("^\\d.+")) {
 					final String start = line.split(" ", 2)[0];
-					final int idx = Integer.parseInt(start);
+					final Integer idx = Integer.valueOf(start);
 					if (line.matches("^\\d+ \\[.+")) {
 						stats.put(idx, new String(line));
 					} else {
@@ -457,8 +457,9 @@ public class PDRTA implements AutomatonModel, Serializable {
 		input = inp;
 		states = new TIntObjectHashMap<>();
 
-		for (final Integer idx : trans.keySet()) {
-			final StateStatistic s = StateStatistic.reconstructStat(input.getAlphSize(), getHistSizes(), stats.get(idx));
+		for (final Integer idxInt : trans.keySet()) {
+			final int idx = idxInt.intValue();
+			final StateStatistic s = StateStatistic.reconstructStat(input.getAlphSize(), getHistSizes(), stats.get(idxInt));
 			states.put(idx, new PDRTAState(this, idx, s));
 		}
 		for (final Entry<Integer, String> eT : trans.entries()) {
@@ -478,7 +479,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 			final PDRTAState s = states.get(source);
 			PDRTAState t;
 			if (!states.containsKey(target)) {
-				final StateStatistic st = StateStatistic.reconstructStat(getAlphSize(), getHistSizes(), stats.get(target));
+				final StateStatistic st = StateStatistic.reconstructStat(getAlphSize(), getHistSizes(), stats.get(new Integer(target)));
 				t = new PDRTAState(this, target, st);
 				states.put(target, t);
 			} else {
@@ -492,12 +493,12 @@ public class PDRTA implements AutomatonModel, Serializable {
 			Interval newIn;
 			if (end < in.getEnd()) {
 				newIn = in.split(end);
-				s.getIntervals(input.getAlphIndex(sym)).put(newIn.getEnd(), newIn);
+				s.getIntervals(input.getAlphIndex(sym)).put(new Integer(newIn.getEnd()), newIn);
 				in = newIn;
 			}
 			if (begin > in.getBegin()) {
 				newIn = in.split(begin - 1);
-				s.getIntervals(input.getAlphIndex(sym)).put(newIn.getEnd(), newIn);
+				s.getIntervals(input.getAlphIndex(sym)).put(new Integer(newIn.getEnd()), newIn);
 			}
 			in.setTarget(t);
 			s.getStat().addInterval(input.getAlphIndex(sym), in, prob);

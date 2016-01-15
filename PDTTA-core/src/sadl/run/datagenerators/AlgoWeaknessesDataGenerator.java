@@ -159,9 +159,9 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 			if (pair == null) {
 				s = null;
 			} else {
-				symbols.add(a.getSymbol(pair.getLeft()));
-				delays.add(pair.getRight());
-				s = s.getTarget(pair.getLeft(), pair.getRight());
+				symbols.add(a.getSymbol(pair.getLeft().intValue()));
+				delays.add(pair.getRight().intValue());
+				s = s.getTarget(pair.getLeft().intValue(), pair.getRight().intValue());
 			}
 		}
 
@@ -183,12 +183,12 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 		transitions.add(new AlphIn(-1, null, s.getSequenceEndProb()));
 
 		Collections.sort(transitions, Collections.reverseOrder());
-		final int idx = drawInstance(transitions.stream().map(a -> a.prob).collect(Collectors.toList()));
+		final int idx = drawInstance(transitions.stream().map(a -> new Double(a.prob)).collect(Collectors.toList()));
 		final AlphIn trans = transitions.get(idx);
 		if (trans.symIdx == -1) {
 			return null;
 		}
-		return Pair.of(trans.symIdx, chooseUniform(trans.in.getBegin(), trans.in.getEnd()));
+		return Pair.of(new Integer(trans.symIdx), new Integer(chooseUniform(trans.in.getBegin(), trans.in.getEnd())));
 	}
 
 	private int chooseUniform(int min, int max) {
@@ -201,7 +201,7 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 		double summedProbs = 0;
 		int index = -1;
 		for (int i = 0; i < instances.size(); i++) {
-			summedProbs += instances.get(i);
+			summedProbs += instances.get(i).doubleValue();
 			if (random < summedProbs) {
 				index = i;
 				break;

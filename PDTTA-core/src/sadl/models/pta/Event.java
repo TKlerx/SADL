@@ -44,7 +44,7 @@ public class Event implements Iterable<SubEvent> {
 
 	public SubEvent getSubEventByTime(double time) {
 
-		final Entry<Double, SubEvent> subEventEntry = subEvents.floorEntry(time);
+		final Entry<Double, SubEvent> subEventEntry = subEvents.floorEntry(new Double(time));
 
 		if (subEventEntry == null) {
 			return null;

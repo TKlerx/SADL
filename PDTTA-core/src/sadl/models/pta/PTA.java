@@ -50,7 +50,7 @@ public class PTA {
 		this.events = events;
 		this.root = new PTAState("", null, this);
 		states.add(root);
-		tails.put(root.getId(), root);
+		tails.put(new Integer(root.getId()), root);
 	}
 
 	public PTA(HashMap<String, Event> events, TimedInput timedSequences) {
@@ -128,7 +128,7 @@ public class PTA {
 			final PTATransition transition = currentState.getTransition(subEvent.getSymbol());
 
 			if (transition == null){
-				tails.remove(currentState.id);
+				tails.remove(new Integer(currentState.id));
 				addTail = true;
 
 				// final PTAState nextState = new PTAState(currentState.getWord() + eventSymbol, currentState, this);
@@ -170,7 +170,7 @@ public class PTA {
 		}
 
 		if (addTail) {
-			tails.put(currentState.getId(), currentState);
+			tails.put(new Integer(currentState.getId()), currentState);
 		}
 
 		if (sequence.length() > depth) {
@@ -220,7 +220,7 @@ public class PTA {
 				for (final PTAState tailState : currentTails.values()) {
 					final PTAState fatherState = tailState.getFatherState();
 					if (fatherState.getId() != root.getId() && !fatherState.isMarked()) {
-						nextTails.putIfAbsent(fatherState.getId(), fatherState);
+						nextTails.putIfAbsent(new Integer(fatherState.getId()), fatherState);
 						fatherState.mark();
 					}
 				}
@@ -292,7 +292,7 @@ public class PTA {
 					writer.write(Integer.toString(state.getId()));
 					writer.write(" [shape=circle, label=\"" + Integer.toString(state.getId()) + "\"");
 
-					if (tails.containsKey(state.getId())) {
+					if (tails.containsKey(new Integer(state.getId()))) {
 						writer.write(", color=red");
 					}
 

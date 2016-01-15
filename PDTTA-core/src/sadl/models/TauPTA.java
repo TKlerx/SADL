@@ -275,12 +275,11 @@ public class TauPTA extends PDTTA {
 		return result;
 	}
 
-	@SuppressWarnings("boxing")
 	private ContinuousDistribution fitDistribution(TDoubleList transitionTimes) {
 		final Vec v = new DenseVector(transitionTimes.toArray());
 		final jsat.utils.Pair<Boolean, Double> sameValues = MyDistributionSearch.checkForDifferentValues(v);
-		if (sameValues.getFirstItem()) {
-			final ContinuousDistribution d = new SingleValueDistribution(sameValues.getSecondItem());
+		if (sameValues.getFirstItem().booleanValue()) {
+			final ContinuousDistribution d = new SingleValueDistribution(sameValues.getSecondItem().doubleValue());
 			return d;
 		} else {
 			final MyKernelDensityEstimator kde = new MyKernelDensityEstimator(v);

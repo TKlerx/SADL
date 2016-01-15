@@ -53,8 +53,8 @@ public class MonteCarloIntegration implements Serializable {
 			xMax = Double.MAX_VALUE;
 		}
 		final Pair<Double, Double> minMax = findExtreme(d, xMin, xMax, stepSize);
-		final double yMin = minMax.getLeft();
-		final double yMax = minMax.getRight();
+		final double yMin = minMax.getLeft().doubleValue();
+		final double yMax = minMax.getRight().doubleValue();
 		final double xDiff = xMax - xMin;
 		final double yDiff = yMax - yMin;
 
@@ -160,7 +160,7 @@ public class MonteCarloIntegration implements Serializable {
 			yMin = Math.min(yMin, pdfValue);
 			yMax = Math.max(yMax, pdfValue);
 		}
-		return Pair.of(yMin, yMax);
+		return Pair.of(new Double(yMin), new Double(yMax));
 	}
 
 	@Override

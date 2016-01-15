@@ -69,24 +69,25 @@ public class AlergiaRedBlue extends Alergia {
 		final Queue<Integer> blueStates = new LinkedList<>();
 
 		stateColoring.put(PDFA.START_STATE, RED);
-		redStates.add(PDFA.START_STATE);
+		redStates.add(new Integer(PDFA.START_STATE));
 
 		final List<Transition> startStateSuccs = pta.getTransitionsToSucc(PDFA.START_STATE);
 		for (int i = 0; i < startStateSuccs.size(); i++) {
 			final int blueState = startStateSuccs.get(i).getToState();
 			stateColoring.put(blueState, BLUE);
-			blueStates.add(blueState);
+			blueStates.add(new Integer(blueState));
 		}
 
 		while (!blueStates.isEmpty()) {
-			final int blueState = blueStates.poll();
+			final Integer blueStateInt = blueStates.poll();
+			final int blueState = blueStateInt.intValue();
 			if (!pta.containsState(blueState) || stateColoring.get(blueState) == RED) {
 				continue;
 			}
 			final Iterator<Integer> iterator = redStates.iterator();
 			inner: while (iterator.hasNext()) {
 				// inner: for (final Integer redState : redStates) {
-				final Integer redState = iterator.next();
+				final int redState = iterator.next().intValue();
 				if (!pta.containsState(redState)) {
 					iterator.remove();
 					// redStates.remove(redState);
@@ -108,17 +109,18 @@ public class AlergiaRedBlue extends Alergia {
 					}
 				}
 			}
-			redStates.add(blueState);
+			redStates.add(blueStateInt);
 			stateColoring.put(blueState, RED);
 
 			for (final Integer redState : redStates) {
-				final List<Transition> succsOfRed = pta.getTransitionsToSucc(redState);
+				final List<Transition> succsOfRed = pta.getTransitionsToSucc(redState.intValue());
 				for (int i = 0; i < succsOfRed.size(); i++) {
 					final int newBlueState = succsOfRed.get(i).getToState();
 					if (stateColoring.get(newBlueState) != RED && pta.getTransitionCount(succsOfRed.get(i)) > getMergeT0()) {
 						stateColoring.put(newBlueState, BLUE);
-						if (!blueStates.contains(newBlueState)) {
-							blueStates.add(newBlueState);
+						final Integer newBlueStateInt = new Integer(newBlueState);
+						if (!blueStates.contains(newBlueStateInt)) {
+							blueStates.add(newBlueStateInt);
 						}
 					}
 				}

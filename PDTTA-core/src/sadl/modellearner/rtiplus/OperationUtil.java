@@ -75,9 +75,9 @@ public class OperationUtil {
 				assert (s2.getIntervals(i).size() == 1);
 				final Set<Entry<Integer, Interval>> iRs = s1.getIntervals(i).entrySet();
 				for (final Entry<Integer, Interval> eIn : iRs) {
-					assert (eIn.getValue().getBegin() == s2.getInterval(i, eIn.getKey()).getBegin());
-					if (eIn.getValue().getEnd() < s2.getInterval(i, eIn.getKey()).getEnd()) {
-						split(s2, i, eIn.getKey(), sc);
+					assert (eIn.getValue().getBegin() == s2.getInterval(i, eIn.getKey().intValue()).getBegin());
+					if (eIn.getValue().getEnd() < s2.getInterval(i, eIn.getKey().intValue()).getEnd()) {
+						split(s2, i, eIn.getKey().intValue(), sc);
 					}
 				}
 				assert (s2.getIntervals(i).size() == s1.getIntervals(i).size());
@@ -140,8 +140,8 @@ public class OperationUtil {
 						in1.getTails().putAll(in2.getTails());
 					} else {
 						// Move subtree of s2 to s1
-						assert (s1.getIntervals(i).containsKey(in2.getEnd()));
-						s1.getIntervals(i).put(in2.getEnd(), in2);
+						assert (s1.getIntervals(i).containsKey(new Integer(in2.getEnd())));
+						s1.getIntervals(i).put(new Integer(in2.getEnd()), in2);
 						if (sc.isRed(s1)) {
 							sc.setBlue(in2.getTarget());
 						}
@@ -161,7 +161,7 @@ public class OperationUtil {
 		final Interval in = s.getInterval(symAlphIdx, time);
 
 		final Interval newIn = in.split(time);
-		s.getIntervals(symAlphIdx).put(newIn.getEnd(), newIn);
+		s.getIntervals(symAlphIdx).put(new Integer(newIn.getEnd()), newIn);
 
 		assert (newIn != in);
 		assert (newIn.getTarget() == null);

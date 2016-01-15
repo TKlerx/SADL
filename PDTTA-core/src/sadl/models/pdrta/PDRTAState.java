@@ -173,7 +173,7 @@ public class PDRTAState implements Serializable {
 			return null;
 		}
 		final NavigableMap<Integer, Interval> intMap = intervals.get(alphIdx);
-		final Integer key = intMap.ceilingKey(time);
+		final Integer key = intMap.ceilingKey(new Integer(time));
 		if (key == null) {
 			return null;
 		} else {

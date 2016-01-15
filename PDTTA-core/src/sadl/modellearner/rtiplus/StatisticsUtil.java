@@ -163,13 +163,13 @@ public abstract class StatisticsUtil {
 		return result;
 	}
 
-	public static double calculateMAD(TDoubleList values, Number median) {
+	public static double calculateMAD(TDoubleList values, double median) {
 
 		double result = Double.NaN;
-		if (values != null && median != null) {
+		if (values != null) {
 			final TDoubleList diffs = new TDoubleArrayList(values.size());
 			for (int i = 0; i < values.size(); i++) {
-				diffs.add(Math.abs(values.get(i) - median.doubleValue()));
+				diffs.add(Math.abs(values.get(i) - median));
 			}
 			diffs.sort();
 			final int count = diffs.size();

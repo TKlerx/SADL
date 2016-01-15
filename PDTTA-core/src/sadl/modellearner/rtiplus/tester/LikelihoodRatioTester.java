@@ -69,9 +69,9 @@ public class LikelihoodRatioTester implements OperationTester {
 		final Multimap<Integer, TimedTail> mSym = HashMultimap.create();
 		final Set<Entry<Integer, TimedTail>> tails = s.getInterval(symAlphIdx, time).getTails().entries();
 		for (final Entry<Integer, TimedTail> eT : tails) {
-			if (eT.getKey() <= time && eT.getValue().getNextTail() != null) {
-				mHist.put(eT.getValue().getNextTail().getHistBarIndex(), eT.getValue().getNextTail());
-				mSym.put(eT.getValue().getNextTail().getSymbolAlphIndex(), eT.getValue().getNextTail());
+			if (eT.getKey().intValue() <= time && eT.getValue().getNextTail() != null) {
+				mHist.put(new Integer(eT.getValue().getNextTail().getHistBarIndex()), eT.getValue().getNextTail());
+				mSym.put(new Integer(eT.getValue().getNextTail().getSymbolAlphIndex()), eT.getValue().getNextTail());
 			}
 		}
 
@@ -154,13 +154,13 @@ public class LikelihoodRatioTester implements OperationTester {
 				assert (in.getTarget() != null);
 				mNextHist = HashMultimap.create();
 				mNextSym = HashMultimap.create();
-				m = mSym.get(i);
+				m = mSym.get(new Integer(i));
 				for (final TimedTail tail : m) {
 					assert (in.containsTail(tail));
 					nt = tail.getNextTail();
 					if (nt != null) {
-						mNextHist.put(nt.getHistBarIndex(), nt);
-						mNextSym.put(nt.getSymbolAlphIndex(), nt);
+						mNextHist.put(new Integer(nt.getHistBarIndex()), nt);
+						mNextSym.put(new Integer(nt.getSymbolAlphIndex()), nt);
 					}
 				}
 				// LRT_FIX : Operator for calculation interruption (thesis: AND, impl: OR, own: AND) => stop recursion
