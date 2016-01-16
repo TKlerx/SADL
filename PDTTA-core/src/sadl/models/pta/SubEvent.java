@@ -11,9 +11,9 @@
 
 package sadl.models.pta;
 
-import org.apache.commons.math3.util.Precision;
-
 import jsat.distributions.empirical.NormalRandomized;
+
+import org.apache.commons.math3.util.Precision;
 
 public class SubEvent {
 
@@ -173,49 +173,55 @@ public class SubEvent {
 		return anomalyInterval.getIntersectionWith(boundInterval);
 	}
 
-	public HalfClosedInterval getIntervalInState(PTAState state) {
+	/*
+	 * public HalfClosedInterval getIntervalInState(PTAState state) {
+	 * 
+	 * if (state == null) {
+	 * throw new IllegalArgumentException();
+	 * }
+	 * 
+	 * return new HalfClosedInterval(getLeftIntervalBoundInState(state), getRightIntervalBoundInState(state));
+	 * }
+	 */
 
-		if (state == null) {
-			throw new IllegalArgumentException();
-		}
+	/*
+	 * public double getLeftIntervalBoundInState(PTAState state) {
+	 * 
+	 * if (state == null) {
+	 * throw new IllegalArgumentException();
+	 * }
+	 * 
+	 * if (previousSubEvent != null && state.outTransitions.containsKey(previousSubEvent.getSymbol())) {
+	 * if (this.hasLeftCriticalArea()) {
+	 * return getLeftBound();
+	 * } else if (previousSubEvent instanceof SubEventCriticalArea
+	 * && !state.outTransitions.containsKey(previousSubEvent.getPreviousSubEvent().getSymbol())) {
+	 * return previousSubEvent.getLeftBound();
+	 * }
+	 * }
+	 * 
+	 * return getLeftAnomalyBound();
+	 * }
+	 */
 
-		return new HalfClosedInterval(getLeftIntervalBoundInState(state), getRightIntervalBoundInState(state));
-	}
-
-	public double getLeftIntervalBoundInState(PTAState state) {
-
-		if (state == null) {
-			throw new IllegalArgumentException();
-		}
-
-		if (previousSubEvent != null && state.outTransitions.containsKey(previousSubEvent.getSymbol())) {
-			if (this.hasLeftCriticalArea()) {
-				return getLeftBound();
-			} else if (previousSubEvent instanceof SubEventCriticalArea
-					&& !state.outTransitions.containsKey(previousSubEvent.getPreviousSubEvent().getSymbol())) {
-				return previousSubEvent.getLeftBound();
-			}
-		}
-
-		return getLeftAnomalyBound();
-	}
-
-	public double getRightIntervalBoundInState(PTAState state) {
-
-		if (state == null) {
-			throw new IllegalArgumentException();
-		}
-
-		if (nextSubEvent != null && state.outTransitions.containsKey(this.getNextSubEvent().getSymbol())) {
-			if (this.hasRightCriticalArea()) {
-				return getRightBound();
-			} else if (nextSubEvent instanceof SubEventCriticalArea && !state.outTransitions.containsKey(nextSubEvent.getNextSubEvent().getSymbol())) {
-				return nextSubEvent.getRightBound();
-			}
-		}
-
-		return getRightBound();
-	}
+	/*
+	 * public double getRightIntervalBoundInState(PTAState state) {
+	 * 
+	 * if (state == null) {
+	 * throw new IllegalArgumentException();
+	 * }
+	 * 
+	 * if (nextSubEvent != null && state.outTransitions.containsKey(this.getNextSubEvent().getSymbol())) {
+	 * if (this.hasRightCriticalArea()) {
+	 * return getRightBound();
+	 * } else if (nextSubEvent instanceof SubEventCriticalArea && !state.outTransitions.containsKey(nextSubEvent.getNextSubEvent().getSymbol())) {
+	 * return nextSubEvent.getRightBound();
+	 * }
+	 * }
+	 * 
+	 * return getRightBound();
+	 * }
+	 */
 
 	public boolean hasLeftCriticalArea() {
 
@@ -254,6 +260,24 @@ public class SubEvent {
 		return nextSubEvent;
 	}
 
+	/*
+	 * public SubEvent getPreviousSubEventInState(PTAState state) {
+	 * 
+	 * final SubEvent prevSubEvent = this.getPreviousSubEvent();
+	 * 
+	 * while (prevSubEvent != null) {
+	 * if (state.getInTransitions().contains(prevSubEvent)) {
+	 * 
+	 * }
+	 * }
+	 * }
+	 * 
+	 * public SubEvent getNextSubEventInState(PTAState state) {
+	 * 
+	 * return null;
+	 * }
+	 * 
+	 */
 	public Event getEvent() {
 		return this.event;
 	}

@@ -57,6 +57,10 @@ public class PTAState implements Cloneable {
 
 	public PTAState isMergedWith() {
 
+		if (mergedWith == null) {
+			throw new IllegalStateException();
+		}
+
 		if (!mergedWith.exists()) {
 			mergedWith = mergedWith.isMergedWith();
 		}
