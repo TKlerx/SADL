@@ -79,7 +79,7 @@ public class DbScanClassifier extends NumericClassifier {
 		logger.info("DBSCAN found {} many clusters.", clusterCount);
 		int count = 0;
 		for (int i = 0; i < clusterCount; i++) {
-			logger.info("Cluster {} has {} many points.", i, clusterResult.get(i).size());
+			logger.debug("Cluster {} has {} many points.", i, clusterResult.get(i).size());
 			count += clusterResult.get(i).size();
 		}
 		logger.info("Original dataset size={}", data.size());

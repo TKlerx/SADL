@@ -75,7 +75,7 @@ public abstract class KMeansBaseClustering extends NumericClassifier {
 			if (clusterSize >= minClusterPoints) {
 				storedMeans.add(means.get(i));
 			}
-			logger.info("Cluster {} has {} many points.", i, clusterSize);
+			logger.debug("Cluster {} has {} many points.", i, clusterSize);
 			count += clusterList.get(i).size();
 		}
 		logger.info("Original dataset size={}", trainSamples.size());
