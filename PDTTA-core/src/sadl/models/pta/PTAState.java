@@ -10,12 +10,14 @@
  */
 package sadl.models.pta;
 
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.Set;
 
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
 import jsat.utils.Pair;
 import sadl.constants.EventsCreationStrategy;
 
@@ -54,6 +56,10 @@ public class PTAState implements Cloneable {
 
 	public PTAState isMergedWith() {
 
+		if (mergedWith == null) {
+			throw new IllegalStateException();
+		}
+
 		if (!mergedWith.exists()) {
 			mergedWith = mergedWith.isMergedWith();
 		}
@@ -76,9 +82,19 @@ public class PTAState implements Cloneable {
 		return inTransitions.values();
 	}
 
+	public Set<String> getEventSymbolsInTransitions() {
+
+		return inTransitions.keySet();
+	}
+
 	public Collection<PTATransition> getOutTransitions() {
 
 		return outTransitions.values();
+	}
+
+	public Set<String> getEventSymbolsOutTransitions() {
+
+		return outTransitions.keySet();
 	}
 
 	public String getWord() {
@@ -192,6 +208,11 @@ public class PTAState implements Cloneable {
 	public void mark() {
 
 		marked = true;
+	}
+
+	public void unmark() {
+
+		marked = false;
 	}
 
 	public static void merge(PTAState firstState, PTAState secondState, EventsCreationStrategy strategy) {

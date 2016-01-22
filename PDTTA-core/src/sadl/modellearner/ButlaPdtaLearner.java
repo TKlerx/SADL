@@ -12,6 +12,7 @@ package sadl.modellearner;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -37,7 +38,6 @@ import sadl.models.pta.Event;
 import sadl.models.pta.EventGenerator;
 import sadl.models.pta.PTA;
 import sadl.models.pta.PTAState;
-import sadl.models.pta.SubEvent;
 
 public class ButlaPdtaLearner implements ProbabilisticModelLearner, CompatibilityChecker {
 	private static Logger logger = LoggerFactory.getLogger(ButlaPdtaLearner.class);
@@ -116,7 +116,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			logger.debug("Merged compatible states.");
 			// pta.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\in-out.gv"));
 			final PDTA pdta = pta.toPDTA();
-			logger.info("Learned PDTA (" + pdta.getStateCount() + " states) with BUTLA");
+			logger.info("Learned PDTA ({} states) with BUTLA", pdta.getStateCount());
 			return pdta;
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -158,14 +158,24 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 
 	public void mergeCompatibleStates(PTA pta, List<PTAState> statesOrdering) {
 
+		// int i = 0;
+		// long time1 = 0, time2 = 0, sum1 = 0, sum2 = 0, sum3 = 0;
+
 		final ArrayList<PTAState> workedOffStates = new ArrayList<>();
 
-		outerloop: for (final PTAState state : statesOrdering) {
+		outerloop: for (PTAState state : statesOrdering) {
+			// time2 = System.currentTimeMillis();
 
 			for (final ListIterator<PTAState> workedOffIterator = workedOffStates.listIterator(); workedOffIterator.hasNext();) {
+
 				final PTAState workedOffState = workedOffIterator.next();
 
 				if (!state.exists()) {
+					state = state.isMergedWith();
+				}
+
+				if (state.isMarked()) {
+					// sum3 += System.currentTimeMillis() - time2;
 					continue outerloop;
 				}
 
@@ -174,17 +184,27 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 					continue;
 				}
 
+				// time1 = System.currentTimeMillis();
 				if (compatible(workedOffState, state)) {
 					logger.trace("Merging state {} and {}.", workedOffState, state);
+					// sum1 += System.currentTimeMillis() - time1;
+					// time1 = System.currentTimeMillis();
 					PTAState.merge(workedOffState, state, splittingStrategy);
+					// sum2 += System.currentTimeMillis() - time1;
 					break;
+				}
+				else {
+					// sum1 += System.currentTimeMillis() - time1;
 				}
 
 			}
 
 			if (state.exists()) {
+				state.mark();
 				workedOffStates.add(state);
 			}
+
+			// sum3 += System.currentTimeMillis() - time2;
 		}
 
 		workedOffStates.add(pta.getRoot());
@@ -240,7 +260,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			}
 
 			eventsMap.put(eventSysbol, event);
-			// System.out.println("Created event: " + event);
+
 			if (event != null) {
 				logger.debug("Splitted event {} into {} subevents.", eventSysbol, event.getSubEventsCount());
 				subEventCount += event.getSubEventsCount();
@@ -259,7 +279,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			return true;
 		}
 
-		if (PTAState.compatibilityIsChecking(stateV, stateW)) {
+		if (mergeStrategy == PTAOrdering.BottomUp && PTAState.compatibilityIsChecking(stateV, stateW)) {
 			return true;
 		}
 
@@ -274,45 +294,74 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			return false;
 		}
 
-		PTAState.setCompatibilityChecking(stateV, stateW);
+		if (mergeStrategy == PTAOrdering.BottomUp) {
+			PTAState.setCompatibilityChecking(stateV, stateW);
+		}
 
-		for (final Event event : stateV.getPTA().getEvents().values()) {
-			for (final SubEvent subEvent : event) {
-				final String eventSymbol = subEvent.getSymbol();
+		final Set<String> usedEvents = new HashSet<>();
 
+		if (transitionsToCheck == TransitionsType.Incoming || transitionsToCheck == TransitionsType.Both) {
+			usedEvents.addAll(stateV.getEventSymbolsInTransitions());
+			usedEvents.addAll(stateW.getEventSymbolsInTransitions());
+		}
+
+		if (transitionsToCheck == TransitionsType.Outgoing || transitionsToCheck == TransitionsType.Both) {
+			usedEvents.addAll(stateV.getEventSymbolsOutTransitions());
+			usedEvents.addAll(stateW.getEventSymbolsOutTransitions());
+		}
+
+		// for (final Event event : stateV.getPTA().getEvents().values()) {
+		// for (final SubEvent subEvent : event) {
+		// final String eventSymbol = subEvent.getSymbol();
+		for (final String eventSymbol : usedEvents) {
+			final PTAState nextV = stateV.getNextState(eventSymbol);
+			final PTAState nextW = stateW.getNextState(eventSymbol);
+
+			if (transitionsToCheck == TransitionsType.Incoming || transitionsToCheck == TransitionsType.Both){
 				final int inTransitionEventCountV = stateV.getInTransitionsCount(eventSymbol);
 				final int inTransitionEventCountW = stateW.getInTransitionsCount(eventSymbol);
+
+				if (fractionDifferent(inTransitionCountV, inTransitionEventCountV, inTransitionCountW, inTransitionEventCountW)) {
+					if (mergeStrategy == PTAOrdering.BottomUp) {
+						PTAState.unsetCompatibilityChecking(stateV, stateW);
+					}
+					return false;
+				}
+			}
+
+			if (nextV == null && nextW == null) {
+				continue;
+			}
+
+			if (transitionsToCheck == TransitionsType.Outgoing || transitionsToCheck == TransitionsType.Both) {
 				final int outTransitionEventCountV = stateV.getOutTransitionsCount(eventSymbol);
 				final int outTransitionEventCountW = stateW.getOutTransitionsCount(eventSymbol);
 
-				if ((transitionsToCheck == TransitionsType.Incoming || transitionsToCheck == TransitionsType.Both)
-						&& fractionDifferent(inTransitionCountV, inTransitionEventCountV, inTransitionCountW, inTransitionEventCountW)) {
-					PTAState.unsetCompatibilityChecking(stateV, stateW);
+				if (fractionDifferent(inTransitionCountV, outTransitionEventCountV, inTransitionCountW, outTransitionEventCountW)) {
+					if (mergeStrategy == PTAOrdering.BottomUp) {
+						PTAState.unsetCompatibilityChecking(stateV, stateW);
+					}
 					return false;
 				}
-
-				if ((transitionsToCheck == TransitionsType.Outgoing || transitionsToCheck == TransitionsType.Both)
-						&& fractionDifferent(inTransitionCountV, outTransitionEventCountV, inTransitionCountW, outTransitionEventCountW)) {
-					PTAState.unsetCompatibilityChecking(stateV, stateW);
-					return false;
-				}
-
-				final PTAState nextV = stateV.getNextState(eventSymbol);
-				final PTAState nextW = stateW.getNextState(eventSymbol);
-
-				if (nextV == null || nextW == null) {
-					continue;
-				}
-
-				if (!compatible(nextV, nextW)) {
-					PTAState.unsetCompatibilityChecking(stateV, stateW);
-					return false;
-				}
-
 			}
+
+			if (nextV == null || nextW == null) {
+				continue;
+			}
+
+			if (!compatible(nextV, nextW)) {
+				if (mergeStrategy == PTAOrdering.BottomUp) {
+					PTAState.unsetCompatibilityChecking(stateV, stateW);
+				}
+				return false;
+			}
+
+			// }
 		}
 
-		PTAState.unsetCompatibilityChecking(stateV, stateW);
+		if (mergeStrategy == PTAOrdering.BottomUp) {
+			PTAState.unsetCompatibilityChecking(stateV, stateW);
+		}
 		return true;
 
 	}
@@ -320,18 +369,6 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 	public boolean fractionDifferent(int n0, int f0, int n1, int f1) {
 
 		return Math.abs(((double) f0 / n0) - ((double) f1 / n1)) > (Math.sqrt(0.5 * Math.log(2.0 / a)) * ((1.0 / Math.sqrt(n0)) + (1.0 / Math.sqrt(n1))));
-	}
-
-	public double[] listToDoubleArray(List<Double> list) {
-
-		final double[] array = new double[list.size()];
-		int i = 0;
-
-		for (final Double element : list) {
-			array[i++] = element.doubleValue();
-		}
-
-		return array;
 	}
 
 }

@@ -30,7 +30,6 @@ import sadl.anomalydetecion.AnomalyDetection;
 import sadl.constants.EventsCreationStrategy;
 import sadl.constants.KDEFormelVariant;
 import sadl.constants.PTAOrdering;
-import sadl.constants.ProbabilityAggregationMethod;
 import sadl.constants.TransitionsType;
 import sadl.experiments.ExperimentResult;
 import sadl.input.TimedInput;
@@ -61,15 +60,14 @@ public class AnodaTest {
 	@Test
 	public void testAnodaOriginalKDE() throws IOException, URISyntaxException {
 		logger.info("Starting Anoda Original KDE test...");
-		final ButlaPdtaLearner learner = new ButlaPdtaLearner(10000, 0.05, TransitionsType.Incoming, 0.05, 0.05, PTAOrdering.BottomUp,
+		final ButlaPdtaLearner learner = new ButlaPdtaLearner(10000, 0.05, TransitionsType.Outgoing, 0.05, 0.05, PTAOrdering.TopDown,
 				EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
-		final AnodaDetector anoda = new AnodaDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY);
+		final AnodaDetector anoda = new AnodaDetector();
 
 		final AnomalyDetection detection = new AnomalyDetection(anoda, learner);
 		ExperimentResult expected = new ExperimentResult(463, 2906, 1627, 4);
 		Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
 		ExperimentResult actual = detection.trainTest(p);
-		detection.getLearnedModel();
 		assertEquals(expected, actual);
 
 		expected = new ExperimentResult(0, 2882, 1623, 495);
@@ -101,7 +99,7 @@ public class AnodaTest {
 		logger.info("Starting Anoda Original BUTLA test...");
 		final ButlaPdtaLearner learner = new ButlaPdtaLearner(10000, 0.05, TransitionsType.Incoming, 0.05, 0.05, PTAOrdering.BottomUp,
 				EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalButlaVariableBandwidth);
-		final AnodaDetector anoda = new AnodaDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY);
+		final AnodaDetector anoda = new AnodaDetector();
 
 		final AnomalyDetection detection = new AnomalyDetection(anoda, learner);
 		ExperimentResult expected = new ExperimentResult(311, 1705, 2828, 156);

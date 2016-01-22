@@ -168,8 +168,8 @@ public class HalfClosedInterval implements Cloneable {
 	}
 
 	@Override
-	public HalfClosedInterval clone() throws CloneNotSupportedException {
-		super.clone();
+	public HalfClosedInterval clone() {
+
 		return new HalfClosedInterval(min, max);
 	}
 

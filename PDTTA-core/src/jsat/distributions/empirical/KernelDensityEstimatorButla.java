@@ -10,18 +10,20 @@
  */
 package jsat.distributions.empirical;
 
-import java.util.Arrays;
-
-import org.apache.commons.math3.util.Precision;
-
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
+
+import java.util.Arrays;
+
 import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.empirical.kernelfunc.GaussKF;
 import jsat.linear.DenseVector;
 import jsat.linear.Vec;
 import jsat.math.Function;
 import jsat.math.optimization.GoldenSearch;
+
+import org.apache.commons.math3.util.Precision;
+
 import sadl.constants.KDEFormelVariant;
 
 public class KernelDensityEstimatorButla {
@@ -78,7 +80,7 @@ public class KernelDensityEstimatorButla {
 		}
 
 		if (this.minSearchStep < 0.0001) {
-			this.minSearchStep = 50d;
+			this.minSearchStep = 0.25d;
 		}
 
 		if (formelVariant == KDEFormelVariant.OriginalKDE) {
