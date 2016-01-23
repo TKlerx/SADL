@@ -16,6 +16,7 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.Set;
 
 import jsat.utils.Pair;
 import sadl.constants.EventsCreationStrategy;
@@ -85,6 +86,16 @@ public class PTAState implements Cloneable {
 	public String getWord() {
 
 		return word;
+	}
+
+	public Set<String> getEventSymbolsInTransitions() {
+
+		return inTransitions.keySet();
+	}
+
+	public Set<String> getEventSymbolsOutTransitions() {
+
+		return outTransitions.keySet();
 	}
 
 	public PTAState getNextState(String symbol) {
