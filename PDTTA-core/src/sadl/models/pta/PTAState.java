@@ -10,12 +10,13 @@
  */
 package sadl.models.pta;
 
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
 import jsat.utils.Pair;
 import sadl.constants.EventsCreationStrategy;
 
@@ -192,6 +193,11 @@ public class PTAState implements Cloneable {
 	public void mark() {
 
 		marked = true;
+	}
+
+	public void unmark() {
+
+		marked = false;
 	}
 
 	public static void merge(PTAState firstState, PTAState secondState, EventsCreationStrategy strategy) {
