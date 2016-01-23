@@ -16,6 +16,7 @@ import gnu.trove.list.array.TIntArrayList;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -38,7 +39,6 @@ import sadl.models.pta.Event;
 import sadl.models.pta.EventGenerator;
 import sadl.models.pta.PTA;
 import sadl.models.pta.PTAState;
-import sadl.models.pta.SubEvent;
 
 public class ButlaPdtaLearner implements ProbabilisticModelLearner, CompatibilityChecker {
 	private static Logger logger = LoggerFactory.getLogger(ButlaPdtaLearner.class);
@@ -231,7 +231,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 					// sum2 += System.currentTimeMillis() - time1;
 					break;
 				}
- else {
+				else {
 					// sum1 += System.currentTimeMillis() - time1;
 				}
 
@@ -317,7 +317,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			return true;
 		}
 
-		if (PTAState.compatibilityIsChecking(stateV, stateW)) {
+		if (mergeStrategy == PTAOrdering.BottomUp && PTAState.compatibilityIsChecking(stateV, stateW)) {
 			return true;
 		}
 
@@ -332,45 +332,74 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			return false;
 		}
 
-		PTAState.setCompatibilityChecking(stateV, stateW);
+		if (mergeStrategy == PTAOrdering.BottomUp) {
+			PTAState.setCompatibilityChecking(stateV, stateW);
+		}
 
-		for (final Event event : stateV.getPTA().getEvents().values()) {
-			for (final SubEvent subEvent : event) {
-				final String eventSymbol = subEvent.getSymbol();
+		final Set<String> usedEvents = new HashSet<>();
 
+		if (transitionsToCheck == TransitionsType.Incoming || transitionsToCheck == TransitionsType.Both) {
+			usedEvents.addAll(stateV.getEventSymbolsInTransitions());
+			usedEvents.addAll(stateW.getEventSymbolsInTransitions());
+		}
+
+		if (transitionsToCheck == TransitionsType.Outgoing || transitionsToCheck == TransitionsType.Both) {
+			usedEvents.addAll(stateV.getEventSymbolsOutTransitions());
+			usedEvents.addAll(stateW.getEventSymbolsOutTransitions());
+		}
+
+		// for (final Event event : stateV.getPTA().getEvents().values()) {
+		// for (final SubEvent subEvent : event) {
+		// final String eventSymbol = subEvent.getSymbol();
+		for (final String eventSymbol : usedEvents) {
+			final PTAState nextV = stateV.getNextState(eventSymbol);
+			final PTAState nextW = stateW.getNextState(eventSymbol);
+
+			if (transitionsToCheck == TransitionsType.Incoming || transitionsToCheck == TransitionsType.Both) {
 				final int inTransitionEventCountV = stateV.getInTransitionsCount(eventSymbol);
 				final int inTransitionEventCountW = stateW.getInTransitionsCount(eventSymbol);
+
+				if (fractionDifferent(inTransitionCountV, inTransitionEventCountV, inTransitionCountW, inTransitionEventCountW)) {
+					if (mergeStrategy == PTAOrdering.BottomUp) {
+						PTAState.unsetCompatibilityChecking(stateV, stateW);
+					}
+					return false;
+				}
+			}
+
+			if (nextV == null && nextW == null) {
+				continue;
+			}
+
+			if (transitionsToCheck == TransitionsType.Outgoing || transitionsToCheck == TransitionsType.Both) {
 				final int outTransitionEventCountV = stateV.getOutTransitionsCount(eventSymbol);
 				final int outTransitionEventCountW = stateW.getOutTransitionsCount(eventSymbol);
 
-				if ((transitionsToCheck == TransitionsType.Incoming || transitionsToCheck == TransitionsType.Both)
-						&& fractionDifferent(inTransitionCountV, inTransitionEventCountV, inTransitionCountW, inTransitionEventCountW)) {
-					PTAState.unsetCompatibilityChecking(stateV, stateW);
+				if (fractionDifferent(inTransitionCountV, outTransitionEventCountV, inTransitionCountW, outTransitionEventCountW)) {
+					if (mergeStrategy == PTAOrdering.BottomUp) {
+						PTAState.unsetCompatibilityChecking(stateV, stateW);
+					}
 					return false;
 				}
-
-				if ((transitionsToCheck == TransitionsType.Outgoing || transitionsToCheck == TransitionsType.Both)
-						&& fractionDifferent(inTransitionCountV, outTransitionEventCountV, inTransitionCountW, outTransitionEventCountW)) {
-					PTAState.unsetCompatibilityChecking(stateV, stateW);
-					return false;
-				}
-
-				final PTAState nextV = stateV.getNextState(eventSymbol);
-				final PTAState nextW = stateW.getNextState(eventSymbol);
-
-				if (nextV == null || nextW == null) {
-					continue;
-				}
-
-				if (!compatible(nextV, nextW)) {
-					PTAState.unsetCompatibilityChecking(stateV, stateW);
-					return false;
-				}
-
 			}
+
+			if (nextV == null || nextW == null) {
+				continue;
+			}
+
+			if (!compatible(nextV, nextW)) {
+				if (mergeStrategy == PTAOrdering.BottomUp) {
+					PTAState.unsetCompatibilityChecking(stateV, stateW);
+				}
+				return false;
+			}
+
+			// }
 		}
 
-		PTAState.unsetCompatibilityChecking(stateV, stateW);
+		if (mergeStrategy == PTAOrdering.BottomUp) {
+			PTAState.unsetCompatibilityChecking(stateV, stateW);
+		}
 		return true;
 
 	}
