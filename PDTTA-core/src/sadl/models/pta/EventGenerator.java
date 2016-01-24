@@ -32,8 +32,8 @@ public class EventGenerator {
 		this.bandwidth = bandwidth;
 
 		final Normal standardNormalFunction = new Normal();
-		anomalyNormalPoint = standardNormalFunction.invCdf(anomalyProbability);
-		warningNormalPoint = standardNormalFunction.invCdf(warningProbability);
+		anomalyNormalPoint = standardNormalFunction.invCdf(anomalyProbability / 2.0);
+		warningNormalPoint = standardNormalFunction.invCdf(warningProbability / 2.0);
 		this.formel = formel;
 	}
 

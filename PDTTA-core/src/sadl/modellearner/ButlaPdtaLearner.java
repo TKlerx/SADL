@@ -117,7 +117,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			logger.debug("Merged compatible states.");
 			// pta.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\in-out.gv"));
 			final PDTA pdta = pta.toPDTA();
-			logger.info("Learned PDTA (" + pdta.getStateCount() + " states) with BUTLA");
+			logger.info("Learned PDTA ({} states) with BUTLA", pdta.getStateCount());
 			return pdta;
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -195,6 +195,9 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 	 */
 
 	public void mergeCompatibleStates(PTA pta, List<PTAState> statesOrdering) {
+
+		// int i = 0;
+		// long time1 = 0, time2 = 0, sum1 = 0, sum2 = 0, sum3 = 0;
 
 		// int i = 0;
 		// long time1 = 0, time2 = 0, sum1 = 0, sum2 = 0, sum3 = 0;
@@ -298,7 +301,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			}
 
 			eventsMap.put(eventSysbol, event);
-			// System.out.println("Created event: " + event);
+
 			if (event != null) {
 				logger.debug("Splitted event {} into {} subevents.", eventSysbol, event.getSubEventsCount());
 				subEventCount += event.getSubEventsCount();
@@ -407,18 +410,6 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 	public boolean fractionDifferent(int n0, int f0, int n1, int f1) {
 
 		return Math.abs(((double) f0 / n0) - ((double) f1 / n1)) > (Math.sqrt(0.5 * Math.log(2.0 / a)) * ((1.0 / Math.sqrt(n0)) + (1.0 / Math.sqrt(n1))));
-	}
-
-	public double[] listToDoubleArray(List<Double> list) {
-
-		final double[] array = new double[list.size()];
-		int i = 0;
-
-		for (final Double element : list) {
-			array[i++] = element.doubleValue();
-		}
-
-		return array;
 	}
 
 }

@@ -14,6 +14,8 @@ import jsat.distributions.empirical.NormalRandomized;
 
 import org.apache.commons.math3.util.Precision;
 
+import org.apache.commons.math3.util.Precision;
+
 public class SubEvent {
 
 	protected Event event;

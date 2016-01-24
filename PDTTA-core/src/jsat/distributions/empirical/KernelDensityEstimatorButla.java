@@ -78,7 +78,7 @@ public class KernelDensityEstimatorButla {
 		}
 
 		if (this.minSearchStep < 0.0001) {
-			this.minSearchStep = 50d;
+			this.minSearchStep = 0.25d;
 		}
 
 		if (formelVariant == KDEFormelVariant.OriginalKDE) {

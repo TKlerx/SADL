@@ -56,6 +56,10 @@ public class PTAState implements Cloneable {
 
 	public PTAState isMergedWith() {
 
+		if (mergedWith == null) {
+			throw new IllegalStateException();
+		}
+
 		if (!mergedWith.exists()) {
 			mergedWith = mergedWith.isMergedWith();
 		}
@@ -78,24 +82,24 @@ public class PTAState implements Cloneable {
 		return inTransitions.values();
 	}
 
-	public Collection<PTATransition> getOutTransitions() {
-
-		return outTransitions.values();
-	}
-
-	public String getWord() {
-
-		return word;
-	}
-
 	public Set<String> getEventSymbolsInTransitions() {
 
 		return inTransitions.keySet();
 	}
 
+	public Collection<PTATransition> getOutTransitions() {
+
+		return outTransitions.values();
+	}
+
 	public Set<String> getEventSymbolsOutTransitions() {
 
 		return outTransitions.keySet();
+	}
+
+	public String getWord() {
+
+		return word;
 	}
 
 	public PTAState getNextState(String symbol) {

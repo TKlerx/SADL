@@ -11,7 +11,6 @@
 package sadl.detectors;
 
 import gnu.trove.list.TDoubleList;
-import sadl.constants.ProbabilityAggregationMethod;
 import sadl.input.TimedWord;
 import sadl.models.pdta.PDTA;
 import sadl.models.pdta.PDTAState;
@@ -20,8 +19,8 @@ import sadl.models.pta.SubEvent;
 
 public class AnodaDetector extends AnomalyDetector {
 
-	public AnodaDetector(ProbabilityAggregationMethod aggType) {
-		super(aggType);
+	public AnodaDetector() {
+		super(null);
 	}
 
 	@Override

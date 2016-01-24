@@ -261,7 +261,7 @@ public class SmacRun {
 		final ProbabilisticModelLearner learner = getLearner(Algoname.getAlgoname(mainParams.get(0)), jc);
 		final AnomalyDetection detection;
 		if (detectorMethod == DetectorMethod.ANODA) {
-			detection = new AnomalyDetection(new AnodaDetector(aggType), learner);
+			detection = new AnomalyDetection(new AnodaDetector(), learner);
 		} else {
 			if (classifier == null || featureCreator == null) {
 				throw new IllegalStateException("classifier or featureCreator is null");
@@ -315,7 +315,7 @@ public class SmacRun {
 				break;
 		}
 
-		logger.info(qCrit.name() + "={}", qVal);
+		logger.info("{}={}", qCrit.name(), qVal);
 		result.setAvgMemoryUsage(gobbler.getAvgRam());
 		result.setMaxMemoryUsage(gobbler.getMaxRam());
 		result.setMinMemoryUsage(gobbler.getMinRam());
