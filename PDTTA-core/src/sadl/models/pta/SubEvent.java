@@ -10,9 +10,9 @@
  */
 package sadl.models.pta;
 
-import org.apache.commons.math3.util.Precision;
-
 import jsat.distributions.empirical.NormalRandomized;
+
+import org.apache.commons.math3.util.Precision;
 
 public class SubEvent {
 
@@ -172,7 +172,7 @@ public class SubEvent {
 		return anomalyInterval.getIntersectionWith(boundInterval);
 	}
 
-	public HalfClosedInterval getIntervalInState(PTAState state) {
+	public HalfClosedInterval getIntervalInState(PTAState state) { // TODO problem
 
 		if (state == null) {
 			throw new IllegalArgumentException();
@@ -196,6 +196,10 @@ public class SubEvent {
 			}
 		}
 
+		if (previousSubEvent != null) {
+			return Math.max(getLeftAnomalyBound(), previousSubEvent.getLeftBound());
+		}
+
 		return getLeftAnomalyBound();
 	}
 
@@ -213,7 +217,11 @@ public class SubEvent {
 			}
 		}
 
-		return getRightBound();
+		if (nextSubEvent != null) {
+			return Math.min(getRightAnomalyBound(), nextSubEvent.getRightBound());
+		}
+
+		return getRightAnomalyBound();
 	}
 
 	public boolean hasLeftCriticalArea() {
@@ -251,6 +259,36 @@ public class SubEvent {
 	public SubEvent getNextSubEvent() {
 
 		return nextSubEvent;
+	}
+
+	public SubEvent getPreviousSubEventInState(PTAState state) {
+
+		SubEvent prev = this.getPreviousSubEvent();
+
+		while (prev != null) {
+			if (state.getOutTransitionsCount(prev.getSymbol()) > 0) {
+				return prev;
+			}
+
+			prev = prev.getPreviousSubEvent();
+		}
+
+		return null; // check
+	}
+
+	public SubEvent getNextSubEventInState(PTAState state) {
+
+		SubEvent next = this.getNextSubEvent();
+
+		while (next != null) {
+			if (state.getOutTransitionsCount(next.getSymbol()) > 0) {
+				return next;
+			}
+
+			next = next.getPreviousSubEvent();
+		}
+
+		return null; // check
 	}
 
 	public Event getEvent() {
