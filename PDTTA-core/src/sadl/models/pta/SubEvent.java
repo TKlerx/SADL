@@ -10,9 +10,9 @@
  */
 package sadl.models.pta;
 
-import org.apache.commons.math3.util.Precision;
-
 import jsat.distributions.empirical.NormalRandomized;
+
+import org.apache.commons.math3.util.Precision;
 
 public class SubEvent {
 

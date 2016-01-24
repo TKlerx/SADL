@@ -227,6 +227,11 @@ public class PTA {
 
 				currentTails = nextTails;
 			}
+
+			for (final PTAState state : orderedStates) {
+				state.unmark();
+			}
+
 		} else {
 			logger.error("Unexpected exception occured.");
 			throw new IllegalArgumentException();
@@ -273,8 +278,10 @@ public class PTA {
 				final PDTAState pdrtaStateTarget = pdtaStates.get(transition.getTarget().getId());
 				final SubEvent event = transition.getEvent();
 
-				pdrtaStateSource.addTransition(event, pdrtaStateTarget, event.getIntervalInState(ptaState), (double) transition.getCount()
-						/ (outTransitionsCount + endCount));
+				// pdrtaStateSource.addTransition(event, pdrtaStateTarget, event.getIntervalInState(ptaState), (double) transition.getCount()
+				// / (outTransitionsCount + endCount));
+				pdrtaStateSource.addTransition(event, pdrtaStateTarget, event.getIntervalInState(ptaState),
+						(double) transition.getCount() / (outTransitionsCount + endCount));
 			}
 		}
 
