@@ -10,6 +10,10 @@
  */
 package sadl.modellearner;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.array.TIntArrayList;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,9 +26,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.array.TDoubleArrayList;
-import gnu.trove.list.array.TIntArrayList;
 import sadl.constants.EventsCreationStrategy;
 import sadl.constants.KDEFormelVariant;
 import sadl.constants.PTAOrdering;
@@ -156,7 +157,47 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 
 	}
 
+	/*
+	 * public void mergeCompatibleStates(PTA pta, List<PTAState> statesOrdering) {
+	 * 
+	 * final ArrayList<PTAState> workedOffStates = new ArrayList<>();
+	 * 
+	 * outerloop: for (final PTAState state : statesOrdering) {
+	 * 
+	 * for (final ListIterator<PTAState> workedOffIterator = workedOffStates.listIterator(); workedOffIterator.hasNext();) {
+	 * final PTAState workedOffState = workedOffIterator.next();
+	 * 
+	 * if (!state.exists()) {
+	 * continue outerloop;
+	 * }
+	 * 
+	 * if (!workedOffState.exists()) {
+	 * workedOffIterator.remove();
+	 * continue;
+	 * }
+	 * 
+	 * if (compatible(workedOffState, state)) {
+	 * logger.trace("Merging state {} and {}.", workedOffState, state);
+	 * PTAState.merge(workedOffState, state, splittingStrategy);
+	 * break;
+	 * }
+	 * 
+	 * }
+	 * 
+	 * if (state.exists()) {
+	 * workedOffStates.add(state);
+	 * }
+	 * }
+	 * 
+	 * workedOffStates.add(pta.getRoot());
+	 * pta.setStates(workedOffStates);
+	 * }
+	 */
+
 	public void mergeCompatibleStates(PTA pta, List<PTAState> statesOrdering) {
+
+		// int i = 0;
+		// long time1 = 0, time2 = 0, sum1 = 0, sum2 = 0, sum3 = 0;
 
 		// int i = 0;
 		// long time1 = 0, time2 = 0, sum1 = 0, sum2 = 0, sum3 = 0;
@@ -317,7 +358,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			final PTAState nextV = stateV.getNextState(eventSymbol);
 			final PTAState nextW = stateW.getNextState(eventSymbol);
 
-			if (transitionsToCheck == TransitionsType.Incoming || transitionsToCheck == TransitionsType.Both){
+			if (transitionsToCheck == TransitionsType.Incoming || transitionsToCheck == TransitionsType.Both) {
 				final int inTransitionEventCountV = stateV.getInTransitionsCount(eventSymbol);
 				final int inTransitionEventCountW = stateW.getInTransitionsCount(eventSymbol);
 

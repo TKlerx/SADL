@@ -11,5 +11,28 @@
 package sadl.constants;
 
 public enum EventsCreationStrategy {
-	DontSplitEvents, NotTimedEvents, SplitEvents, IsolateCriticalAreas, IsolateCriticalAreasMergeInProcess, IsolateCriticalAreasMergeAfter
+	/**
+	 * Time guards are min and max.
+	 */
+	DontSplitEvents,
+	/**
+	 * Time guards are from 0 to infty
+	 */
+	NotTimedEvents,
+	/**
+	 * Just split like in original BUTLA
+	 */
+	SplitEvents,
+	/**
+	 * Special event for critical areas
+	 */
+	IsolateCriticalAreas,
+	/**
+	 * like IsolateCriticalAreas but some postprocessing (does not work that well). Changes the range of the inveral afterwards.
+	 */
+	IsolateCriticalAreasMergeInProcess,
+	/**
+	 * like IsolateCriticalAreas but some postprocessing (does not work that well). Changes the range of the inveral afterwards.
+	 */
+	IsolateCriticalAreasMergeAfter
 }
