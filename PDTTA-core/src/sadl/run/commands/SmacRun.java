@@ -315,7 +315,7 @@ public class SmacRun {
 				break;
 		}
 
-		logger.info(qCrit.name() + "={}", qVal);
+		logger.info("{}={}", qCrit.name(), qVal);
 		result.setAvgMemoryUsage(gobbler.getAvgRam());
 		result.setMaxMemoryUsage(gobbler.getMaxRam());
 		result.setMinMemoryUsage(gobbler.getMinRam());
