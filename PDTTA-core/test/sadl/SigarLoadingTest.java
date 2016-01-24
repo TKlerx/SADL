@@ -24,9 +24,9 @@ public class SigarLoadingTest {
 		gobbler.start();
 		Thread.sleep(2000);
 		gobbler.shutdown();
-		assertTrue(gobbler.getAvgRam() < 100);
-		assertTrue(gobbler.getMaxRam() < 100);
-		assertTrue(gobbler.getMinRam() < 100);
+		assertTrue("JVM should need RAM, but average Ram is " + gobbler.getAvgRam(), gobbler.getAvgRam() > 10);
+		assertTrue("JVM should need RAM, but max Ram is " + gobbler.getMaxRam(), gobbler.getMaxRam() > 10);
+		assertTrue("JVM should need RAM, but min Ram is " + gobbler.getMinRam(), gobbler.getMinRam() > 10);
 	}
 
 }
