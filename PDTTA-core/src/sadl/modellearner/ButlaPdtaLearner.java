@@ -10,10 +10,6 @@
  */
 package sadl.modellearner;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.array.TDoubleArrayList;
-import gnu.trove.list.array.TIntArrayList;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,6 +22,9 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.array.TIntArrayList;
 import sadl.constants.EventsCreationStrategy;
 import sadl.constants.KDEFormelVariant;
 import sadl.constants.PTAOrdering;
@@ -92,8 +91,8 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 		this.splittingStrategy = splittingStrategy;
 	}
 
-	public ButlaPdtaLearner(double bandwidth, EventsCreationStrategy splittingStrategy, KDEFormelVariant formelVariant) {
-		this.eventGenerator = new EventGenerator(bandwidth, 0, 0, formelVariant);
+	public ButlaPdtaLearner(double bandwidth, double anomalyProbability, EventsCreationStrategy splittingStrategy, KDEFormelVariant formelVariant) {
+		this.eventGenerator = new EventGenerator(bandwidth, anomalyProbability, 0, formelVariant);
 		this.splittingStrategy = splittingStrategy;
 	}
 
