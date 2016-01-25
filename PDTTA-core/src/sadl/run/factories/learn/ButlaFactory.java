@@ -11,6 +11,7 @@
 package sadl.run.factories.learn;
 
 import sadl.constants.EventsCreationStrategy;
+import sadl.constants.IntervalCreationStrategy;
 import sadl.constants.KDEFormelVariant;
 import sadl.constants.PTAOrdering;
 import sadl.constants.TransitionsType;
@@ -42,12 +43,14 @@ public class ButlaFactory implements LearnerFactory {
 	@Parameter(names = "-formelVariant")
 	KDEFormelVariant formelVariant;
 
+	@Parameter(names = "-intervalCreationStrategy")
+	IntervalCreationStrategy intervalCreationStrategy;
+
 	@Override
 	public ProbabilisticModelLearner create() {
 
 		final ProbabilisticModelLearner learner = new ButlaPdtaLearner(bandwidth, alpha, transitionsToCheck, anomalyProbability, anomalyProbability, mergeStrategy,
-				splittingStrategy,
-				formelVariant);
+ splittingStrategy, formelVariant, intervalCreationStrategy);
 		return learner;
 	}
 

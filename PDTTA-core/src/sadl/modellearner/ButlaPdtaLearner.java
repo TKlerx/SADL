@@ -26,6 +26,7 @@ import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 import sadl.constants.EventsCreationStrategy;
+import sadl.constants.IntervalCreationStrategy;
 import sadl.constants.KDEFormelVariant;
 import sadl.constants.PTAOrdering;
 import sadl.constants.TransitionsType;
@@ -47,9 +48,10 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 	TransitionsType transitionsToCheck;
 	PTAOrdering mergeStrategy;
 	EventsCreationStrategy splittingStrategy;
+	IntervalCreationStrategy intervalCreation;
 
 	public ButlaPdtaLearner(double bandwidth, double a, TransitionsType transitionsToCheck, double anomalyProbability, double warningProbability,
-			PTAOrdering mergeStrategy, EventsCreationStrategy splittingStrategy, KDEFormelVariant formelVariant) {
+			PTAOrdering mergeStrategy, EventsCreationStrategy splittingStrategy, KDEFormelVariant formelVariant, IntervalCreationStrategy intervalCreation) {
 
 		if (Double.isNaN(a) || a >= 1.0d || a <= 0.0d) {
 			throw new IllegalArgumentException("a has to be between 0.0 and 1.0 excluded.");
@@ -72,6 +74,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 		this.transitionsToCheck = transitionsToCheck;
 		this.mergeStrategy = mergeStrategy;
 		this.splittingStrategy = splittingStrategy;
+		this.intervalCreation = intervalCreation;
 	}
 
 	/**
@@ -115,7 +118,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			}
 			logger.debug("Merged compatible states.");
 			// pta.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\in-out.gv"));
-			final PDTA pdta = pta.toPDTA();
+			final PDTA pdta = pta.toPDTA(intervalCreation);
 			logger.info("Learned PDTA ({} states) with BUTLA", pdta.getStateCount());
 			return pdta;
 		} catch (final Exception e) {
