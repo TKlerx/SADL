@@ -9,8 +9,12 @@ anomalyProbability [0.00000001,0.9999] [0.05]
 #{warningProbability > anomalyProbability}
 
 mergeStrategy {TopDown, BottomUp} [BottomUp]
-splittingStrategy {	DontSplitEvents, SplitEvents, IsolateCriticalAreas, IsolateCriticalAreasMergeInProcess, IsolateCriticalAreasMergeAfter} [SplitEvents]
+splittingStrategy {NotTimedEvents, DontSplitEvents, SplitEvents, IsolateCriticalAreas } [SplitEvents]
 formelVariant {	OriginalKDE, OriginalButlaVariableBandwidth, ButlaBandwidthSquared, ButlaBandwidthNotSquared} [OriginalKDE]
+intervalCreationStrategy {OriginalButla, WithoutAnomalyBounds, extendInterval} [OriginalButla]
+intervalCreationStrategy | splittingStrategy in {SplitEvents}
+
+DontSplitEvents,IsolateCriticalAreas
 
 bandwidth [10000,1000000] [20000]
 bandwidth | formelVariant in {OriginalKDE}
