@@ -10,6 +10,11 @@
  */
 package sadl.models.pdta;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.linked.TIntLinkedList;
+import gnu.trove.map.TIntObjectMap;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -22,10 +27,6 @@ import java.util.TreeMap;
 
 import org.apache.commons.math3.util.Pair;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.array.TDoubleArrayList;
-import gnu.trove.list.linked.TIntLinkedList;
-import gnu.trove.map.TIntObjectMap;
 import sadl.constants.ClassLabel;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
@@ -47,7 +48,7 @@ public class PDTA implements AutomatonModel {
 		final TDoubleList probabilities1 = new TDoubleArrayList(s.length());
 		final TDoubleList probabilities2 = new TDoubleArrayList(s.length());
 
-		final PDTAState currentState = root;
+		PDTAState currentState = root;
 
 		for (int i = 0; i < s.length(); i++) {
 			final String eventSymbol = s.getSymbol(i);
@@ -63,6 +64,7 @@ public class PDTA implements AutomatonModel {
 
 			probabilities1.add(currentTransition.getPropability());
 			probabilities2.add(currentTransition.getEvent().calculateProbability(time));
+			currentState = currentTransition.getTarget();
 		}
 
 		probabilities1.add(currentState.getEndProbability());

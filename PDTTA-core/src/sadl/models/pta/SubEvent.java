@@ -123,18 +123,9 @@ public class SubEvent {
 		return anomalyInterval;
 	}
 
-	public void setAnomalyBounds(HalfClosedInterval bounds) {
+	public HalfClosedInterval getBounds() {
 
-		if (bounds == null || bounds.getMinimum() < 0.0) {
-			throw new IllegalArgumentException();
-		}
-
-		anomalyInterval = bounds;
-
-		if (!anomalyInterval.contains(warningInterval)) {
-
-			warningInterval = anomalyInterval.getIntersectionWith(warningInterval);
-		}
+		return boundInterval;
 	}
 
 	public void setBounds(HalfClosedInterval bounds) {
@@ -150,6 +141,20 @@ public class SubEvent {
 	public void setRightBound(double bound) {
 
 		boundInterval.setMaximum(bound);
+	}
+
+	public void setAnomalyBounds(HalfClosedInterval bounds) {
+
+		if (bounds == null || bounds.getMinimum() < 0.0) {
+			throw new IllegalArgumentException();
+		}
+
+		anomalyInterval = bounds;
+
+		if (!anomalyInterval.contains(warningInterval)) {
+
+			warningInterval = anomalyInterval.getIntersectionWith(warningInterval);
+		}
 	}
 
 	public String getNumber() {
