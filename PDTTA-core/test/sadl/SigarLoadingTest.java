@@ -22,11 +22,11 @@ public class SigarLoadingTest {
 	public void testSigarLoading() throws InterruptedException {
 		final RamGobbler gobbler = new RamGobbler();
 		gobbler.start();
-		Thread.sleep(2000);
+		Thread.sleep(5000);
 		gobbler.shutdown();
-		assertTrue("JVM should need RAM, but average Ram is " + gobbler.getAvgRam(), gobbler.getAvgRam() > 10);
-		assertTrue("JVM should need RAM, but max Ram is " + gobbler.getMaxRam(), gobbler.getMaxRam() > 10);
 		assertTrue("JVM should need RAM, but min Ram is " + gobbler.getMinRam(), gobbler.getMinRam() > 10);
+		assertTrue("JVM should need RAM, but max Ram is " + gobbler.getMaxRam(), gobbler.getMaxRam() > 10);
+		assertTrue("JVM should need RAM, but average Ram is " + gobbler.getAvgRam(), gobbler.getAvgRam() > 10);
 	}
 
 }

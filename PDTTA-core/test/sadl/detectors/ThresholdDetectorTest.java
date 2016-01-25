@@ -22,6 +22,7 @@ import org.junit.Test;
 
 import sadl.anomalydetecion.AnomalyDetection;
 import sadl.constants.EventsCreationStrategy;
+import sadl.constants.IntervalCreationStrategy;
 import sadl.constants.KDEFormelVariant;
 import sadl.constants.PTAOrdering;
 import sadl.constants.ProbabilityAggregationMethod;
@@ -129,7 +130,7 @@ public class ThresholdDetectorTest {
 	@Test
 	public void testSingleThresholdDetectorButla() throws IOException, URISyntaxException {
 		final ButlaPdtaLearner learner = new ButlaPdtaLearner(20000, 0.05, TransitionsType.Incoming, 0.05, 0.05, PTAOrdering.TopDown,
-				EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
+				EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE, IntervalCreationStrategy.OriginalButla);
 		// final AggregatedThresholdDetector detector = new AggregatedThresholdDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, -5, -8,
 		// false);
 		final AnomalyDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, new AggregatedSingleFeatureCreator(),

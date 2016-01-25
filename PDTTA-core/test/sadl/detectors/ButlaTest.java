@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import sadl.anomalydetecion.AnomalyDetection;
 import sadl.constants.DistanceMethod;
 import sadl.constants.EventsCreationStrategy;
+import sadl.constants.IntervalCreationStrategy;
 import sadl.constants.KDEFormelVariant;
 import sadl.constants.PTAOrdering;
 import sadl.constants.ProbabilityAggregationMethod;
@@ -70,7 +71,7 @@ public class ButlaTest {
 	public void testAnodaOriginalKDE() throws IOException, URISyntaxException {
 		logger.info("Starting Anoda Original KDE test...");
 		final ButlaPdtaLearner learner = new ButlaPdtaLearner(10000, 0.05, TransitionsType.Outgoing, 0.05, 0.05, PTAOrdering.TopDown,
-				EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
+				EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE, IntervalCreationStrategy.extendInterval);
 		final AnodaDetector anoda = new AnodaDetector();
 
 		final AnomalyDetection detection = new AnomalyDetection(anoda, learner);
@@ -107,7 +108,7 @@ public class ButlaTest {
 
 		logger.info("Starting Anoda Original BUTLA test...");
 		final ButlaPdtaLearner learner = new ButlaPdtaLearner(10000, 0.9, TransitionsType.Incoming, 0.000001, 0.3, PTAOrdering.BottomUp,
-				EventsCreationStrategy.NotTimedEvents, KDEFormelVariant.OriginalButlaVariableBandwidth);
+				EventsCreationStrategy.NotTimedEvents, KDEFormelVariant.OriginalButlaVariableBandwidth, IntervalCreationStrategy.extendInterval);
 		final AnodaDetector anoda = new AnodaDetector();
 
 		final AnomalyDetection detection = new AnomalyDetection(anoda, learner);
@@ -158,7 +159,7 @@ public class ButlaTest {
 	public void testXMeansOriginalKDE() throws IOException, URISyntaxException {
 		logger.info("Starting XMeans Original KDE test...");
 		final ButlaPdtaLearner learner = new ButlaPdtaLearner(10000, 0.05, TransitionsType.Outgoing, 0.01, 0.05, PTAOrdering.TopDown,
-				EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
+				EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE, IntervalCreationStrategy.extendInterval);
 		final FeatureCreator featureCreator = new UberFeatureCreator();
 		final NumericClassifier classifier = new XMeansClassifier(ScalingMethod.NORMALIZE, 0.2, 0, DistanceMethod.EUCLIDIAN);
 		final VectorDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, featureCreator, classifier, false);
@@ -197,7 +198,7 @@ public class ButlaTest {
 
 		logger.info("Starting Threshold Original KDE test...");
 		final ButlaPdtaLearner learner = new ButlaPdtaLearner(10000, 0.05, TransitionsType.Incoming, 0.01, 0.05, PTAOrdering.TopDown,
-				EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
+				EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE, IntervalCreationStrategy.extendInterval);
 		final AnomalyDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, new AggregatedSingleFeatureCreator(),
 				new ThresholdClassifier(Math.exp(-1)));
 

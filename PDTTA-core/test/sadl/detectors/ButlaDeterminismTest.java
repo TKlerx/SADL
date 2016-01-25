@@ -26,6 +26,7 @@ import org.junit.Test;
 
 import sadl.anomalydetecion.AnomalyDetection;
 import sadl.constants.EventsCreationStrategy;
+import sadl.constants.IntervalCreationStrategy;
 import sadl.constants.KDEFormelVariant;
 import sadl.constants.PTAOrdering;
 import sadl.constants.ProbabilityAggregationMethod;
@@ -67,7 +68,7 @@ public class ButlaDeterminismTest {
 					.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI()));
 			Settings.setDebug(false);
 			final ButlaPdtaLearner learner = new ButlaPdtaLearner(10000, 0.05, TransitionsType.Incoming, 0.05, 0.05, PTAOrdering.BottomUp,
-					EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
+					EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE, IntervalCreationStrategy.OriginalButla);
 
 			final SmallFeatureCreator featureCreator = new SmallFeatureCreator();
 			final ThresholdClassifier classifier = new ThresholdClassifier(Math.exp(-5), Math.exp(-8), 0.01, 0.001);
