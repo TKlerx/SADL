@@ -74,27 +74,27 @@ public class ButlaTest {
 		final AnodaDetector anoda = new AnodaDetector();
 
 		final AnomalyDetection detection = new AnomalyDetection(anoda, learner);
-		ExperimentResult expected = new ExperimentResult(467, 3034, 1499, 0);
+		ExperimentResult expected = new ExperimentResult(467, 1831, 2702, 0);
 		Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
 		ExperimentResult actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(0, 3024, 1481, 495);
+		expected = new ExperimentResult(170, 1778, 2727, 325);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type2.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(374, 3036, 1478, 112);
+		expected = new ExperimentResult(375, 1861, 2653, 111);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type3.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(523, 3005, 1472, 0);
+		expected = new ExperimentResult(523, 1748, 2729, 0);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type4.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(384, 3039, 1499, 78);
+		expected = new ExperimentResult(384, 1818, 2720, 78);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type5.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
@@ -106,59 +106,49 @@ public class ButlaTest {
 	public void testAnodaOriginalButla() throws IOException, URISyntaxException {
 
 		logger.info("Starting Anoda Original BUTLA test...");
-		final ButlaPdtaLearner learner = new ButlaPdtaLearner(10000, 0.05, TransitionsType.Incoming, 0.05, 0.05, PTAOrdering.BottomUp,
-				EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalButlaVariableBandwidth);
+		final ButlaPdtaLearner learner = new ButlaPdtaLearner(10000, 0.9, TransitionsType.Incoming, 0.000001, 0.3, PTAOrdering.BottomUp,
+				EventsCreationStrategy.NotTimedEvents, KDEFormelVariant.OriginalButlaVariableBandwidth);
 		final AnodaDetector anoda = new AnodaDetector();
 
 		final AnomalyDetection detection = new AnomalyDetection(anoda, learner);
-		ExperimentResult expected = new ExperimentResult(281, 2118, 2415, 186);
+		ExperimentResult expected = new ExperimentResult(464, 4527, 6, 3);
 		Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
 		Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(p);
 		TimedInput trainSet = trainTest.getKey();
 		trainSet.decreaseSamples(0.1);
 		ExperimentResult actual = detection.trainTest(trainSet, trainTest.getValue());
-		// ExperimentResult [truePositives=377, trueNegatives=1966, falsePositives=2567, falseNegatives=90, executionTimeTraining=00:03:27.512,
-		// executionTimeTesting=00:00:00.143, numberOfStates=43, maxMemoryUsage=0(MB), minMemoryUsage=0(MB), avgMemoryUsage=0.0(MB)]
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(147, 2402, 2103, 348);
+		expected = new ExperimentResult(40, 4494, 11, 455);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type2.txt").toURI());
 		trainTest = IoUtils.readTrainTestFile(p);
 		trainSet = trainTest.getKey();
 		trainSet.decreaseSamples(0.1);
 		actual = detection.trainTest(trainSet, trainTest.getValue());
-		// ExperimentResult [truePositives=228, trueNegatives=1667, falsePositives=2838, falseNegatives=267, executionTimeTraining=00:02:36.574,
-		// executionTimeTesting=00:00:00.005, numberOfStates=445, maxMemoryUsage=0(MB), minMemoryUsage=0(MB), avgMemoryUsage=0.0(MB)]
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(322, 2248, 2266, 164);
+		expected = new ExperimentResult(283, 4495, 19, 203);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type3.txt").toURI());
 		trainTest = IoUtils.readTrainTestFile(p);
 		trainSet = trainTest.getKey();
 		trainSet.decreaseSamples(0.1);
 		actual = detection.trainTest(trainSet, trainTest.getValue());
-		// ExperimentResult [truePositives=486, trueNegatives=1295, falsePositives=3219, falseNegatives=0, executionTimeTraining=00:19:40.180,
-		// executionTimeTesting=00:00:00.012, numberOfStates=3010, maxMemoryUsage=0(MB), minMemoryUsage=0(MB), avgMemoryUsage=0.0(MB)]
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(523, 2373, 2104, 0);
+		expected = new ExperimentResult(523, 4467, 10, 0);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type4.txt").toURI());
 		trainTest = IoUtils.readTrainTestFile(p);
 		trainSet = trainTest.getKey();
 		trainSet.decreaseSamples(0.1);
 		actual = detection.trainTest(trainSet, trainTest.getValue());
-		// ExperimentResult [truePositives=523, trueNegatives=1148, falsePositives=3329, falseNegatives=0, executionTimeTraining=00:25:46.229,
-		// executionTimeTesting=00:00:00.018, numberOfStates=3022, maxMemoryUsage=0(MB), minMemoryUsage=0(MB), avgMemoryUsage=0.0(MB)]
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(225, 2207, 2331, 237);
+		expected = new ExperimentResult(362, 4534, 4, 100);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type5.txt").toURI());
 		trainTest = IoUtils.readTrainTestFile(p);
 		trainSet = trainTest.getKey();
 		trainSet.decreaseSamples(0.1);
 		actual = detection.trainTest(trainSet, trainTest.getValue());
-		// ExperimentResult [truePositives=462, trueNegatives=1153, falsePositives=3385, falseNegatives=0, executionTimeTraining=00:25:25.535,
-		// executionTimeTesting=00:00:00.004, numberOfStates=2985, maxMemoryUsage=0(MB), minMemoryUsage=0(MB), avgMemoryUsage=0.0(MB)]
 		assertEquals(expected, actual);
 
 		logger.info("Finished Anoda Original BUTLA test.");
@@ -174,31 +164,31 @@ public class ButlaTest {
 		final VectorDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, featureCreator, classifier, false);
 
 		final AnomalyDetection detection = new AnomalyDetection(detector, learner);
-		ExperimentResult expected = new ExperimentResult(467, 3034, 1499, 0);
+		ExperimentResult expected = new ExperimentResult(88, 4243, 290, 379);
 		Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
 		ExperimentResult actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(0, 3024, 1481, 495);
+		expected = new ExperimentResult(307, 4174, 331, 188);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type2.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(374, 3036, 1478, 112);
+		expected = new ExperimentResult(334, 4258, 256, 152);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type3.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(523, 3005, 1472, 0);
+		expected = new ExperimentResult(72, 4146, 331, 451);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type4.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(384, 3039, 1499, 78);
+		expected = new ExperimentResult(455, 4195, 343, 7);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type5.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
-		logger.info("Finished Anoda Original KDE test.");
+		logger.info("Finished XMeans Original KDE test.");
 
 	}
 
@@ -212,57 +202,47 @@ public class ButlaTest {
 				new ThresholdClassifier(Math.exp(-1)));
 
 		final AnomalyDetection detection = new AnomalyDetection(detector, learner);
-		ExperimentResult expected = new ExperimentResult(281, 2118, 2415, 186);
+		ExperimentResult expected = new ExperimentResult(467, 1382, 3151, 0);
 		Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
 		Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(p);
 		TimedInput trainSet = trainTest.getKey();
 		trainSet.decreaseSamples(0.1);
 		ExperimentResult actual = detection.trainTest(trainSet, trainTest.getValue());
-		// ExperimentResult [truePositives=377, trueNegatives=1966, falsePositives=2567, falseNegatives=90, executionTimeTraining=00:03:27.512,
-		// executionTimeTesting=00:00:00.143, numberOfStates=43, maxMemoryUsage=0(MB), minMemoryUsage=0(MB), avgMemoryUsage=0.0(MB)]
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(147, 2402, 2103, 348);
+		expected = new ExperimentResult(381, 1440, 3065, 114);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type2.txt").toURI());
 		trainTest = IoUtils.readTrainTestFile(p);
 		trainSet = trainTest.getKey();
 		trainSet.decreaseSamples(0.1);
 		actual = detection.trainTest(trainSet, trainTest.getValue());
-		// ExperimentResult [truePositives=228, trueNegatives=1667, falsePositives=2838, falseNegatives=267, executionTimeTraining=00:02:36.574,
-		// executionTimeTesting=00:00:00.005, numberOfStates=445, maxMemoryUsage=0(MB), minMemoryUsage=0(MB), avgMemoryUsage=0.0(MB)]
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(322, 2248, 2266, 164);
+		expected = new ExperimentResult(486, 1640, 2874, 0);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type3.txt").toURI());
 		trainTest = IoUtils.readTrainTestFile(p);
 		trainSet = trainTest.getKey();
 		trainSet.decreaseSamples(0.1);
 		actual = detection.trainTest(trainSet, trainTest.getValue());
-		// ExperimentResult [truePositives=486, trueNegatives=1295, falsePositives=3219, falseNegatives=0, executionTimeTraining=00:19:40.180,
-		// executionTimeTesting=00:00:00.012, numberOfStates=3010, maxMemoryUsage=0(MB), minMemoryUsage=0(MB), avgMemoryUsage=0.0(MB)]
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(523, 2373, 2104, 0);
+		expected = new ExperimentResult(523, 1388, 3089, 0);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type4.txt").toURI());
 		trainTest = IoUtils.readTrainTestFile(p);
 		trainSet = trainTest.getKey();
 		trainSet.decreaseSamples(0.1);
 		actual = detection.trainTest(trainSet, trainTest.getValue());
-		// ExperimentResult [truePositives=523, trueNegatives=1148, falsePositives=3329, falseNegatives=0, executionTimeTraining=00:25:46.229,
-		// executionTimeTesting=00:00:00.018, numberOfStates=3022, maxMemoryUsage=0(MB), minMemoryUsage=0(MB), avgMemoryUsage=0.0(MB)]
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(225, 2207, 2331, 237);
+		expected = new ExperimentResult(462, 1379, 3159, 0);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type5.txt").toURI());
 		trainTest = IoUtils.readTrainTestFile(p);
 		trainSet = trainTest.getKey();
 		trainSet.decreaseSamples(0.1);
 		actual = detection.trainTest(trainSet, trainTest.getValue());
-		// ExperimentResult [truePositives=462, trueNegatives=1153, falsePositives=3385, falseNegatives=0, executionTimeTraining=00:25:25.535,
-		// executionTimeTesting=00:00:00.004, numberOfStates=2985, maxMemoryUsage=0(MB), minMemoryUsage=0(MB), avgMemoryUsage=0.0(MB)]
 		assertEquals(expected, actual);
 
-		logger.info("Finished Anoda Original BUTLA test.");
+		logger.info("Finished Threshold Original KDE test.");
 	}
 
 }
