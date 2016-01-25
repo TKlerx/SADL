@@ -14,8 +14,6 @@ import jsat.distributions.empirical.NormalRandomized;
 
 import org.apache.commons.math3.util.Precision;
 
-import org.apache.commons.math3.util.Precision;
-
 public class SubEvent {
 
 	protected Event event;
@@ -174,7 +172,7 @@ public class SubEvent {
 		return anomalyInterval.getIntersectionWith(boundInterval);
 	}
 
-	public HalfClosedInterval getIntervalInState(PTAState state) { // TODO problem
+	public HalfClosedInterval getIntervalInState(PTAState state) {
 
 		if (state == null) {
 			throw new IllegalArgumentException();
@@ -183,47 +181,81 @@ public class SubEvent {
 		return new HalfClosedInterval(getLeftIntervalBoundInState(state), getRightIntervalBoundInState(state));
 	}
 
+	/*
+	 * public double getLeftIntervalBoundInState(PTAState state) {
+	 * 
+	 * if (state == null) {
+	 * throw new IllegalArgumentException();
+	 * }
+	 * 
+	 * if (previousSubEvent != null && state.outTransitions.containsKey(previousSubEvent.getSymbol())) {
+	 * if (this.hasLeftCriticalArea()) {
+	 * return getLeftBound();
+	 * } else if (previousSubEvent instanceof SubEventCriticalArea
+	 * && !state.outTransitions.containsKey(previousSubEvent.getPreviousSubEvent().getSymbol())) {
+	 * return previousSubEvent.getLeftBound();
+	 * }
+	 * }
+	 * 
+	 * /*
+	 * if (previousSubEvent != null) {
+	 * return Math.max(getLeftAnomalyBound(), previousSubEvent.getLeftBound());
+	 * }
+	 * 
+	 * 
+	 * return getLeftAnomalyBound();
+	 * }
+	 */
+
 	public double getLeftIntervalBoundInState(PTAState state) {
 
-		if (state == null) {
-			throw new IllegalArgumentException();
+		final SubEvent prev = this.getPreviousSubEventInState(state);
+
+		if (prev == null || prev.getRightAnomalyBound() <= getLeftAnomalyBound()) {
+			return getLeftAnomalyBound();
 		}
 
-		if (previousSubEvent != null && state.outTransitions.containsKey(previousSubEvent.getSymbol())) {
-			if (this.hasLeftCriticalArea()) {
-				return getLeftBound();
-			} else if (previousSubEvent instanceof SubEventCriticalArea
-					&& !state.outTransitions.containsKey(previousSubEvent.getPreviousSubEvent().getSymbol())) {
-				return previousSubEvent.getLeftBound();
-			}
-		}
-
-		if (previousSubEvent != null) {
-			return Math.max(getLeftAnomalyBound(), previousSubEvent.getLeftBound());
-		}
-
-		return getLeftAnomalyBound();
+		return getLeftBound(); // TODO
 	}
+
+	/*
+	 * public double getRightIntervalBoundInState(PTAState state) {
+	 * 
+	 * 
+	 * if (state == null) {
+	 * throw new IllegalArgumentException();
+	 * }
+	 * 
+	 * final SubEvent next = this.getNextSubEventInState(state);
+	 * 
+	 * if (next != null) {
+	 * return Math.min(getRightAnomalyBound(), next.getLeftBound()); // no
+	 * }
+	 * 
+	 * return getRightAnomalyBound();
+	 * 
+	 * 
+	 * if (nextSubEvent != null && state.outTransitions.containsKey(this.getNextSubEvent().getSymbol())) {
+	 * if (this.hasRightCriticalArea()) {
+	 * return getRightBound();
+	 * } else if (nextSubEvent instanceof SubEventCriticalArea && !state.outTransitions.containsKey(nextSubEvent.getNextSubEvent().getSymbol())) {
+	 * return nextSubEvent.getRightBound();
+	 * }
+	 * }
+	 * 
+	 * return getRightAnomalyBound();
+	 * }
+	 */
 
 	public double getRightIntervalBoundInState(PTAState state) {
 
-		if (state == null) {
-			throw new IllegalArgumentException();
+		final SubEvent next = this.getNextSubEventInState(state);
+
+		if (next == null || getRightAnomalyBound() <= next.getLeftAnomalyBound()) {
+			return getRightAnomalyBound();
 		}
 
-		if (nextSubEvent != null && state.outTransitions.containsKey(this.getNextSubEvent().getSymbol())) {
-			if (this.hasRightCriticalArea()) {
-				return getRightBound();
-			} else if (nextSubEvent instanceof SubEventCriticalArea && !state.outTransitions.containsKey(nextSubEvent.getNextSubEvent().getSymbol())) {
-				return nextSubEvent.getRightBound();
-			}
-		}
-
-		if (nextSubEvent != null) {
-			return Math.min(getRightAnomalyBound(), nextSubEvent.getRightBound());
-		}
-
-		return getRightAnomalyBound();
+		return getRightBound();
 	}
 
 	public boolean hasLeftCriticalArea() {
