@@ -49,7 +49,7 @@ public class PdttaWithPreprocessingTest {
 		final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
 		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(p);
 
-		final ButlaPdtaLearner butla = new ButlaPdtaLearner(20000, 0.001, EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
+		final ButlaPdtaLearner butla = new ButlaPdtaLearner(20000, EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
 		// final ButlaPdtaLearner butla = new ButlaPdtaLearner(EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
 
 		final Pair<TimedInput, Map<String, Event>> pair = butla.splitEventsInTimedSequences(trainTest.getKey());

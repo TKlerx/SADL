@@ -166,14 +166,12 @@ public class ButlaTest {
 
 	@Test
 	public void testXMeansOriginalKDE() throws IOException, URISyntaxException {
-		logger.info("Starting Anoda Original KDE test...");
+		logger.info("Starting XMeans Original KDE test...");
 		final ButlaPdtaLearner learner = new ButlaPdtaLearner(10000, 0.05, TransitionsType.Outgoing, 0.01, 0.05, PTAOrdering.TopDown,
 				EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
 		final FeatureCreator featureCreator = new UberFeatureCreator();
-		final NumericClassifier classifier = new XMeansClassifier(ScalingMethod.NORMALIZE, 0.05, 0, DistanceMethod.EUCLIDIAN);
-		// final VectorDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, featureCreator, classifier, false);
-		final AnomalyDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, new AggregatedSingleFeatureCreator(),
-				new ThresholdClassifier(Math.exp(-1)));
+		final NumericClassifier classifier = new XMeansClassifier(ScalingMethod.NORMALIZE, 0.2, 0, DistanceMethod.EUCLIDIAN);
+		final VectorDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, featureCreator, classifier, false);
 
 		final AnomalyDetection detection = new AnomalyDetection(detector, learner);
 		ExperimentResult expected = new ExperimentResult(467, 3034, 1499, 0);
@@ -205,16 +203,13 @@ public class ButlaTest {
 	}
 
 	@Test
-	public void testThresholdOriginalButla() throws IOException, URISyntaxException {
+	public void testThresholdOriginalKDE() throws IOException, URISyntaxException {
 
-		logger.info("Starting Anoda Original BUTLA test...");
-		final ButlaPdtaLearner learner = new ButlaPdtaLearner(10000, 0.05, TransitionsType.Incoming, 0.05, 0.05, PTAOrdering.BottomUp,
-				EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalButlaVariableBandwidth);
-		final FeatureCreator featureCreator = new UberFeatureCreator();
-		final NumericClassifier classifier = new XMeansClassifier(ScalingMethod.NORMALIZE, 0.05, 0, DistanceMethod.EUCLIDIAN);
-		// final VectorDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, featureCreator, classifier, false);
+		logger.info("Starting Threshold Original KDE test...");
+		final ButlaPdtaLearner learner = new ButlaPdtaLearner(10000, 0.05, TransitionsType.Incoming, 0.01, 0.05, PTAOrdering.TopDown,
+				EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
 		final AnomalyDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, new AggregatedSingleFeatureCreator(),
-				new ThresholdClassifier(Math.exp(-5)));
+				new ThresholdClassifier(Math.exp(-1)));
 
 		final AnomalyDetection detection = new AnomalyDetection(detector, learner);
 		ExperimentResult expected = new ExperimentResult(281, 2118, 2415, 186);

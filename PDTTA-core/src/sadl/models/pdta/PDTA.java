@@ -47,7 +47,7 @@ public class PDTA implements AutomatonModel {
 		final TDoubleList probabilities1 = new TDoubleArrayList(s.length());
 		final TDoubleList probabilities2 = new TDoubleArrayList(s.length());
 
-		final PDTAState currentState = root;
+		PDTAState currentState = root;
 
 		for (int i = 0; i < s.length(); i++) {
 			final String eventSymbol = s.getSymbol(i);
@@ -63,6 +63,7 @@ public class PDTA implements AutomatonModel {
 
 			probabilities1.add(currentTransition.getPropability());
 			probabilities2.add(currentTransition.getEvent().calculateProbability(time));
+			currentState = currentTransition.getTarget();
 		}
 
 		probabilities1.add(currentState.getEndProbability());

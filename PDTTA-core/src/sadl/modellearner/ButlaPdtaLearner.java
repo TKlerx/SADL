@@ -91,8 +91,8 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 		this.splittingStrategy = splittingStrategy;
 	}
 
-	public ButlaPdtaLearner(double bandwidth, double anomalyProbability, EventsCreationStrategy splittingStrategy, KDEFormelVariant formelVariant) {
-		this.eventGenerator = new EventGenerator(bandwidth, anomalyProbability, 0, formelVariant);
+	public ButlaPdtaLearner(double bandwidth, EventsCreationStrategy splittingStrategy, KDEFormelVariant formelVariant) {
+		this.eventGenerator = new EventGenerator(bandwidth, 0, 0, formelVariant);
 		this.splittingStrategy = splittingStrategy;
 	}
 

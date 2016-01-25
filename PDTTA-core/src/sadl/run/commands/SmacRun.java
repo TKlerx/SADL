@@ -180,10 +180,6 @@ public class SmacRun {
 	@Parameter(names = "-butlaPreprocessingBandwidth")
 	double butlaPreprocessingBandwidth = 10000;
 
-	@Parameter(names = "-butlaAnomalyProbability")
-	double butlaAnomalyProbability = 0.001;
-
-
 	@SuppressWarnings("null")
 	public ExperimentResult run(JCommander jc) {
 		final RamGobbler gobbler = new RamGobbler();
@@ -284,7 +280,7 @@ public class SmacRun {
 				} else {
 					bandwidth = butlaPreprocessingBandwidth;
 				}
-				final ButlaPdtaLearner butla = new ButlaPdtaLearner(bandwidth, butlaAnomalyProbability, EventsCreationStrategy.SplitEvents,
+				final ButlaPdtaLearner butla = new ButlaPdtaLearner(bandwidth, EventsCreationStrategy.SplitEvents,
 						KDEFormelVariant.OriginalKDE);
 				final Pair<TimedInput, Map<String, Event>> pair = butla.splitEventsInTimedSequences(trainSet);
 				trainSet = pair.getKey();
