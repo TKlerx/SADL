@@ -130,34 +130,34 @@ public class ThresholdDetectorTest {
 	@Test
 	public void testSingleThresholdDetectorButla() throws IOException, URISyntaxException {
 		final ButlaPdtaLearner learner = new ButlaPdtaLearner(20000, 0.05, TransitionsType.Incoming, 0.05, 0.05, PTAOrdering.TopDown,
-				EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE, IntervalCreationStrategy.OriginalButla);
+				EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE, IntervalCreationStrategy.extendInterval);
 		// final AggregatedThresholdDetector detector = new AggregatedThresholdDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, -5, -8,
 		// false);
 		final AnomalyDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, new AggregatedSingleFeatureCreator(),
 				new ThresholdClassifier(Math.exp(-5)));
 
 		final AnomalyDetection detection = new AnomalyDetection(detector, learner);
-		ExperimentResult expected = new ExperimentResult(467, 0, 4533, 0);
+		ExperimentResult expected = new ExperimentResult(467, 1388, 3145, 0);
 		Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
 		ExperimentResult actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(495, 0, 4505, 0);
+		expected = new ExperimentResult(201, 1341, 3164, 294);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type2.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(486, 0, 4514, 0);
+		expected = new ExperimentResult(322, 1423, 3091, 164);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type3.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(523, 0, 4477, 0);
+		expected = new ExperimentResult(523, 1331, 3146, 0);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type4.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(462, 0, 4538, 0);
+		expected = new ExperimentResult(251, 1419, 3119, 211);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type5.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
