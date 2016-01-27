@@ -11,17 +11,11 @@
 package sadl.run.factories.learn;
 
 import com.beust.jcommander.Parameter;
-import com.beust.jcommander.Parameters;
 
 import sadl.constants.KdeKernelFunction;
-import sadl.constants.MergeMethod;
 import sadl.constants.TauEstimation;
-import sadl.modellearner.AlergiaRedBlue;
-import sadl.modellearner.PdfaLearner;
-import sadl.modellearner.PdttaLearner;
 
-@Parameters(commandDescription = "Run with PDTTALearner as a learner")
-public class PdttaFactory implements PdfaDefaultFactory, TptaDefaultFactory {
+public class TptaFactory implements TptaDefaultFactory {
 	@Parameter(names = "-kdeBandwidth")
 	double kdeBandwidth = 10000;
 
@@ -39,20 +33,6 @@ public class PdttaFactory implements PdfaDefaultFactory, TptaDefaultFactory {
 
 	@Parameter(names = "-tauEstimation")
 	TauEstimation tauEstimation = TauEstimation.DENSITY;
-
-	@Parameter(names = "-mergeAlpha")
-	double mergeAlpha = 0.05;
-
-	@Parameter(names = "-mergeMethod")
-	MergeMethod mergeMethod = MergeMethod.ALERGIA_PAPER;
-
-	@Parameter(names = "-mergeT0")
-	int mergeT0 = 3;
-
-	@Parameter(names = "-recursiveMergeTest", arity = 1)
-	boolean recursiveMergeTest = true;
-
-
 
 	@Override
 	public boolean getKdeBandwidthEstimateValue() {
@@ -82,34 +62,5 @@ public class PdttaFactory implements PdfaDefaultFactory, TptaDefaultFactory {
 	@Override
 	public TauEstimation getTauEstimation() {
 		return tauEstimation;
-	}
-
-	@Override
-	public double getMergeAlpha() {
-		return mergeAlpha;
-	}
-
-	@Override
-	public MergeMethod getMergeMethod() {
-		return mergeMethod;
-	}
-
-	@Override
-	public int getMergeT0() {
-		return mergeT0;
-	}
-
-
-
-	@Override
-	public boolean isRecursiveMergeTest() {
-		return recursiveMergeTest;
-	}
-
-	@Override
-	public PdttaLearner create() {
-		final PdfaLearner pdfaLearner = new AlergiaRedBlue(getMergeAlpha(), isRecursiveMergeTest(), getMergeMethod(), getMergeT0());
-		final PdttaLearner learner = new PdttaLearner(pdfaLearner, getKernelFunction(), getBandwidth(), getTauEstimator());
-		return learner;
 	}
 }

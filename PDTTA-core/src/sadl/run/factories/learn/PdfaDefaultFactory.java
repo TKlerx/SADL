@@ -8,8 +8,27 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-package sadl.constants;
+package sadl.run.factories.learn;
 
-public enum IntervalCreationStrategy {
-	OriginalButla, WithoutAnomalyBounds, extendInterval
+import sadl.constants.MergeMethod;
+import sadl.interfaces.ProbabilisticModelLearner;
+import sadl.modellearner.AlergiaRedBlue;
+import sadl.run.factories.LearnerFactory;
+
+public interface PdfaDefaultFactory extends LearnerFactory {
+
+	public double getMergeAlpha();
+
+	public boolean isRecursiveMergeTest();
+
+	public int getMergeT0();
+
+	public MergeMethod getMergeMethod();
+
+
+	@Override
+	public default ProbabilisticModelLearner create() {
+		return new AlergiaRedBlue(getMergeAlpha(), isRecursiveMergeTest(), getMergeMethod(), getMergeT0());
+	}
+
 }

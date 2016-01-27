@@ -59,9 +59,11 @@ import sadl.oneclassclassifier.clustering.KMeansClassifier;
 import sadl.oneclassclassifier.clustering.XMeansClassifier;
 import sadl.run.factories.LearnerFactory;
 import sadl.run.factories.learn.ButlaFactory;
+import sadl.run.factories.learn.PdfaFactory;
 import sadl.run.factories.learn.PdttaFactory;
 import sadl.run.factories.learn.PetriNetFactory;
 import sadl.run.factories.learn.RTIFactory;
+import sadl.run.factories.learn.TptaFactory;
 import sadl.utils.IoUtils;
 import sadl.utils.MasterSeed;
 import sadl.utils.RamGobbler;
@@ -87,7 +89,7 @@ public class SmacRun {
 	private Boolean bla;
 
 	@Parameter(names = "-qualityCriterion")
-	QualityCriterion qCrit = QualityCriterion.F_MEASURE;
+	QualityCriterion qCrit = QualityCriterion.PHI_COEFFICIENT;
 
 	// @ParametersDelegate
 	// private final TrainRun trainRun = new TrainRun(true);
@@ -321,7 +323,11 @@ public class SmacRun {
 		result.setMinMemoryUsage(gobbler.getMinRam());
 		logger.info("{}", result);
 		gobbler.shutdown();
-		System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - qVal) + ", 0");
+		if (Double.isInfinite(qVal) || Double.isNaN(qVal)) {
+			System.out.println("Result for SMAC: SUCCESS, 0, 0, " + Integer.MAX_VALUE + ", 0");
+		} else {
+			System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - qVal) + ", 0");
+		}
 		return result;
 	}
 
@@ -363,6 +369,12 @@ public class SmacRun {
 				break;
 			case BUTLA:
 				lf = new ButlaFactory();
+				break;
+			case TPTA:
+				lf = new TptaFactory();
+				break;
+			case PDFA:
+				lf = new PdfaFactory();
 				break;
 				// TODO Add other learning algorithms
 			default:

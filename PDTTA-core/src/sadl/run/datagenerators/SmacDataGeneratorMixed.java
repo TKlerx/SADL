@@ -21,19 +21,25 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.apache.commons.lang3.SerializationUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import sadl.constants.AnomalyInsertionType;
+import sadl.constants.EventsCreationStrategy;
+import sadl.constants.KDEFormelVariant;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
+import sadl.modellearner.ButlaPdtaLearner;
 import sadl.modellearner.TauPtaLearner;
 import sadl.models.TauPTA;
+import sadl.models.pta.Event;
 import sadl.utils.CollectionUtils;
 import sadl.utils.MasterSeed;
 
@@ -55,7 +61,7 @@ public class SmacDataGeneratorMixed implements Serializable {
 	private static final double ANOMALY_PERCENTAGE = 0.1;
 	private static final int TRAIN_SIZE = 10000;
 	private static final int TEST_SIZE = 5000;
-	private static final int SAMPLE_FILES = 20;
+	private static final int SAMPLE_FILES = 11;
 
 	/**
 	 * @param args
@@ -84,7 +90,13 @@ public class SmacDataGeneratorMixed implements Serializable {
 		logger.info("Starting to learn TauPTA...");
 		int k = 0;
 		// parse timed sequences
-		final TimedInput trainingTimedSequences = TimedInput.parseAlt(Paths.get(dataString), 1);
+		TimedInput trainingTimedSequences = TimedInput.parseAlt(Paths.get(dataString), 1);
+		final boolean splitTimedEvents = true;
+		if (splitTimedEvents) {
+			final ButlaPdtaLearner butla = new ButlaPdtaLearner(10000, EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
+			final Pair<TimedInput, Map<String, Event>> p = butla.splitEventsInTimedSequences(trainingTimedSequences);
+			trainingTimedSequences = p.getKey();
+		}
 		final Random r = MasterSeed.nextRandom();
 		final List<TimedWord> trainSequences = new ArrayList<>();
 		final List<TimedWord> testSequences = new ArrayList<>();

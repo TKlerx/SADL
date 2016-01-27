@@ -1,4 +1,4 @@
-paramfile = butla/params.pcs
+paramfile = butla/butla-params.pcs
 runObj = QUALITY
 #3 hours algorithm time
 cutoffTime = 10800

@@ -51,7 +51,7 @@ public class PdttaLearner implements ProbabilisticModelLearner {
 	KernelFunction kdeKernelFunction;
 	double kdeBandwidth;
 	private final PdfaLearner pdfaLearner;
-	private final TauEstimator tauEstimator;
+	protected final TauEstimator tauEstimator;
 
 	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest) {
 		this(new AlergiaRedBlue(mergeAlpha, recursiveMergeTest), null, 0);

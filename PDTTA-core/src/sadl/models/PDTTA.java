@@ -56,6 +56,10 @@ public class PDTTA extends PDFA {
 	protected PDTTA() {
 	}
 
+	protected PDTTA(TauEstimator tauEstimator) {
+		this.tauEstimator = tauEstimator;
+	}
+
 	public PDTTA(PDFA pdfa, Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions, TauEstimator tauEstimation) throws IOException {
 		super(pdfa);
 		this.transitionDistributions = transitionDistributions;

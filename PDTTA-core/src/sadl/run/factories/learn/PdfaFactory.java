@@ -8,8 +8,44 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-package sadl.constants;
+package sadl.run.factories.learn;
 
-public enum IntervalCreationStrategy {
-	OriginalButla, WithoutAnomalyBounds, extendInterval
+import com.beust.jcommander.Parameter;
+
+import sadl.constants.MergeMethod;
+
+public class PdfaFactory implements PdfaDefaultFactory {
+
+	@Parameter(names = "-mergeAlpha")
+	double mergeAlpha = 0.05;
+
+	@Parameter(names = "-recursiveMergeTest", arity = 1)
+	boolean recursiveMergeTest = true;
+
+	@Parameter(names = "-mergeT0")
+	int mergeT0 = 3;
+
+	@Parameter(names = "-mergeMethod")
+	MergeMethod mergeMethod = MergeMethod.ALERGIA_PAPER;
+
+	@Override
+	public double getMergeAlpha() {
+		return mergeAlpha;
+	}
+
+	@Override
+	public boolean isRecursiveMergeTest() {
+		return recursiveMergeTest;
+	}
+
+	@Override
+	public int getMergeT0() {
+		return mergeT0;
+	}
+
+	@Override
+	public MergeMethod getMergeMethod() {
+		return mergeMethod;
+	}
+
 }

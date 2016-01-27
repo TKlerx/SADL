@@ -78,7 +78,8 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 	}
 
 	/**
-	 * Same as alergia with recursion
+	 * Same as alergia with recursion. Events are not split.
+	 * 
 	 * @param alpha
 	 */
 	public ButlaPdtaLearner(double alpha) {
@@ -87,11 +88,6 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 		this.a = alpha;
 		this.mergeStrategy = PTAOrdering.TopDown;
 		this.transitionsToCheck = TransitionsType.Incoming;
-	}
-
-	public ButlaPdtaLearner(EventsCreationStrategy splittingStrategy, KDEFormelVariant formelVariant) {
-		this.eventGenerator = new EventGenerator(0, 0, 0, formelVariant);
-		this.splittingStrategy = splittingStrategy;
 	}
 
 	public ButlaPdtaLearner(double bandwidth, EventsCreationStrategy splittingStrategy, KDEFormelVariant formelVariant) {

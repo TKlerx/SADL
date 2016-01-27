@@ -1,29 +1,31 @@
-#BUTLA parameters
+#PDTTA parameters
+mergeAlpha [0,1] [0.05]
+recursiveMergeTest {true,false} [false]
+mergeT0 [1,100] [3]i
+mergeMethod {ALERGIA_PAPER,TREBA} [ALERGIA_PAPER]
 
-alpha [0.0001,0.9999] [0.05]
-transitionsToCheck {Incoming, Outgoing, Both} [Incoming]
-anomalyProbability [0.00000001,0.9999] [0.05]
+kdeBandwidthEstimate {true, false} [true]
+kdeBandwidth [0.0000001,1000] [1]
+kdeBandwidth |kdeBandwidthEstimate in {false}
+kdeKernelFunction {BIWEIGHT, EPANECHNIKOV, GAUSS, TRIWEIGHT, UNIFORM, ESTIMATE} [ESTIMATE]
+tauEstimation {DENSITY,MONTE_CARLO} [MONTE_CARLO]
+mcNumberOfSteps [10,100000] [1000]i
+mcNumberOfSteps | tauEstimation in {MONTE_CARLO}
 
-#warningProbability [0.00000001,0.9999] [0.05]
-#forbidden:
-#{warningProbability > anomalyProbability}
+mcPointsToStore [10,40000] [10000]i
+mcPointsToStore | tauEstimation in {MONTE_CARLO}
 
-mergeStrategy {TopDown, BottomUp} [BottomUp]
-splittingStrategy {NotTimedEvents, DontSplitEvents, SplitEvents, IsolateCriticalAreas } [SplitEvents]
-formelVariant {	OriginalKDE, OriginalButlaVariableBandwidth, ButlaBandwidthSquared, ButlaBandwidthNotSquared} [OriginalKDE]
-intervalCreationStrategy {OriginalButla, WithoutAnomalyBounds, extendInterval} [OriginalButla]
-intervalCreationStrategy | splittingStrategy in {SplitEvents}
 
-DontSplitEvents,IsolateCriticalAreas
+butlaPreprocessing {true, false}[false]
 
-bandwidth [10000,1000000] [20000]
-bandwidth | formelVariant in {OriginalKDE}
+butlaPreprocessingBandwidth [10000,1000000] [20000]
+butlaPreprocessingBandwidth | butlaPreprocessing in {true}
 
-intervalCreationStrategy {OriginalButla, WithoutAnomalyBounds, extendInterval} [OriginalButla]
-intervalCreationStrategy | splittingStrategy in {SplitEvents}
+
+
 
 #Detector parameters
-detectorMethod {SVM,DBSCAN,THRESHOLD_SINGLE,THRESHOLD_AGG_ONLY, THRESHOLD_ALL, GMEANS,XMEANS,KMEANS,ANODA} [ANODA]
+detectorMethod {SVM,DBSCAN,THRESHOLD_SINGLE,THRESHOLD_AGG_ONLY, THRESHOLD_ALL, GMEANS,XMEANS,KMEANS} [SVM]
 # Must be tested first!
 # aggregateSublists {true,false} [false] 
 

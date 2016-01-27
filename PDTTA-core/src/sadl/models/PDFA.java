@@ -659,18 +659,18 @@ public class PDFA implements AutomatonModel, Serializable {
 			int count = 0;
 			for (final Transition t : transitions) {
 				if (!other.transitions.contains(t)) {
-					logger.error("Transition {} not contained in other.transitions", t);
+					logger.trace("Transition {} not contained in other.transitions", t);
 					count++;
 				}
 			}
 			for (final Transition t : other.transitions) {
 				if (!transitions.contains(t)) {
-					logger.error("Transition {} not contained in transitions", t);
+					logger.trace("Transition {} not contained in transitions", t);
 					count++;
 				}
 			}
 			if (count > 0) {
-				logger.error("{} out of {} transitions did not match", count, transitions.size());
+				logger.debug("{} out of {} transitions did not match", count, transitions.size());
 			}
 			return false;
 		}

@@ -1,19 +1,13 @@
 #PDTTA parameters
 mergeAlpha [0,1] [0.05]
-kdeBandwidthEstimate {true, false} [true]
-kdeBandwidth [0.0000001,1000] [1]
-kdeBandwidth |kdeBandwidthEstimate in {false}
-kdeKernelFunction {BIWEIGHT, EPANECHNIKOV, GAUSS, TRIWEIGHT, UNIFORM, ESTIMATE} [ESTIMATE]
-tauEstimation {DENSITY,MONTE_CARLO} [MONTE_CARLO]
 mergeMethod {ALERGIA_PAPER,TREBA} [ALERGIA_PAPER]
+recursiveMergeTest {true,false} [false]
+mergeT0 [1,100] [3]i
+
 
 butlaPreprocessing {true, false}[false]
 
-#butlaPreprocessingBandwidthEstimate{true, false}[false]
-#butlaPreprocessingBandwidthEstimate | butlaPreprocessing in {true}
-
 butlaPreprocessingBandwidth [10000,1000000] [20000]
-#butlaPreprocessingBandwidth | butlaPreprocessingBandwidthEstimate in {false}
 butlaPreprocessingBandwidth | butlaPreprocessing in {true}
 
 mcNumberOfSteps [10,100000] [1000]i
@@ -22,9 +16,7 @@ mcNumberOfSteps | tauEstimation in {MONTE_CARLO}
 mcPointsToStore [10,40000] [10000]i
 mcPointsToStore | tauEstimation in {MONTE_CARLO}
 
-recursiveMergeTest {true,false} [false]
 
-mergeT0 [1,100] [3]i
 
 #Detector parameters
 detectorMethod {SVM,DBSCAN,THRESHOLD_SINGLE,THRESHOLD_AGG_ONLY, THRESHOLD_ALL, GMEANS,XMEANS,KMEANS} [SVM]

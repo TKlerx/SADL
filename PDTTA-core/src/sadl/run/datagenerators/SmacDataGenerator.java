@@ -21,17 +21,23 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.apache.commons.lang3.SerializationUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sadl.constants.AnomalyInsertionType;
+import sadl.constants.EventsCreationStrategy;
+import sadl.constants.KDEFormelVariant;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
+import sadl.modellearner.ButlaPdtaLearner;
 import sadl.modellearner.TauPtaLearner;
 import sadl.models.TauPTA;
+import sadl.models.pta.Event;
 import sadl.utils.MasterSeed;
 
 /**
@@ -78,8 +84,14 @@ public class SmacDataGenerator implements Serializable {
 			}
 		});
 		int k = 0;
+		final boolean splitTimedEvents = true;
 		// parse timed sequences
-		final TimedInput trainingTimedSequences = TimedInput.parseAlt(Paths.get(dataString), 1);
+		TimedInput trainingTimedSequences = TimedInput.parseAlt(Paths.get(dataString), 1);
+		if (splitTimedEvents) {
+			final ButlaPdtaLearner butla = new ButlaPdtaLearner(10000, EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
+			final Pair<TimedInput, Map<String, Event>> p = butla.splitEventsInTimedSequences(trainingTimedSequences);
+			trainingTimedSequences = p.getKey();
+		}
 		final Random r = MasterSeed.nextRandom();
 		final List<TimedWord> trainSequences = new ArrayList<>();
 		final List<TimedWord> testSequences = new ArrayList<>();
@@ -92,9 +104,9 @@ public class SmacDataGenerator implements Serializable {
 		// final Process ps = Runtime.getRuntime().exec("dot -Tpdf -O " + outputDir.resolve(p));
 		// System.out.println(outputDir.resolve(p));
 		// ps.waitFor();
-		logger.info("Finished TauPTA creation.");
+		logger.info("Finished TauPTA ({} states) creation.", pta.getStateCount());
 		TauPTA currentPta;
-		while (k < 100) {
+		while (k < 54) {
 			for (final AnomalyInsertionType type : AnomalyInsertionType.values()) {
 				if (type != AnomalyInsertionType.NONE && type != AnomalyInsertionType.ALL) {
 					// if (type != AnomalyInsertionType.TYPE_TWO) {
@@ -135,7 +147,7 @@ public class SmacDataGenerator implements Serializable {
 					}
 					final TimedInput trainset = new TimedInput(trainSequences);
 					final TimedInput testset = new TimedInput(testSequences);
-					final Path outputFile = outputDir.resolve(Paths.get(df.format(k) + "_smac_mix_type" + type.getTypeIndex() + ".txt"));
+					final Path outputFile = outputDir.resolve(Paths.get(df.format(k) + "_smac_type" + type.getTypeIndex() + ".txt"));
 					try (BufferedWriter bw = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
 						trainset.toFile(bw, true);
 						bw.write('\n');

@@ -53,6 +53,7 @@ import sadl.constants.ClassLabel;
 import sadl.detectors.AnomalyDetector;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
+import sadl.interfaces.TauEstimator;
 import sadl.structure.Transition;
 import sadl.structure.UntimedSequence;
 import sadl.structure.ZeroProbTransition;
@@ -142,6 +143,12 @@ public class TauPTA extends PDTTA {
 
 
 	public TauPTA(TObjectIntMap<Transition> transitionCount, TIntIntMap finalStateCount) {
+		this.transitionCount = transitionCount;
+		this.finalStateCount = finalStateCount;
+	}
+
+	public TauPTA(TObjectIntMap<Transition> transitionCount, TIntIntMap finalStateCount, TauEstimator tauEstimator) {
+		super(tauEstimator);
 		this.transitionCount = transitionCount;
 		this.finalStateCount = finalStateCount;
 	}

@@ -63,7 +63,11 @@ public class TauPtaLearner extends PdttaLearner {
 
 	@Override
 	public TauPTA train(TimedInput trainingSequences) {
-		return train(trainingSequences, false);
+		if (tauEstimator != null) {
+			return train(trainingSequences, true);
+		} else {
+			return train(trainingSequences, false);
+		}
 	}
 
 	private void addEventSequence(TauPTA pta, TimedWord s) {
@@ -127,7 +131,7 @@ public class TauPtaLearner extends PdttaLearner {
 		finalStateCount = new TIntIntHashMap();
 		// now the whole stuff again but only with those sequences that are in the initialPta
 		// do not remove any sequences because they should occur more often than the specified threshold
-		final TauPTA newPta = new TauPTA(transitionCount, finalStateCount);
+		final TauPTA newPta = new TauPTA(transitionCount, finalStateCount, tauEstimator);
 
 		newPta.addState(TauPTA.START_STATE);
 
