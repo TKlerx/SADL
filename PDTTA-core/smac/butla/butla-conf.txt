@@ -9,6 +9,6 @@ instance_file = smac-data/train
 test_instance_file = smac-data/test
 instance-suffix = txt
 test-instance-suffix = txt
-algo = java -Xmx2g -XX:+HeapDumpOnOutOfMemoryError -jar run/PDTTA-core-0.0.1-SNAPSHOT.jar smac BUTLA
+algo = java -Xmx4g -XX:+HeapDumpOnOutOfMemoryError -jar run/PDTTA-core-0.0.1-SNAPSHOT.jar smac BUTLA
 num-test-instances = 10
 deterministic = true
