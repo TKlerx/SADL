@@ -98,8 +98,8 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 	@Override
 	public PDTA train(TimedInput TimedTrainingSequences) {
 		logger.debug("Starting to learn PDTA with BUTLA...");
-		final HashMap<String, TDoubleList> eventToTimelistMap = mapEventsToTimes(TimedTrainingSequences);
-		final HashMap<String, Event> eventsMap = generateSubEvents(eventToTimelistMap);
+		final Map<String, TDoubleList> eventToTimelistMap = mapEventsToTimes(TimedTrainingSequences);
+		final Map<String, Event> eventsMap = generateSubEvents(eventToTimelistMap);
 
 		try {
 			logger.debug("Starting to build PTA ...");
@@ -126,10 +126,10 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 	/**
 	 * 
 	 * @param timedEventSequences
-	 * Sequences of timed events.
-	 * @return
+	 *            Sequences of timed events.
+	 * @return The mapping from event name to the time values occuring for this event globally in the input.
 	 */
-	public HashMap<String, TDoubleList> mapEventsToTimes(TimedInput timedEventSequences) {
+	public Map<String, TDoubleList> mapEventsToTimes(TimedInput timedEventSequences) {
 		logger.debug("Starting to gather time values...");
 		final HashMap<String, TDoubleList> eventTimesMap = new HashMap<>(timedEventSequences.getSymbols().length);
 
@@ -251,8 +251,8 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 	}
 
 	public Pair<TimedInput, Map<String, Event>> splitEventsInTimedSequences(TimedInput timedSequences) {
-		final HashMap<String, TDoubleList> eventToTimelistMap = mapEventsToTimes(timedSequences);
-		final HashMap<String, Event> eventsMap = generateSubEvents(eventToTimelistMap);
+		final Map<String, TDoubleList> eventToTimelistMap = mapEventsToTimes(timedSequences);
+		final Map<String, Event> eventsMap = generateSubEvents(eventToTimelistMap);
 		return Pair.of(getSplitInputForMapping(timedSequences, eventsMap), eventsMap);
 	}
 

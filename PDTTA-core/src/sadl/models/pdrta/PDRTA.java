@@ -93,6 +93,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 		return states.get(index);
 	}
 
+	@SuppressWarnings("unused")
 	public PDRTA(PDRTA a) {
 
 		input = a.input;

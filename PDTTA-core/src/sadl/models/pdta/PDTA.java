@@ -10,23 +10,22 @@
  */
 package sadl.models.pdta;
 
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.array.TDoubleArrayList;
-import gnu.trove.list.linked.TIntLinkedList;
-import gnu.trove.map.TIntObjectMap;
-
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
 
 import org.apache.commons.math3.util.Pair;
 
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.linked.TIntLinkedList;
+import gnu.trove.map.TIntObjectMap;
 import sadl.constants.ClassLabel;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
@@ -40,7 +39,7 @@ public class PDTA implements AutomatonModel {
 
 	PDTAState root;
 	TIntObjectMap<PDTAState> states;
-	HashMap<String, Event> events;
+	Map<String, Event> events;
 
 	@Override
 	public Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord s) {
@@ -71,7 +70,7 @@ public class PDTA implements AutomatonModel {
 		return new Pair<>(probabilities1, probabilities2);
 	}
 
-	public PDTA(PDTAState root, TIntObjectMap<PDTAState> states, HashMap<String, Event> events) {
+	public PDTA(PDTAState root, TIntObjectMap<PDTAState> states, Map<String, Event> events) {
 		this.root = root;
 		this.states = states;
 		this.events = events;

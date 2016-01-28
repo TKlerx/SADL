@@ -10,24 +10,23 @@
  */
 package sadl.models.pta;
 
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
-
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import sadl.constants.IntervalCreationStrategy;
 import sadl.constants.PTAOrdering;
 import sadl.input.TimedInput;
@@ -40,7 +39,7 @@ public class PTA {
 
 	protected PTAState root;
 	protected LinkedHashMap<Integer, PTAState> tails = new LinkedHashMap<>();
-	protected HashMap<String, Event> events;
+	protected Map<String, Event> events;
 	protected int depth = 0;
 
 	protected List<PTAState> states = new ArrayList<>();
@@ -48,19 +47,19 @@ public class PTA {
 
 	protected boolean statesMerged = false;
 
-	public PTA(HashMap<String, Event> events) {
+	public PTA(Map<String, Event> events) {
 		this.events = events;
 		this.root = new PTAState("", null, this);
 		states.add(root);
 		tails.put(new Integer(root.getId()), root);
 	}
 
-	public PTA(HashMap<String, Event> events, TimedInput timedSequences) {
+	public PTA(Map<String, Event> events, TimedInput timedSequences) {
 		this(events);
 		this.addSequences(timedSequences);
 	}
 
-	public HashMap<String, Event> getEvents() {
+	public Map<String, Event> getEvents() {
 
 		return events;
 	}
