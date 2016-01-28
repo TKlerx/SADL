@@ -11,5 +11,12 @@
 package sadl.constants;
 
 public enum MergeMethod {
-	TREBA, ALERGIA_PAPER
+	/**
+	 * Just do one recursion step for state similarity (as implemented in treba library).
+	 */
+	TREBA,
+	/**
+	 * Check states fully recursively for similarity.
+	 */
+	ALERGIA_PAPER
 }

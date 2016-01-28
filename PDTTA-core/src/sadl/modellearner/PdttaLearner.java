@@ -61,6 +61,10 @@ public class PdttaLearner implements ProbabilisticModelLearner {
 		this(pdfaLearner, null, 0);
 	}
 
+	public PdttaLearner(PdfaLearner pdfaLearner, KernelFunction kdeKernelFunction) {
+		this(pdfaLearner, kdeKernelFunction, -1, null);
+	}
+
 	public PdttaLearner(PdfaLearner pdfaLearner, KernelFunction kdeKernelFunction, double kdeBandwidth) {
 		this(pdfaLearner, kdeKernelFunction, kdeBandwidth, null);
 	}
@@ -72,10 +76,10 @@ public class PdttaLearner implements ProbabilisticModelLearner {
 		this.tauEstimator = tauEstimation;
 	}
 
-	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
-			TauEstimator tauEstimation) {
-		this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest, mergeTest), kdeKernelFunction, kdeBandwidth, tauEstimation);
-	}
+	// public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
+	// TauEstimator tauEstimation) {
+	// this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest, mergeTest), kdeKernelFunction, kdeBandwidth, tauEstimation);
+	// }
 
 	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest) {
 		this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest, mergeTest), kdeKernelFunction, kdeBandwidth, null);
@@ -87,11 +91,10 @@ public class PdttaLearner implements ProbabilisticModelLearner {
 
 	}
 
-	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
-			double smoothingPrior, TauEstimator tauEstimatior) {
-		this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest, mergeTest, smoothingPrior), kdeKernelFunction, kdeBandwidth, tauEstimatior);
-
-	}
+	// public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
+	// double smoothingPrior, TauEstimator tauEstimatior) {
+	// this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest, mergeTest, smoothingPrior), kdeKernelFunction, kdeBandwidth, tauEstimatior);
+	// }
 
 
 	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
@@ -105,9 +108,9 @@ public class PdttaLearner implements ProbabilisticModelLearner {
 		this(mergeAlpha, recursiveMergeTest, null, -1, mergeTest);
 	}
 
-	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, MergeTest mergeTest, double smoothingPrior) {
-		this(mergeAlpha, recursiveMergeTest, null, -1, mergeTest, smoothingPrior);
-	}
+	// public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, MergeTest mergeTest, double smoothingPrior) {
+	// this(mergeAlpha, recursiveMergeTest, null, -1, mergeTest, smoothingPrior);
+	// }
 
 
 	@Override

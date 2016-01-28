@@ -31,7 +31,6 @@ import sadl.constants.ProbabilityAggregationMethod;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.ProbabilisticModel;
-import sadl.models.PDTTA;
 import sadl.utils.Settings;
 
 /**
@@ -62,7 +61,7 @@ public abstract class AnomalyDetector {
 		this.aggType = aggType;
 	}
 
-	public AnomalyDetector(ProbabilityAggregationMethod aggType, PDTTA model) {
+	public AnomalyDetector(ProbabilityAggregationMethod aggType, ProbabilisticModel model) {
 		super();
 		this.aggType = aggType;
 		this.model = model;
