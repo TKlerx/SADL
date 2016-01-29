@@ -324,10 +324,9 @@ public class SmacRun {
 		logger.info("{}", result);
 		gobbler.shutdown();
 		if (Double.isInfinite(qVal) || Double.isNaN(qVal)) {
-			System.out.println("Result for SMAC: SUCCESS, 0, 0, " + Integer.MAX_VALUE + ", 0");
-		} else {
-			System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - qVal) + ", 0");
+			qVal = 0;
 		}
+		System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - qVal) + ", 0");
 		return result;
 	}
 

@@ -39,6 +39,7 @@ import sadl.models.pta.Event;
 import sadl.models.pta.EventGenerator;
 import sadl.models.pta.PTA;
 import sadl.models.pta.PTAState;
+import sadl.models.pta.SubEvent;
 
 public class ButlaPdtaLearner implements ProbabilisticModelLearner, CompatibilityChecker {
 	private static Logger logger = LoggerFactory.getLogger(ButlaPdtaLearner.class);
@@ -265,8 +266,16 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			for (int i = 0; i < word.length(); i++) {
 				final String eventSymbol = word.getSymbol(i);
 				final double time = word.getTimeValue(i);
-				final String subEventSymbol = eventsMap.get(eventSymbol).getSubEventByTime(time).getSymbol();
-				symbols.add(subEventSymbol);
+				final Event event = eventsMap.get(eventSymbol);
+				if (event == null) {
+					// symbol never occured in train set
+					logger.debug("Event is null for symbol={}", eventSymbol);
+					symbols.add(eventSymbol);
+				} else {
+					final SubEvent subEventByTime = event.getSubEventByTime(time);
+					final String subEventSymbol = subEventByTime.getSymbol();
+					symbols.add(subEventSymbol);
+				}
 				timeValues.add((int) time);
 			}
 			words.add(new TimedWord(symbols, timeValues, word.getLabel()));
