@@ -83,6 +83,23 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 		}
 	}
 
+	/**
+	 * Tries to parse sequences from a file in the old or new format. If both fail, an exception is thrown.
+	 * 
+	 * @param in
+	 *            A {@link Path} that contains timed sequences in the appropriate format
+	 * @return A {@link TimedInput} that represents the timed sequences parsed
+	 * @throws IOException
+	 * @implNote The {@link #parse(Path)} and {@link #parseAlt(Path)} methods are called.
+	 */
+	public static TimedInput tryParse(Path in) throws IOException {
+		try {
+			return parse(in);
+		} catch (final IOException | IllegalArgumentException e) {
+			return parseAlt(in);
+		}
+	}
+
 	// TODO maybe add parsing for anomaly type?!
 	/**
 	 * Parses timed sequences from a file. Each line contains exactly one of those sequences that have the following format:

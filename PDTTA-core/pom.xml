@@ -129,6 +129,11 @@
 						<owner>Timo Klerx</owner>
 						<email>tiklerx@gmail.com</email>
 					</properties>
+					<includes>
+						<include>src/**</include>
+						<include>test/**</include>
+						<include>pom.xml</include>
+					</includes>
 					<excludes>
 						<exclude>license.txt</exclude>
 						<exclude>**/README</exclude>
@@ -146,6 +151,7 @@
 						<exclude>testResources/**</exclude>
 						<exclude>bin/**</exclude>
 						<exclude>assembly/**</exclude>
+						<exclude>**/.git/**</exclude>
 					</excludes>
 				</configuration>
 				<executions>
