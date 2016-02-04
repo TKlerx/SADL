@@ -72,6 +72,7 @@ public class SmacDataGenerator implements Serializable {
 	}
 
 	private void run() throws IOException, InterruptedException {
+		final EventsCreationStrategy[] splitEvents = { EventsCreationStrategy.DontSplitEvents, EventsCreationStrategy.SplitEvents };
 		if (Files.notExists(outputDir)) {
 			Files.createDirectories(outputDir);
 		}
@@ -83,80 +84,82 @@ public class SmacDataGenerator implements Serializable {
 				e.printStackTrace();
 			}
 		});
-		int k = 0;
-		final boolean splitTimedEvents = true;
-		// parse timed sequences
-		TimedInput trainingTimedSequences = TimedInput.parseAlt(Paths.get(dataString), 1);
-		if (splitTimedEvents) {
-			final ButlaPdtaLearner butla = new ButlaPdtaLearner(10000, EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
-			final Pair<TimedInput, Map<String, Event>> p = butla.splitEventsInTimedSequences(trainingTimedSequences);
-			trainingTimedSequences = p.getKey();
-		}
-		final Random r = MasterSeed.nextRandom();
-		final List<TimedWord> trainSequences = new ArrayList<>();
-		final List<TimedWord> testSequences = new ArrayList<>();
-		final TauPtaLearner learner = new TauPtaLearner();
-		final TauPTA pta = learner.train(trainingTimedSequences);
-		final TauPTA typeTwoNormalPta = SerializationUtils.clone(pta);
-		final DecimalFormat df = new DecimalFormat("00");
-		// final Path p = Paths.get("pta_normal.dot");
-		// pta.toGraphvizFile(outputDir.resolve(p), false);
-		// final Process ps = Runtime.getRuntime().exec("dot -Tpdf -O " + outputDir.resolve(p));
-		// System.out.println(outputDir.resolve(p));
-		// ps.waitFor();
-		logger.info("Finished TauPTA ({} states) creation.", pta.getStateCount());
-		TauPTA currentPta;
-		while (k < 54) {
-			for (final AnomalyInsertionType type : AnomalyInsertionType.values()) {
-				if (type != AnomalyInsertionType.NONE && type != AnomalyInsertionType.ALL) {
-					// if (type != AnomalyInsertionType.TYPE_TWO) {
-					// continue;
-					// }
-					if (type == AnomalyInsertionType.TYPE_TWO) {
-						currentPta = SerializationUtils.clone(typeTwoNormalPta);
-						currentPta.setRandom(MasterSeed.nextRandom());
-					} else {
-						currentPta = pta;
-					}
-					trainSequences.clear();
-					testSequences.clear();
-					final TauPTA anomaly = SerializationUtils.clone(currentPta);
-					logger.info("inserting Anomaly Type {}", type);
-					anomaly.makeAbnormal(type);
-					if (type == AnomalyInsertionType.TYPE_TWO) {
-						anomaly.removeAbnormalSequences(currentPta);
-					}
-					for (int i = 0; i < TRAIN_SIZE; i++) {
-						trainSequences.add(currentPta.sampleSequence());
-					}
-					// PTAs of Type 2 and 4 always produce abnormal sequences
-					// it is possible to sample abnormal and normal sequences with abnormal ptas of the other types (1,3,5).
-					// but I don't know how the distribution is, so to be fair, i sample all anomalies the same
-					for (int i = 0; i < TEST_SIZE; i++) {
-						if (r.nextDouble() < ANOMALY_PERCENTAGE) {
-							boolean wasAnormal = false;
-							TimedWord seq = null;
-							while (!wasAnormal) {
-								seq = anomaly.sampleSequence();
-								wasAnormal = seq.isAnomaly();
-							}
-							testSequences.add(seq);
+		for (final EventsCreationStrategy split : splitEvents) {
+			int k = 0;
+			// parse timed sequences
+			TimedInput trainingTimedSequences = TimedInput.parseAlt(Paths.get(dataString), 1);
+			if (split == EventsCreationStrategy.SplitEvents) {
+				final ButlaPdtaLearner butla = new ButlaPdtaLearner(10000, EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
+				final Pair<TimedInput, Map<String, Event>> p = butla.splitEventsInTimedSequences(trainingTimedSequences);
+				trainingTimedSequences = p.getKey();
+			}
+			final Random r = MasterSeed.nextRandom();
+			final List<TimedWord> trainSequences = new ArrayList<>();
+			final List<TimedWord> testSequences = new ArrayList<>();
+			final TauPtaLearner learner = new TauPtaLearner();
+			final TauPTA pta = learner.train(trainingTimedSequences);
+			final TauPTA typeTwoNormalPta = SerializationUtils.clone(pta);
+			final DecimalFormat df = new DecimalFormat("00");
+			// final Path p = Paths.get("pta_normal.dot");
+			// pta.toGraphvizFile(outputDir.resolve(p), false);
+			// final Process ps = Runtime.getRuntime().exec("dot -Tpdf -O " + outputDir.resolve(p));
+			// System.out.println(outputDir.resolve(p));
+			// ps.waitFor();
+			logger.info("Finished TauPTA ({} states) creation.", pta.getStateCount());
+			TauPTA currentPta;
+			while (k < 54) {
+				for (final AnomalyInsertionType type : AnomalyInsertionType.values()) {
+					if (type != AnomalyInsertionType.NONE && type != AnomalyInsertionType.ALL) {
+						// if (type != AnomalyInsertionType.TYPE_TWO) {
+						// continue;
+						// }
+						if (type == AnomalyInsertionType.TYPE_TWO) {
+							currentPta = SerializationUtils.clone(typeTwoNormalPta);
+							currentPta.setRandom(MasterSeed.nextRandom());
 						} else {
-							testSequences.add(currentPta.sampleSequence());
+							currentPta = pta;
 						}
+						trainSequences.clear();
+						testSequences.clear();
+						final TauPTA anomaly = SerializationUtils.clone(currentPta);
+						logger.info("inserting Anomaly Type {}", type);
+						anomaly.makeAbnormal(type);
+						if (type == AnomalyInsertionType.TYPE_TWO) {
+							anomaly.removeAbnormalSequences(currentPta);
+						}
+						for (int i = 0; i < TRAIN_SIZE; i++) {
+							trainSequences.add(currentPta.sampleSequence());
+						}
+						// PTAs of Type 2 and 4 always produce abnormal sequences
+						// it is possible to sample abnormal and normal sequences with abnormal ptas of the other types (1,3,5).
+						// but I don't know how the distribution is, so to be fair, i sample all anomalies the same
+						for (int i = 0; i < TEST_SIZE; i++) {
+							if (r.nextDouble() < ANOMALY_PERCENTAGE) {
+								boolean wasAnormal = false;
+								TimedWord seq = null;
+								while (!wasAnormal) {
+									seq = anomaly.sampleSequence();
+									wasAnormal = seq.isAnomaly();
+								}
+								testSequences.add(seq);
+							} else {
+								testSequences.add(currentPta.sampleSequence());
+							}
+						}
+						final TimedInput trainset = new TimedInput(trainSequences);
+						final TimedInput testset = new TimedInput(testSequences);
+						final String prep = split == EventsCreationStrategy.SplitEvents ? "prep" : "noPrep";
+						final Path outputFile = outputDir.resolve(Paths.get("tpta-" + prep + "-" + df.format(k) + "_smac_type" + type.getTypeIndex() + ".txt"));
+						try (BufferedWriter bw = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
+							trainset.toFile(bw, true);
+							bw.write('\n');
+							bw.write(TRAIN_TEST_SEP);
+							bw.write('\n');
+							testset.toFile(bw, true);
+						}
+						logger.info("Wrote file #{} ({})", k, outputFile);
+						k++;
 					}
-					final TimedInput trainset = new TimedInput(trainSequences);
-					final TimedInput testset = new TimedInput(testSequences);
-					final Path outputFile = outputDir.resolve(Paths.get(df.format(k) + "_smac_type" + type.getTypeIndex() + ".txt"));
-					try (BufferedWriter bw = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
-						trainset.toFile(bw, true);
-						bw.write('\n');
-						bw.write(TRAIN_TEST_SEP);
-						bw.write('\n');
-						testset.toFile(bw, true);
-					}
-					logger.info("Wrote file #{} ({})", k, outputFile);
-					k++;
 				}
 			}
 		}

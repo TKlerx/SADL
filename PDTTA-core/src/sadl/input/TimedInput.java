@@ -30,12 +30,18 @@ import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
+import jsat.distributions.Distribution;
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.ClassLabel;
+import sadl.modellearner.TauPtaLearner;
+import sadl.models.TauPTA;
+import sadl.structure.Transition;
 import sadl.utils.CollectionUtils;
 import sadl.utils.MasterSeed;
 
@@ -55,6 +61,13 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	private final TObjectIntMap<String> alphabet = new TObjectIntHashMap<>();
 	private final List<String> alphabetRev = new ArrayList<>();
 	private List<TimedWord> words = new ArrayList<>();
+
+	private static final double ANOMALY_PERCENTAGE = 0.1;
+	private static final double HUGE_TIME_CHANGE = 0.9;
+	private static final double SMALL_TIME_CHANGE = 0.1;
+	private static final double ANOMALY_TYPE_TWO_P_1 = 0.7;
+	private static final double ANOMALY_TYPE_TWO_P_2 = 0.9;
+	private static final int MAX_SEQUENCE_LENGTH = 1000;
 
 	private static final String[] parseSymbols = new String[] { "^\\(", "\\)$", "\\)\\s+\\(", "\\s*,\\s*", "\\s*:\\s*" };
 	private static final String[] parseSymbolsAlt = new String[] { "^\\d+ ", "$", "\\s{2}", "\\s", "\\s*:\\s*" };
@@ -669,7 +682,7 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 				index = r.nextInt(anomalyIndexes.size());
 			}
 			TimedWord word = CollectionUtils.chooseRandomObject(result.words, r);
-			while(word.isAnomaly()){
+			while (word.isAnomaly()) {
 				word = CollectionUtils.chooseRandomObject(result.words, r);
 			}
 			result.words.remove(word);
@@ -682,22 +695,99 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 			final AnomalyInsertionType newType = AnomalyInsertionType.getType(typeInt);
 			word = insertAnomaly(word, newType);
 			anomalyIndexes.add(index);
+			result.words.set(index, word);
 		}
 		return result;
 	}
 
+	private TauPTA tpta = null;
 	private TimedWord insertAnomaly(TimedWord word, AnomalyInsertionType type) {
 		if (type == AnomalyInsertionType.TYPE_ONE) {
-
+			final int changeIndex = r.nextInt(word.length());
+			final String event = word.getSymbol(changeIndex);
+			String newEvent = getSymbol(r.nextInt(getAlphSize()));
+			while (newEvent.equals(event)) {
+				newEvent = getSymbol(r.nextInt(getAlphSize()));
+			}
+			word.symbols.set(changeIndex, newEvent);
 		} else if (type == AnomalyInsertionType.TYPE_TWO) {
-
+			if (tpta == null) {
+				final TauPtaLearner learner = new TauPtaLearner();
+				tpta = learner.train(this);
+			}
+			word = createAbnormalEventSequence(tpta, r);
 		} else if (type == AnomalyInsertionType.TYPE_THREE) {
-
+			final int changeIndex = r.nextInt(word.length());
+			final TIntList timeValues = word.getTimeValues();
+			final double changePercent = HUGE_TIME_CHANGE;
+			changeTimeValue(r, timeValues, changePercent, changeIndex);
 		} else if (type == AnomalyInsertionType.TYPE_FOUR) {
-
-		} else if (type == AnomalyInsertionType.TYPE_FIVE) {
-
+			final TIntList timeValues = word.getTimeValues();
+			final double changePercent = SMALL_TIME_CHANGE;
+			for (int i = 0; i < timeValues.size(); i++) {
+				changeTimeValue(r, timeValues, changePercent, i);
+			}
+		} else if(type==AnomalyInsertionType.TYPE_FIVE)		{
+			final int changeIndex = r.nextInt(word.length());
+			final List<String> symbols = new ArrayList<>();
+			final TIntList timeValues = new TIntArrayList();
+			for(int i = 0;i<changeIndex;i++){
+				symbols.add(word.getSymbol(i));
+				timeValues.add(word.getTimeValue(i));
+			}
+			word = new TimedWord(symbols, timeValues, ClassLabel.ANOMALY);
 		}
-		return null;
+		word.setLabel(ClassLabel.ANOMALY);
+		return word;
+	}
+
+	private void changeTimeValue(Random mutation, TIntList timeValues, double changePercent, int i) {
+		int newValue = timeValues.get(i);
+		if (mutation.nextBoolean()) {
+			newValue = (int) (newValue + newValue * changePercent);
+		} else {
+			newValue = (int) (newValue - newValue * changePercent);
+		}
+		if (newValue < 0) {
+			newValue = 0;
+		}
+		timeValues.set(i, newValue);
+	}
+
+	public static TimedWord createAbnormalEventSequence(TauPTA automaton, Random mutation) {
+		final List<String> eventList = new ArrayList<>();
+		final TIntList timeList = new TIntArrayList();
+		boolean choseFinalState = false;
+		int currentState = 0;
+		while (!choseFinalState) {
+			final List<Transition> possibleTransitions = automaton.getOutTransitions(currentState, true);
+			Collections.sort(possibleTransitions, (o1, o2) -> Double.compare(o1.getProbability(), o2.getProbability()));
+			final List<Transition> topThree = possibleTransitions.subList(possibleTransitions.size() - 3, possibleTransitions.size());
+			final double randomValue = mutation.nextDouble();
+			int chosenTransitionIndex = -1;
+			if (randomValue <= ANOMALY_TYPE_TWO_P_1) {
+				chosenTransitionIndex = 0;
+			} else if (randomValue > ANOMALY_TYPE_TWO_P_1 && randomValue < ANOMALY_TYPE_TWO_P_2) {
+				chosenTransitionIndex = 1;
+			} else {
+				chosenTransitionIndex = 2;
+			}
+			final Transition chosenTransition = topThree.get(chosenTransitionIndex);
+			if (chosenTransition.isStopTraversingTransition() || eventList.size() > MAX_SEQUENCE_LENGTH) {
+				choseFinalState = true;
+			} else {
+				currentState = chosenTransition.getToState();
+
+				final Distribution d = automaton.getTransitionDistributions().get(chosenTransition.toZeroProbTransition());
+				if (d == null) {
+					// just do it again with other random sampling
+					return createAbnormalEventSequence(automaton, mutation);
+				}
+				final int timeValue = (int) d.sample(1, mutation)[0];
+				eventList.add(chosenTransition.getSymbol());
+				timeList.add(timeValue);
+			}
+		}
+		return new TimedWord(eventList, timeList, ClassLabel.ANOMALY);
 	}
 }

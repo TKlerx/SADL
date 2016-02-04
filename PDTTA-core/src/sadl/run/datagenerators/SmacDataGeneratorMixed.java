@@ -49,6 +49,7 @@ import sadl.utils.MasterSeed;
  *
  */
 public class SmacDataGeneratorMixed implements Serializable {
+
 	public static final String TRAIN_TEST_SEP = "?????????????????????????";
 
 	private static Logger logger = LoggerFactory.getLogger(SmacDataGeneratorMixed.class);
@@ -76,6 +77,7 @@ public class SmacDataGeneratorMixed implements Serializable {
 	}
 
 	private void run() throws IOException, InterruptedException {
+		final EventsCreationStrategy[] splitEvents = { EventsCreationStrategy.DontSplitEvents, EventsCreationStrategy.SplitEvents };
 		if (Files.notExists(outputDir)) {
 			Files.createDirectories(outputDir);
 		}
@@ -87,84 +89,90 @@ public class SmacDataGeneratorMixed implements Serializable {
 				e.printStackTrace();
 			}
 		});
-		logger.info("Starting to learn TauPTA...");
-		int k = 0;
-		// parse timed sequences
-		TimedInput trainingTimedSequences = TimedInput.parseAlt(Paths.get(dataString), 1);
-		final boolean splitTimedEvents = true;
-		if (splitTimedEvents) {
-			final ButlaPdtaLearner butla = new ButlaPdtaLearner(10000, EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
-			final Pair<TimedInput, Map<String, Event>> p = butla.splitEventsInTimedSequences(trainingTimedSequences);
-			trainingTimedSequences = p.getKey();
-		}
-		final Random r = MasterSeed.nextRandom();
-		final List<TimedWord> trainSequences = new ArrayList<>();
-		final List<TimedWord> testSequences = new ArrayList<>();
-		final TauPtaLearner learner = new TauPtaLearner();
-		final TauPTA pta = learner.train(trainingTimedSequences);
-		final DecimalFormat df = new DecimalFormat("00");
-		// final Path p = Paths.get("pta_normal.dot");
-		// pta.toGraphvizFile(outputDir.resolve(p), false);
-		// final Process ps = Runtime.getRuntime().exec("dot -Tpdf -O " + outputDir.resolve(p));
-		// System.out.println(outputDir.resolve(p));
-		// ps.waitFor();
-		logger.info("Finished TauPTA creation.");
-		logger.info("Before inserting anomalies, normal PTA has {} states and {} transitions",pta.getStateCount(),pta.getTransitionCount());
-		final List<TauPTA> abnormalPtas = new ArrayList<>();
-		for (final AnomalyInsertionType type : AnomalyInsertionType.values()) {
-			if (type != AnomalyInsertionType.NONE && type != AnomalyInsertionType.ALL) {
-				final TauPTA anomaly = SerializationUtils.clone(pta);
-				logger.info("inserting Anomaly Type {}", type);
-				anomaly.makeAbnormal(type);
-				abnormalPtas.add(anomaly);
-				if (type == AnomalyInsertionType.TYPE_TWO) {
-					anomaly.removeAbnormalSequences(pta);
-				}
-				logger.info("After inserting anomaly type {}, normal PTA has {} states and {} transitions", type, pta.getStateCount(),
-						pta.getTransitionCount());
-
+		for (final EventsCreationStrategy split : splitEvents) {
+			logger.info("Starting to learn TauPTA...");
+			int k = 0;
+			// parse timed sequences
+			TimedInput trainingTimedSequences = TimedInput.parseAlt(Paths.get(dataString), 1);
+			if (split == EventsCreationStrategy.SplitEvents) {
+				final ButlaPdtaLearner butla = new ButlaPdtaLearner(10000, EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
+				final Pair<TimedInput, Map<String, Event>> p = butla.splitEventsInTimedSequences(trainingTimedSequences);
+				trainingTimedSequences = p.getKey();
 			}
-		}
-		logger.info("After inserting all anomalies, normal PTA has {} states and {} transitions", pta.getStateCount(), pta.getTransitionCount());
-		final TObjectIntMap<TauPTA> anomalyOccurences = new TObjectIntHashMap<>();
-		final Random anomalyChooser = MasterSeed.nextRandom();
-		while (k < SAMPLE_FILES) {
-			trainSequences.clear();
-			testSequences.clear();
-			for (int i = 0; i < TRAIN_SIZE; i++) {
-				trainSequences.add(pta.sampleSequence());
-			}
-			for (int i = 0; i < TEST_SIZE; i++) {
-				if (r.nextDouble() < ANOMALY_PERCENTAGE) {
-					boolean wasAnormal = false;
-					TimedWord seq = null;
-					final TauPTA chosen = CollectionUtils.chooseRandomObject(abnormalPtas, anomalyChooser);
-					while (!wasAnormal) {
-						seq = chosen.sampleSequence();
-						wasAnormal = seq.isAnomaly();
+			final Random r = MasterSeed.nextRandom();
+			final List<TimedWord> trainSequences = new ArrayList<>();
+			final List<TimedWord> testSequences = new ArrayList<>();
+			final TauPtaLearner learner = new TauPtaLearner();
+			final TauPTA pta = learner.train(trainingTimedSequences);
+			final DecimalFormat df = new DecimalFormat("00");
+			// final Path p = Paths.get("pta_normal.dot");
+			// pta.toGraphvizFile(outputDir.resolve(p), false);
+			// final Process ps = Runtime.getRuntime().exec("dot -Tpdf -O " + outputDir.resolve(p));
+			// System.out.println(outputDir.resolve(p));
+			// ps.waitFor();
+			logger.info("Finished TauPTA creation.");
+			logger.info("Before inserting anomalies, normal PTA has {} states and {} transitions", pta.getStateCount(), pta.getTransitionCount());
+			final List<TauPTA> abnormalPtas = new ArrayList<>();
+			for (final AnomalyInsertionType type : AnomalyInsertionType.values()) {
+				if (type != AnomalyInsertionType.NONE && type != AnomalyInsertionType.ALL) {
+					final TauPTA anomaly = SerializationUtils.clone(pta);
+					logger.info("inserting Anomaly Type {}", type);
+					anomaly.makeAbnormal(type);
+					abnormalPtas.add(anomaly);
+					if (type == AnomalyInsertionType.TYPE_TWO) {
+						anomaly.removeAbnormalSequences(pta);
 					}
-					anomalyOccurences.adjustOrPutValue(chosen, 1, 1);
-					testSequences.add(seq);
-				} else {
-					testSequences.add(pta.sampleSequence());
+					logger.info("After inserting anomaly type {}, normal PTA has {} states and {} transitions", type, pta.getStateCount(),
+							pta.getTransitionCount());
+
 				}
 			}
-			final TimedInput trainset = new TimedInput(trainSequences);
-			final TimedInput testset = new TimedInput(testSequences);
-			final Path outputFile = outputDir.resolve(Paths.get(df.format(k) + "_smac_mixed.txt"));
-			try (BufferedWriter bw = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
-				trainset.toFile(bw, true);
-				bw.write('\n');
-				bw.write(TRAIN_TEST_SEP);
-				bw.write('\n');
-				testset.toFile(bw, true);
+			logger.info("After inserting all anomalies, normal PTA has {} states and {} transitions", pta.getStateCount(), pta.getTransitionCount());
+			final TObjectIntMap<TauPTA> anomalyOccurences = new TObjectIntHashMap<>();
+			final Random anomalyChooser = MasterSeed.nextRandom();
+			while (k < SAMPLE_FILES) {
+				trainSequences.clear();
+				testSequences.clear();
+				for (int i = 0; i < TRAIN_SIZE; i++) {
+					trainSequences.add(pta.sampleSequence());
+				}
+				for (int i = 0; i < TEST_SIZE; i++) {
+					if (r.nextDouble() < ANOMALY_PERCENTAGE) {
+						boolean wasAnormal = false;
+						TimedWord seq = null;
+						final TauPTA chosen = CollectionUtils.chooseRandomObject(abnormalPtas, anomalyChooser);
+						while (!wasAnormal) {
+							seq = chosen.sampleSequence();
+							wasAnormal = seq.isAnomaly();
+						}
+						anomalyOccurences.adjustOrPutValue(chosen, 1, 1);
+						testSequences.add(seq);
+					} else {
+						testSequences.add(pta.sampleSequence());
+					}
+				}
+				final TimedInput trainset = new TimedInput(trainSequences);
+				final TimedInput testset = new TimedInput(testSequences);
+				final String prep = split == EventsCreationStrategy.SplitEvents ? "prep" : "noPrep";
+				final Path outputFile = outputDir.resolve(Paths.get("tpta-" + prep + "-" + df.format(k) + "_smac_mixed.txt"));
+				try (BufferedWriter bw = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
+					trainset.toFile(bw, true);
+					bw.write('\n');
+					bw.write(TRAIN_TEST_SEP);
+					bw.write('\n');
+					testset.toFile(bw, true);
+				}
+				logger.info("Wrote file #{} ({})", k, outputFile);
+				k++;
 			}
-			logger.info("Wrote file #{} ({})", k, outputFile);
-			k++;
+			for (final TauPTA anomaly : anomalyOccurences.keySet()) {
+				logger.info("Anomaly {} was chosen {} times", anomaly.getAnomalyType(), anomalyOccurences.get(anomaly));
+			}
 		}
-		for (final TauPTA anomaly : anomalyOccurences.keySet()) {
-			logger.info("Anomaly {} was chosen {} times", anomaly.getAnomalyType(), anomalyOccurences.get(anomaly));
-		}
+		// TODO for random anomalies:
+		// pick random sequences that were not picked from the input as train set
+		// use the insertRandomAnomalies with 0.1 on another timed input which has the size that the test set should have (with the sequences for the test set
+		// selected randomly from the original input)
 	}
 
 }
