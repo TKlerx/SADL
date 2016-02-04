@@ -1,0 +1,312 @@
+<sadl.models.pdrta.PDRTA>
+  <states class="tree-map">
+    <entry>
+      <int>0</int>
+      <sadl.models.pdrta.PDRTAState>
+        <automaton reference="../../../.."/>
+        <intervals>
+          <tree-map>
+            <entry>
+              <int>1</int>
+              <sadl.models.pdrta.Interval>
+                <begin>1</begin>
+                <end>1</end>
+                <tails serialization="custom">
+                  <unserializable-parents/>
+                  <com.google.common.collect.TreeMultimap>
+                    <default/>
+                    <com.google.common.collect.NaturalOrdering/>
+                    <com.google.common.collect.NaturalOrdering reference="../com.google.common.collect.NaturalOrdering"/>
+                    <int>0</int>
+                  </com.google.common.collect.TreeMultimap>
+                </tails>
+                <target>
+                  <automaton reference="../../../../../../../../.."/>
+                  <intervals>
+                    <tree-map>
+                      <entry>
+                        <int>1</int>
+                        <sadl.models.pdrta.Interval>
+                          <begin>1</begin>
+                          <end>1</end>
+                          <tails serialization="custom">
+                            <unserializable-parents/>
+                            <com.google.common.collect.TreeMultimap>
+                              <default/>
+                              <com.google.common.collect.NaturalOrdering reference="../../../../../../../../tails/com.google.common.collect.TreeMultimap/com.google.common.collect.NaturalOrdering"/>
+                              <com.google.common.collect.NaturalOrdering reference="../../../../../../../../tails/com.google.common.collect.TreeMultimap/com.google.common.collect.NaturalOrdering"/>
+                              <int>0</int>
+                            </com.google.common.collect.TreeMultimap>
+                          </tails>
+                          <target>
+                            <automaton reference="../../../../../../../../../../../../../.."/>
+                            <intervals>
+                              <tree-map>
+                                <entry>
+                                  <int>1</int>
+                                  <sadl.models.pdrta.Interval>
+                                    <begin>1</begin>
+                                    <end>1</end>
+                                    <tails serialization="custom">
+                                      <unserializable-parents/>
+                                      <com.google.common.collect.TreeMultimap>
+                                        <default/>
+                                        <com.google.common.collect.NaturalOrdering reference="../../../../../../../../../../../../../tails/com.google.common.collect.TreeMultimap/com.google.common.collect.NaturalOrdering"/>
+                                        <com.google.common.collect.NaturalOrdering reference="../../../../../../../../../../../../../tails/com.google.common.collect.TreeMultimap/com.google.common.collect.NaturalOrdering"/>
+                                        <int>0</int>
+                                      </com.google.common.collect.TreeMultimap>
+                                    </tails>
+                                    <target reference="../../../../../../../../../../../../../../.."/>
+                                  </sadl.models.pdrta.Interval>
+                                </entry>
+                              </tree-map>
+                              <tree-map>
+                                <entry>
+                                  <int>1</int>
+                                  <sadl.models.pdrta.Interval>
+                                    <begin>1</begin>
+                                    <end>1</end>
+                                    <tails serialization="custom">
+                                      <unserializable-parents/>
+                                      <com.google.common.collect.TreeMultimap>
+                                        <default/>
+                                        <com.google.common.collect.NaturalOrdering reference="../../../../../../../../../../../../../tails/com.google.common.collect.TreeMultimap/com.google.common.collect.NaturalOrdering"/>
+                                        <com.google.common.collect.NaturalOrdering reference="../../../../../../../../../../../../../tails/com.google.common.collect.TreeMultimap/com.google.common.collect.NaturalOrdering"/>
+                                        <int>0</int>
+                                      </com.google.common.collect.TreeMultimap>
+                                    </tails>
+                                  </sadl.models.pdrta.Interval>
+                                </entry>
+                              </tree-map>
+                            </intervals>
+                            <stat>
+                              <histBarSizes>
+                                <int>1</int>
+                              </histBarSizes>
+                              <totalOutCount>-1</totalOutCount>
+                              <totalInCount>-1</totalInCount>
+                              <trainMode>false</trainMode>
+                              <timeProbs>
+                                <double>1.0</double>
+                              </timeProbs>
+                              <symbolProbs>
+                                <double>1.0</double>
+                                <double>0.0</double>
+                              </symbolProbs>
+                              <tailEndProb>0.19755296926290655</tailEndProb>
+                              <intervalProbs>
+                                <byte>0</byte>
+                                <byte>0</byte>
+                                <float>0.5</float>
+                                <float>0.5</float>
+                                <int>0</int>
+                                <int>2</int>
+                                <int>1</int>
+                                <gnu.trove.map.hash.TObjectDoubleHashMap>
+                                  <byte>0</byte>
+                                  <byte>0</byte>
+                                  <byte>0</byte>
+                                  <float>0.5</float>
+                                  <float>0.5</float>
+                                  <double>0.0</double>
+                                  <int>1</int>
+                                  <sadl.models.pdrta.Interval reference="../../../../intervals/tree-map[2]/entry/sadl.models.pdrta.Interval"/>
+                                  <double>0.0</double>
+                                </gnu.trove.map.hash.TObjectDoubleHashMap>
+                                <int>0</int>
+                                <gnu.trove.map.hash.TObjectDoubleHashMap>
+                                  <byte>0</byte>
+                                  <byte>0</byte>
+                                  <byte>0</byte>
+                                  <float>0.5</float>
+                                  <float>0.5</float>
+                                  <double>0.0</double>
+                                  <int>1</int>
+                                  <sadl.models.pdrta.Interval reference="../../../../intervals/tree-map/entry/sadl.models.pdrta.Interval"/>
+                                  <double>1.0</double>
+                                </gnu.trove.map.hash.TObjectDoubleHashMap>
+                              </intervalProbs>
+                            </stat>
+                            <index>2</index>
+                          </target>
+                        </sadl.models.pdrta.Interval>
+                      </entry>
+                    </tree-map>
+                    <tree-map>
+                      <entry>
+                        <int>1</int>
+                        <sadl.models.pdrta.Interval>
+                          <begin>1</begin>
+                          <end>1</end>
+                          <tails serialization="custom">
+                            <unserializable-parents/>
+                            <com.google.common.collect.TreeMultimap>
+                              <default/>
+                              <com.google.common.collect.NaturalOrdering reference="../../../../../../../../tails/com.google.common.collect.TreeMultimap/com.google.common.collect.NaturalOrdering"/>
+                              <com.google.common.collect.NaturalOrdering reference="../../../../../../../../tails/com.google.common.collect.TreeMultimap/com.google.common.collect.NaturalOrdering"/>
+                              <int>0</int>
+                            </com.google.common.collect.TreeMultimap>
+                          </tails>
+                          <target reference="../../../../tree-map/entry/sadl.models.pdrta.Interval/target"/>
+                        </sadl.models.pdrta.Interval>
+                      </entry>
+                    </tree-map>
+                  </intervals>
+                  <stat>
+                    <histBarSizes reference="../../intervals/tree-map/entry/sadl.models.pdrta.Interval/target/stat/histBarSizes"/>
+                    <totalOutCount>-1</totalOutCount>
+                    <totalInCount>-1</totalInCount>
+                    <trainMode>false</trainMode>
+                    <timeProbs>
+                      <double>1.0</double>
+                    </timeProbs>
+                    <symbolProbs>
+                      <double>0.4905998209489705</double>
+                      <double>0.5094001790510295</double>
+                    </symbolProbs>
+                    <tailEndProb>0.19388982439259084</tailEndProb>
+                    <intervalProbs>
+                      <byte>0</byte>
+                      <byte>0</byte>
+                      <float>0.5</float>
+                      <float>0.5</float>
+                      <int>0</int>
+                      <int>2</int>
+                      <int>1</int>
+                      <gnu.trove.map.hash.TObjectDoubleHashMap>
+                        <byte>0</byte>
+                        <byte>0</byte>
+                        <byte>0</byte>
+                        <float>0.5</float>
+                        <float>0.5</float>
+                        <double>0.0</double>
+                        <int>1</int>
+                        <sadl.models.pdrta.Interval reference="../../../../intervals/tree-map[2]/entry/sadl.models.pdrta.Interval"/>
+                        <double>0.5094001790510295</double>
+                      </gnu.trove.map.hash.TObjectDoubleHashMap>
+                      <int>0</int>
+                      <gnu.trove.map.hash.TObjectDoubleHashMap>
+                        <byte>0</byte>
+                        <byte>0</byte>
+                        <byte>0</byte>
+                        <float>0.5</float>
+                        <float>0.5</float>
+                        <double>0.0</double>
+                        <int>1</int>
+                        <sadl.models.pdrta.Interval reference="../../../../intervals/tree-map/entry/sadl.models.pdrta.Interval"/>
+                        <double>0.4905998209489705</double>
+                      </gnu.trove.map.hash.TObjectDoubleHashMap>
+                    </intervalProbs>
+                  </stat>
+                  <index>1</index>
+                </target>
+              </sadl.models.pdrta.Interval>
+            </entry>
+          </tree-map>
+          <tree-map>
+            <entry>
+              <int>1</int>
+              <sadl.models.pdrta.Interval>
+                <begin>1</begin>
+                <end>1</end>
+                <tails serialization="custom">
+                  <unserializable-parents/>
+                  <com.google.common.collect.TreeMultimap>
+                    <default/>
+                    <com.google.common.collect.NaturalOrdering reference="../../../../../../tree-map/entry/sadl.models.pdrta.Interval/tails/com.google.common.collect.TreeMultimap/com.google.common.collect.NaturalOrdering"/>
+                    <com.google.common.collect.NaturalOrdering reference="../../../../../../tree-map/entry/sadl.models.pdrta.Interval/tails/com.google.common.collect.TreeMultimap/com.google.common.collect.NaturalOrdering"/>
+                    <int>0</int>
+                  </com.google.common.collect.TreeMultimap>
+                </tails>
+              </sadl.models.pdrta.Interval>
+            </entry>
+          </tree-map>
+        </intervals>
+        <stat>
+          <histBarSizes reference="../../intervals/tree-map/entry/sadl.models.pdrta.Interval/target/intervals/tree-map/entry/sadl.models.pdrta.Interval/target/stat/histBarSizes"/>
+          <totalOutCount>-1</totalOutCount>
+          <totalInCount>-1</totalInCount>
+          <trainMode>false</trainMode>
+          <timeProbs>
+            <double>1.0</double>
+          </timeProbs>
+          <symbolProbs>
+            <double>1.0</double>
+            <double>0.0</double>
+          </symbolProbs>
+          <tailEndProb>0.1134570270846662</tailEndProb>
+          <intervalProbs>
+            <byte>0</byte>
+            <byte>0</byte>
+            <float>0.5</float>
+            <float>0.5</float>
+            <int>0</int>
+            <int>2</int>
+            <int>1</int>
+            <gnu.trove.map.hash.TObjectDoubleHashMap>
+              <byte>0</byte>
+              <byte>0</byte>
+              <byte>0</byte>
+              <float>0.5</float>
+              <float>0.5</float>
+              <double>0.0</double>
+              <int>1</int>
+              <sadl.models.pdrta.Interval reference="../../../../intervals/tree-map[2]/entry/sadl.models.pdrta.Interval"/>
+              <double>0.0</double>
+            </gnu.trove.map.hash.TObjectDoubleHashMap>
+            <int>0</int>
+            <gnu.trove.map.hash.TObjectDoubleHashMap>
+              <byte>0</byte>
+              <byte>0</byte>
+              <byte>0</byte>
+              <float>0.5</float>
+              <float>0.5</float>
+              <double>0.0</double>
+              <int>1</int>
+              <sadl.models.pdrta.Interval reference="../../../../intervals/tree-map/entry/sadl.models.pdrta.Interval"/>
+              <double>1.0</double>
+            </gnu.trove.map.hash.TObjectDoubleHashMap>
+          </intervalProbs>
+        </stat>
+        <index>0</index>
+      </sadl.models.pdrta.PDRTAState>
+    </entry>
+    <entry>
+      <int>1</int>
+      <sadl.models.pdrta.PDRTAState reference="../../entry/sadl.models.pdrta.PDRTAState/intervals/tree-map/entry/sadl.models.pdrta.Interval/target"/>
+    </entry>
+    <entry>
+      <int>2</int>
+      <sadl.models.pdrta.PDRTAState reference="../../entry/sadl.models.pdrta.PDRTAState/intervals/tree-map/entry/sadl.models.pdrta.Interval/target/intervals/tree-map/entry/sadl.models.pdrta.Interval/target"/>
+    </entry>
+  </states>
+  <root reference="../states/entry/sadl.models.pdrta.PDRTAState"/>
+  <input>
+    <maxTimeDelay>1</maxTimeDelay>
+    <minTimeDelay>1</minTimeDelay>
+    <histoBorders/>
+    <histoSizes reference="../../states/entry/sadl.models.pdrta.PDRTAState/intervals/tree-map/entry/sadl.models.pdrta.Interval/target/intervals/tree-map/entry/sadl.models.pdrta.Interval/target/stat/histBarSizes"/>
+    <tails/>
+    <inp>
+      <alphabet class="gnu.trove.map.hash.TObjectIntHashMap">
+        <byte>0</byte>
+        <byte>0</byte>
+        <byte>0</byte>
+        <float>0.5</float>
+        <float>0.5</float>
+        <int>0</int>
+        <int>2</int>
+        <string>b</string>
+        <int>1</int>
+        <string>a</string>
+        <int>0</int>
+      </alphabet>
+      <alphabetRev>
+        <string>a</string>
+        <string>b</string>
+      </alphabetRev>
+      <words/>
+      <transformedToInt>false</transformedToInt>
+    </inp>
+  </input>
+</sadl.models.pdrta.PDRTA>

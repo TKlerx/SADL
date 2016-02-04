@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
+    Copyright (C) 2013-2016  the original author or authors.
+
+    SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+    SADL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
+
+-->
+<Configuration>
+	<Appenders>
+		<!-- <File name="infoFileAppender" fileName="logs/info-${date:yyyy-MM-dd-HH.mm.ss}.log" append="true">
+			<ThresholdFilter level="INFO" onMatch="ACCEPT" />
+			<PatternLayout pattern="(%d{DEFAULT}) %-5p [%t] [%c{1}.%M:%L] - %m%n" />
+		</File>
+		<File name="errFileAppender" fileName="logs/error-${date:yyyy-MM-dd-HH.mm.ss}.log" append="true">
+			<ThresholdFilter level="ERROR" onMatch="ACCEPT" />
+			<PatternLayout pattern="(%d{DEFAULT}) %-5p [%t] [%c{1}.%M:%L] - %m%n" />
+		</File> -->
+		<File name="infoFileAppender" fileName="logs/info.log" append="true">
+			<ThresholdFilter level="INFO" onMatch="ACCEPT" />
+			<PatternLayout pattern="(%d{DEFAULT}) %-5p [%t] [%c{1}.%M:%L] - %m%n" />
+		</File>
+		<File name="errFileAppender" fileName="logs/error.log" append="true">
+			<ThresholdFilter level="ERROR" onMatch="ACCEPT" />
+			<PatternLayout pattern="(%d{DEFAULT}) %-5p [%t] [%c{1}.%M:%L] - %m%n" />
+		</File>
+		<Console name="console" target="SYSTEM_OUT">
+			<PatternLayout pattern="(%d{DEFAULT}) %-5p [%t] [%c{1}.%M:%L] - %m%n" />
+		</Console>
+	</Appenders>
+	<Loggers>
+		<!-- <Logger name="sadl.integration" level="debug"/> -->
+		<Logger name="sadl" level="info">
+			<AppenderRef ref="console" />
+			<AppenderRef ref="infoFileAppender" />
+			<AppenderRef ref="errFileAppender" />
+		</Logger>
+		<Root level="debug">
+		</Root>
+	</Loggers>
+</Configuration>

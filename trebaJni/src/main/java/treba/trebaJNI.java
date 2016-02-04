@@ -14,27 +14,36 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
+import utils.LibraryChecker;
 
 public class trebaJNI {
 
 	private static boolean libraryLoaded = false;
+
 	static {
 		try {
-			final String osName = System.getProperty("os.name");
 			Path p = null;
-			if (osName.toLowerCase().contains("linux")) {
+			if (LibraryChecker.trebaDepsInstalled()) {
 				p = Paths.get("./native_libs/libtreba.so");
-				if(Files.notExists(p)){
+				if (Files.notExists(p)) {
 					p = findLibrary();
 				}
 				// } else if (osName.equalsIgnoreCase("Windows")) {
-				// System.err.println("current OS (" + osName + ") not supported");
+				// System.err.println("current OS (" + osName + ") not
+				// supported");
 				// System.exit(1);
-				loadLibrary(p);
+				if (p == null) {
+					System.err.println(
+							"Did not load the treba library (libtreba.so). You cannot use full functionality until library is loaded!");
+				} else {
+					loadLibrary(p);
+				}
 			} else {
-				// System.err.println("current OS (" + osName + ") not supported");
+				// System.err.println("current OS (" + osName + ") not
+				// supported");
 				// p = Paths.get("");
-				System.err.println("Did not load the treba library (libtreba.so). You cannot use full functionality until library is loaded!");
+				System.err.println(
+						"Did not load the treba library (libtreba.so). You cannot use full functionality until library is loaded!");
 			}
 		} catch (final UnsatisfiedLinkError | IOException e) {
 			System.err.println("Native code library failed to load. \n" + e);
@@ -46,25 +55,27 @@ public class trebaJNI {
 		return libraryLoaded;
 	}
 
-	private static Path findLibrary() throws IOException {
-		Path rootDir = Paths.get(".");
-		Optional<Path> opt = Files.find(rootDir, 10, (p, attr)->p.getFileName().toString().startsWith("treba")&&p.getFileName().toString().endsWith(".so")).findFirst();
-		if(opt.isPresent()){
-			//System.out.println(rootDir.resolve(opt.get()).normalize().toAbsolutePath());
+	protected static Path findLibrary() throws IOException {
+		final Path rootDir = Paths.get(".");
+		final Optional<Path> opt = Files.find(rootDir, 10, (p, attr) -> p.getFileName().toString().startsWith("treba")
+				&& p.getFileName().toString().endsWith(".so")).findFirst();
+		if (opt.isPresent()) {
+			// System.out.println(rootDir.resolve(opt.get()).normalize().toAbsolutePath());
 			return rootDir.resolve(opt.get());
-		}else{
-			throw new IOException("Could not find treba library from rootDir"+rootDir.normalize());
+		} else {
+			System.err.println("Could not find treba library from rootDir " + rootDir.toAbsolutePath());
+			return null;
 		}
 	}
 
-	public static void loadLibrary(Path p) {
+	public static void loadLibrary(final Path p) {
 		try {
 			System.load(p.toAbsolutePath().normalize().toString());
 			System.out.println("Loaded treba library.");
 			libraryLoaded = true;
 		} catch (final UnsatisfiedLinkError e) {
-			System.err.println("Native code library failed to load frpm path "+p+". \n" + e);
-			System.exit(1);
+			System.err.println("Native code library failed to load from path " + p + ". \n" + e);
+			throw e;
 		}
 	}
 
@@ -260,7 +271,8 @@ public class trebaJNI {
 
 	public final static native int observations_occurrences_get(long jarg1, observations jarg1_);
 
-	public final static native void observations_next_set(long jarg1, observations jarg1_, long jarg2, observations jarg2_);
+	public final static native void observations_next_set(long jarg1, observations jarg1_, long jarg2,
+			observations jarg2_);
 
 	public final static native long observations_next_get(long jarg1, observations jarg1_);
 
@@ -310,13 +322,15 @@ public class trebaJNI {
 
 	public final static native double train_viterbi_bw_hmm(long jarg1, hmm jarg1_, long jarg2, observations jarg2_);
 
-	public final static native double train_viterbi_hmm(long jarg1, hmm jarg1_, long jarg2, observations jarg2_, int jarg3, double jarg4);
+	public final static native double train_viterbi_hmm(long jarg1, hmm jarg1_, long jarg2, observations jarg2_,
+			int jarg3, double jarg4);
 
 	public final static native void viterbi_hmm(long jarg1, hmm jarg1_, long jarg2, observations jarg2_, int jarg3);
 
 	public final static native void generate_words_hmm(long jarg1, hmm jarg1_, int jarg2);
 
-	public final static native double train_bw_hmm(long jarg1, hmm jarg1_, long jarg2, observations jarg2_, int jarg3, double jarg4);
+	public final static native double train_bw_hmm(long jarg1, hmm jarg1_, long jarg2, observations jarg2_, int jarg3,
+			double jarg4);
 
 	public final static native void gibbs_state_chain_state_set(long jarg1, gibbs_state_chain jarg1_, int jarg2);
 
@@ -330,16 +344,17 @@ public class trebaJNI {
 
 	public final static native void delete_gibbs_state_chain(long jarg1);
 
-	public final static native double gibbs_sampler_fsm(long jarg1, wfsa jarg1_, long jarg2, observations jarg2_, double jarg3, int jarg4, int jarg5,
-			int jarg6, int jarg7);
+	public final static native double gibbs_sampler_fsm(long jarg1, wfsa jarg1_, long jarg2, observations jarg2_,
+			double jarg3, int jarg4, int jarg5, int jarg6, int jarg7);
 
-	public final static native double gibbs_sampler_hmm(long jarg1, hmm jarg1_, long jarg2, observations jarg2_, double jarg3, double jarg4, int jarg5,
-			int jarg6, int jarg7, int jarg8);
+	public final static native double gibbs_sampler_hmm(long jarg1, hmm jarg1_, long jarg2, observations jarg2_,
+			double jarg3, double jarg4, int jarg5, int jarg6, int jarg7, int jarg8);
 
-	public final static native long gibbs_counts_to_hmm(long jarg1, hmm jarg1_, long jarg2, long jarg3, long jarg4, int jarg5, int jarg6, double jarg7,
-			double jarg8);
+	public final static native long gibbs_counts_to_hmm(long jarg1, hmm jarg1_, long jarg2, long jarg3, long jarg4,
+			int jarg5, int jarg6, double jarg7, double jarg8);
 
-	public final static native long gibbs_counts_to_wfsa(long jarg1, wfsa jarg1_, long jarg2, long jarg3, int jarg4, int jarg5, double jarg6, double jarg7);
+	public final static native long gibbs_counts_to_wfsa(long jarg1, wfsa jarg1_, long jarg2, long jarg3, int jarg4,
+			int jarg5, double jarg6, double jarg7);
 
 	public final static native long gibbs_init_fsm(long jarg1, observations jarg1_, int jarg2, int jarg3, long jarg4);
 
@@ -393,17 +408,23 @@ public class trebaJNI {
 
 	public final static native long observations_read(String jarg1);
 
-	public final static native double loglikelihood_all_observations_fsm(long jarg1, wfsa jarg1_, long jarg2, observations jarg2_);
+	public final static native double loglikelihood_all_observations_fsm(long jarg1, wfsa jarg1_, long jarg2,
+			observations jarg2_);
 
-	public final static native double loglikelihood_all_observations_hmm(long jarg1, hmm jarg1_, long jarg2, observations jarg2_);
+	public final static native double loglikelihood_all_observations_hmm(long jarg1, hmm jarg1_, long jarg2,
+			observations jarg2_);
 
-	public final static native double trellis_backward(long jarg1, trellis jarg1_, long jarg2, int jarg3, long jarg4, wfsa jarg4_);
+	public final static native double trellis_backward(long jarg1, trellis jarg1_, long jarg2, int jarg3, long jarg4,
+			wfsa jarg4_);
 
-	public final static native double trellis_viterbi(long jarg1, trellis jarg1_, long jarg2, int jarg3, long jarg4, wfsa jarg4_);
+	public final static native double trellis_viterbi(long jarg1, trellis jarg1_, long jarg2, int jarg3, long jarg4,
+			wfsa jarg4_);
 
-	public final static native double trellis_forward_fsm(long jarg1, trellis jarg1_, long jarg2, int jarg3, long jarg4, wfsa jarg4_);
+	public final static native double trellis_forward_fsm(long jarg1, trellis jarg1_, long jarg2, int jarg3, long jarg4,
+			wfsa jarg4_);
 
-	public final static native double trellis_forward_hmm(long jarg1, trellis jarg1_, long jarg2, int jarg3, long jarg4, hmm jarg4_);
+	public final static native double trellis_forward_hmm(long jarg1, trellis jarg1_, long jarg2, int jarg3, long jarg4,
+			hmm jarg4_);
 
 	public final static native long trellis_init(long jarg1, observations jarg1_, int jarg2);
 
@@ -419,7 +440,8 @@ public class trebaJNI {
 
 	public final static native void forward_fsm(long jarg1, wfsa jarg1_, long jarg2, observations jarg2_, int jarg3);
 
-	public final static native void forward_fsm_to_file(long jarg1, wfsa jarg1_, long jarg2, observations jarg2_, int jarg3, String jarg4);
+	public final static native void forward_fsm_to_file(long jarg1, wfsa jarg1_, long jarg2, observations jarg2_,
+			int jarg3, String jarg4);
 
 	public final static native void forward_hmm(long jarg1, hmm jarg1_, long jarg2, observations jarg2_, int jarg3);
 
@@ -427,11 +449,14 @@ public class trebaJNI {
 
 	public final static native void backward_hmm(long jarg1, hmm jarg1_, long jarg2, observations jarg2_, int jarg3);
 
-	public final static native double train_viterbi(long jarg1, wfsa jarg1_, long jarg2, observations jarg2_, int jarg3, double jarg4);
+	public final static native double train_viterbi(long jarg1, wfsa jarg1_, long jarg2, observations jarg2_, int jarg3,
+			double jarg4);
 
-	public final static native double train_baum_welch(long jarg1, wfsa jarg1_, long jarg2, observations jarg2_, int jarg3, double jarg4, int jarg5);
+	public final static native double train_baum_welch(long jarg1, wfsa jarg1_, long jarg2, observations jarg2_,
+			int jarg3, double jarg4, int jarg5);
 
-	public final static native double train_bw(long jarg1, wfsa jarg1_, long jarg2, observations jarg2_, int jarg3, double jarg4);
+	public final static native double train_bw(long jarg1, wfsa jarg1_, long jarg2, observations jarg2_, int jarg3,
+			double jarg4);
 
 	public final static native double train_viterbi_bw(long jarg1, wfsa jarg1_, long jarg2, observations jarg2_);
 
@@ -469,7 +494,8 @@ public class trebaJNI {
 
 	public final static native long dffa_to_wfsa(long jarg1, dffa jarg1_);
 
-	public final static native long dffa_state_merge(long jarg1, observations jarg1_, double jarg2, int jarg3, int jarg4);
+	public final static native long dffa_state_merge(long jarg1, observations jarg1_, double jarg2, int jarg3,
+			int jarg4);
 
 	public final static native long dffa_mdi(long jarg1, observations jarg1_, double jarg2);
 
