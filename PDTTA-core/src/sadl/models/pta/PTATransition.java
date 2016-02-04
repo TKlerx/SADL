@@ -65,8 +65,8 @@ public class PTATransition {
 		final String eventSymbol = event.getSymbol();
 		final TIntObjectMap<PTATransition> eventInTransition = target.inTransitions.get(eventSymbol);
 
-		final PTATransition outTrans = source.outTransitions.remove(eventSymbol);
-		final PTATransition inTrans = eventInTransition.remove(source.getId());
+		PTATransition outTrans = source.outTransitions.remove(eventSymbol);
+		PTATransition inTrans = eventInTransition.remove(source.getId());
 		if (outTrans == null || inTrans == null) {
 			throw new RuntimeException();
 		}
