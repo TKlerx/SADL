@@ -27,4 +27,13 @@ public enum AnomalyInsertionType {
 		return typeIndex;
 	}
 
+	public static AnomalyInsertionType getType(int typeInt) {
+		for (final AnomalyInsertionType type : AnomalyInsertionType.values()) {
+			if (type.getTypeIndex() == typeInt) {
+				return type;
+			}
+		}
+		return null;
+	}
+
 }

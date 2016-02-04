@@ -36,6 +36,7 @@ import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.ClassLabel;
+import sadl.utils.CollectionUtils;
 import sadl.utils.MasterSeed;
 
 /**
@@ -667,22 +668,36 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 			while (anomalyIndexes.contains(index)) {
 				index = r.nextInt(anomalyIndexes.size());
 			}
-
-			if (type == AnomalyInsertionType.TYPE_ONE) {
-
-			} else if (type == AnomalyInsertionType.TYPE_TWO) {
-
-			} else if (type == AnomalyInsertionType.TYPE_THREE) {
-
-			} else if (type == AnomalyInsertionType.TYPE_FOUR) {
-
-			} else if (type == AnomalyInsertionType.TYPE_FIVE) {
-
-			} else if (type == AnomalyInsertionType.ALL) {
-
+			TimedWord word = CollectionUtils.chooseRandomObject(result.words, r);
+			while(word.isAnomaly()){
+				word = CollectionUtils.chooseRandomObject(result.words, r);
 			}
+			result.words.remove(word);
+			int typeInt;
+			if (type == AnomalyInsertionType.ALL) {
+				typeInt = r.nextInt(5) + 1;
+			} else {
+				typeInt = type.getTypeIndex();
+			}
+			final AnomalyInsertionType newType = AnomalyInsertionType.getType(typeInt);
+			word = insertAnomaly(word, newType);
 			anomalyIndexes.add(index);
 		}
 		return result;
+	}
+
+	private TimedWord insertAnomaly(TimedWord word, AnomalyInsertionType type) {
+		if (type == AnomalyInsertionType.TYPE_ONE) {
+
+		} else if (type == AnomalyInsertionType.TYPE_TWO) {
+
+		} else if (type == AnomalyInsertionType.TYPE_THREE) {
+
+		} else if (type == AnomalyInsertionType.TYPE_FOUR) {
+
+		} else if (type == AnomalyInsertionType.TYPE_FIVE) {
+
+		}
+		return null;
 	}
 }
