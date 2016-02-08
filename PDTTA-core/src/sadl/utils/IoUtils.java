@@ -22,10 +22,13 @@ import java.io.PipedReader;
 import java.io.PipedWriter;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -83,6 +86,35 @@ public class IoUtils {
 				logger.warn("{} should have been explicitly deleted, but did not exist.", p);
 			}
 		}
+	}
+
+	public static void cleanDir(Path outputDir) throws IOException {
+		if (Files.notExists(outputDir)) {
+			Files.createDirectories(outputDir);
+		}
+		Files.walk(outputDir).filter(p -> !Files.isDirectory(p)).forEach(p -> {
+			try {
+				logger.info("Deleting file {}", p);
+				Files.delete(p);
+			} catch (final Exception e) {
+				e.printStackTrace();
+			}
+		});
+		Files.walkFileTree(outputDir, new SimpleFileVisitor<Path>() {
+			@Override
+			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+				logger.info("Deleting file {}", file);
+				Files.delete(file);
+				return FileVisitResult.CONTINUE;
+			};
+
+			@Override
+			public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+				logger.info("Deleting directory {}", dir);
+				Files.delete(dir);
+				return FileVisitResult.CONTINUE;
+			};
+		});
 	}
 
 	public static Object deserialize(Path path) throws FileNotFoundException, IOException, ClassNotFoundException {

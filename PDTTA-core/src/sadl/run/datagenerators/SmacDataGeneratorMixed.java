@@ -41,6 +41,7 @@ import sadl.modellearner.TauPtaLearner;
 import sadl.models.TauPTA;
 import sadl.models.pta.Event;
 import sadl.utils.CollectionUtils;
+import sadl.utils.IoUtils;
 import sadl.utils.MasterSeed;
 
 /**
@@ -48,6 +49,7 @@ import sadl.utils.MasterSeed;
  * @author Timo Klerx
  *
  */
+@Deprecated
 public class SmacDataGeneratorMixed implements Serializable {
 
 	public static final String TRAIN_TEST_SEP = "?????????????????????????";
@@ -78,17 +80,7 @@ public class SmacDataGeneratorMixed implements Serializable {
 
 	private void run() throws IOException, InterruptedException {
 		final EventsCreationStrategy[] splitEvents = { EventsCreationStrategy.DontSplitEvents, EventsCreationStrategy.SplitEvents };
-		if (Files.notExists(outputDir)) {
-			Files.createDirectories(outputDir);
-		}
-		Files.walk(outputDir).filter(p -> !Files.isDirectory(p)).forEach(p -> {
-			try {
-				logger.info("Deleting file {}", p);
-				Files.delete(p);
-			} catch (final Exception e) {
-				e.printStackTrace();
-			}
-		});
+		IoUtils.cleanDir(outputDir);
 		for (final EventsCreationStrategy split : splitEvents) {
 			logger.info("Starting to learn TauPTA...");
 			int k = 0;
@@ -174,5 +166,6 @@ public class SmacDataGeneratorMixed implements Serializable {
 		// use the insertRandomAnomalies with 0.1 on another timed input which has the size that the test set should have (with the sequences for the test set
 		// selected randomly from the original input)
 	}
+
 
 }

@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
@@ -34,15 +35,12 @@ import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
-import gnu.trove.set.TIntSet;
-import gnu.trove.set.hash.TIntHashSet;
 import jsat.distributions.Distribution;
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.ClassLabel;
 import sadl.modellearner.TauPtaLearner;
 import sadl.models.TauPTA;
 import sadl.structure.Transition;
-import sadl.utils.CollectionUtils;
 import sadl.utils.MasterSeed;
 
 /**
@@ -674,18 +672,15 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 		}
 		final TimedInput result = SerializationUtils.clone(this);
 		final int size = result.size();
+		final TIntList indexes = new TIntArrayList(size);
+		for (int i = 0; i < size; i++) {
+			indexes.add(i);
+		}
+		indexes.shuffle(r);
 		final int requestedAnomalies = (int) (size * anomalyPercentage);
-		final TIntSet anomalyIndexes = new TIntHashSet();
-		while (anomalyIndexes.size() < requestedAnomalies) {
-			int index = r.nextInt(anomalyIndexes.size());
-			while (anomalyIndexes.contains(index)) {
-				index = r.nextInt(anomalyIndexes.size());
-			}
-			TimedWord word = CollectionUtils.chooseRandomObject(result.words, r);
-			while (word.isAnomaly()) {
-				word = CollectionUtils.chooseRandomObject(result.words, r);
-			}
-			result.words.remove(word);
+		for (int i = 0; i < requestedAnomalies; i++) {
+			final int index = indexes.get(i);
+			TimedWord word = result.getWord(index);
 			int typeInt;
 			if (type == AnomalyInsertionType.ALL) {
 				typeInt = r.nextInt(5) + 1;
@@ -694,7 +689,6 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 			}
 			final AnomalyInsertionType newType = AnomalyInsertionType.getType(typeInt);
 			word = insertAnomaly(word, newType);
-			anomalyIndexes.add(index);
 			result.words.set(index, word);
 		}
 		return result;
@@ -762,7 +756,7 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 		while (!choseFinalState) {
 			final List<Transition> possibleTransitions = automaton.getOutTransitions(currentState, true);
 			Collections.sort(possibleTransitions, (o1, o2) -> Double.compare(o1.getProbability(), o2.getProbability()));
-			final List<Transition> topThree = possibleTransitions.subList(possibleTransitions.size() - 3, possibleTransitions.size());
+			final List<Transition> topThree = possibleTransitions.stream().filter(t -> t.getProbability() > 0).limit(3).collect(Collectors.toList());
 			final double randomValue = mutation.nextDouble();
 			int chosenTransitionIndex = -1;
 			if (randomValue <= ANOMALY_TYPE_TWO_P_1) {
@@ -772,6 +766,7 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 			} else {
 				chosenTransitionIndex = 2;
 			}
+			chosenTransitionIndex = Math.min(chosenTransitionIndex, topThree.size() - 1);
 			final Transition chosenTransition = topThree.get(chosenTransitionIndex);
 			if (chosenTransition.isStopTraversingTransition() || eventList.size() > MAX_SEQUENCE_LENGTH) {
 				choseFinalState = true;

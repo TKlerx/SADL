@@ -33,6 +33,7 @@ import sadl.utils.IoUtils;
  * @author Timo Klerx
  *
  */
+@Deprecated
 public class DataGenerator implements Serializable {
 	private static Logger logger = LoggerFactory.getLogger(DataGenerator.class);
 

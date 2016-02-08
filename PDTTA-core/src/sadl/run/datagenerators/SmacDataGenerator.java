@@ -38,6 +38,7 @@ import sadl.modellearner.ButlaPdtaLearner;
 import sadl.modellearner.TauPtaLearner;
 import sadl.models.TauPTA;
 import sadl.models.pta.Event;
+import sadl.utils.IoUtils;
 import sadl.utils.MasterSeed;
 
 /**
@@ -45,6 +46,7 @@ import sadl.utils.MasterSeed;
  * @author Timo Klerx
  *
  */
+@Deprecated
 public class SmacDataGenerator implements Serializable {
 	public static final String TRAIN_TEST_SEP = "?????????????????????????";
 
@@ -73,17 +75,7 @@ public class SmacDataGenerator implements Serializable {
 
 	private void run() throws IOException, InterruptedException {
 		final EventsCreationStrategy[] splitEvents = { EventsCreationStrategy.DontSplitEvents, EventsCreationStrategy.SplitEvents };
-		if (Files.notExists(outputDir)) {
-			Files.createDirectories(outputDir);
-		}
-		Files.walk(outputDir).filter(p -> !Files.isDirectory(p)).forEach(p -> {
-			try {
-				logger.info("Deleting file {}", p);
-				Files.delete(p);
-			} catch (final Exception e) {
-				e.printStackTrace();
-			}
-		});
+		IoUtils.cleanDir(outputDir);
 		for (final EventsCreationStrategy split : splitEvents) {
 			int k = 0;
 			// parse timed sequences
@@ -164,5 +156,7 @@ public class SmacDataGenerator implements Serializable {
 			}
 		}
 	}
+
+
 
 }
