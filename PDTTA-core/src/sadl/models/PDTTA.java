@@ -10,7 +10,6 @@
  */
 package sadl.models;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +59,7 @@ public class PDTTA extends PDFA {
 		this.tauEstimator = tauEstimator;
 	}
 
-	public PDTTA(PDFA pdfa, Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions, TauEstimator tauEstimation) throws IOException {
+	public PDTTA(PDFA pdfa, Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions, TauEstimator tauEstimation) {
 		super(pdfa);
 		this.transitionDistributions = transitionDistributions;
 		this.tauEstimator = tauEstimation;
@@ -328,8 +327,11 @@ public class PDTTA extends PDFA {
 					// the training data.
 					throw new IllegalStateException("This should never happen for transition " + chosenTransition);
 				}
-				final int timeValue = (int) d.sample(1, r)[0];
+				int timeValue = (int) d.sample(1, r)[0];
 				eventList.add(chosenTransition.getSymbol());
+				if (timeValue < 0) {
+					timeValue = 0;
+				}
 				timeList.add(timeValue);
 			}
 		}

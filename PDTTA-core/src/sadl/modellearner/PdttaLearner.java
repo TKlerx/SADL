@@ -10,7 +10,6 @@
  */
 package sadl.modellearner;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -96,13 +95,11 @@ public class PdttaLearner implements ProbabilisticModelLearner {
 	// this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest, mergeTest, smoothingPrior), kdeKernelFunction, kdeBandwidth, tauEstimatior);
 	// }
 
-
 	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
 			double smoothingPrior, int mergeT0, TauEstimator tauEstimation) {
 		this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest, mergeTest, smoothingPrior, mergeT0), kdeKernelFunction, kdeBandwidth, tauEstimation);
 
 	}
-
 
 	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, MergeTest mergeTest) {
 		this(mergeAlpha, recursiveMergeTest, null, -1, mergeTest);
@@ -112,50 +109,43 @@ public class PdttaLearner implements ProbabilisticModelLearner {
 	// this(mergeAlpha, recursiveMergeTest, null, -1, mergeTest, smoothingPrior);
 	// }
 
-
 	@Override
 	public PDTTA train(TimedInput trainingSequences) {
 
 		final PDFA pdfa = pdfaLearner.train(trainingSequences);
-		try {
-			// for debugging why the hell parallel execution leads to different and non deterministic results even though the maps (and even the automata) are
-			// the same!
-			// final Map<ZeroProbTransition, TDoubleList> timeValueBucketsPar = fillTimeValueBucketsParallel(pdfa, trainingSequences);
-			final Map<ZeroProbTransition, TDoubleList> timeValueBucketsSeq = fillTimeValueBuckets(pdfa, trainingSequences);
+		// for debugging why the hell parallel execution leads to different and non deterministic results even though the maps (and even the automata) are
+		// the same!
+		// final Map<ZeroProbTransition, TDoubleList> timeValueBucketsPar = fillTimeValueBucketsParallel(pdfa, trainingSequences);
+		final Map<ZeroProbTransition, TDoubleList> timeValueBucketsSeq = fillTimeValueBuckets(pdfa, trainingSequences);
 
-			// timeValueBucketsPar.values().forEach(list -> list.sort());
-			// timeValueBucketsSeq.values().forEach(list -> list.sort());
-			// if (!timeValueBucketsPar.equals(timeValueBucketsSeq)) {
-			// throw new IllegalStateException();
-			// }
+		// timeValueBucketsPar.values().forEach(list -> list.sort());
+		// timeValueBucketsSeq.values().forEach(list -> list.sort());
+		// if (!timeValueBucketsPar.equals(timeValueBucketsSeq)) {
+		// throw new IllegalStateException();
+		// }
 
-			// final Map<ZeroProbTransition, ContinuousDistribution> transitionDistributionsPar = fit(timeValueBucketsPar);
-			final Map<ZeroProbTransition, ContinuousDistribution> transitionDistributionsSeq = fit(timeValueBucketsSeq);
-			// if (!transitionDistributionsPar.equals(transitionDistributionsSeq)) {
-			// throw new IllegalStateException();
-			// }
+		// final Map<ZeroProbTransition, ContinuousDistribution> transitionDistributionsPar = fit(timeValueBucketsPar);
+		final Map<ZeroProbTransition, ContinuousDistribution> transitionDistributionsSeq = fit(timeValueBucketsSeq);
+		// if (!transitionDistributionsPar.equals(transitionDistributionsSeq)) {
+		// throw new IllegalStateException();
+		// }
 
-			// final PDTTA pdttaPar = new PDTTA(pdfa, transitionDistributionsPar, tauEstimator);
-			// pdttaPar.setAlphabet(trainingSequences);
-			// pdttaPar.preprocess();
-			// pdttaPar.makeImmutable();
+		// final PDTTA pdttaPar = new PDTTA(pdfa, transitionDistributionsPar, tauEstimator);
+		// pdttaPar.setAlphabet(trainingSequences);
+		// pdttaPar.preprocess();
+		// pdttaPar.makeImmutable();
 
-			final PDTTA pdttaSeq = new PDTTA(pdfa, transitionDistributionsSeq, tauEstimator);
-			pdttaSeq.setAlphabet(trainingSequences);
-			pdttaSeq.preprocess();
-			pdttaSeq.makeImmutable();
-			//
-			// if (!pdttaSeq.equals(pdttaPar)) {
-			// throw new IllegalStateException();
-			// }
+		final PDTTA pdttaSeq = new PDTTA(pdfa, transitionDistributionsSeq, tauEstimator);
+		pdttaSeq.setAlphabet(trainingSequences);
+		pdttaSeq.preprocess();
+		pdttaSeq.makeImmutable();
+		//
+		// if (!pdttaSeq.equals(pdttaPar)) {
+		// throw new IllegalStateException();
+		// }
 
-			logger.info("Learned PDTTA.");
-			return pdttaSeq;
-		} catch (final IOException e) {
-			logger.error("An unexpected error occured", e);
-			e.printStackTrace();
-		}
-		return null;
+		logger.info("Learned PDTTA.");
+		return pdttaSeq;
 	}
 
 	@SuppressWarnings("unused")
@@ -207,9 +197,7 @@ public class PdttaLearner implements ProbabilisticModelLearner {
 		return result2;
 	}
 
-
-	protected static void addTimeValue(Map<ZeroProbTransition, TDoubleList> result, int currentState, int followingState, String event,
-			double timeValue) {
+	protected static void addTimeValue(Map<ZeroProbTransition, TDoubleList> result, int currentState, int followingState, String event, double timeValue) {
 		final ZeroProbTransition t = new ZeroProbTransition(currentState, followingState, event);
 		final TDoubleList list = result.get(t);
 		if (list == null) {

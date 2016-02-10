@@ -729,6 +729,9 @@ public class TauPTA extends PDTTA {
 					}
 				}
 				eventList.add(chosenTransition.getSymbol());
+				if (timeValue < 0) {
+					timeValue = 0;
+				}
 				timeList.add(timeValue);
 			}
 		}

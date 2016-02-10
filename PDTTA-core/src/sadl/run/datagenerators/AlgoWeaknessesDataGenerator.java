@@ -48,7 +48,7 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 	private long seed;
 
 	@Parameter(names = "-normalPDRTA", description = "File containing the normal PDRTA", arity = 1, required = true)
-	private Path normalPDRTA;
+	private Path normalPdrtaPath;
 
 	@Parameter(names = "-anomalyPDRTAs", description = "Files containing the anomaly PDRTAs", variableArity = true, required = true)
 	private List<Path> anomalyPDRTAs;
@@ -86,12 +86,12 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 		MasterSeed.setSeed(seed);
 		rndm = MasterSeed.nextRandom();
 
-		PDRTA nPDRTA = null;
-		List<PDRTA> aPDRTAs = null;
+		PDRTA normalPDRTA = null;
+		List<PDRTA> abnormalPDRTAs = null;
 
 		try {
-			nPDRTA = PDRTA.parse(normalPDRTA.toFile());
-			aPDRTAs = parse(anomalyPDRTAs);
+			normalPDRTA = PDRTA.parse(normalPdrtaPath.toFile());
+			abnormalPDRTAs = parse(anomalyPDRTAs);
 		} catch (final IOException e) {
 			e.printStackTrace();
 		}
@@ -100,11 +100,11 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 		final int numTestNeg = (int) Math.rint((setSize - numTrain) * (1.0 - anomalyAmount));
 		final int numTestPos = setSize - (numTrain + numTestNeg);
 
-		for (int i = 0; i < aPDRTAs.size(); i++) {
+		for (int i = 0; i < abnormalPDRTAs.size(); i++) {
 			for (int j = 0; j < numSets; j++) {
-				final TimedInput inpTrain = sample(nPDRTA, numTrain, ClassLabel.NORMAL);
-				final TimedInput inpTestNeg = sample(nPDRTA, numTestNeg, ClassLabel.NORMAL);
-				final TimedInput inpTestPos = sample(aPDRTAs.get(i), numTestPos, ClassLabel.ANOMALY);
+				final TimedInput inpTrain = sample(normalPDRTA, numTrain, ClassLabel.NORMAL);
+				final TimedInput inpTestNeg = sample(normalPDRTA, numTestNeg, ClassLabel.NORMAL);
+				final TimedInput inpTestPos = sample(abnormalPDRTAs.get(i), numTestPos, ClassLabel.ANOMALY);
 				final Path outFile = outDir.resolve(anomalyPDRTAs.get(i).getFileName().toString().replaceAll("\\.[^\\.]+$", "") + "_" + j + ".txt");
 				write(inpTrain, inpTestNeg, inpTestPos, outFile);
 			}

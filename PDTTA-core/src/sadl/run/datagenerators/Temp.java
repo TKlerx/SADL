@@ -1,8 +1,16 @@
+/**
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
+ * Copyright (C) 2013-2016  the original author or authors.
+ *
+ * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * SADL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package sadl.run.datagenerators;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -122,11 +130,11 @@ public class Temp {
 		}
 	}
 
-	private void generateModelAnomaly(TimedInput foo, Path dataOutputFile, AnomalyInsertionType type) throws IOException {
+	private void generateModelAnomaly(TimedInput input, Path dataOutputFile, AnomalyInsertionType type) throws IOException {
 		if (type != AnomalyInsertionType.ALL) {
-			generateSingleModelAnomaly(foo, dataOutputFile, type);
+			generateSingleModelAnomaly(input, dataOutputFile, type);
 		} else {
-			generateMixedModelAnomaly(foo, dataOutputFile);
+			generateMixedModelAnomaly(input, dataOutputFile);
 		}
 	}
 
@@ -213,15 +221,7 @@ public class Temp {
 				testSequences.add(pta.sampleSequence());
 			}
 		}
-		final TimedInput trainset = new TimedInput(trainSequences);
-		final TimedInput testset = new TimedInput(testSequences);
-		try (BufferedWriter bw = Files.newBufferedWriter(dataOutputFile, StandardCharsets.UTF_8)) {
-			trainset.toFile(bw, true);
-			bw.write('\n');
-			bw.write(TRAIN_TEST_SEP);
-			bw.write('\n');
-			testset.toFile(bw, true);
-		}
+		IoUtils.writeTrainTestFile(dataOutputFile, new TimedInput(trainSequences), new TimedInput(testSequences));
 	}
 
 	int[] intIndex;
@@ -255,15 +255,8 @@ public class Temp {
 			final TimedInput trainSet = new TimedInput(trainSequenceClone);
 			TimedInput testSet = new TimedInput(testSequenceClone);
 			testSet = testSet.insertRandomAnomalies(type, ANOMALY_PERCENTAGE);
+			IoUtils.writeTrainTestFile(dataOutputFile, trainSet, testSet);
 
-			try (BufferedWriter bw = Files.newBufferedWriter(dataOutputFile, StandardCharsets.UTF_8)) {
-				trainSet.toFile(bw, true);
-				bw.write('\n');
-				bw.write(TRAIN_TEST_SEP);
-				bw.write('\n');
-				testSet.toFile(bw, true);
-				bw.flush();
-			}
 		}
 	}
 
@@ -288,7 +281,7 @@ public class Temp {
 	}
 
 	Map<Path, Pair<TauPTA, List<TauPTA>>> mixedModelPtas = new HashMap<>();
-	private void generateMixedModelAnomaly(TimedInput foo, Path dataOutputFile) throws IOException {
+	private void generateMixedModelAnomaly(TimedInput input, Path dataOutputFile) throws IOException {
 		final Path key = dataOutputFile.getParent().getParent();
 		final Pair<TauPTA, List<TauPTA>> result = mixedModelPtas.get(key);
 		TauPTA normalPta;
@@ -296,7 +289,7 @@ public class Temp {
 		if (result == null) {
 			logger.info("Learning TPTA for mixed anomalies...");
 			final TauPtaLearner learner = new TauPtaLearner();
-			normalPta = learner.train(foo);
+			normalPta = learner.train(input);
 			abnormalPtas = createAbnormalPtas(normalPta);
 			mixedModelPtas.put(key, Pair.of(normalPta, abnormalPtas));
 			logger.info("Finished TauPTA creation.");
@@ -329,14 +322,6 @@ public class Temp {
 				testSequences.add(normalPta.sampleSequence());
 			}
 		}
-		final TimedInput trainset = new TimedInput(trainSequences);
-		final TimedInput testset = new TimedInput(testSequences);
-		try (BufferedWriter bw = Files.newBufferedWriter(dataOutputFile, StandardCharsets.UTF_8)) {
-			trainset.toFile(bw, true);
-			bw.write('\n');
-			bw.write(TRAIN_TEST_SEP);
-			bw.write('\n');
-			testset.toFile(bw, true);
-		}
+		IoUtils.writeTrainTestFile(dataOutputFile, new TimedInput(trainSequences), new TimedInput(testSequences));
 	}
 }

@@ -45,6 +45,7 @@ import com.thoughtworks.xstream.XStream;
 
 import sadl.input.TimedInput;
 import sadl.run.datagenerators.SmacDataGenerator;
+import sadl.run.datagenerators.Temp;
 
 /**
  * 
@@ -133,6 +134,16 @@ public class IoUtils {
 				throw new RuntimeException(e);
 			}
 		});
+	}
+
+	public static void writeTrainTestFile(Path trainTestFile, TimedInput trainSet, TimedInput testSet) throws IOException {
+		try (BufferedWriter bw = Files.newBufferedWriter(trainTestFile, StandardCharsets.UTF_8)) {
+			trainSet.toFile(bw, true);
+			bw.write('\n');
+			bw.write(Temp.TRAIN_TEST_SEP);
+			bw.write('\n');
+			testSet.toFile(bw, true);
+		}
 	}
 
 	public static Pair<TimedInput, TimedInput> readTrainTestFile(Path trainTestFile) {
