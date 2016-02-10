@@ -18,9 +18,6 @@ intervalCreationStrategy | splittingStrategy in {SplitEvents}
 bandwidth [10000,1000000] [20000]
 bandwidth | formelVariant in {OriginalKDE}
 
-intervalCreationStrategy {OriginalButla, WithoutAnomalyBounds, extendInterval} [OriginalButla]
-intervalCreationStrategy | splittingStrategy in {SplitEvents}
-
 #Detector parameters
 detectorMethod {SVM,DBSCAN,THRESHOLD_SINGLE,THRESHOLD_AGG_ONLY, THRESHOLD_ALL, GMEANS,XMEANS,KMEANS,ANODA} [ANODA]
 # Must be tested first!
