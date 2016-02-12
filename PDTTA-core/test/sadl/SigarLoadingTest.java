@@ -10,11 +10,13 @@
  */
 package sadl;
 
+import org.junit.Test;
+
 import sadl.utils.RamGobbler;
 
 public class SigarLoadingTest {
 
-	// @Test
+	@Test
 	public void testSigarLoading() throws InterruptedException {
 		final RamGobbler gobbler = new RamGobbler();
 		gobbler.start();

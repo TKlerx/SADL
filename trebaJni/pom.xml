@@ -16,7 +16,7 @@
 		<dependency>
 			<groupId>de.upb.timok</groupId>
 			<artifactId>trebaNative</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<version>0.0.1</version>
 			<scope>runtime</scope>
 			<type>so</type>
 		</dependency>
@@ -69,7 +69,7 @@
 							<groupId>de.upb.timok</groupId>
 							<artifactId>trebaNative</artifactId>
 							<type>so</type>
-							<version>0.0.1-SNAPSHOT</version>
+							<version>0.0.1</version>
 							<overWrite>true</overWrite>
 							<outputDirectory>${project.build.directory}/lib/</outputDirectory>
 							<!--<destFileName>so</destFileName> -->
@@ -148,5 +148,5 @@
 		</plugins>
 	</build>
 	<groupId>de.upb.timok</groupId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 </project>
