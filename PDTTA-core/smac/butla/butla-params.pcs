@@ -12,7 +12,6 @@ mergeStrategy {TopDown, BottomUp} [BottomUp]
 splittingStrategy {NotTimedEvents, DontSplitEvents, SplitEvents, IsolateCriticalAreas } [SplitEvents]
 formelVariant {	OriginalKDE, OriginalButlaVariableBandwidth, ButlaBandwidthSquared, ButlaBandwidthNotSquared} [OriginalKDE]
 intervalCreationStrategy {OriginalButla, WithoutAnomalyBounds, extendInterval} [OriginalButla]
-intervalCreationStrategy | splittingStrategy in {SplitEvents}
 
 
 bandwidth [10000,1000000] [20000]

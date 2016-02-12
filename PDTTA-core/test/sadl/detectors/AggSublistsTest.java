@@ -82,27 +82,31 @@ public class AggSublistsTest {
 
 		final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
 		Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
-		inputSets.getKey().decreaseSamples(0.2);
+		inputSets.getKey().decreaseSamples(0.1);
 		final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
-		final ExperimentResult expected = new ExperimentResult(467, 4174, 359, 0);
+		final ExperimentResult expected = new ExperimentResult(3982, 467, 0, 551);
+		// System.out.println(actual);
 		assertEquals(expected, actual);
 
 		inputSets = IoUtils.readTrainTestFile(p);
-		inputSets.getKey().decreaseSamples(0.2);
+		inputSets.getKey().decreaseSamples(0.1);
 		final ExperimentResult actual2 = detection2.trainTest(inputSets.getKey(), inputSets.getValue());
-		final ExperimentResult expected2 = new ExperimentResult(4, 4164, 369, 463);
+		final ExperimentResult expected2 = new ExperimentResult(3969, 406, 61, 564);
+		// System.out.println(actual2);
 		assertEquals(expected2, actual2);
 
 		inputSets = IoUtils.readTrainTestFile(p);
-		inputSets.getKey().decreaseSamples(0.2);
+		inputSets.getKey().decreaseSamples(0.1);
 		final ExperimentResult actual3 = detection3.trainTest(inputSets.getKey(), inputSets.getValue());
-		final ExperimentResult expected3 = new ExperimentResult(48, 780, 3753, 419);
+		final ExperimentResult expected3 = new ExperimentResult(186, 467, 0, 4347);
+		// System.out.println(actual3);
 		assertEquals(expected3, actual3);
 
 		inputSets = IoUtils.readTrainTestFile(p);
-		inputSets.getKey().decreaseSamples(0.2);
+		inputSets.getKey().decreaseSamples(0.1);
 		final ExperimentResult actual4 = detection4.trainTest(inputSets.getKey(), inputSets.getValue());
-		final ExperimentResult expected4 = new ExperimentResult(134, 0, 4533, 333);
+		final ExperimentResult expected4 = new ExperimentResult(0, 467, 0, 4533);
+		// System.out.println(actual4);
 		assertEquals(expected4, actual4);
 	}
 }

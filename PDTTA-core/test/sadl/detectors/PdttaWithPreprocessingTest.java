@@ -60,7 +60,7 @@ public class PdttaWithPreprocessingTest {
 		final AnomalyDetection detection = new AnomalyDetection(detector, model);
 		final TimedInput testSet = butla.getSplitInputForMapping(trainTest.getValue(), eventMapping);
 		final ExperimentResult result = detection.test(testSet);
-		final ExperimentResult expected = new ExperimentResult(467, 4421, 112, 0);
+		final ExperimentResult expected = new ExperimentResult(4421, 467, 0, 112);
 		assertEquals(expected, result);
 	}
 

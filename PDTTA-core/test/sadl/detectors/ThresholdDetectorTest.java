@@ -56,35 +56,35 @@ public class ThresholdDetectorTest {
 
 		final AnomalyDetection detection = new AnomalyDetection(detector, learner);
 		final AnomalyDetection detection2 = new AnomalyDetection(detector2, learner);
-		ExperimentResult expected = new ExperimentResult(467, 4436, 97, 0);
+		ExperimentResult expected = new ExperimentResult(4436, 467, 0, 97);
 		Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
 		ExperimentResult actual = detection.trainTest(p);
 		ExperimentResult actual2 = detection2.trainTest(p);
 		assertEquals(expected, actual);
 		assertEquals(expected, actual2);
 
-		expected = new ExperimentResult(72, 4345, 160, 423);
+		expected = new ExperimentResult(4345, 72, 423, 160);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type2.txt").toURI());
 		actual = detection.trainTest(p);
 		actual2 = detection2.trainTest(p);
 		assertEquals(expected, actual);
 		assertEquals(expected, actual2);
 
-		expected = new ExperimentResult(454, 4400, 114, 32);
+		expected = new ExperimentResult(4400, 454, 32, 114);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type3.txt").toURI());
 		actual = detection.trainTest(p);
 		actual2 = detection2.trainTest(p);
 		assertEquals(expected, actual);
 		assertEquals(expected, actual2);
 
-		expected = new ExperimentResult(523, 4346, 131, 0);
+		expected = new ExperimentResult(4346, 523, 0, 131);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type4.txt").toURI());
 		actual = detection.trainTest(p);
 		actual2 = detection2.trainTest(p);
 		assertEquals(expected, actual);
 		assertEquals(expected, actual2);
 
-		expected = new ExperimentResult(383, 4385, 153, 79);
+		expected = new ExperimentResult(4385, 383, 79, 153);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type5.txt").toURI());
 		actual = detection.trainTest(p);
 		actual2 = detection2.trainTest(p);
@@ -101,27 +101,27 @@ public class ThresholdDetectorTest {
 				new ThresholdClassifier(Math.exp(-5)));
 
 		final AnomalyDetection detection = new AnomalyDetection(detector, learner);
-		ExperimentResult expected = new ExperimentResult(467, 4437, 96, 0);
+		ExperimentResult expected = new ExperimentResult(4437, 467, 0, 96);
 		Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
 		ExperimentResult actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(72, 4349, 156, 423);
+		expected = new ExperimentResult(4349, 72, 423, 156);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type2.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(453, 4401, 113, 33);
+		expected = new ExperimentResult(4401, 453, 33, 113);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type3.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(523, 4348, 129, 0);
+		expected = new ExperimentResult(4348, 523, 0, 129);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type4.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(383, 4386, 152, 79);
+		expected = new ExperimentResult(4386, 383, 79, 152);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type5.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
@@ -137,27 +137,27 @@ public class ThresholdDetectorTest {
 				new ThresholdClassifier(Math.exp(-5)));
 
 		final AnomalyDetection detection = new AnomalyDetection(detector, learner);
-		ExperimentResult expected = new ExperimentResult(467, 1388, 3145, 0);
+		ExperimentResult expected = new ExperimentResult(1388, 467, 0, 3145);
 		Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
 		ExperimentResult actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(201, 1341, 3164, 294);
+		expected = new ExperimentResult(1341, 201, 294, 3164);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type2.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(322, 1423, 3091, 164);
+		expected = new ExperimentResult(1423, 322, 164, 3091);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type3.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(523, 1331, 3146, 0);
+		expected = new ExperimentResult(1331, 523, 0, 3146);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type4.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);
 
-		expected = new ExperimentResult(251, 1419, 3119, 211);
+		expected = new ExperimentResult(1419, 251, 211, 3119);
 		p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type5.txt").toURI());
 		actual = detection.trainTest(p);
 		assertEquals(expected, actual);

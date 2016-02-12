@@ -75,7 +75,7 @@ public class NumericClassifierTest {
 		final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
 		final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
 		final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
-		final ExperimentResult expected = new ExperimentResult(420, 4072, 461, 47);
+		final ExperimentResult expected = new ExperimentResult(4072, 420, 47, 461);
 		assertEquals(expected, actual);
 	}
 
@@ -89,7 +89,7 @@ public class NumericClassifierTest {
 		final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
 		final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
 		final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
-		final ExperimentResult expected = new ExperimentResult(467, 4356, 177, 0);
+		final ExperimentResult expected = new ExperimentResult(4356, 467, 0, 177);
 		assertEquals(expected, actual);
 	}
 
@@ -123,7 +123,7 @@ public class NumericClassifierTest {
 		final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
 		final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
 		final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
-		final ExperimentResult expected = new ExperimentResult(467, 445, 4088, 0);
+		final ExperimentResult expected = new ExperimentResult(445, 467, 0, 4088);
 		assertEquals(expected, actual);
 	}
 
@@ -137,7 +137,7 @@ public class NumericClassifierTest {
 		final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
 		final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
 		final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
-		final ExperimentResult expected = new ExperimentResult(467, 4239, 294, 0);
+		final ExperimentResult expected = new ExperimentResult(4239, 467, 0, 294);
 		assertEquals(expected, actual);
 	}
 
@@ -151,7 +151,7 @@ public class NumericClassifierTest {
 		final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
 		final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
 		final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
-		final ExperimentResult expected = new ExperimentResult(467, 4311, 222, 0);
+		final ExperimentResult expected = new ExperimentResult(4311, 467, 0, 222);
 		assertEquals(expected, actual);
 	}
 
@@ -166,7 +166,7 @@ public class NumericClassifierTest {
 		final Path p = Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
 		final Pair<TimedInput, TimedInput> inputSets = IoUtils.readTrainTestFile(p);
 		final ExperimentResult actual = detection.trainTest(inputSets.getKey(), inputSets.getValue());
-		final ExperimentResult expected = new ExperimentResult(467, 0, 4533, 0);
+		final ExperimentResult expected = new ExperimentResult(0, 467, 0, 4533);
 		assertEquals(expected, actual);
 	}
 }

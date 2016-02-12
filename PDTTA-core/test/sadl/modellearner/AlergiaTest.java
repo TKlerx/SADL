@@ -148,7 +148,7 @@ public class AlergiaTest {
 		final AnomalyDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, new AggregatedSingleFeatureCreator(),
 				new ThresholdClassifier(Math.exp(-5)));
 		final AnomalyDetection detection = new AnomalyDetection(detector, pdfa);
-		final ExperimentResult expected = new ExperimentResult(467, 4531, 2, 0);
+		final ExperimentResult expected = new ExperimentResult(4531, 467, 0, 2);
 		final ExperimentResult actual = detection.test(trainTest.getValue());
 		assertEquals(expected, actual);
 		assertEquals(808, pdfa.getStateCount());
@@ -162,7 +162,7 @@ public class AlergiaTest {
 		final AnomalyDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, new AggregatedSingleFeatureCreator(),
 				new ThresholdClassifier(Math.exp(-5)));
 		final AnomalyDetection detection = new AnomalyDetection(detector, pdfa);
-		final ExperimentResult expected = new ExperimentResult(467, 4531, 2, 0);
+		final ExperimentResult expected = new ExperimentResult(4531, 467, 0, 2);
 		final ExperimentResult actual = detection.test(trainTest.getValue());
 		assertEquals(expected, actual);
 		assertEquals(808, pdfa.getStateCount());
@@ -176,7 +176,7 @@ public class AlergiaTest {
 		final AnomalyDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, new AggregatedSingleFeatureCreator(),
 				new ThresholdClassifier(Math.exp(-5)));
 		final AnomalyDetection detection = new AnomalyDetection(detector, pdfa);
-		final ExperimentResult expected = new ExperimentResult(467, 4525, 8, 0);
+		final ExperimentResult expected = new ExperimentResult(4525, 467, 0, 8);
 		final ExperimentResult actual = detection.test(trainTest.getValue());
 		assertEquals(expected, actual);
 		assertEquals(882, pdfa.getStateCount());
@@ -190,7 +190,7 @@ public class AlergiaTest {
 		final AnomalyDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, new AggregatedSingleFeatureCreator(),
 				new ThresholdClassifier(Math.exp(-5)));
 		final AnomalyDetection detection = new AnomalyDetection(detector, pdfa);
-		final ExperimentResult expected = new ExperimentResult(467, 4528, 5, 0);
+		final ExperimentResult expected = new ExperimentResult(4528, 467, 0, 5);
 		final ExperimentResult actual = detection.test(trainTest.getValue());
 		assertEquals(expected, actual);
 		assertEquals(808, pdfa.getStateCount());
@@ -205,7 +205,7 @@ public class AlergiaTest {
 		final AnomalyDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, new AggregatedSingleFeatureCreator(),
 				new ThresholdClassifier(Math.exp(-5)));
 		final AnomalyDetection detection = new AnomalyDetection(detector, pdfaAlergia);
-		final ExperimentResult expected = new ExperimentResult(0, 4533, 0, 467);
+		final ExperimentResult expected = new ExperimentResult(4533, 0, 467, 0);
 		final ExperimentResult actual = detection.test(trainTest.getValue());
 		assertEquals(expected, actual);
 		assertEquals(2, pdfaAlergia.getStateCount());
@@ -219,7 +219,7 @@ public class AlergiaTest {
 		final AnomalyDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, new AggregatedSingleFeatureCreator(),
 				new ThresholdClassifier(Math.exp(-5)));
 		final AnomalyDetection detection = new AnomalyDetection(detector, pdfa);
-		final ExperimentResult expected = new ExperimentResult(0, 4533, 0, 467);
+		final ExperimentResult expected = new ExperimentResult(4533, 0, 467, 0);
 		final ExperimentResult actual = detection.test(trainTest.getValue());
 		assertEquals(expected, actual);
 		assertEquals(2, pdfa.getStateCount());
@@ -234,7 +234,7 @@ public class AlergiaTest {
 		final AnomalyDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, new AggregatedSingleFeatureCreator(),
 				new ThresholdClassifier(Math.exp(-5)));
 		final AnomalyDetection detection = new AnomalyDetection(detector, pdfaAlergia);
-		final ExperimentResult alergiaEexpected = new ExperimentResult(467, 4532, 1, 0);
+		final ExperimentResult alergiaEexpected = new ExperimentResult(4532, 467, 0, 1);
 		final ExperimentResult alergiaActual = detection.test(trainTest.getValue());
 		assertEquals(alergiaEexpected, alergiaActual);
 		assertEquals(108, pdfaAlergia.getStateCount());
@@ -248,7 +248,7 @@ public class AlergiaTest {
 		final AnomalyDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, new AggregatedSingleFeatureCreator(),
 				new ThresholdClassifier(Math.exp(-5)));
 		final AnomalyDetection detection = new AnomalyDetection(detector, pdfaAlergia);
-		final ExperimentResult expected = new ExperimentResult(467, 4532, 1, 0);
+		final ExperimentResult expected = new ExperimentResult(4532, 467, 0, 1);
 		final ExperimentResult actual = detection.test(trainTest.getValue());
 		assertEquals(expected, actual);
 		assertEquals(70, pdfaAlergia.getStateCount());
@@ -296,7 +296,7 @@ public class AlergiaTest {
 					new ThresholdClassifier(Math.exp(-5)));
 			final PDFA pdfaTreba = treba.train(trainTest.getKey());
 			final AnomalyDetection trebaDetection = new AnomalyDetection(detector, pdfaTreba);
-			final ExperimentResult trebaExpected = new ExperimentResult(463, 4533, 0, 4);
+			final ExperimentResult trebaExpected = new ExperimentResult(4533, 463, 4, 0);
 			final ExperimentResult trebaActual = trebaDetection.test(trainTest.getValue());
 			logger.info("Treba PDFA has {} states.", pdfaTreba.getStateCount());
 			assertEquals(trebaExpected, trebaActual);
@@ -316,7 +316,7 @@ public class AlergiaTest {
 					new ThresholdClassifier(Math.exp(-5)));
 			final PDFA pdfaTreba = treba.train(trainTest.getKey());
 			final AnomalyDetection trebaDetection = new AnomalyDetection(detector, pdfaTreba);
-			final ExperimentResult trebaExpected = new ExperimentResult(467, 4525, 8, 0);
+			final ExperimentResult trebaExpected = new ExperimentResult(4525, 467, 0, 8);
 			final ExperimentResult trebaActual = trebaDetection.test(trainTest.getValue());
 			logger.info("Treba PDFA has {} states.", pdfaTreba.getStateCount());
 			assertEquals(trebaExpected, trebaActual);

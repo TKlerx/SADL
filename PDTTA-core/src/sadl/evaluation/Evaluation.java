@@ -51,18 +51,22 @@ public class Evaluation {
 			if (s.getLabel() == ClassLabel.NORMAL) {
 				if (detectorResult[i]) {
 					// detector said anomaly
-					falsePos++;
+					// falsePos++;
+					falseNeg++;
 				} else {
 					// detector said normal
-					trueNeg++;
+					// trueNeg++;
+					truePos++;
 				}
 			} else if (s.getLabel() == ClassLabel.ANOMALY) {
 				if (detectorResult[i]) {
 					// detector said anomaly
-					truePos++;
+					// truePos++;
+					trueNeg++;
 				} else {
 					// detector said normal
-					falseNeg++;
+					// falseNeg++;
+					falsePos++;
 				}
 			}
 
