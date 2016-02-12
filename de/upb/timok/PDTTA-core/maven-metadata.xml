@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>de.upb.timok</groupId>
+  <artifactId>PDTTA-core</artifactId>
+  <versioning>
+    <versions>
+      <version>0.0.2-SNAPSHOT</version>
+    </versions>
+    <lastUpdated>20160212135804</lastUpdated>
+  </versioning>
+</metadata>
