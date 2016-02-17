@@ -61,7 +61,6 @@ import sadl.run.factories.LearnerFactory;
 import sadl.run.factories.learn.ButlaFactory;
 import sadl.run.factories.learn.PdfaFactory;
 import sadl.run.factories.learn.PdttaFactory;
-import sadl.run.factories.learn.PetriNetFactory;
 import sadl.run.factories.learn.RTIFactory;
 import sadl.run.factories.learn.TptaFactory;
 import sadl.utils.IoUtils;
@@ -362,9 +361,6 @@ public class SmacRun {
 				break;
 			case PDTTA:
 				lf = new PdttaFactory();
-				break;
-			case PETRI_NET:
-				lf = new PetriNetFactory();
 				break;
 			case BUTLA:
 				lf = new ButlaFactory();

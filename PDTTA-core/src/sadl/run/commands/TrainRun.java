@@ -32,7 +32,6 @@ import sadl.models.pdrta.PDRTA;
 import sadl.run.factories.LearnerFactory;
 import sadl.run.factories.learn.ButlaFactory;
 import sadl.run.factories.learn.PdttaFactory;
-import sadl.run.factories.learn.PetriNetFactory;
 import sadl.run.factories.learn.RTIFactory;
 import sadl.utils.IoUtils;
 
@@ -74,9 +73,6 @@ public class TrainRun {
 				break;
 			case PDTTA:
 				lf = new PdttaFactory();
-				break;
-			case PETRI_NET:
-				lf = new PetriNetFactory();
 				break;
 			case BUTLA:
 				lf = new ButlaFactory();

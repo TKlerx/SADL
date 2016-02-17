@@ -92,11 +92,12 @@ public class IoUtils {
 	public static void cleanDir(Path outputDir) throws IOException {
 		if (Files.notExists(outputDir)) {
 			Files.createDirectories(outputDir);
+			return;
 		}
 		Files.walk(outputDir).filter(p -> !Files.isDirectory(p)).forEach(p -> {
 			try {
 				logger.info("Deleting file {}", p);
-				Files.delete(p);
+				Files.deleteIfExists(p);
 			} catch (final Exception e) {
 				e.printStackTrace();
 			}
@@ -105,14 +106,16 @@ public class IoUtils {
 			@Override
 			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
 				logger.info("Deleting file {}", file);
-				Files.delete(file);
+				Files.deleteIfExists(file);
 				return FileVisitResult.CONTINUE;
 			};
 
 			@Override
 			public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-				logger.info("Deleting directory {}", dir);
-				Files.delete(dir);
+				if (!dir.equals(outputDir)) {
+					logger.info("Deleting directory {}", dir);
+					Files.deleteIfExists(dir);
+				}
 				return FileVisitResult.CONTINUE;
 			};
 		});

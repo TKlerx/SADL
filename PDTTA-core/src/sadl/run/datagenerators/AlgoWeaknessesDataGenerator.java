@@ -68,8 +68,7 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 	@Parameter(names = "-anomalyAmount", description = "Relative amount of anomaly sequences among the test sequences", arity = 1, required = true)
 	private double anomalyAmount;
 
-	public static void main(String[] args) throws URISyntaxException {
-
+	public static void main(String[] args) throws URISyntaxException, IOException {
 		final AlgoWeaknessesDataGenerator awdg = new AlgoWeaknessesDataGenerator();
 		final JCommander jc = new JCommander(awdg);
 		if (args.length == 0) {
@@ -81,8 +80,7 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 	}
 
 	@SuppressWarnings("null")
-	private void run() {
-
+	private void run() throws IOException {
 		MasterSeed.setSeed(seed);
 		rndm = MasterSeed.nextRandom();
 
@@ -97,23 +95,29 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 		}
 
 		final int numTrain = (int) Math.rint(setSize * (1.0 - testAmount));
-		final int numTestNeg = (int) Math.rint((setSize - numTrain) * (1.0 - anomalyAmount));
-		final int numTestPos = setSize - (numTrain + numTestNeg);
+		final int numTestNormal = (int) Math.rint((setSize - numTrain) * (1.0 - anomalyAmount));
+		final int numTestAnomalies = setSize - (numTrain + numTestNormal);
 
 		for (int i = 0; i < abnormalPDRTAs.size(); i++) {
 			for (int j = 0; j < numSets; j++) {
-				final TimedInput inpTrain = sample(normalPDRTA, numTrain, ClassLabel.NORMAL);
-				final TimedInput inpTestNeg = sample(normalPDRTA, numTestNeg, ClassLabel.NORMAL);
-				final TimedInput inpTestPos = sample(abnormalPDRTAs.get(i), numTestPos, ClassLabel.ANOMALY);
+				final TimedInput inpTrain = sample(numTrain, ClassLabel.NORMAL, normalPDRTA);
+				final TimedInput inpTestNeg = sample(numTestNormal, ClassLabel.NORMAL, normalPDRTA);
+				final TimedInput inpTestPos = sample(numTestAnomalies, ClassLabel.ANOMALY, abnormalPDRTAs.get(i));
 				final Path outFile = outDir.resolve(anomalyPDRTAs.get(i).getFileName().toString().replaceAll("\\.[^\\.]+$", "") + "_" + j + ".txt");
 				write(inpTrain, inpTestNeg, inpTestPos, outFile);
 			}
+		}
+		for (int j = 0; j < numSets; j++) {
+			final TimedInput inpTrain = sample( numTrain, ClassLabel.NORMAL,normalPDRTA);
+			final TimedInput inpTestNeg = sample(numTestNormal, ClassLabel.NORMAL,normalPDRTA);
+			final TimedInput inpTestPos = sample(numTestAnomalies, ClassLabel.ANOMALY, abnormalPDRTAs.toArray(new PDRTA[0]));
+			final Path outFile = outDir.resolve("algo_weaknesses_pdrta_mixed_" + j + ".txt");
+			write(inpTrain, inpTestNeg, inpTestPos, outFile);
 		}
 
 	}
 
 	private List<PDRTA> parse(List<Path> pdrtaFiles) throws IOException {
-
 		final List<PDRTA> pdrtas = new ArrayList<>(pdrtaFiles.size());
 		for (final Path p : pdrtaFiles) {
 			pdrtas.add(PDRTA.parse(p.toFile()));
@@ -122,7 +126,6 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 	}
 
 	private void write(TimedInput inpTrain, TimedInput inpTestNeg, TimedInput inpTestPos, Path outFile) {
-
 		try {
 			Files.createDirectories(outFile.getParent());
 		} catch (final IOException e) {
@@ -140,17 +143,17 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 		}
 	}
 
-	private TimedInput sample(PDRTA a, int numSeq, ClassLabel label) {
-
+	private TimedInput sample(int numSeq, ClassLabel label, PDRTA... a) {
 		final List<TimedWord> seqs = new ArrayList<>(numSeq);
+		int roundRobin = 0;
 		for (int i = 0; i < numSeq; i++) {
-			seqs.add(sampleSeq(a, label));
+			seqs.add(sampleSeq(a[roundRobin], label));
+			roundRobin %= a.length;
 		}
 		return new TimedInput(seqs);
 	}
 
 	private TimedWord sampleSeq(PDRTA a, ClassLabel label) {
-
 		final List<String> symbols = new ArrayList<>();
 		final TIntList delays = new TIntArrayList();
 		PDRTAState s = a.getRoot();
@@ -169,7 +172,6 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 	}
 
 	private Pair<Integer, Integer> samplePair(PDRTAState s) {
-
 		final List<AlphIn> transitions = new ArrayList<>();
 		for (int i = 0; i < s.getPDRTA().getAlphSize(); i++) {
 			final Collection<Interval> ins = s.getIntervals(i).values();
@@ -196,7 +198,6 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 	}
 
 	private int drawInstance(List<Double> instances) {
-
 		final double random = rndm.nextDouble();
 		double summedProbs = 0;
 		int index = -1;
@@ -216,7 +217,7 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 		return index;
 	}
 
-	private static class AlphIn implements Comparable<AlphIn> {
+	public static class AlphIn implements Comparable<AlphIn> {
 		final int symIdx;
 		final Interval in;
 		final double prob;
@@ -263,7 +264,6 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 
 	@Override
 	public int processVariableArity(String optionName, String[] options) {
-
 		for (int i = 0; i < options.length; i++) {
 			if (options[i].startsWith("-")) {
 				return i;

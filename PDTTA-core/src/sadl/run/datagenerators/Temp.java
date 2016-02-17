@@ -48,10 +48,11 @@ import sadl.utils.MasterSeed;
 
 public class Temp {
 
+	private static Path DATA_TYPE = Paths.get("real");
 	public static final String TRAIN_TEST_SEP = "?????????????????????????";
-	private static final double ANOMALY_PERCENTAGE = 0.1;
-	private static final int TRAIN_SIZE = 9000;
-	private static final int TEST_SIZE = 4000;
+	private static double ANOMALY_PERCENTAGE = 0.1;
+	private static int TRAIN_SIZE = 9000;
+	private static int TEST_SIZE = 4000;
 	private static final int SAMPLE_FILES = 11;
 	Random r;
 
@@ -63,26 +64,36 @@ public class Temp {
 	}
 
 	void temp(String dataString) throws IOException {
-		final Path outputDir = Paths.get("output");
+		final Path outputDir = Paths.get("output2");
 		IoUtils.cleanDir(outputDir);
 		if (r == null) {
 			r = MasterSeed.nextRandom();
 		}
 		final Path confFile = Paths.get("conf-template.txt");
-		final String dataType = "real";
 		final DecimalFormat df = new DecimalFormat("00");
 		final EventsCreationStrategy[] splitEvents = { EventsCreationStrategy.DontSplitEvents, EventsCreationStrategy.SplitEvents };
 		TimedInput trainingTimedSequences;
 		TimedInput splitTrainingTimedSequences = null;
 		logger.info("Parsing input file {}...", dataString);
-		final TimedInput unsplitTrainingTimedSequences = TimedInput.parseAlt(Paths.get(dataString), 1);
+		final TimedInput unsplitTrainingTimedSequences = TimedInput.tryParse(Paths.get(dataString));
+		if (unsplitTrainingTimedSequences.size() > 13000) {
+			DATA_TYPE = Paths.get("real");
+		} else if (unsplitTrainingTimedSequences.size() >= 1000) {
+			final String confSubFolder = "synthetic-pDtta";
+			DATA_TYPE = Paths.get(confSubFolder);
+			TRAIN_SIZE = 700;
+			TEST_SIZE = 300;
+			ANOMALY_PERCENTAGE = .5;
+		} else {
+			throw new IllegalStateException("Input must at least have size 1000, but has " + unsplitTrainingTimedSequences.size());
+		}
 		logger.info("Parsed input file.");
 		for (final AnomalyInsertionType type : AnomalyInsertionType.values()) {
 			if (type == AnomalyInsertionType.NONE) {
 				continue;
 			}
 
-			final Path confDir = outputDir.resolve("confs");
+			final Path confDir = outputDir.resolve("confs").resolve(DATA_TYPE);
 			for (final EventsCreationStrategy split : splitEvents) {
 				if (split == EventsCreationStrategy.SplitEvents) {
 					if (splitTrainingTimedSequences == null) {
@@ -99,24 +110,24 @@ public class Temp {
 				final String genFolder = "tpta-" + (split == EventsCreationStrategy.SplitEvents ? "prep" : "noPrep");
 				final int typeIndex = type.getTypeIndex();
 				final String typeFolderString = typeIndex == AnomalyInsertionType.ALL.getTypeIndex() ? "mixed" : "type" + typeIndex;
-				final Path typeFolder = Paths.get(dataType).resolve(genFolder).resolve(Paths.get(typeFolderString));
-				final TimedInput foo = trainingTimedSequences;
+				final Path typeFolder = DATA_TYPE.resolve(genFolder).resolve(Paths.get(typeFolderString));
+				final TimedInput input = trainingTimedSequences;
 				final Consumer<Path> anomalyGenerator = (Path dataOutputFile) -> {
 					try {
-						generateModelAnomaly(foo, dataOutputFile, type);
+						generateModelAnomaly(input, dataOutputFile, type);
 					} catch (final Exception e) {
 						e.printStackTrace();
 						logger.error("Unexpected exception", e);
 					}
 				};
-				createFiles(outputDir, confFile, dataType, df, confDir, genFolder, typeFolderString, typeFolder, anomalyGenerator);
+				createFiles(outputDir, confFile, DATA_TYPE, df, confDir, genFolder, typeFolderString, typeFolder, anomalyGenerator);
 			}
 
 			// randomly
 			final String genFolder = "random";
 			final int typeIndex = type.getTypeIndex();
 			final String typeFolderString = typeIndex == AnomalyInsertionType.ALL.getTypeIndex() ? "mixed" : "type" + typeIndex;
-			final Path typeFolder = Paths.get(dataType).resolve(genFolder).resolve(Paths.get(typeFolderString));
+			final Path typeFolder = DATA_TYPE.resolve(genFolder).resolve(Paths.get(typeFolderString));
 			final Consumer<Path> anomalyGenerator = (Path dataOutputFile) -> {
 				try {
 					generateRandomAnomaly(unsplitTrainingTimedSequences, dataOutputFile, type);
@@ -125,10 +136,11 @@ public class Temp {
 					logger.error("Unexpected exception", e);
 				}
 			};
-			createFiles(outputDir, confFile, dataType, df, confDir, genFolder, typeFolderString, typeFolder, anomalyGenerator);
-
+			createFiles(outputDir, confFile, DATA_TYPE, df, confDir, genFolder, typeFolderString, typeFolder, anomalyGenerator);
 		}
 	}
+
+
 
 	private void generateModelAnomaly(TimedInput input, Path dataOutputFile, AnomalyInsertionType type) throws IOException {
 		if (type != AnomalyInsertionType.ALL) {
@@ -138,11 +150,11 @@ public class Temp {
 		}
 	}
 
-	public void createFiles(final Path outputDir, final Path confFile, final String dataType, final DecimalFormat df, final Path confDir,
+	public void createFiles(final Path outputDir, final Path confFile, final Path dataType, final DecimalFormat df, final Path confDir,
 			final String genFolder, final String typeFolderString, final Path typeFolder, Consumer<Path> anomalyGenerator) throws IOException {
 		for (int k = 0; k < SAMPLE_FILES; k++) {
 			final String destFolder = k == 0 ? "train" : "test";
-			final Path dataFolder = outputDir.resolve("smac-data").resolve(Paths.get(dataType)).resolve(genFolder).resolve(typeFolderString)
+			final Path dataFolder = outputDir.resolve("smac-data").resolve(dataType).resolve(genFolder).resolve(typeFolderString)
 					.resolve(destFolder);
 			final Path dataOutputFile = dataFolder.resolve(Paths.get(genFolder + "-" + df.format(k) + "_smac_" + typeFolderString + ".txt"));
 			if (Files.notExists(dataFolder)) {
@@ -151,8 +163,8 @@ public class Temp {
 			anomalyGenerator.accept(dataOutputFile);
 			logger.info("Wrote file #{} ({})", Integer.toString(k), dataOutputFile);
 		}
-		final String fileSuffix = "-" + dataType + "-" + genFolder + "-" + typeFolderString + ".txt";
-		createConfDir(confFile, confDir, typeFolder, fileSuffix);
+		// final String fileSuffix = "-" + dataType + "-" + genFolder + "-" + typeFolderString + ".txt";
+		// createConfDir(confFile, confDir, typeFolder, fileSuffix);
 	}
 
 	public void createConfDir(final Path confFile, final Path confDir, final Path typeFolder, final String fileSuffix) throws IOException {
