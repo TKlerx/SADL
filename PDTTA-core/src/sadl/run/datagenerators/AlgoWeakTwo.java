@@ -129,38 +129,6 @@ public class AlgoWeakTwo {
 			final String folderName = det.determinism ? "pDtta" : "pNtta";
 			writeTrainTest(outputFolder.resolve(folderName), "A-mixed", () -> foo.sampleNormalPndtta(det.determinism), anomalyCreationFunctions);
 		}
-
-		System.out.println("normal");
-		foo.sampleNormalPndtta(true);
-		foo.sampleNormalPndtta(false);
-
-		System.out.println("A1");
-		foo.sampleAbnormalPndttaA1(true);
-		foo.sampleAbnormalPndttaA1(false);
-
-		System.out.println("A2");
-		foo.sampleAbnormalPndttaA2(true);
-		foo.sampleAbnormalPndttaA2(false);
-
-		System.out.println("A3");
-		foo.sampleAbnormalPndttaA3(true);
-		foo.sampleAbnormalPndttaA3(false);
-
-		System.out.println("A4");
-		foo.sampleAbnormalPndttaA4(true);
-		foo.sampleAbnormalPndttaA4(false);
-
-		System.out.println("A5");
-		foo.sampleAbnormalPndttaA5(true);
-		foo.sampleAbnormalPndttaA5(false);
-
-		System.out.println("A6");
-		foo.sampleAbnormalPndttaA6(true);
-		foo.sampleAbnormalPndttaA6(false);
-
-		System.out.println("A7");
-		foo.sampleAbnormalPndttaA7(true);
-		foo.sampleAbnormalPndttaA7(false);
 	}
 
 	private static void writeTrainTest(Path outputFolder, String fileName, Supplier<String> supplier, List<Supplier<String>> anomalyCreationFunctions)
@@ -192,6 +160,8 @@ public class AlgoWeakTwo {
 				bw.append(supplier.get());
 				bw.append('\n');
 			}
+			bw.append(Temp.TRAIN_TEST_SEP);
+			bw.append('\n');
 			for (int i = 0; i < ANOMALY_COUNT; i++) {
 				if (r.nextDouble() > ANOMALY_RATE) {
 					bw.append(supplier.get());

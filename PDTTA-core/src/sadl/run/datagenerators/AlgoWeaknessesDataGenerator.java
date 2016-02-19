@@ -98,6 +98,14 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 		final int numTestNormal = (int) Math.rint((setSize - numTrain) * (1.0 - anomalyAmount));
 		final int numTestAnomalies = setSize - (numTrain + numTestNormal);
 
+		{
+			final Path p = Paths.get("fw-pdrta-normal.txt");
+			final TimedInput inpTrain = sample(setSize, ClassLabel.NORMAL, normalPDRTA);
+			try (BufferedWriter bw = Files.newBufferedWriter(p)) {
+				inpTrain.toFile(bw, false);
+			}
+		}
+
 		for (int i = 0; i < abnormalPDRTAs.size(); i++) {
 			for (int j = 0; j < numSets; j++) {
 				final TimedInput inpTrain = sample(numTrain, ClassLabel.NORMAL, normalPDRTA);
@@ -108,8 +116,8 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 			}
 		}
 		for (int j = 0; j < numSets; j++) {
-			final TimedInput inpTrain = sample( numTrain, ClassLabel.NORMAL,normalPDRTA);
-			final TimedInput inpTestNeg = sample(numTestNormal, ClassLabel.NORMAL,normalPDRTA);
+			final TimedInput inpTrain = sample(numTrain, ClassLabel.NORMAL, normalPDRTA);
+			final TimedInput inpTestNeg = sample(numTestNormal, ClassLabel.NORMAL, normalPDRTA);
 			final TimedInput inpTestPos = sample(numTestAnomalies, ClassLabel.ANOMALY, abnormalPDRTAs.toArray(new PDRTA[0]));
 			final Path outFile = outDir.resolve("algo_weaknesses_pdrta_mixed_" + j + ".txt");
 			write(inpTrain, inpTestNeg, inpTestPos, outFile);
@@ -134,7 +142,7 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 		try (BufferedWriter bw = Files.newBufferedWriter(outFile)) {
 			inpTrain.toFile(bw, true);
 			bw.append('\n');
-			bw.append(SmacDataGenerator.TRAIN_TEST_SEP);
+			bw.append(Temp.TRAIN_TEST_SEP);
 			bw.append('\n');
 			inpTestNeg.toFile(bw, true);
 			inpTestPos.toFile(bw, true);

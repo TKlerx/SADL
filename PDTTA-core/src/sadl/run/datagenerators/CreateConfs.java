@@ -24,7 +24,7 @@ import sadl.constants.Algoname;
 import sadl.utils.IoUtils;
 
 public class CreateConfs {
-
+	private static int uniqueId = 0;
 	public static void main(String[] args) throws IOException {
 		createConfFiles(Paths.get(args[0]), Paths.get("conf-template.txt"), Paths.get(args[1]));
 	}
@@ -46,19 +46,19 @@ public class CreateConfs {
 					final Path targetDir = confDir.resolve(difference);
 					for (final Algoname algo : Algoname.values()) {
 						Files.createDirectories(targetDir);
-						final Path targetFile = targetDir.resolve(algo.toString().toLowerCase() + ".txt");
+						final Path targetFile = targetDir.resolve(algo.toString().toLowerCase() + "-id=" + (uniqueId++) + ".txt");
 						Files.copy(confTemplate, targetFile);
 						final List<String> lines = Files.readAllLines(targetFile);
 						for (int i = 0; i < lines.size(); i++) {
 							String line = lines.get(i);
 							line = line.replaceAll("\\$algoname", Matcher.quoteReplacement(algo.name().toLowerCase()));
-							line = line.replaceAll("\\$trainFolder", Matcher.quoteReplacement(difference.resolve("train").toString()));
-							line = line.replaceAll("\\$testFolder", Matcher.quoteReplacement(difference.resolve("test").toString()));
+							line = line.replaceAll("\\$trainFolder", Matcher.quoteReplacement(difference.resolve("train").toString())).replaceAll("\\\\", "/");
+							line = line.replaceAll("\\$testFolder", Matcher.quoteReplacement(difference.resolve("test").toString())).replaceAll("\\\\", "/");
 							int algoRuntime = 0;
 							if (difference.toString().contains("real")) {
 								algoRuntime = 604800;
 							} else {
-								algoRuntime = 10800;
+								algoRuntime = 3600;
 							}
 							line = line.replaceAll("\\$runtime", Integer.toString(algoRuntime));
 							lines.set(i, line);

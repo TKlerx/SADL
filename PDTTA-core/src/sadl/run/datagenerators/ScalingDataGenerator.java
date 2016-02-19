@@ -14,4 +14,5 @@ public class ScalingDataGenerator {
 	// TODO implement
 	// TODO measure only the time for model generation and for testing only that part where the probabilities are computed, but not how long the classification
 	// via classifier takes
+	// Do this with a PDRTA and a PDTTA
 }
