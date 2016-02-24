@@ -16,7 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
-import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 
@@ -32,6 +32,7 @@ public class CreateConfs {
 	public static void createConfFiles(Path dataDir, Path confTemplate, Path confDirInput) throws IOException {
 		final Path confDir = confDirInput.resolve("smac-confs");
 		IoUtils.cleanDir(confDirInput);
+		final List<String> templateLines = Files.readAllLines(confTemplate);
 		Files.walkFileTree(dataDir, new SimpleFileVisitor<Path>() {
 			@Override
 			public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
@@ -47,8 +48,7 @@ public class CreateConfs {
 					for (final Algoname algo : Algoname.values()) {
 						Files.createDirectories(targetDir);
 						final Path targetFile = targetDir.resolve(algo.toString().toLowerCase() + "-id=" + (uniqueId++) + ".txt");
-						Files.copy(confTemplate, targetFile);
-						final List<String> lines = Files.readAllLines(targetFile);
+						final List<String> lines = new ArrayList<>(templateLines);
 						for (int i = 0; i < lines.size(); i++) {
 							String line = lines.get(i);
 							line = line.replaceAll("\\$algoname", Matcher.quoteReplacement(algo.name().toLowerCase()));
@@ -63,7 +63,7 @@ public class CreateConfs {
 							line = line.replaceAll("\\$runtime", Integer.toString(algoRuntime));
 							lines.set(i, line);
 						}
-						Files.write(targetFile, lines, StandardOpenOption.WRITE);
+						Files.write(targetFile, lines);
 					}
 				}
 				return FileVisitResult.CONTINUE;

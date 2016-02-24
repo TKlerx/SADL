@@ -76,6 +76,8 @@ public class AlgoWeakTwo {
 		}
 	}
 
+	private static final int TRAIN_FILES = 10;
+	private static final int TEST_FILES = 10;
 	private static final int FILE_SIZE = 1000;
 	private static final int ANOMALY_COUNT = 300;
 	private static final double ANOMALY_RATE = 0.5;
@@ -144,8 +146,10 @@ public class AlgoWeakTwo {
 
 		// TODO write to train and test!
 		final Random r = MasterSeed.nextRandom();
-		writeFile(fileName + "-0.txt", supplier, anomalyCreationFunctions, train, r);
-		for (int i = 1; i <= 10; i++) {
+		for (int i = 0; i < TRAIN_FILES; i++) {
+			writeFile(fileName + "-" + i + ".txt", supplier, anomalyCreationFunctions, train, r);
+		}
+		for (int i = TRAIN_FILES + 1; i < TRAIN_FILES + TEST_FILES; i++) {
 			writeFile(fileName + "-" + i + ".txt", supplier, anomalyCreationFunctions, test, r);
 		}
 

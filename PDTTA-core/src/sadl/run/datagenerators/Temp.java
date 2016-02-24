@@ -50,7 +50,7 @@ public class Temp {
 	private static double ANOMALY_PERCENTAGE = 0.1;
 	private static int TRAIN_SIZE = 9000;
 	private static int TEST_SIZE = 4000;
-	private static final int SAMPLE_FILES = 11;
+	private static final int SAMPLE_FILES = 20;
 	private static double SPLIT_BANDWIDTH = -1;
 	Random r;
 
@@ -167,7 +167,7 @@ public class Temp {
 	public void createFiles(final Path outputDir, final Path dataType, final DecimalFormat df, final String genFolder, final String typeFolderString,
 			Consumer<Path> anomalyGenerator) throws IOException {
 		for (int k = 0; k < SAMPLE_FILES; k++) {
-			final String destFolder = k == 0 ? "train" : "test";
+			final String destFolder = k < SAMPLE_FILES / 2 ? "train" : "test";
 			final Path dataFolder = outputDir.resolve("smac-data").resolve(dataType).resolve(genFolder).resolve(typeFolderString).resolve(destFolder);
 			final Path dataOutputFile = dataFolder.resolve(Paths.get(genFolder + "-" + df.format(k) + "_smac_" + typeFolderString + ".txt"));
 			if (Files.notExists(dataFolder)) {
