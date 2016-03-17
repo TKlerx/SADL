@@ -75,7 +75,6 @@ public class SmacRun {
 
 	private static final Logger logger = LoggerFactory.getLogger(SmacRun.class);
 
-
 	/*
 	 * ################### SMAC Params ###################
 	 */
@@ -177,6 +176,9 @@ public class SmacRun {
 
 	@Parameter(names = "-butlaPreprocessingBandwidthEstimate", arity = 1)
 	boolean butlaPreprocessingBandwidthEstimate = false;
+
+	@Parameter(names = "-butlaFormula")
+	KDEFormelVariant butlaFormula = KDEFormelVariant.OriginalKDE;
 
 	@Parameter(names = "-butlaPreprocessingBandwidth")
 	double butlaPreprocessingBandwidth = 10000;
@@ -281,8 +283,7 @@ public class SmacRun {
 				} else {
 					bandwidth = butlaPreprocessingBandwidth;
 				}
-				final ButlaPdtaLearner butla = new ButlaPdtaLearner(bandwidth, EventsCreationStrategy.SplitEvents,
-						KDEFormelVariant.OriginalKDE);
+				final ButlaPdtaLearner butla = new ButlaPdtaLearner(bandwidth, EventsCreationStrategy.SplitEvents, butlaFormula);
 				final Pair<TimedInput, Map<String, Event>> pair = butla.splitEventsInTimedSequences(trainSet);
 				trainSet = pair.getKey();
 				testSet = butla.getSplitInputForMapping(testSet, pair.getValue());
