@@ -12,40 +12,33 @@ package sadl.run.factories.learn;
 
 import com.beust.jcommander.Parameter;
 
-import sadl.constants.MergeMethod;
+import sadl.constants.MergeTest;
+import sadl.interfaces.ProbabilisticModelLearner;
+import sadl.modellearner.PdfaLearner;
+import sadl.modellearner.TrebaPdfaLearner;
+import sadl.run.factories.LearnerFactory;
 
-public class PdfaFactory implements PdfaDefaultFactory {
+public class PdfaFactory implements LearnerFactory {
 
 	@Parameter(names = "-mergeAlpha")
 	double mergeAlpha = 0.05;
 
-	@Parameter(names = "-recursiveMergeTest", arity = 1)
-	boolean recursiveMergeTest = true;
+	@Parameter(names = "-mergeTest")
+	MergeTest mergeTest = MergeTest.MDI;
 
-	@Parameter(names = "-mergeT0")
-	int mergeT0 = 3;
 
-	@Parameter(names = "-mergeMethod")
-	MergeMethod mergeMethod = MergeMethod.ALERGIA_PAPER;
-
-	@Override
 	public double getMergeAlpha() {
 		return mergeAlpha;
 	}
 
-	@Override
-	public boolean isRecursiveMergeTest() {
-		return recursiveMergeTest;
+	public MergeTest getMergeTest() {
+		return mergeTest;
 	}
 
 	@Override
-	public int getMergeT0() {
-		return mergeT0;
-	}
-
-	@Override
-	public MergeMethod getMergeMethod() {
-		return mergeMethod;
+	public ProbabilisticModelLearner create() {
+		final PdfaLearner pdfaLearner = new TrebaPdfaLearner(getMergeAlpha(), false, getMergeTest());
+		return pdfaLearner;
 	}
 
 }
