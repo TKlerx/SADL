@@ -156,6 +156,7 @@ public class AlgoWeaknessesDataGenerator implements IVariableArity {
 		int roundRobin = 0;
 		for (int i = 0; i < numSeq; i++) {
 			seqs.add(sampleSeq(a[roundRobin], label));
+			roundRobin++;
 			roundRobin %= a.length;
 		}
 		return new TimedInput(seqs);
