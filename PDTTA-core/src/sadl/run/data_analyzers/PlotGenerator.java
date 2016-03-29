@@ -20,14 +20,16 @@ import gnu.trove.map.TObjectDoubleMap;
 import gnu.trove.map.hash.TObjectDoubleHashMap;
 
 public class PlotGenerator {
+	private static final boolean generatePlots = true;
+
 	static String[] keys = { "pdfa", "tpta", "pdtta", "rti", "butla" };
 	static String[] values = { "ALERGIA", "TPTA", "ProDTAL", "RTI+", "BUTLA" };
-	public static void main(String[] args) throws IOException {
-		// TODO Auto-generated method stub
+
+	public static void main(String[] args) throws IOException, InterruptedException {
 		run(Paths.get(args[0]), Paths.get(args[1]), Paths.get(args[2]));
 	}
 
-	private static void run(Path input, Path template, Path outputDir) throws IOException {
+	private static void run(Path input, Path template, Path outputDir) throws IOException, InterruptedException {
 		final Set<String> generationTypes = new HashSet<>();
 		final Set<String> anomalyTypes = new HashSet<>();
 		final List<String> templateContent = Files.readAllLines(template);
@@ -78,6 +80,9 @@ public class PlotGenerator {
 					bw.append('\n');
 				}
 			}
+		}
+		if (generatePlots) {
+			RecursivePlot.plot(outputDir);
 		}
 	}
 }
