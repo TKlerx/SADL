@@ -327,9 +327,6 @@ public class SmacRun {
 		} catch (final IOException e) {
 			logger.error("Error when loading input from file: " + e.getMessage());
 			smacErrorAbort();
-		} catch (final Error t) {
-			logger.error("Caught error...exiting", t);
-			smacErrorAbort();
 		}
 		return null;
 	}
@@ -394,8 +391,6 @@ public class SmacRun {
 	}
 
 	protected static void smacErrorAbort() {
-		System.out.println("Result for SMAC: CRASHED, 0, 0, 0, 0");
-		System.exit(1);
 	}
 
 }
