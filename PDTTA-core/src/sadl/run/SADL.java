@@ -126,7 +126,7 @@ public class SADL {
 					System.exit(1);
 					break;
 			}
-		} catch (final Throwable e) {
+		} catch (final Error e) {
 			logger.error("Unexpected exception with parameters" + Arrays.toString(args), e);
 			e.printStackTrace();
 			crash = true;
