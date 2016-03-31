@@ -91,22 +91,20 @@ public class PDFA implements AutomatonModel, Serializable {
 	 * 
 	 * @return true if was not consistent and consistency was restored.
 	 */
-	protected boolean checkAndRestoreConsistency() {
+	public boolean checkAndRestoreConsistency() {
 		if (!isConsistent()) {
+			logger.info("Probabilities do not match, but will be corrected");
 			return restoreConsistency();
 		}
 		return false;
 	}
 
-	protected boolean restoreConsistency() {
+	public boolean restoreConsistency() {
 		return fixProbabilities();
 	}
 
 	protected boolean isConsistent() {
 		final boolean probabilities = finalStateProbabilities.keySet().forEach(state -> checkProbability(state));
-		if (!probabilities) {
-			logger.info("Probabilities do not match, but will be corrected");
-		}
 		return probabilities;
 	}
 
@@ -235,6 +233,10 @@ public class PDFA implements AutomatonModel, Serializable {
 		this.transitions = pdfa.transitions;
 		this.finalStateProbabilities = pdfa.finalStateProbabilities;
 		this.abnormalFinalStates = pdfa.abnormalFinalStates;
+	}
+
+	public PDFA(TimedInput alphabet, Set<Transition> transitions, TIntDoubleMap finalStateProbabilities) {
+		this(alphabet, transitions, finalStateProbabilities, null);
 	}
 
 	public PDFA(TimedInput alphabet, Set<Transition> transitions, TIntDoubleMap finalStateProbabilities, TIntSet abnormalFinalStates) {
