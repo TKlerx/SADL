@@ -419,7 +419,33 @@ public class PDFA implements AutomatonModel, Serializable {
 		return result;
 	}
 
-	protected boolean removeTransition(Transition t) {
+	/**
+	 * Returns all outgoing transitions for a given state
+	 * 
+	 * @param currentState
+	 *            the given state
+	 * @param includeStoppingTransition
+	 *            whether to include final transition probabilities
+	 * @return the outgoing transitions
+	 */
+	public List<Transition> getOutTransitions(int currentState, boolean includeStoppingTransition) {
+		final List<Transition> result = new ArrayList<>();
+		for (final Transition t : transitions) {
+			if (t.getFromState() == currentState) {
+				result.add(t);
+			}
+		}
+		if (includeStoppingTransition) {
+			for (final int state : finalStateProbabilities.keys()) {
+				if (state == currentState) {
+					result.add(getFinalTransition(state));
+				}
+			}
+		}
+		return result;
+	}
+
+	public boolean removeTransition(Transition t) {
 		checkImmutable();
 		final boolean wasRemoved = transitions.remove(t);
 		if (!wasRemoved) {
@@ -467,29 +493,6 @@ public class PDFA implements AutomatonModel, Serializable {
 		return chosenTransition;
 	}
 
-	/**
-	 * Returns all outgoing transitions for a given state
-	 * 
-	 * @param currentState the given state
-	 * @param includeStoppingTransition whether to include final transition probabilities
-	 * @return the outgoing transitions
-	 */
-	public List<Transition> getOutTransitions(int currentState, boolean includeStoppingTransition) {
-		final List<Transition> result = new ArrayList<>();
-		for (final Transition t : transitions) {
-			if (t.getFromState() == currentState) {
-				result.add(t);
-			}
-		}
-		if (includeStoppingTransition) {
-			for (final int state : finalStateProbabilities.keys()) {
-				if (state == currentState) {
-					result.add(getFinalTransition(state));
-				}
-			}
-		}
-		return result;
-	}
 
 	/**
 	 * Returns all outgoing transitions for a given state
@@ -751,5 +754,59 @@ public class PDFA implements AutomatonModel, Serializable {
 		return Pair.create(computeEventLikelihoods(s), new TDoubleArrayList());
 	}
 
+	// public boolean isConnected2() {
+	// final TIntStack openList = new TIntArrayStack();
+	// final TIntSet closedList = new TIntHashSet();
+	//
+	// openList.push(START_STATE);
+	// while (openList.size() > 0) {
+	// final int currentState = openList.pop();
+	// closedList.add(currentState);
+	// final List<Transition> currentTransitions = getOutTransitions(currentState, false);
+	// currentTransitions.stream().filter(t -> !closedList.contains(t.getToState())).forEach(t -> openList.push(t.getToState()));
+	// }
+	// for (final int state : getStates()) {
+	// if (!closedList.contains(state)) {
+	// return false;
+	// }
+	// }
+	// return true;
+	// }
+	public boolean isConnected() {
+		final TIntStack openList = new TIntArrayStack();
+		final TIntSet closedList = new TIntHashSet();
+
+		openList.push(START_STATE);
+		while (openList.size() > 0) {
+			final int currentState = openList.pop();
+			closedList.add(currentState);
+			final List<Transition> currentTransitions = getOutTransitions(currentState, false);
+			for (final Transition t : currentTransitions) {
+				if (!closedList.contains(t.getToState())) {
+					openList.push(t.getToState());
+				}
+			}
+		}
+		for (final int state : getStates()) {
+			if (!closedList.contains(state)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Not yet implemented!
+	 * 
+	 * @param t
+	 * @return
+	 */
+	public boolean isBridgeTransition(Transition t) {
+		throw new UnsupportedOperationException("not yet implemented...");
+	}
+
+	public Set<Transition> getTransitions() {
+		return transitions;
+	}
 
 }

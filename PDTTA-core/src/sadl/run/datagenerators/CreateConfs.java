@@ -24,7 +24,7 @@ import sadl.constants.Algoname;
 import sadl.utils.IoUtils;
 
 public class CreateConfs {
-	private static int uniqueId = 0;
+	private static int uniqueId = 300;
 	public static void main(String[] args) throws IOException {
 		createConfFiles(Paths.get(args[0]), Paths.get("conf-template.txt"), Paths.get(args[1]));
 	}

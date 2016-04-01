@@ -298,7 +298,7 @@ public class PDTTA extends PDFA {
 	}
 
 	@Override
-	protected boolean removeTransition(Transition t) {
+	public boolean removeTransition(Transition t) {
 		return removeTimedTransition(t) != null;
 	}
 

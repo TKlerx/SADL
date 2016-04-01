@@ -12,9 +12,15 @@ package sadl.run.datagenerators;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -23,14 +29,22 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import gnu.trove.map.TIntDoubleMap;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.SerializationUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import jsat.distributions.ContinuousDistribution;
 import jsat.distributions.Uniform;
+import sadl.constants.AnomalyInsertionType;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.models.PDFA;
@@ -39,8 +53,11 @@ import sadl.structure.Transition;
 import sadl.structure.ZeroProbTransition;
 import sadl.tau_estimation.IdentityEstimator;
 import sadl.utils.CollectionUtils;
+import sadl.utils.IoUtils;
 
 public class ScalingDataGenerator {
+	private static Logger logger = LoggerFactory.getLogger(ScalingDataGenerator.class);
+
 	private static final int INITIAL_ALPHABET_SIZE = 50;
 	private static final int INITIAL_STATE_SIZE = 50;
 	private static final int INITIAL_TRANSITION_SIZE = 625;
@@ -55,21 +72,26 @@ public class ScalingDataGenerator {
 	private static final int TIME_LOW = 1;
 	private static final int TIME_HIGH = 1000;
 	private static final int SCALING_STEPS = 10;
+	final Random r = new Random(1234);
 
 	public static void main(String[] args) throws IOException {
 		final ScalingDataGenerator sdg = new ScalingDataGenerator();
-		sdg.run();
+		final Path dataOutputDir = Paths.get(args[0]);
+		sdg.generateData(dataOutputDir);
+		final Path confOutputDir = Paths.get(args[1]);
+		sdg.createConfs(dataOutputDir, confOutputDir);
 	}
 
 	@SuppressWarnings("boxing")
-	public void run() throws IOException {
+	public void generateData(Path outputFolder) throws IOException {
+		Files.createDirectories(outputFolder);
 		final String[] alphabetStrings = new String[INITIAL_ALPHABET_SIZE];
 		for (int i = 0; i < INITIAL_ALPHABET_SIZE; i++) {
 			alphabetStrings[i] = Integer.toString(i);
 		}
 		final TimedInput alphabet = new TimedInput(alphabetStrings);
 
-		final TIntDoubleMap states = new TIntDoubleHashMap();
+		final TIntDoubleHashMap states = new TIntDoubleHashMap();
 		final TreeMap<Integer, Integer> stateTransitionCount = new TreeMap<>();
 		states.put(0, 0.0);
 		stateTransitionCount.put(0, 0);
@@ -78,7 +100,6 @@ public class ScalingDataGenerator {
 			stateTransitionCount.put(i, 0);
 		}
 		final HashSet<Transition> transitions = new HashSet<>();
-		final Random r = new Random(1234);
 		for (int i = 0; i < INITIAL_TRANSITION_SIZE; i++) {
 			final Integer currentState = stateTransitionCount.entrySet().stream().min((e1, e2) -> e1.getValue().compareTo(e2.getValue())).get().getKey();
 			final Integer currentValue = stateTransitionCount.get(currentState);
@@ -99,7 +120,7 @@ public class ScalingDataGenerator {
 		}
 		states.put(0, 0.0);
 		structure.checkAndRestoreConsistency();
-		structure.toGraphvizFile(Paths.get("pdfa.gv"), false);
+		structure.toGraphvizFile(outputFolder.resolve("pdfa.gv"), false);
 		final Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions = new HashMap<>();
 		for (final Transition t : transitions) {
 			transitionDistributions.put(t.toZeroProbTransition(), new Uniform(TIME_LOW, TIME_HIGH));
@@ -111,7 +132,7 @@ public class ScalingDataGenerator {
 			initialWords.add(initialAutomaton.sampleSequence());
 		}
 		TimedInput input = new TimedInput(initialWords);
-		BufferedWriter bw = Files.newBufferedWriter(Paths.get("initial-data.txt"));
+		BufferedWriter bw = Files.newBufferedWriter(outputFolder.resolve("initial-data.txt"));
 		input.toFile(bw, true);
 		bw.close();
 		{
@@ -121,7 +142,7 @@ public class ScalingDataGenerator {
 					initialWords.add(initialAutomaton.sampleSequence());
 				}
 				input = new TimedInput(initialWords);
-				bw = Files.newBufferedWriter(Paths.get("data-inc-samples-" + i + ".txt"));
+				bw = Files.newBufferedWriter(outputFolder.resolve("data-inc-samples-" + i + ".txt"));
 				input.toFile(bw, true);
 				bw.close();
 			}
@@ -170,7 +191,7 @@ public class ScalingDataGenerator {
 					initialWords.add(eventPdtta.sampleSequence());
 				}
 				input = new TimedInput(initialWords);
-				bw = Files.newBufferedWriter(Paths.get("data-event-transitions-" + i + ".txt"));
+				bw = Files.newBufferedWriter(outputFolder.resolve("data-event-transitions-" + i + ".txt"));
 				input.toFile(bw, true);
 				bw.close();
 			}
@@ -223,7 +244,7 @@ public class ScalingDataGenerator {
 					initialWords.add(eventPdtta.sampleSequence());
 				}
 				input = new TimedInput(initialWords);
-				bw = Files.newBufferedWriter(Paths.get("data-time-transitions-" + i + ".txt"));
+				bw = Files.newBufferedWriter(outputFolder.resolve("data-time-transitions-" + i + ".txt"));
 				input.toFile(bw, true);
 				bw.close();
 			}
@@ -238,7 +259,7 @@ public class ScalingDataGenerator {
 				final Map<Integer, Integer> eventOcc = new HashMap<>();
 				final List<String> bigAlphabetStrings = new ArrayList<>();
 				for (int j = 0; j < alphabetSize; j++) {
-					bigAlphabetStrings.add( Integer.toString(j));
+					bigAlphabetStrings.add(Integer.toString(j));
 					eventOcc.put(j, 0);
 				}
 				final TimedInput bigAlphabet = new TimedInput(alphabetStrings);
@@ -273,7 +294,7 @@ public class ScalingDataGenerator {
 				}
 				for (final String symbol : occ.keySet()) {
 					if (occ.get(symbol) <= 0) {
-						System.err.println(symbol);
+						logger.error("Symbol {} was never used", symbol);
 					}
 				}
 				final PDTTA eventPdtta = new PDTTA(newStructure, distributions, new IdentityEstimator());
@@ -282,7 +303,7 @@ public class ScalingDataGenerator {
 					initialWords.add(eventPdtta.sampleSequence());
 				}
 				input = new TimedInput(initialWords);
-				bw = Files.newBufferedWriter(Paths.get("data-alphabet-" + i + ".txt"));
+				bw = Files.newBufferedWriter(outputFolder.resolve("data-alphabet-" + i + ".txt"));
 				input.toFile(bw, true);
 				bw.close();
 			}
@@ -290,7 +311,140 @@ public class ScalingDataGenerator {
 		{
 			// increase number of states
 			// check whether every state is still reachable after adding a state (bending a transition to a new state)
+			final double stateStepSize = (double) (MAX_STATE_SIZE - INITIAL_STATE_SIZE) / (SCALING_STEPS - 1);
+			for (int i = 1; i < SCALING_STEPS; i++) {
+				final TreeMap<Integer, Integer> transitionCount = (TreeMap<Integer, Integer>) stateTransitionCount.clone();
+				final int elementsToAdd = (int) (stateStepSize * i);
+				final HashSet<Transition> importantTransitions = new HashSet<>();
+				final HashSet<Transition> stateTransitions = new HashSet<>();
+				for (final Transition t : transitions) {
+					stateTransitions.add(new Transition(t.getFromState(), t.getToState(), t.getSymbol(), 1.0));
+				}
+				final PDFA newStructure = new PDFA(alphabet, stateTransitions, SerializationUtils.clone(states));
+				for (int k = 1; k < states.size(); k++) {
+					final int outCount = newStructure.getOutTransitions(k, false).size();
+					states.put(k, 0.05 * outCount);
+				}
+				for (int j = 0; j < elementsToAdd; j++) {
 
+					final Entry<Integer, Integer> entry = transitionCount.entrySet().stream().max((e1, e2) -> e1.getValue().compareTo(e2.getValue())).get();
+					final Integer currentState = entry.getKey();
+					final Integer currentCount = entry.getValue();
+					if (currentCount == Integer.MIN_VALUE) {
+						logger.error("Was not able to bend any transition for state {}", currentState);
+						break;
+					}
+					final List<Transition> currentTransitions = newStructure.getOutTransitions(currentState, false);
+					if (importantTransitions.containsAll(currentTransitions)) {
+						transitionCount.put(currentState, Integer.MIN_VALUE);
+						j--;
+						continue;
+					}
+					Transition toRemove;
+					do {
+						toRemove = CollectionUtils.chooseRandomObject(currentTransitions, r);
+					} while (importantTransitions.contains(toRemove));
+					newStructure.removeTransition(toRemove);
+					if (!newStructure.isConnected()) {
+						newStructure.addTransition(toRemove.getFromState(), toRemove.getToState(), toRemove.getSymbol(), toRemove.getProbability());
+						importantTransitions.add(toRemove);
+						j--;
+						continue;
+					}
+					transitionCount.put(currentState, currentCount - 1);
+					final int newState = newStructure.getStateCount();
+					newStructure.addFinalState(newState, 1.0);
+					newStructure.addTransition(toRemove.getFromState(), newState, toRemove.getSymbol(), toRemove.getProbability());
+					newStructure.checkAndRestoreConsistency();
+				}
+				final Map<ZeroProbTransition, ContinuousDistribution> distributions = new HashMap<>();
+				for (final Transition t : newStructure.getTransitions()) {
+					distributions.put(t.toZeroProbTransition(), new Uniform(TIME_LOW, TIME_HIGH));
+				}
+				final PDTTA statePdtta = new PDTTA(newStructure, distributions, new IdentityEstimator());
+				logger.info("statePdtta has {} states", statePdtta.getStateCount());
+				initialWords.clear();
+				for (int j = 0; j < INITIAL_SAMPLES; j++) {
+					initialWords.add(statePdtta.sampleSequence());
+				}
+				input = new TimedInput(initialWords);
+				bw = Files.newBufferedWriter(outputFolder.resolve("data-states-" + i + ".txt"));
+				input.toFile(bw, true);
+				bw.close();
+			}
+		}
+	}
+
+	final DecimalFormat df = new DecimalFormat("00");
+
+	public void createConfs(Path inputDir, Path outputDir) throws IOException {
+		try {
+			Files.walkFileTree(inputDir, new SimpleFileVisitor<Path>() {
+				@Override
+				public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+					if (!attrs.isDirectory() && file.toString().endsWith(".txt")) {
+						final TimedInput unsplitTrainingTimedSequences = TimedInput.parse(file);
+						final String genFolder = "random";
+						final String typeFolderString = "mixed";
+						final Consumer<Path> anomalyGenerator = (Path dataOutputFile) -> {
+							try {
+								generateRandomAnomaly(unsplitTrainingTimedSequences, dataOutputFile, AnomalyInsertionType.ALL);
+							} catch (final Exception e) {
+								e.printStackTrace();
+								logger.error("Unexpected exception", e);
+							}
+						};
+						Temp.createFiles(outputDir, Paths.get(FilenameUtils.removeExtension(file.toString())), df, genFolder, typeFolderString,
+								anomalyGenerator);
+					}
+					return FileVisitResult.CONTINUE;
+				}
+
+				@Override
+				public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+					return super.preVisitDirectory(dir, attrs);
+				}
+			});
+		} catch (final IOException e) {
+			System.err.println("Unexpected exception occured." + e);
+		}
+	}
+
+	int[] intIndex;
+
+	public void generateRandomAnomaly(TimedInput trainingTimedSequences, Path dataOutputFile, AnomalyInsertionType type) throws IOException {
+		if (type != AnomalyInsertionType.NONE) {
+			logger.info("generating random anomalies for type {}...", type);
+			final ArrayList<TimedWord> trainSequences = new ArrayList<>();
+			final ArrayList<TimedWord> testSequences = new ArrayList<>();
+			// final Path p = Paths.get("pta_normal.dot");
+			// pta.toGraphvizFile(outputDir.resolve(p), false);
+			// final Process ps = Runtime.getRuntime().exec("dot -Tpdf -O " + outputDir.resolve(p));
+			// System.out.println(outputDir.resolve(p));
+			// ps.waitFor();
+			if (intIndex == null || intIndex.length != trainingTimedSequences.size()) {
+				intIndex = new int[trainingTimedSequences.size()];
+				for (int i = 0; i < trainingTimedSequences.size(); i++) {
+					intIndex[i] = i;
+				}
+			}
+			final TIntList shuffledIndex = new TIntArrayList(Arrays.copyOf(intIndex, intIndex.length));
+			shuffledIndex.shuffle(r);
+			final int split = (int) (trainingTimedSequences.size() * 0.9);
+			for (int i = 0; i < split; i++) {
+				trainSequences.add(trainingTimedSequences.get(shuffledIndex.get(i)));
+			}
+			for (int i = split; i < trainingTimedSequences.size(); i++) {
+				testSequences.add(trainingTimedSequences.get(shuffledIndex.get(i)));
+			}
+			logger.info("inserting random  Anomaly Type {}", type);
+			// do a deep clone, cloning also the words themselves
+			final List<TimedWord> trainSequenceClone = SerializationUtils.clone(trainSequences);
+			final List<TimedWord> testSequenceClone = SerializationUtils.clone(testSequences);
+			final TimedInput trainSet = new TimedInput(trainSequenceClone);
+			TimedInput testSet = new TimedInput(testSequenceClone);
+			testSet = testSet.insertRandomAnomalies(type, 0.5);
+			IoUtils.writeTrainTestFile(dataOutputFile, trainSet, testSet);
 		}
 	}
 }

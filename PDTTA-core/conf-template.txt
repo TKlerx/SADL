@@ -1,7 +1,7 @@
 paramfile = $algoname/$algoname-params.pcs
 runObj = QUALITY
 #3 hours algorithm time
-cutoffTime = 10800
+cutoffTime = 86400
 wallclock-limit = $runtime
 deterministic = 1
 instance_file = smac-data/$trainFolder
@@ -13,3 +13,6 @@ algo = ../jdk1.8.0_72/bin/java -Xmx4g -Xms1g  -jar run/PDTTA-core-0.0.1.jar smac
 #algo = java -Xmx4g -Xms1g  -jar run/PDTTA-core-0.0.1.jar smac $algoname
 num-test-instances = 10
 deterministic = true
+log-level = INFO
+kill-run-exceeding-captime-factor = 2
+abort-on-first-run-crash=false
