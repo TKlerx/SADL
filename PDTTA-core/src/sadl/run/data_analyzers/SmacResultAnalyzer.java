@@ -53,6 +53,8 @@ public class SmacResultAnalyzer {
 
 	private static void processFiles(List<Path> inputFiles, Path outputFile) throws IOException {
 		String[] headline = null;
+		int skippedLineCount = 0;
+		int totalLineCount = 0;
 		try (CSVWriter writer = new CSVWriter(Files.newBufferedWriter(outputFile), csvSeparator)) {
 			for (final Path p : inputFiles) {
 				try (CSVReader reader = new CSVReader(Files.newBufferedReader(p), csvSeparator)) {
@@ -75,8 +77,19 @@ public class SmacResultAnalyzer {
 					int lineCounter = 0;
 					while ((line = reader.readNext()) != null) {
 						// final String time = line[0];
+						if (line.length != 17) {
+							System.err.println("line " + lineCounter + " in file " + p + " has length " + line.length);
+							skippedLineCount++;
+							continue;
+						}
 						final String configs = line[1];
 						final String[] config = configs.split("\\s*,\\s*");
+						if (config.length < 3) {
+							System.err.println("Line " + lineCounter + " in file " + p + " cannot be split by comma");
+							System.err.println(line[1]);
+							skippedLineCount++;
+							continue;
+						}
 						final String algoName = config[1];
 						String configFile = config[2];
 						final int paramStartIndex = 7;
@@ -138,8 +151,10 @@ public class SmacResultAnalyzer {
 						}
 						lineCounter++;
 					}
+					totalLineCount += lineCounter;
 				}
 			}
+			System.out.println("Skipped " + skippedLineCount + "/" + totalLineCount + " lines.");
 			for (final String qualifier : results.keySet()) {
 				final List<String> newLine = new ArrayList<>();
 				final Pair<String, List<OnLineStatistics>> pair = results.get(qualifier);

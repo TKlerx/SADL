@@ -30,7 +30,7 @@ import gnu.trove.map.TObjectDoubleMap;
 import gnu.trove.map.hash.TObjectDoubleHashMap;
 
 public class PlotGenerator {
-	private static final boolean generatePlots = true;
+	private static final boolean generatePlots = false;
 
 	static String[] keys = { "pdfa", "tpta", "pdtta", "rti", "butla" };
 	static String[] values = { "ALERGIA", "TPTA", "ProDTAL", "RTI+", "BUTLA" };

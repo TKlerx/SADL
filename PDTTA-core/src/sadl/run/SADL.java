@@ -94,7 +94,17 @@ public class SADL {
 					logger.info("Starting SMAC with params=" + Arrays.toString(args));
 					boolean fileExisted = true;
 					final ExperimentResult result = smacRun.run(jc.getCommands().get(smac));
-					final Path resultPath = Paths.get("result.csv");
+					logger.info("Finished SMAC run.");
+					Path p = Paths.get(result.getQualifier()).getParent().getParent();
+					final Path smacData = Paths.get("smac-data");
+					String fileName = result.getAlgorithm() + "-";
+					while (!p.getFileName().equals(smacData)) {
+						fileName += p.getFileName() + "-";
+						p = p.getParent();
+					}
+					fileName += "result.csv";
+					final Path resultPath = Paths.get("results").resolve(fileName);
+					Files.createDirectories(resultPath.getParent());
 					if (!Files.exists(resultPath)) {
 						Files.createFile(resultPath);
 						fileExisted = false;
@@ -117,7 +127,6 @@ public class SADL {
 						bw.append(result.toCsvString());
 						bw.append('\n');
 					}
-					logger.info("Finished SMAC run.");
 					break;
 				default:
 					// TODO Print usage

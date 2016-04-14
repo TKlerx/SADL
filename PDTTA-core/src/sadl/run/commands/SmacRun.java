@@ -289,6 +289,8 @@ public class SmacRun {
 				testSet = butla.getSplitInputForMapping(testSet, pair.getValue());
 			}
 			result = detection.trainTest(trainSet, testSet);
+			result.setQualifier(mainParams.get(1));
+			result.setAlgorithm(Algoname.getAlgoname(mainParams.get(0)));
 
 			// Can stay the same
 			double qVal = 0.0;

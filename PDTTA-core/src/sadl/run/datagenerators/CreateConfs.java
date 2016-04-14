@@ -25,6 +25,7 @@ import sadl.utils.IoUtils;
 
 public class CreateConfs {
 	private static int uniqueId = 300;
+
 	public static void main(String[] args) throws IOException {
 		createConfFiles(Paths.get(args[0]), Paths.get("conf-template.txt"), Paths.get(args[1]));
 	}
@@ -57,6 +58,8 @@ public class CreateConfs {
 							int algoRuntime = 0;
 							if (difference.toString().contains("real")) {
 								algoRuntime = 604800;
+							} else if (difference.toString().contains("scaling")) {
+								algoRuntime = 86400;
 							} else {
 								algoRuntime = 3600;
 							}

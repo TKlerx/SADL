@@ -12,6 +12,8 @@ package sadl.experiments;
 
 import org.apache.commons.lang3.time.DurationFormatUtils;
 
+import sadl.constants.Algoname;
+
 /**
  * 
  * @author Timo Klerx
@@ -36,7 +38,7 @@ public class ExperimentResult {
 	}
 
 	public ExperimentResult(long truePositives, long trueNegatives, long falsePositives, long falseNegatives, long executionTimeTraining,
-			long executionTimeTesting, int numberOfStates) {
+			long executionTimeTesting, int numberOfStates, String configFile) {
 		super();
 		this.truePositives = truePositives;
 		this.trueNegatives = trueNegatives;
@@ -57,6 +59,24 @@ public class ExperimentResult {
 	int maxMemoryUsage = 0;
 	int minMemoryUsage = 0;
 	double avgMemoryUsage = 0;
+	String qualifier;
+	Algoname algorithm;
+
+	public Algoname getAlgorithm() {
+		return algorithm;
+	}
+
+	public void setAlgorithm(Algoname algorithm) {
+		this.algorithm = algorithm;
+	}
+
+	public String getQualifier() {
+		return qualifier;
+	}
+
+	public void setQualifier(String qualifier) {
+		this.qualifier = qualifier;
+	}
 
 	public int getMaxMemoryUsage() {
 		return maxMemoryUsage;
@@ -136,15 +156,15 @@ public class ExperimentResult {
 
 		return "trainTime" + separator + "testTime" + separator + "minRam" + separator + "maxRam" + separator + "AvgRam" + separator + "numberOfStates"
 				+ separator + "truePositives" + separator + "falsePositives" + separator + "trueNegatives" + separator + "falseNegatives" + separator
-				+ "precision" + separator
-				+ "recall" + separator + "accuracy" + separator + "FMeasure" + separator + "PhiCoefficient";
+				+ "precision" + separator + "recall" + separator + "accuracy" + separator + "FMeasure" + separator + "PhiCoefficient";
 	}
+
 	public String toCsvString() {
 		return DurationFormatUtils.formatDurationHMS(executionTimeTraining) + "(" + executionTimeTraining + ")" + separator
 				+ DurationFormatUtils.formatDurationHMS(executionTimeTesting) + "(" + executionTimeTesting + ")" + separator + minMemoryUsage + separator
-				+ maxMemoryUsage + separator + avgMemoryUsage + separator + numberOfStates + separator + truePositives + separator
-				+ falsePositives + separator + trueNegatives + separator + falseNegatives + separator + getPrecision() + separator
-				+ getRecall() + separator + getAccuracy() + separator + getFMeasure() + separator + getPhiCoefficient();
+				+ maxMemoryUsage + separator + avgMemoryUsage + separator + numberOfStates + separator + truePositives + separator + falsePositives + separator
+				+ trueNegatives + separator + falseNegatives + separator + getPrecision() + separator + getRecall() + separator + getAccuracy() + separator
+				+ getFMeasure() + separator + getPhiCoefficient();
 	}
 
 	public double getPhiCoefficient() {
@@ -157,7 +177,6 @@ public class ExperimentResult {
 	public double getAccuracy() {
 		return (truePositives + trueNegatives) / (double) (truePositives + trueNegatives + falsePositives + falseNegatives);
 	}
-
 
 	@Override
 	public int hashCode() {
@@ -215,6 +234,5 @@ public class ExperimentResult {
 		result.setNumberOfStates(Math.max(this.getNumberOfStates(), other.getNumberOfStates()));
 		return result;
 	}
-
 
 }
