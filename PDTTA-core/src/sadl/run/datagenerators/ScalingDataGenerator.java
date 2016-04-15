@@ -58,17 +58,17 @@ import sadl.utils.IoUtils;
 public class ScalingDataGenerator {
 	private static Logger logger = LoggerFactory.getLogger(ScalingDataGenerator.class);
 
-	private static final int INITIAL_ALPHABET_SIZE = 50;
-	private static final int INITIAL_STATE_SIZE = 50;
-	private static final int INITIAL_TRANSITION_SIZE = 625;
-	private static final int INITIAL_SAMPLES = 5000;
+	private static final int INITIAL_ALPHABET_SIZE = 25;
+	private static final int INITIAL_STATE_SIZE = 25;
+	private static final int INITIAL_TRANSITION_SIZE = 156;
+	private static final int INITIAL_SAMPLES = 1000;
 	private static final int INITIAL_TIME_BASED_TRANSITION_SIZE = 0;
 
-	private static final int MAX_EVENT_BASED_TRANSITION_SIZE = 2500;
+	private static final int MAX_EVENT_BASED_TRANSITION_SIZE = INITIAL_STATE_SIZE * INITIAL_STATE_SIZE;
 	private static final int MAX_TIME_BASED_TRANSITION_SIZE = MAX_EVENT_BASED_TRANSITION_SIZE - INITIAL_TRANSITION_SIZE;
-	private static final int MAX_ALPHABET_SIZE = 625;
-	private static final int MAX_STATE_SIZE = 575;
-	private static final int MAX_SAMPLES = 25000;
+	private static final int MAX_ALPHABET_SIZE = INITIAL_TRANSITION_SIZE;
+	private static final int MAX_STATE_SIZE = INITIAL_TRANSITION_SIZE - INITIAL_STATE_SIZE;
+	private static final int MAX_SAMPLES = 20000;
 	private static final int TIME_LOW = 1;
 	private static final int TIME_HIGH = 1000;
 	private static final int SCALING_STEPS = 10;
@@ -132,24 +132,26 @@ public class ScalingDataGenerator {
 			initialWords.add(initialAutomaton.sampleSequence());
 		}
 		TimedInput input = new TimedInput(initialWords);
-		BufferedWriter bw = Files.newBufferedWriter(outputFolder.resolve("initial-data.txt"));
-		input.toFile(bw, true);
-		bw.close();
+		try (BufferedWriter bw = Files.newBufferedWriter(outputFolder.resolve("initial-data.txt"))) {
+			input.toFile(bw, true);
+		}
 		{
 			final double scalingStepSize = (double) (MAX_SAMPLES - INITIAL_SAMPLES) / (SCALING_STEPS - 1);
+			logger.info("Scaling step size for more data samples={}", scalingStepSize);
 			for (int i = 1; i < SCALING_STEPS; i++) {
 				for (int j = 0; j < scalingStepSize; j++) {
 					initialWords.add(initialAutomaton.sampleSequence());
 				}
 				input = new TimedInput(initialWords);
-				bw = Files.newBufferedWriter(outputFolder.resolve("data-inc-samples-" + i + ".txt"));
-				input.toFile(bw, true);
-				bw.close();
+				try (BufferedWriter bw = Files.newBufferedWriter(outputFolder.resolve("data-inc-samples-" + i + ".txt"))) {
+					input.toFile(bw, true);
+				}
 			}
 		}
 		{
 			// add event based transitions
 			final double eventStepSize = (double) (MAX_EVENT_BASED_TRANSITION_SIZE - INITIAL_TRANSITION_SIZE) / (SCALING_STEPS - 1);
+			logger.info("Scaling step size for more event transitions={}", eventStepSize);
 			for (int i = 1; i < SCALING_STEPS; i++) {
 				final Set<Transition> eventTransitions = new HashSet<>();
 				for (final Transition t : transitions) {
@@ -191,15 +193,15 @@ public class ScalingDataGenerator {
 					initialWords.add(eventPdtta.sampleSequence());
 				}
 				input = new TimedInput(initialWords);
-				bw = Files.newBufferedWriter(outputFolder.resolve("data-event-transitions-" + i + ".txt"));
-				input.toFile(bw, true);
-				bw.close();
+				try (BufferedWriter bw = Files.newBufferedWriter(outputFolder.resolve("data-event-transitions-" + i + ".txt"))) {
+					input.toFile(bw, true);
+				}
 			}
 		}
 		{
 			// add time based transitions
 			final double timeStepSize = (double) (MAX_TIME_BASED_TRANSITION_SIZE - INITIAL_TIME_BASED_TRANSITION_SIZE) / (SCALING_STEPS - 1);
-
+			logger.info("Scaling step size for more time transitions={}", timeStepSize);
 			for (int i = 1; i < SCALING_STEPS; i++) {
 				final Map<ZeroProbTransition, ContinuousDistribution> distributions = new HashMap<>();
 				final Set<Transition> timeTransitions = new HashSet<>();
@@ -244,15 +246,16 @@ public class ScalingDataGenerator {
 					initialWords.add(eventPdtta.sampleSequence());
 				}
 				input = new TimedInput(initialWords);
-				bw = Files.newBufferedWriter(outputFolder.resolve("data-time-transitions-" + i + ".txt"));
-				input.toFile(bw, true);
-				bw.close();
+				try (BufferedWriter bw = Files.newBufferedWriter(outputFolder.resolve("data-time-transitions-" + i + ".txt"))) {
+					input.toFile(bw, true);
+				}
 			}
 		}
 
 		{
 			// increase alphabet size
 			final double alphabetStepSize = (double) (MAX_ALPHABET_SIZE - INITIAL_ALPHABET_SIZE) / (SCALING_STEPS - 1);
+			logger.info("Scaling step size for more symbols={}", alphabetStepSize);
 			for (int i = 1; i < SCALING_STEPS; i++) {
 				final Set<Transition> alphabetTransitions = new HashSet<>();
 				final int alphabetSize = (int) (INITIAL_ALPHABET_SIZE + (alphabetStepSize * i));
@@ -303,15 +306,16 @@ public class ScalingDataGenerator {
 					initialWords.add(eventPdtta.sampleSequence());
 				}
 				input = new TimedInput(initialWords);
-				bw = Files.newBufferedWriter(outputFolder.resolve("data-alphabet-" + i + ".txt"));
-				input.toFile(bw, true);
-				bw.close();
+				try (BufferedWriter bw = Files.newBufferedWriter(outputFolder.resolve("data-alphabet-" + i + ".txt"))) {
+					input.toFile(bw, true);
+				}
 			}
 		}
 		{
 			// increase number of states
 			// check whether every state is still reachable after adding a state (bending a transition to a new state)
 			final double stateStepSize = (double) (MAX_STATE_SIZE - INITIAL_STATE_SIZE) / (SCALING_STEPS - 1);
+			logger.info("Scaling step size for more states={}", stateStepSize);
 			for (int i = 1; i < SCALING_STEPS; i++) {
 				final TreeMap<Integer, Integer> transitionCount = (TreeMap<Integer, Integer>) stateTransitionCount.clone();
 				final int elementsToAdd = (int) (stateStepSize * i);
@@ -368,9 +372,9 @@ public class ScalingDataGenerator {
 					initialWords.add(statePdtta.sampleSequence());
 				}
 				input = new TimedInput(initialWords);
-				bw = Files.newBufferedWriter(outputFolder.resolve("data-states-" + i + ".txt"));
-				input.toFile(bw, true);
-				bw.close();
+				try (BufferedWriter bw = Files.newBufferedWriter(outputFolder.resolve("data-states-" + i + ".txt"))) {
+					input.toFile(bw, true);
+				}
 			}
 		}
 	}
@@ -437,7 +441,6 @@ public class ScalingDataGenerator {
 			for (int i = split; i < trainingTimedSequences.size(); i++) {
 				testSequences.add(trainingTimedSequences.get(shuffledIndex.get(i)));
 			}
-			logger.info("inserting random  Anomaly Type {}", type);
 			// do a deep clone, cloning also the words themselves
 			final List<TimedWord> trainSequenceClone = SerializationUtils.clone(trainSequences);
 			final List<TimedWord> testSequenceClone = SerializationUtils.clone(testSequences);
@@ -445,6 +448,7 @@ public class ScalingDataGenerator {
 			TimedInput testSet = new TimedInput(testSequenceClone);
 			testSet = testSet.insertRandomAnomalies(type, 0.5);
 			IoUtils.writeTrainTestFile(dataOutputFile, trainSet, testSet);
+			logger.info("Done!");
 		}
 	}
 }
