@@ -29,7 +29,7 @@ import com.opencsv.CSVReader;
 import gnu.trove.map.TObjectDoubleMap;
 import gnu.trove.map.hash.TObjectDoubleHashMap;
 
-public class PlotGenerator {
+public class BarchartGenerator {
 	private static final boolean generatePlots = false;
 
 	static String[] keys = { "pdfa", "tpta", "pdtta", "rti", "butla" };
@@ -92,7 +92,7 @@ public class PlotGenerator {
 			}
 		}
 		if (generatePlots) {
-			RecursivePlot.plot(outputDir);
+			RecursiveBargraphPlot.plot(outputDir);
 		}
 	}
 }

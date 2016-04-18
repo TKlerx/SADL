@@ -13,13 +13,9 @@ package sadl.run.data_analyzers;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -27,7 +23,9 @@ import java.util.concurrent.Executors;
 
 import org.apache.commons.io.FilenameUtils;
 
-public class RecursivePlot {
+import sadl.utils.IoUtils;
+
+public class RecursiveBargraphPlot {
 	static String plotExecutable = "/home/timo/bargraph/bargraph.pl";
 
 	public static void main(String[] args) throws IOException, InterruptedException {
@@ -36,26 +34,8 @@ public class RecursivePlot {
 
 	public static void plot(Path inputDir) throws IOException, InterruptedException {
 
-		final List<Path> plotFiles = new ArrayList<>();
+		final List<Path> plotFiles = IoUtils.listFiles(inputDir, ".perf", true);
 
-		try {
-			Files.walkFileTree(inputDir, new SimpleFileVisitor<Path>() {
-				@Override
-				public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
-					if (!attrs.isDirectory() && file.toString().endsWith(".perf")) {
-						plotFiles.add(file);
-					}
-					return FileVisitResult.CONTINUE;
-				}
-
-				@Override
-				public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
-					return super.preVisitDirectory(dir, attrs);
-				}
-			});
-		} catch (final IOException e) {
-			System.err.println("Unexpected exception occured." + e);
-		}
 		final ExecutorService es = Executors.newSingleThreadExecutor();
 		int i = 1;
 		for (final Path p : plotFiles) {

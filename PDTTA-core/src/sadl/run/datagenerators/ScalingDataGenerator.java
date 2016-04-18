@@ -58,20 +58,20 @@ import sadl.utils.IoUtils;
 public class ScalingDataGenerator {
 	private static Logger logger = LoggerFactory.getLogger(ScalingDataGenerator.class);
 
-	private static final int INITIAL_ALPHABET_SIZE = 25;
-	private static final int INITIAL_STATE_SIZE = 25;
-	private static final int INITIAL_TRANSITION_SIZE = 156;
-	private static final int INITIAL_SAMPLES = 1000;
-	private static final int INITIAL_TIME_BASED_TRANSITION_SIZE = 0;
+	public static final int INITIAL_ALPHABET_SIZE = 25;
+	public static final int INITIAL_STATE_SIZE = 25;
+	public static final int INITIAL_TRANSITION_SIZE = 156;
+	public static final int INITIAL_SAMPLES = 1000;
+	public static final int INITIAL_TIME_BASED_TRANSITION_SIZE = 0;
 
-	private static final int MAX_EVENT_BASED_TRANSITION_SIZE = INITIAL_STATE_SIZE * INITIAL_STATE_SIZE;
-	private static final int MAX_TIME_BASED_TRANSITION_SIZE = MAX_EVENT_BASED_TRANSITION_SIZE - INITIAL_TRANSITION_SIZE;
-	private static final int MAX_ALPHABET_SIZE = INITIAL_TRANSITION_SIZE;
-	private static final int MAX_STATE_SIZE = INITIAL_TRANSITION_SIZE - INITIAL_STATE_SIZE;
-	private static final int MAX_SAMPLES = 20000;
-	private static final int TIME_LOW = 1;
-	private static final int TIME_HIGH = 1000;
-	private static final int SCALING_STEPS = 10;
+	public static final int MAX_EVENT_BASED_TRANSITION_SIZE = INITIAL_STATE_SIZE * INITIAL_STATE_SIZE;
+	public static final int MAX_TIME_BASED_TRANSITION_SIZE = MAX_EVENT_BASED_TRANSITION_SIZE - INITIAL_TRANSITION_SIZE;
+	public static final int MAX_ALPHABET_SIZE = INITIAL_TRANSITION_SIZE;
+	public static final int MAX_STATE_SIZE = INITIAL_TRANSITION_SIZE - INITIAL_STATE_SIZE;
+	public static final int MAX_SAMPLES = 20000;
+	public static final int TIME_LOW = 1;
+	public static final int TIME_HIGH = 1000;
+	public static final int SCALING_STEPS = 10;
 	final Random r = new Random(1234);
 
 	public static void main(String[] args) throws IOException {

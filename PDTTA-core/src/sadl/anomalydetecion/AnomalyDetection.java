@@ -83,8 +83,8 @@ public class AnomalyDetection {
 		final ExperimentResult testResult = test(test);
 		sw.stop();
 		final long testTime = sw.getTime();
-		testResult.setExecutionTimeTesting(testTime);
 		testResult.setExecutionTimeTraining(trainTime);
+		testResult.setExecutionTimeTesting(testTime);
 		return testResult;
 	}
 
