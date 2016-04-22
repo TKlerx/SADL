@@ -140,7 +140,7 @@ public class SmacResultAnalyzer {
 									list.get(i - metricStartIndex).add(qualityValue);
 								} else {
 									// If the quality value is infinite and this was the first line we added, then remove it
-									// remove this if/else if this is used for aggregating the scaling approaches
+									// remove this (if/else) if this class is used for aggregating the scaling approaches
 									if (Precision.equals(list.get(0).getSumOfWeights(), 1)) {
 										results.remove(qualifier);
 										lineCounter--;

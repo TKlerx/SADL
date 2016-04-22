@@ -26,11 +26,18 @@ public class ExperimentResultTest {
 
 	static ExperimentResult result2;
 	static ExperimentResult result3;
+
+	private static ExperimentResult result4;
+
+	private static ExperimentResult result5;
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
 		result = new ExperimentResult(305, 4046, 459, 190);
 		result2 = new ExperimentResult(900, 5, 100, 5);
 		result3 = new ExperimentResult(5, 900, 5, 100);
+		// result4 = new ExperimentResult(700, 500, 300, 500);
+		// result5 = new ExperimentResult(700, 50, 300, 50);
+
 	}
 
 	@AfterClass
@@ -65,6 +72,7 @@ public class ExperimentResultTest {
 	public void testGetPhiCoefficient() {
 		assertEquals(0.4268945458, result.getPhiCoefficient(), 0.01);
 		assertEquals(result2.getPhiCoefficient(), result3.getPhiCoefficient(), 0.01);
+		// assertEquals(result4.getPhiCoefficient(), result5.getPhiCoefficient(), 0.01);
 	}
 
 	@Test

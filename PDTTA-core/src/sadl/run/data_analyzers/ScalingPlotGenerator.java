@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.util.Pair;
 
 import com.opencsv.CSVReader;
@@ -152,7 +153,7 @@ public class ScalingPlotGenerator {
 			final List<String> lines = new ArrayList<>(runtimeTemplate);
 			for (int i = 0; i < lines.size(); i++) {
 				String line = lines.get(i);
-				line = line.replaceAll("\\$OUTPUT_NAME", p.getFileName().toString() + ".pdf");
+				line = line.replaceAll("\\$OUTPUT_NAME", FilenameUtils.removeExtension(p.getFileName().toString()) + ".pdf");
 				line = line.replaceAll("\\$INPUT_FILE", p.getFileName().toString());
 				line = line.replaceAll("\\$ATTRIBUTE", SCALING_LEGEND[k]);
 				lines.set(i, line);
@@ -162,7 +163,7 @@ public class ScalingPlotGenerator {
 			Files.write(plotFile, lines);
 			final Process proc = Runtime.getRuntime().exec(new String[] { "gnuplot", plotFile.toString() }, null, p.getParent().toFile());
 			proc.waitFor();
-			System.out.println("" + proc.exitValue());
+			System.out.println("Gnuplot exit code= " + proc.exitValue());
 		}
 	}
 }
