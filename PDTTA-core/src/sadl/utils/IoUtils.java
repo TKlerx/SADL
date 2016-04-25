@@ -29,6 +29,7 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -62,6 +63,34 @@ public class IoUtils {
 			paths[i] = p;
 		}
 		deleteFiles(paths);
+	}
+
+	public static List<Path> listFiles(Path directory, String fileEnding, boolean recursively) {
+		final List<Path> result = new ArrayList<>();
+
+		try {
+			Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+				@Override
+				public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+					if (!attrs.isDirectory() && file.toString().endsWith(fileEnding)) {
+						result.add(file);
+					}
+					return FileVisitResult.CONTINUE;
+				}
+
+				@Override
+				public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+					if(recursively) {
+						return super.preVisitDirectory(dir, attrs);
+					} else {
+						return FileVisitResult.SKIP_SUBTREE;
+					}
+				}
+			});
+		} catch (final IOException e) {
+			logger.error("Unexpected exception occured.", e);
+		}
+		return result;
 	}
 
 	public static void runGraphviz(final Path gvFile, final Path pngFile) {
@@ -194,7 +223,6 @@ public class IoUtils {
 		return null;
 	}
 
-
 	public static void serialize(Object o, Path path) throws IOException {
 		try (OutputStream fileOut = Files.newOutputStream(path); ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
 			out.writeObject(o);
@@ -240,8 +268,5 @@ public class IoUtils {
 			logger.error("Unexpected exception", e);
 		}
 	}
-
-
-
 
 }

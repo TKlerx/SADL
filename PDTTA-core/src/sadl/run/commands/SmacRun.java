@@ -75,7 +75,6 @@ public class SmacRun {
 
 	private static final Logger logger = LoggerFactory.getLogger(SmacRun.class);
 
-
 	/*
 	 * ################### SMAC Params ###################
 	 */
@@ -178,99 +177,102 @@ public class SmacRun {
 	@Parameter(names = "-butlaPreprocessingBandwidthEstimate", arity = 1)
 	boolean butlaPreprocessingBandwidthEstimate = false;
 
+	@Parameter(names = "-butlaFormula")
+	KDEFormelVariant butlaFormula = KDEFormelVariant.OriginalKDE;
+
 	@Parameter(names = "-butlaPreprocessingBandwidth")
 	double butlaPreprocessingBandwidth = 10000;
 
 	@SuppressWarnings("null")
 	public ExperimentResult run(JCommander jc) {
-		final RamGobbler gobbler = new RamGobbler();
-		gobbler.start();
-		logger.info("Starting new SmacRun with commands={}", jc.getUnknownOptions());
-		MasterSeed.setSeed(Long.parseLong(mainParams.get(4)));
-
-		// TODO Try to use this again
-		// final Pair<TimedInput, TimedInput> inputs = IoUtils.readTrainTestFile(inputSeqs);
-		// trainRun.trainSeqs = inputs.getFirst();
-		// testRun.trainSeqs = inputs.getFirst();
-		// testRun.testSeqs = inputs.getSecond();
-		//
-		// final Model m = trainRun.run(jc);
-		// testRun.testModel = m;
-		// final ExperimentResult result = testRun.run();
-
-		FeatureCreator featureCreator;
-		AnomalyDetector anomalyDetector;
-		OneClassClassifier classifier;
-		if (featureCreatorMethod == FeatureCreatorMethod.FULL) {
-			featureCreator = new FullFeatureCreator();
-		} else if (featureCreatorMethod == FeatureCreatorMethod.SMALL) {
-			featureCreator = new SmallFeatureCreator();
-		} else if (featureCreatorMethod == FeatureCreatorMethod.MINIMAL) {
-			featureCreator = new MinimalFeatureCreator();
-		} else if (featureCreatorMethod == FeatureCreatorMethod.UBER) {
-			featureCreator = new UberFeatureCreator();
-		} else if (featureCreatorMethod == FeatureCreatorMethod.SINGLE) {
-			featureCreator = new AggregatedSingleFeatureCreator();
-		} else {
-			featureCreator = null;
-		}
-		if (detectorMethod == DetectorMethod.SVM) {
-			if (svmGammaEstimate) {
-				svmGamma = 0;
-			}
-			classifier = new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu, svmKernelType, svmEps, svmDegree, scalingMethod);
-		} else if (detectorMethod == DetectorMethod.THRESHOLD_SINGLE) {
-			// only works with minimal feature creator
-			if (featureCreatorMethod != null && featureCreatorMethod != FeatureCreatorMethod.SINGLE) {
-				throw new IllegalArgumentException(
-						"Please do only specify " + FeatureCreatorMethod.SINGLE + " or no featureCreatorMethod for " + detectorMethod);
-			}
-			featureCreator = new AggregatedSingleFeatureCreator();
-			classifier = new ThresholdClassifier(aggregatedEventThreshold);
-		} else if (detectorMethod == DetectorMethod.THRESHOLD_AGG_ONLY) {
-			// only works with minimal feature creator
-			if (featureCreatorMethod != null && featureCreatorMethod != FeatureCreatorMethod.MINIMAL) {
-				throw new IllegalArgumentException(
-						"Please do only specify " + FeatureCreatorMethod.MINIMAL + " or no featureCreatorMethod for " + detectorMethod);
-			}
-			featureCreator = new MinimalFeatureCreator();
-			classifier = new ThresholdClassifier(aggregatedEventThreshold, aggregatedTimeThreshold);
-		} else if (detectorMethod == DetectorMethod.THRESHOLD_ALL) {
-			// only works with small feature creator
-			if (featureCreatorMethod != null && featureCreatorMethod != FeatureCreatorMethod.SMALL) {
-				throw new IllegalArgumentException(
-						"Please do only specify " + FeatureCreatorMethod.SMALL + " or no featureCreatorMethod for " + detectorMethod);
-			}
-			featureCreator = new SmallFeatureCreator();
-			classifier = new ThresholdClassifier(aggregatedEventThreshold, aggregatedTimeThreshold, singleEventThreshold, singleTimeThreshold);
-		} else if (detectorMethod == DetectorMethod.DBSCAN) {
-			if (dbscan_threshold <= 0) {
-				dbscan_threshold = dbscan_eps;
-			}
-			classifier = new DbScanClassifier(dbscan_eps, dbscan_n, dbscan_threshold, clusteringDistanceMethod, scalingMethod);
-		} else if (detectorMethod == DetectorMethod.GMEANS) {
-			classifier = new GMeansClassifier(scalingMethod, kmeans_threshold, kmeans_minPoints, clusteringDistanceMethod);
-		} else if (detectorMethod == DetectorMethod.XMEANS) {
-			classifier = new XMeansClassifier(scalingMethod, kmeans_threshold, kmeans_minPoints, clusteringDistanceMethod);
-		} else if (detectorMethod == DetectorMethod.KMEANS) {
-			classifier = new KMeansClassifier(scalingMethod, kmeans_k, kmeans_threshold, kmeans_minPoints, clusteringDistanceMethod);
-		} else {
-			classifier = null;
-		}
-
-		final ProbabilisticModelLearner learner = getLearner(Algoname.getAlgoname(mainParams.get(0)), jc);
-		final AnomalyDetection detection;
-		if (detectorMethod == DetectorMethod.ANODA) {
-			detection = new AnomalyDetection(new AnodaDetector(), learner);
-		} else {
-			if (classifier == null || featureCreator == null) {
-				throw new IllegalStateException("classifier or featureCreator is null");
-			}
-			anomalyDetector = new VectorDetector(aggType, featureCreator, classifier, aggregateSublists);
-			detection = new AnomalyDetection(anomalyDetector, learner);
-		}
-		ExperimentResult result = null;
 		try {
+			final RamGobbler gobbler = new RamGobbler();
+			gobbler.start();
+			logger.info("Starting new SmacRun with commands={}", jc.getUnknownOptions());
+			MasterSeed.setSeed(Long.parseLong(mainParams.get(4)));
+
+			// TODO Try to use this again
+			// final Pair<TimedInput, TimedInput> inputs = IoUtils.readTrainTestFile(inputSeqs);
+			// trainRun.trainSeqs = inputs.getFirst();
+			// testRun.trainSeqs = inputs.getFirst();
+			// testRun.testSeqs = inputs.getSecond();
+			//
+			// final Model m = trainRun.run(jc);
+			// testRun.testModel = m;
+			// final ExperimentResult result = testRun.run();
+
+			FeatureCreator featureCreator;
+			AnomalyDetector anomalyDetector;
+			OneClassClassifier classifier;
+			if (featureCreatorMethod == FeatureCreatorMethod.FULL) {
+				featureCreator = new FullFeatureCreator();
+			} else if (featureCreatorMethod == FeatureCreatorMethod.SMALL) {
+				featureCreator = new SmallFeatureCreator();
+			} else if (featureCreatorMethod == FeatureCreatorMethod.MINIMAL) {
+				featureCreator = new MinimalFeatureCreator();
+			} else if (featureCreatorMethod == FeatureCreatorMethod.UBER) {
+				featureCreator = new UberFeatureCreator();
+			} else if (featureCreatorMethod == FeatureCreatorMethod.SINGLE) {
+				featureCreator = new AggregatedSingleFeatureCreator();
+			} else {
+				featureCreator = null;
+			}
+			if (detectorMethod == DetectorMethod.SVM) {
+				if (svmGammaEstimate) {
+					svmGamma = 0;
+				}
+				classifier = new LibSvmClassifier(svmProbabilityEstimate, svmGamma, svmNu, svmKernelType, svmEps, svmDegree, scalingMethod);
+			} else if (detectorMethod == DetectorMethod.THRESHOLD_SINGLE) {
+				// only works with minimal feature creator
+				if (featureCreatorMethod != null && featureCreatorMethod != FeatureCreatorMethod.SINGLE) {
+					throw new IllegalArgumentException(
+							"Please do only specify " + FeatureCreatorMethod.SINGLE + " or no featureCreatorMethod for " + detectorMethod);
+				}
+				featureCreator = new AggregatedSingleFeatureCreator();
+				classifier = new ThresholdClassifier(aggregatedEventThreshold);
+			} else if (detectorMethod == DetectorMethod.THRESHOLD_AGG_ONLY) {
+				// only works with minimal feature creator
+				if (featureCreatorMethod != null && featureCreatorMethod != FeatureCreatorMethod.MINIMAL) {
+					throw new IllegalArgumentException(
+							"Please do only specify " + FeatureCreatorMethod.MINIMAL + " or no featureCreatorMethod for " + detectorMethod);
+				}
+				featureCreator = new MinimalFeatureCreator();
+				classifier = new ThresholdClassifier(aggregatedEventThreshold, aggregatedTimeThreshold);
+			} else if (detectorMethod == DetectorMethod.THRESHOLD_ALL) {
+				// only works with small feature creator
+				if (featureCreatorMethod != null && featureCreatorMethod != FeatureCreatorMethod.SMALL) {
+					throw new IllegalArgumentException(
+							"Please do only specify " + FeatureCreatorMethod.SMALL + " or no featureCreatorMethod for " + detectorMethod);
+				}
+				featureCreator = new SmallFeatureCreator();
+				classifier = new ThresholdClassifier(aggregatedEventThreshold, aggregatedTimeThreshold, singleEventThreshold, singleTimeThreshold);
+			} else if (detectorMethod == DetectorMethod.DBSCAN) {
+				if (dbscan_threshold <= 0) {
+					dbscan_threshold = dbscan_eps;
+				}
+				classifier = new DbScanClassifier(dbscan_eps, dbscan_n, dbscan_threshold, clusteringDistanceMethod, scalingMethod);
+			} else if (detectorMethod == DetectorMethod.GMEANS) {
+				classifier = new GMeansClassifier(scalingMethod, kmeans_threshold, kmeans_minPoints, clusteringDistanceMethod);
+			} else if (detectorMethod == DetectorMethod.XMEANS) {
+				classifier = new XMeansClassifier(scalingMethod, kmeans_threshold, kmeans_minPoints, clusteringDistanceMethod);
+			} else if (detectorMethod == DetectorMethod.KMEANS) {
+				classifier = new KMeansClassifier(scalingMethod, kmeans_k, kmeans_threshold, kmeans_minPoints, clusteringDistanceMethod);
+			} else {
+				classifier = null;
+			}
+
+			final ProbabilisticModelLearner learner = getLearner(Algoname.getAlgoname(mainParams.get(0)), jc);
+			final AnomalyDetection detection;
+			if (detectorMethod == DetectorMethod.ANODA) {
+				detection = new AnomalyDetection(new AnodaDetector(), learner);
+			} else {
+				if (classifier == null || featureCreator == null) {
+					throw new IllegalStateException("classifier or featureCreator is null");
+				}
+				anomalyDetector = new VectorDetector(aggType, featureCreator, classifier, aggregateSublists);
+				detection = new AnomalyDetection(anomalyDetector, learner);
+			}
+			ExperimentResult result = null;
 			final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(Paths.get(mainParams.get(1)), skipFirstElement);
 			TimedInput trainSet = trainTest.getKey();
 			TimedInput testSet = trainTest.getValue();
@@ -281,52 +283,54 @@ public class SmacRun {
 				} else {
 					bandwidth = butlaPreprocessingBandwidth;
 				}
-				final ButlaPdtaLearner butla = new ButlaPdtaLearner(bandwidth, EventsCreationStrategy.SplitEvents,
-						KDEFormelVariant.OriginalKDE);
+				final ButlaPdtaLearner butla = new ButlaPdtaLearner(bandwidth, EventsCreationStrategy.SplitEvents, butlaFormula);
 				final Pair<TimedInput, Map<String, Event>> pair = butla.splitEventsInTimedSequences(trainSet);
 				trainSet = pair.getKey();
 				testSet = butla.getSplitInputForMapping(testSet, pair.getValue());
 			}
 			result = detection.trainTest(trainSet, testSet);
+			result.setQualifier(mainParams.get(1));
+			result.setAlgorithm(Algoname.getAlgoname(mainParams.get(0)));
+
+			// Can stay the same
+			double qVal = 0.0;
+			switch (qCrit) {
+				case F_MEASURE:
+					qVal = result.getFMeasure();
+					break;
+				case PRECISION:
+					qVal = result.getPrecision();
+					break;
+				case RECALL:
+					qVal = result.getRecall();
+					break;
+				case PHI_COEFFICIENT:
+					qVal = result.getPhiCoefficient();
+					break;
+				case ACCURACY:
+					qVal = result.getAccuracy();
+					break;
+				default:
+					logger.error("Quality criterion not found!");
+					break;
+			}
+
+			logger.info("{}={}", qCrit.name(), qVal);
+			result.setAvgMemoryUsage(gobbler.getAvgRam());
+			result.setMaxMemoryUsage(gobbler.getMaxRam());
+			result.setMinMemoryUsage(gobbler.getMinRam());
+			logger.info("{}", result);
+			gobbler.shutdown();
+			if (Double.isInfinite(qVal) || Double.isNaN(qVal)) {
+				qVal = 0;
+			}
+			System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - qVal) + ", 0");
+			return result;
 		} catch (final IOException e) {
 			logger.error("Error when loading input from file: " + e.getMessage());
 			smacErrorAbort();
 		}
-
-		// Can stay the same
-		double qVal = 0.0;
-		switch (qCrit) {
-			case F_MEASURE:
-				qVal = result.getFMeasure();
-				break;
-			case PRECISION:
-				qVal = result.getPrecision();
-				break;
-			case RECALL:
-				qVal = result.getRecall();
-				break;
-			case PHI_COEFFICIENT:
-				qVal = result.getPhiCoefficient();
-				break;
-			case ACCURACY:
-				qVal = result.getAccuracy();
-				break;
-			default:
-				logger.error("Quality criterion not found!");
-				break;
-		}
-
-		logger.info("{}={}", qCrit.name(), qVal);
-		result.setAvgMemoryUsage(gobbler.getAvgRam());
-		result.setMaxMemoryUsage(gobbler.getMaxRam());
-		result.setMinMemoryUsage(gobbler.getMinRam());
-		logger.info("{}", result);
-		gobbler.shutdown();
-		if (Double.isInfinite(qVal) || Double.isNaN(qVal)) {
-			qVal = 0;
-		}
-		System.out.println("Result for SMAC: SUCCESS, 0, 0, " + (1 - qVal) + ", 0");
-		return result;
+		return null;
 	}
 
 	@SuppressWarnings("unused")
@@ -389,8 +393,6 @@ public class SmacRun {
 	}
 
 	protected static void smacErrorAbort() {
-		System.out.println("Result for SMAC: CRASHED, 0, 0, 0, 0");
-		System.exit(1);
 	}
 
 }

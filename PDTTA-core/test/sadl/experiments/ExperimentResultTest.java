@@ -11,7 +11,9 @@
 package sadl.experiments;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
+import org.apache.commons.math3.util.Precision;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -22,9 +24,20 @@ public class ExperimentResultTest {
 
 	static ExperimentResult result;
 
+	static ExperimentResult result2;
+	static ExperimentResult result3;
+
+	private static ExperimentResult result4;
+
+	private static ExperimentResult result5;
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
 		result = new ExperimentResult(305, 4046, 459, 190);
+		result2 = new ExperimentResult(900, 5, 100, 5);
+		result3 = new ExperimentResult(5, 900, 5, 100);
+		// result4 = new ExperimentResult(700, 500, 300, 500);
+		// result5 = new ExperimentResult(700, 50, 300, 50);
+
 	}
 
 	@AfterClass
@@ -52,16 +65,20 @@ public class ExperimentResultTest {
 	@Test
 	public void testGetFMeasure() {
 		assertEquals(0.484511517077045, result.getFMeasure(), 0.01);
+		assertFalse(Precision.equals(result2.getFMeasure(), result3.getFMeasure()));
 	}
 
 	@Test
 	public void testGetPhiCoefficient() {
 		assertEquals(0.4268945458, result.getPhiCoefficient(), 0.01);
+		assertEquals(result2.getPhiCoefficient(), result3.getPhiCoefficient(), 0.01);
+		// assertEquals(result4.getPhiCoefficient(), result5.getPhiCoefficient(), 0.01);
 	}
 
 	@Test
 	public void testGetAccuracy() {
 		assertEquals(0.8702, result.getAccuracy(), 0.01);
+		assertEquals(result2.getAccuracy(), result3.getAccuracy(), 0.01);
 	}
 
 }

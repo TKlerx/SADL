@@ -164,7 +164,7 @@ public class Temp {
 		}
 	}
 
-	public void createFiles(final Path outputDir, final Path dataType, final DecimalFormat df, final String genFolder, final String typeFolderString,
+	public static void createFiles(final Path outputDir, final Path dataType, final DecimalFormat df, final String genFolder, final String typeFolderString,
 			Consumer<Path> anomalyGenerator) throws IOException {
 		for (int k = 0; k < SAMPLE_FILES; k++) {
 			final String destFolder = k < SAMPLE_FILES / 2 ? "train" : "test";

@@ -298,12 +298,12 @@ public class PDTTA extends PDFA {
 	}
 
 	@Override
-	protected boolean removeTransition(Transition t) {
+	public boolean removeTransition(Transition t) {
 		return removeTimedTransition(t) != null;
 	}
 
 	@Override
-	protected boolean restoreConsistency() {
+	public boolean restoreConsistency() {
 		return deleteIrrelevantTransitions() | super.restoreConsistency();
 	}
 
