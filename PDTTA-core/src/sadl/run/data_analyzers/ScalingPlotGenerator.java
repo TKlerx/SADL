@@ -1,3 +1,13 @@
+/**
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
+ * Copyright (C) 2013-2016  the original author or authors.
+ *
+ * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * SADL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package sadl.run.data_analyzers;
 
 import java.io.BufferedWriter;
@@ -22,7 +32,7 @@ import sadl.run.datagenerators.ScalingDataGenerator;
 public class ScalingPlotGenerator {
 
 	static String[] SCALING_QUALIFIERS = { "data-time-transitions", "data-event-transitions", "data-states", "data-inc-samples", "data-alphabet" };
-	static String[] SCALING_LEGEND = { "#time transitions", "#event transitions", "#states", "#samples", "#alphabet" };
+	static String[] SCALING_LEGEND = { "#time transitions", "#event transitions", "#states", "#samples", "#symbols" };
 	static Map<String, Integer> legendMap = new HashMap<>();
 
 	private static void initLegend() {
@@ -81,11 +91,11 @@ public class ScalingPlotGenerator {
 		final List<String> memoryTemplate = Files.readAllLines(outputFolder.resolve("memory-template.gp"));
 
 		// Algoname, data file -> Count , (train time [minutes],avgRam)
-		final Map<Pair<String, String>, Pair<Integer, Pair<Double, Double>>> data = new HashMap<>();
+		final Map<Pair<String, String>, Pair<Integer, double[]>> data = new HashMap<>();
 		// use train time (column index 3) and average ram (column index 7)
 		try (final CSVReader reader = new CSVReader(Files.newBufferedReader(inputFile), ';')) {
 			final String[] headline = reader.readNext();
-			if (!headline[3].trim().equalsIgnoreCase("trainTime") || !headline[7].trim().equalsIgnoreCase("avgram")) {
+			if (!headline[3].trim().equalsIgnoreCase("trainTime") || !headline[8].trim().equalsIgnoreCase("avgram")) {
 				System.err.println("headline is not valid: " + Arrays.toString(headline));
 			}
 			String[] line = null;
@@ -95,20 +105,23 @@ public class ScalingPlotGenerator {
 				final int numberOfRuns = (int) Double.parseDouble(line[1]);
 				final String argArray = line[2];
 				final double trainTime = Double.parseDouble(line[3]);
-				final double ram = Double.parseDouble(line[7]);
+				final double trainTimeStd = Double.parseDouble(line[4]);
+				final double ram = Double.parseDouble(line[8]);
+				final double ramStd = Double.parseDouble(line[9]);
 				final String dataFileQualifier = argArray.split("/")[2];
 				final Pair<String, String> qualifier = Pair.create(algoName, dataFileQualifier);
-				final Pair<Integer, Pair<Double, Double>> currentEntry = data.get(qualifier);
+				final Pair<Integer, double[]> currentEntry = data.get(qualifier);
 				if (currentEntry == null || currentEntry.getKey() < numberOfRuns) {
-					data.put(qualifier, Pair.create(numberOfRuns, Pair.create(trainTime, ram)));
+					data.put(qualifier, Pair.create(numberOfRuns, new double[] { trainTime, trainTimeStd, ram, ramStd }));
 				}
 			}
-			final Map<String, Double> memory = new HashMap<>();
-			final Map<String, Double> runtime = new HashMap<>();
-			for (final Entry<Pair<String, String>, Pair<Integer, Pair<Double, Double>>> e : data.entrySet()) {
+			final Map<String, double[]> memory = new HashMap<>();
+			final Map<String, double[]> runtime = new HashMap<>();
+			for (final Entry<Pair<String, String>, Pair<Integer, double[]>> e : data.entrySet()) {
 				// algoname + scalingName
-				runtime.put(e.getKey().getKey() + e.getKey().getValue(), e.getValue().getValue().getKey());
-				memory.put(e.getKey().getKey() + e.getKey().getValue(), e.getValue().getValue().getValue());
+				final double[] dataArray = e.getValue().getValue();
+				runtime.put(e.getKey().getKey() + e.getKey().getValue(), Arrays.copyOfRange(dataArray, 0, 2));
+				memory.put(e.getKey().getKey() + e.getKey().getValue(), Arrays.copyOfRange(dataArray, 2, 4));
 			}
 			createFiles(outputFolder, memory, "memory", memoryTemplate);
 			createFiles(outputFolder, runtime, "runtime", runtimeTemplate);
@@ -117,33 +130,43 @@ public class ScalingPlotGenerator {
 
 	}
 
-	private static void createFiles(Path outputFolder, Map<String, Double> data, String criterion, List<String> runtimeTemplate)
+	private static void createFiles(Path outputFolder, Map<String, double[]> data, String criterion, List<String> runtimeTemplate)
 			throws IOException, InterruptedException {
 		for (int k = 0; k < SCALING_QUALIFIERS.length; k++) {
 			final String scalingQualifier = SCALING_QUALIFIERS[k];
 			final Path p = outputFolder.resolve(criterion + "-" + scalingQualifier + ".dat");
 			try (BufferedWriter bw = Files.newBufferedWriter(p)) {
 				bw.write("#\tX");
-				for (int j = 0; j < BarchartGenerator.keys.length; j++) {
+				for (int j = 0; j < BarchartGenerator.valuesError.length; j++) {
 					bw.write('\t');
-					bw.write(BarchartGenerator.values[j]);
+					bw.write(BarchartGenerator.valuesError[j]);
 				}
 				bw.write('\n');
 				bw.write(legendMap.get(scalingQualifier + "0").toString());
 				for (int j = 0; j < BarchartGenerator.keys.length; j++) {
 					bw.write('\t');
-					bw.write(data.get(BarchartGenerator.keys[j] + "initial-data").toString());
+					bw.write(Double.toString(data.get(BarchartGenerator.keys[j] + "initial-data")[0]));
+					bw.write('\t');
+					bw.write(Double.toString(data.get(BarchartGenerator.keys[j] + "initial-data")[1]));
 				}
 				bw.write('\n');
 				for (int i = 1; i <= 9; i++) {
 					bw.write(legendMap.get(scalingQualifier + i).toString());
 					for (int j = 0; j < BarchartGenerator.keys.length; j++) {
 						bw.write('\t');
-						final Double value = data.get(BarchartGenerator.keys[j] + scalingQualifier + "-" + i);
-						if (value == null) {
+						final double[] values = data.get(BarchartGenerator.keys[j] + scalingQualifier + "-" + i);
+						if (values == null) {
+							bw.write(" ");
+							bw.write("\t");
 							bw.write(" ");
 						} else {
-							bw.write(value.toString());
+							bw.write(Double.toString(values[0]));
+							bw.write('\t');
+							final double value = values[1];
+							// if (Double.isNaN(value)) {
+							// value = 3 * values[0];
+							// }
+							bw.write(Double.toString(value));
 						}
 					}
 					bw.write('\n');

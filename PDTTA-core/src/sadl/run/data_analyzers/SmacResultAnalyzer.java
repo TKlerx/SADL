@@ -32,6 +32,7 @@ import jsat.utils.Pair;
 
 public class SmacResultAnalyzer {
 	static char csvSeparator = ';';
+	static boolean scalingAggregation = true;
 
 	public static void main(String[] args) throws IOException {
 		final Path inputDir = Paths.get(args[0]);
@@ -64,6 +65,8 @@ public class SmacResultAnalyzer {
 						final List<String> newHeadline = new ArrayList<>(Arrays.asList(headline));
 						newHeadline.set(0, "algorithm");
 						newHeadline.add(1, "numberOfRuns");
+						newHeadline.add(4, "TrainTimeErr");
+						newHeadline.add(9, "MemErr");
 						writer.writeNext(newHeadline.toArray(new String[0]));
 						wroteHeadline = true;
 					} else {
@@ -115,7 +118,6 @@ public class SmacResultAnalyzer {
 						sb.deleteCharAt(sb.length() - 1);
 						final String qualifier = sb.toString();
 
-
 						final int qualityStartIndex = 4;
 						final int metricStartIndex = qualityStartIndex - 2;
 						if (results.get(qualifier) == null) {
@@ -136,15 +138,18 @@ public class SmacResultAnalyzer {
 						innerFor: for (int i = qualityStartIndex; i < line.length; i++) {
 							try {
 								qualityValue = Double.parseDouble(line[i]);
-								if (!Double.isInfinite(qualityValue) && !Double.isNaN(qualityValue)) {
+								if (scalingAggregation) {
 									list.get(i - metricStartIndex).add(qualityValue);
 								} else {
-									// If the quality value is infinite and this was the first line we added, then remove it
-									// remove this (if/else) if this class is used for aggregating the scaling approaches
-									if (Precision.equals(list.get(0).getSumOfWeights(), 1)) {
-										results.remove(qualifier);
-										lineCounter--;
-										break innerFor;
+									if (!Double.isInfinite(qualityValue) && !Double.isNaN(qualityValue)) {
+										list.get(i - metricStartIndex).add(qualityValue);
+									} else {
+										// If the quality value is infinite and this was the first line we added, then remove it
+										if (Precision.equals(list.get(0).getSumOfWeights(), 1)) {
+											results.remove(qualifier);
+											skippedLineCount++;
+											break innerFor;
+										}
 									}
 								}
 							} catch (final NumberFormatException e) {
@@ -165,12 +170,17 @@ public class SmacResultAnalyzer {
 				final List<OnLineStatistics> statistics = pair.getSecondItem();
 				newLine.add(Double.toString(statistics.get(0).getSumOfWeights()));
 				newLine.add(qualifier);
+				int count = 0;
 				for (final OnLineStatistics stat : statistics) {
 					if (stat.getSumOfWeights() != 0) {
 						newLine.add(Double.toString(stat.getMean()));
+						if (count == 0 || count == 4) {
+							newLine.add(Double.toString(stat.getStandardDeviation() / Math.sqrt(stat.getSumOfWeights())));
+						}
 					} else {
 						Double.toString(Double.NaN);
 					}
+					count++;
 				}
 				writer.writeNext(newLine.toArray(new String[0]));
 			}
