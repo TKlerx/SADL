@@ -32,8 +32,9 @@ import gnu.trove.map.hash.TObjectDoubleHashMap;
 public class BarchartGenerator {
 	private static final boolean generatePlots = false;
 
-	static String[] keys = { "pdfa", "tpta", "pdtta", "rti", "butla" };
-	static String[] values = { "ALERGIA", "TPTA", "ProDTAL", "RTI+", "BUTLA" };
+	static String[] keys = { "pdfa", "tpta", "pdtta", "rti", "butla", "butla-orig" };
+	static String[] keysScaling = { "pdfa", "tpta", "pdtta", "rti", "butla" };
+
 	static String[] valuesError = { "ALERGIA", "ALERGIA_ERR", "TPTA", "TPTA_ERR", "ProDTAL", "PRODTAL_ERR", "RTI+", "RTI+_ERR", "BUTLA", "BUTLA_ERR" };
 
 	public static void main(String[] args) throws IOException, InterruptedException {

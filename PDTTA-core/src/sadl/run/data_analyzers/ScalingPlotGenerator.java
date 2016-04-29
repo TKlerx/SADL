@@ -143,18 +143,18 @@ public class ScalingPlotGenerator {
 				}
 				bw.write('\n');
 				bw.write(legendMap.get(scalingQualifier + "0").toString());
-				for (int j = 0; j < BarchartGenerator.keys.length; j++) {
+				for (int j = 0; j < BarchartGenerator.keysScaling.length; j++) {
 					bw.write('\t');
-					bw.write(Double.toString(data.get(BarchartGenerator.keys[j] + "initial-data")[0]));
+					bw.write(Double.toString(data.get(BarchartGenerator.keysScaling[j] + "initial-data")[0]));
 					bw.write('\t');
-					bw.write(Double.toString(data.get(BarchartGenerator.keys[j] + "initial-data")[1]));
+					bw.write(Double.toString(data.get(BarchartGenerator.keysScaling[j] + "initial-data")[1]));
 				}
 				bw.write('\n');
 				for (int i = 1; i <= 9; i++) {
 					bw.write(legendMap.get(scalingQualifier + i).toString());
-					for (int j = 0; j < BarchartGenerator.keys.length; j++) {
+					for (int j = 0; j < BarchartGenerator.keysScaling.length; j++) {
 						bw.write('\t');
-						final double[] values = data.get(BarchartGenerator.keys[j] + scalingQualifier + "-" + i);
+						final double[] values = data.get(BarchartGenerator.keysScaling[j] + scalingQualifier + "-" + i);
 						if (values == null) {
 							bw.write(" ");
 							bw.write("\t");

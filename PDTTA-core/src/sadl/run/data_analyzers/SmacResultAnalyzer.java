@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.util.Precision;
 
 import com.opencsv.CSVReader;
@@ -39,10 +40,8 @@ public class SmacResultAnalyzer {
 		final Path outputFile = Paths.get(args[1]);
 		final List<Path> inputFiles = new ArrayList<>();
 		Files.walk(inputDir).filter(p -> !Files.isDirectory(p)).forEach(p -> {
-			try {
+			if (FilenameUtils.getExtension(p.getFileName().toString()).equalsIgnoreCase("csv")) {
 				inputFiles.add(p);
-			} catch (final Exception e) {
-				e.printStackTrace();
 			}
 		});
 		processFiles(inputFiles, outputFile);
