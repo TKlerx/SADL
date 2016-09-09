@@ -101,7 +101,10 @@ public class ScalingPlotGenerator {
 			String[] line = null;
 
 			while ((line = reader.readNext()) != null) {
-				final String algoName = line[0];
+				String algoName = line[0];
+				if (algoName.equalsIgnoreCase("prodtal")) {
+					algoName = "ProDTTAL";
+				}
 				final int numberOfRuns = (int) Double.parseDouble(line[1]);
 				final String argArray = line[2];
 				final double trainTime = Double.parseDouble(line[3]);
