@@ -511,7 +511,7 @@ struct dffa *dffa_accessible(struct dffa *dffa) {
     accessible = calloc(dffa->num_states, sizeof(int));
     accessiblemap = calloc(dffa->num_states, sizeof(int));
     dffa_mark_accessible(dffa, 0, accessible, &numaccessible);
-    printf("Found %i accessible states\n", numaccessible);
+    //printf("Found %i accessible states\n", numaccessible);
     for (i = 0, j = 0; i < dffa->num_states; i++) {
 	if (accessible[i]) {
 	    accessiblemap[i] = j++;
@@ -751,7 +751,7 @@ struct wfsa *dffa_to_wfsa(struct dffa *dffa) {
     int i, j, k;
     prior = g_merge_prior;
     fsm = wfsa_init(dffa->num_states, dffa->alphabet_size);
-    printf( "Converting to PFSA: %i states %i symbols\n", dffa->num_states, dffa->alphabet_size);
+    //printf( "Converting to PFSA: %i states %i symbols\n", dffa->num_states, dffa->alphabet_size);
     for (i = 0; i < dffa->num_states; i++) {
 	for (j = 0; j < dffa->num_states; j++) {
 	    for (k = 0; k < dffa->alphabet_size; k++) {	

@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,11 +8,11 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.modellearner;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -26,6 +26,7 @@ import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 import sadl.constants.EventsCreationStrategy;
+import sadl.constants.IntervalCreationStrategy;
 import sadl.constants.KDEFormelVariant;
 import sadl.constants.PTAOrdering;
 import sadl.constants.TransitionsType;
@@ -48,9 +49,10 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 	TransitionsType transitionsToCheck;
 	PTAOrdering mergeStrategy;
 	EventsCreationStrategy splittingStrategy;
+	IntervalCreationStrategy intervalCreation;
 
 	public ButlaPdtaLearner(double bandwidth, double a, TransitionsType transitionsToCheck, double anomalyProbability, double warningProbability,
-			PTAOrdering mergeStrategy, EventsCreationStrategy splittingStrategy, KDEFormelVariant formelVariant) {
+			PTAOrdering mergeStrategy, EventsCreationStrategy splittingStrategy, KDEFormelVariant formelVariant, IntervalCreationStrategy intervalCreation) {
 
 		if (Double.isNaN(a) || a >= 1.0d || a <= 0.0d) {
 			throw new IllegalArgumentException("a has to be between 0.0 and 1.0 excluded.");
@@ -68,17 +70,25 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			throw new IllegalArgumentException();
 		}
 
-
 		this.eventGenerator = new EventGenerator(bandwidth, anomalyProbability, warningProbability, formelVariant);
 		this.a = a;
 		this.transitionsToCheck = transitionsToCheck;
 		this.mergeStrategy = mergeStrategy;
 		this.splittingStrategy = splittingStrategy;
+		this.intervalCreation = intervalCreation;
 	}
 
-	public ButlaPdtaLearner(EventsCreationStrategy splittingStrategy, KDEFormelVariant formelVariant) {
-		this.eventGenerator = new EventGenerator(0, 0, 0, formelVariant);
-		this.splittingStrategy = splittingStrategy;
+	/**
+	 * Same as alergia with recursion. Events are not split.
+	 * 
+	 * @param alpha
+	 */
+	public ButlaPdtaLearner(double alpha) {
+		this.eventGenerator = new EventGenerator(0, 0, 0, KDEFormelVariant.OriginalKDE);
+		this.splittingStrategy = EventsCreationStrategy.DontSplitEvents;
+		this.a = alpha;
+		this.mergeStrategy = PTAOrdering.TopDown;
+		this.transitionsToCheck = TransitionsType.Incoming;
 	}
 
 	public ButlaPdtaLearner(double bandwidth, EventsCreationStrategy splittingStrategy, KDEFormelVariant formelVariant) {
@@ -89,14 +99,14 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 	@Override
 	public PDTA train(TimedInput TimedTrainingSequences) {
 		logger.debug("Starting to learn PDTA with BUTLA...");
-		final HashMap<String, TDoubleList> eventToTimelistMap = mapEventsToTimes(TimedTrainingSequences);
-		final HashMap<String, Event> eventsMap = generateSubEvents(eventToTimelistMap);
+		final Map<String, TDoubleList> eventToTimelistMap = mapEventsToTimes(TimedTrainingSequences);
+		final Map<String, Event> eventsMap = generateSubEvents(eventToTimelistMap);
 
 		try {
 			logger.debug("Starting to build PTA ...");
 			final PTA pta = new PTA(eventsMap, TimedTrainingSequences);
 			// pta.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\output.gv"));
-			logger.debug("Built PTA ({} states).", pta.getStates().size());
+			logger.info("Built PTA ({} states).", pta.getStates().size());
 			logger.debug("Starting to merge compatible states...");
 			mergeCompatibleStates(pta, pta.getStatesOrdered(mergeStrategy));
 
@@ -105,8 +115,8 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			}
 			logger.debug("Merged compatible states.");
 			// pta.toGraphvizFile(Paths.get("C:\\Private Daten\\GraphViz\\bin\\in-out.gv"));
-			final PDTA pdta = pta.toPDTA();
-			logger.info("Learned PDTA (" + pdta.getStateCount() + " states) with BUTLA");
+			final PDTA pdta = pta.toPDTA(intervalCreation);
+			logger.info("Learned PDTA ({} states) with BUTLA", pdta.getStateCount());
 			return pdta;
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -118,9 +128,9 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 	 * 
 	 * @param timedEventSequences
 	 *            Sequences of timed events.
-	 * @return
+	 * @return The mapping from event name to the time values occuring for this event globally in the input.
 	 */
-	public HashMap<String, TDoubleList> mapEventsToTimes(TimedInput timedEventSequences) {
+	public Map<String, TDoubleList> mapEventsToTimes(TimedInput timedEventSequences) {
 		logger.debug("Starting to gather time values...");
 		final HashMap<String, TDoubleList> eventTimesMap = new HashMap<>(timedEventSequences.getSymbols().length);
 
@@ -146,16 +156,66 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 
 	}
 
+	/*
+	 * public void mergeCompatibleStates(PTA pta, List<PTAState> statesOrdering) {
+	 * 
+	 * final ArrayList<PTAState> workedOffStates = new ArrayList<>();
+	 * 
+	 * outerloop: for (final PTAState state : statesOrdering) {
+	 * 
+	 * for (final ListIterator<PTAState> workedOffIterator = workedOffStates.listIterator(); workedOffIterator.hasNext();) {
+	 * final PTAState workedOffState = workedOffIterator.next();
+	 * 
+	 * if (!state.exists()) {
+	 * continue outerloop;
+	 * }
+	 * 
+	 * if (!workedOffState.exists()) {
+	 * workedOffIterator.remove();
+	 * continue;
+	 * }
+	 * 
+	 * if (compatible(workedOffState, state)) {
+	 * logger.trace("Merging state {} and {}.", workedOffState, state);
+	 * PTAState.merge(workedOffState, state, splittingStrategy);
+	 * break;
+	 * }
+	 * 
+	 * }
+	 * 
+	 * if (state.exists()) {
+	 * workedOffStates.add(state);
+	 * }
+	 * }
+	 * 
+	 * workedOffStates.add(pta.getRoot());
+	 * pta.setStates(workedOffStates);
+	 * }
+	 */
+
 	public void mergeCompatibleStates(PTA pta, List<PTAState> statesOrdering) {
+
+		// int i = 0;
+		// long time1 = 0, time2 = 0, sum1 = 0, sum2 = 0, sum3 = 0;
+
+		// int i = 0;
+		// long time1 = 0, time2 = 0, sum1 = 0, sum2 = 0, sum3 = 0;
 
 		final ArrayList<PTAState> workedOffStates = new ArrayList<>();
 
-		outerloop: for (final PTAState state : statesOrdering) {
+		outerloop: for (PTAState state : statesOrdering) {
+			// time2 = System.currentTimeMillis();
 
 			for (final ListIterator<PTAState> workedOffIterator = workedOffStates.listIterator(); workedOffIterator.hasNext();) {
+
 				final PTAState workedOffState = workedOffIterator.next();
 
 				if (!state.exists()) {
+					state = state.isMergedWith();
+				}
+
+				if (state.isMarked()) {
+					// sum3 += System.currentTimeMillis() - time2;
 					continue outerloop;
 				}
 
@@ -164,27 +224,36 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 					continue;
 				}
 
+				// time1 = System.currentTimeMillis();
 				if (compatible(workedOffState, state)) {
 					logger.trace("Merging state {} and {}.", workedOffState, state);
+					// sum1 += System.currentTimeMillis() - time1;
+					// time1 = System.currentTimeMillis();
 					PTAState.merge(workedOffState, state, splittingStrategy);
+					// sum2 += System.currentTimeMillis() - time1;
 					break;
+				}
+				else {
+					// sum1 += System.currentTimeMillis() - time1;
 				}
 
 			}
 
 			if (state.exists()) {
+				state.mark();
 				workedOffStates.add(state);
 			}
-		}
 
+			// sum3 += System.currentTimeMillis() - time2;
+		}
 
 		workedOffStates.add(pta.getRoot());
 		pta.setStates(workedOffStates);
 	}
 
 	public Pair<TimedInput, Map<String, Event>> splitEventsInTimedSequences(TimedInput timedSequences) {
-		final HashMap<String, TDoubleList> eventToTimelistMap = mapEventsToTimes(timedSequences);
-		final HashMap<String, Event> eventsMap = generateSubEvents(eventToTimelistMap);
+		final Map<String, TDoubleList> eventToTimelistMap = mapEventsToTimes(timedSequences);
+		final Map<String, Event> eventsMap = generateSubEvents(eventToTimelistMap);
 		return Pair.of(getSplitInputForMapping(timedSequences, eventsMap), eventsMap);
 	}
 
@@ -197,8 +266,16 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			for (int i = 0; i < word.length(); i++) {
 				final String eventSymbol = word.getSymbol(i);
 				final double time = word.getTimeValue(i);
-				final String subEventSymbol = eventsMap.get(eventSymbol).getSubEventByTime(time).getSymbol();
-				symbols.add(subEventSymbol);
+				final Event event = eventsMap.get(eventSymbol);
+				if (event == null) {
+					// symbol never occured in train set
+					logger.debug("Event is null for symbol={}", eventSymbol);
+					symbols.add(eventSymbol);
+				} else {
+					final SubEvent subEventByTime = event.getSubEventByTime(time);
+					final String subEventSymbol = subEventByTime.getSymbol();
+					symbols.add(subEventSymbol);
+				}
 				timeValues.add((int) time);
 			}
 			words.add(new TimedWord(symbols, timeValues, word.getLabel()));
@@ -231,7 +308,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			}
 
 			eventsMap.put(eventSysbol, event);
-			// System.out.println("Created event: " + event);
+
 			if (event != null) {
 				logger.debug("Splitted event {} into {} subevents.", eventSysbol, event.getSubEventsCount());
 				subEventCount += event.getSubEventsCount();
@@ -250,7 +327,7 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			return true;
 		}
 
-		if (PTAState.compatibilityIsChecking(stateV, stateW)) {
+		if (mergeStrategy == PTAOrdering.BottomUp && PTAState.compatibilityIsChecking(stateV, stateW)) {
 			return true;
 		}
 
@@ -265,45 +342,74 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 			return false;
 		}
 
-		PTAState.setCompatibilityChecking(stateV, stateW);
+		if (mergeStrategy == PTAOrdering.BottomUp) {
+			PTAState.setCompatibilityChecking(stateV, stateW);
+		}
 
-		for (final Event event : stateV.getPTA().getEvents().values()) {
-			for (final SubEvent subEvent : event) {
-				final String eventSymbol = subEvent.getSymbol();
+		final Set<String> usedEvents = new HashSet<>();
 
+		if (transitionsToCheck == TransitionsType.Incoming || transitionsToCheck == TransitionsType.Both) {
+			usedEvents.addAll(stateV.getEventSymbolsInTransitions());
+			usedEvents.addAll(stateW.getEventSymbolsInTransitions());
+		}
+
+		if (transitionsToCheck == TransitionsType.Outgoing || transitionsToCheck == TransitionsType.Both) {
+			usedEvents.addAll(stateV.getEventSymbolsOutTransitions());
+			usedEvents.addAll(stateW.getEventSymbolsOutTransitions());
+		}
+
+		// for (final Event event : stateV.getPTA().getEvents().values()) {
+		// for (final SubEvent subEvent : event) {
+		// final String eventSymbol = subEvent.getSymbol();
+		for (final String eventSymbol : usedEvents) {
+			final PTAState nextV = stateV.getNextState(eventSymbol);
+			final PTAState nextW = stateW.getNextState(eventSymbol);
+
+			if (transitionsToCheck == TransitionsType.Incoming || transitionsToCheck == TransitionsType.Both) {
 				final int inTransitionEventCountV = stateV.getInTransitionsCount(eventSymbol);
 				final int inTransitionEventCountW = stateW.getInTransitionsCount(eventSymbol);
+
+				if (fractionDifferent(inTransitionCountV, inTransitionEventCountV, inTransitionCountW, inTransitionEventCountW)) {
+					if (mergeStrategy == PTAOrdering.BottomUp) {
+						PTAState.unsetCompatibilityChecking(stateV, stateW);
+					}
+					return false;
+				}
+			}
+
+			if (nextV == null && nextW == null) {
+				continue;
+			}
+
+			if (transitionsToCheck == TransitionsType.Outgoing || transitionsToCheck == TransitionsType.Both) {
 				final int outTransitionEventCountV = stateV.getOutTransitionsCount(eventSymbol);
 				final int outTransitionEventCountW = stateW.getOutTransitionsCount(eventSymbol);
 
-				if ((transitionsToCheck == TransitionsType.Incoming || transitionsToCheck == TransitionsType.Both)
-						&& fractionDifferent(inTransitionCountV, inTransitionEventCountV, inTransitionCountW, inTransitionEventCountW)) {
-					PTAState.unsetCompatibilityChecking(stateV, stateW);
+				if (fractionDifferent(inTransitionCountV, outTransitionEventCountV, inTransitionCountW, outTransitionEventCountW)) {
+					if (mergeStrategy == PTAOrdering.BottomUp) {
+						PTAState.unsetCompatibilityChecking(stateV, stateW);
+					}
 					return false;
 				}
-
-				if ((transitionsToCheck == TransitionsType.Outgoing || transitionsToCheck == TransitionsType.Both)
-						&& fractionDifferent(inTransitionCountV, outTransitionEventCountV, inTransitionCountW, outTransitionEventCountW)) {
-					PTAState.unsetCompatibilityChecking(stateV, stateW);
-					return false;
-				}
-
-				final PTAState nextV = stateV.getNextState(eventSymbol);
-				final PTAState nextW = stateW.getNextState(eventSymbol);
-
-				if (nextV == null || nextW == null) {
-					continue;
-				}
-
-				if (!compatible(nextV, nextW)) {
-					PTAState.unsetCompatibilityChecking(stateV, stateW);
-					return false;
-				}
-
 			}
+
+			if (nextV == null || nextW == null) {
+				continue;
+			}
+
+			if (!compatible(nextV, nextW)) {
+				if (mergeStrategy == PTAOrdering.BottomUp) {
+					PTAState.unsetCompatibilityChecking(stateV, stateW);
+				}
+				return false;
+			}
+
+			// }
 		}
 
-		PTAState.unsetCompatibilityChecking(stateV, stateW);
+		if (mergeStrategy == PTAOrdering.BottomUp) {
+			PTAState.unsetCompatibilityChecking(stateV, stateW);
+		}
 		return true;
 
 	}
@@ -311,18 +417,6 @@ public class ButlaPdtaLearner implements ProbabilisticModelLearner, Compatibilit
 	public boolean fractionDifferent(int n0, int f0, int n1, int f1) {
 
 		return Math.abs(((double) f0 / n0) - ((double) f1 / n1)) > (Math.sqrt(0.5 * Math.log(2.0 / a)) * ((1.0 / Math.sqrt(n0)) + (1.0 / Math.sqrt(n1))));
-	}
-
-	public double[] listToDoubleArray(List<Double> list) {
-
-		final double[] array = new double[list.size()];
-		int i = 0;
-
-		for (final Double element : list) {
-			array[i++] = element.doubleValue();
-		}
-
-		return array;
 	}
 
 }

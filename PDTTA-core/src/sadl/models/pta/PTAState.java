@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,15 +8,16 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.models.pta;
+
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.Set;
 
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
 import jsat.utils.Pair;
 import sadl.constants.EventsCreationStrategy;
 
@@ -55,6 +56,10 @@ public class PTAState implements Cloneable {
 
 	public PTAState isMergedWith() {
 
+		if (mergedWith == null) {
+			throw new IllegalStateException();
+		}
+
 		if (!mergedWith.exists()) {
 			mergedWith = mergedWith.isMergedWith();
 		}
@@ -77,9 +82,19 @@ public class PTAState implements Cloneable {
 		return inTransitions.values();
 	}
 
+	public Set<String> getEventSymbolsInTransitions() {
+
+		return inTransitions.keySet();
+	}
+
 	public Collection<PTATransition> getOutTransitions() {
 
 		return outTransitions.values();
+	}
+
+	public Set<String> getEventSymbolsOutTransitions() {
+
+		return outTransitions.keySet();
 	}
 
 	public String getWord() {
@@ -193,6 +208,11 @@ public class PTAState implements Cloneable {
 	public void mark() {
 
 		marked = true;
+	}
+
+	public void unmark() {
+
+		marked = false;
 	}
 
 	public static void merge(PTAState firstState, PTAState secondState, EventsCreationStrategy strategy) {

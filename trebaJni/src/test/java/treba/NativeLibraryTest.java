@@ -1,6 +1,8 @@
 package treba;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -11,7 +13,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import treba.trebaJNI;
+import utils.LibraryChecker;
 
 public class NativeLibraryTest {
 
@@ -32,22 +34,14 @@ public class NativeLibraryTest {
 	}
 
 	@Test
-	public void test() {
-		final String osName = System.getProperty("os.name");
+	public void test() throws IOException {
 		Path p = null;
-		if (osName.toLowerCase().contains("linux")) {
+		if (LibraryChecker.trebaDepsInstalled()) {
 			assertTrue(trebaJNI.isLibraryLoaded());
-		} else if (osName.toLowerCase().contains("windows")) {
 			try {
 				p = trebaJNI.findLibrary();
 				assertNotNull(p);
-				try {
-					trebaJNI.loadLibrary(p);
-					fail("not possible to load treba in windows");
-				} catch (UnsatisfiedLinkError e) {
-					// expected
-				}
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				e.printStackTrace();
 				fail(e.getMessage());
 			}

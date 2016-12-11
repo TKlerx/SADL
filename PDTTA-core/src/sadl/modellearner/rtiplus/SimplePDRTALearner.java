@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,7 +8,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.modellearner.rtiplus;
 
 import java.io.BufferedWriter;
@@ -32,6 +31,7 @@ import java.util.NavigableSet;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.Function;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -55,6 +55,7 @@ import sadl.models.pdrta.PDRTA;
 import sadl.models.pdrta.PDRTAInput;
 import sadl.models.pdrta.PDRTAState;
 import sadl.models.pdrta.TimedTail;
+import sadl.utils.IoUtils;
 import sadl.utils.Settings;
 
 /**
@@ -303,9 +304,9 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 		//sequential
 		final Iterator<Integer> it = t.in.getTails().keySet().iterator();
 		if (it.hasNext()) {
-			int last = it.next();
+			int last = it.next().intValue();
 			while (it.hasNext()) {
-				final int cur = it.next();
+				final int cur = it.next().intValue();
 				int splitTime = -1;
 				switch (splitPos) {
 					case LEFT:
@@ -484,21 +485,9 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 		} catch (final Exception e) {
 			logger.error("Not able to store PDRTA in Graphviz format: {}", e.getMessage());
 		}
-		final String[] args = { "dot", "-Tpng", gvFile.toAbsolutePath().toString(), "-o", pngFile.toAbsolutePath().toString() };
-		Process pr = null;
-		try {
-			pr = Runtime.getRuntime().exec(args);
-		} catch (final Exception e) {
-			logger.warn("Could not create plot of PDRTA: {}", e.getMessage());
-		} finally {
-			if (pr != null) {
-				try {
-					pr.waitFor();
-				} catch (final InterruptedException e) {
-				}
-			}
-		}
+		IoUtils.runGraphviz(gvFile, pngFile);
 	}
+
 
 	protected String getDuration(long start, long end) {
 
@@ -557,34 +546,34 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 			final Iterator<Entry<Integer, Collection<TimedTail>>> it = tails.entrySet().iterator();
 			if (it.hasNext()) {
 				Entry<Integer, Collection<TimedTail>> ePrev = it.next();
-				int t = ePrev.getKey();
+				int t = ePrev.getKey().intValue();
 				if (in.getBegin() <= t - tolerance - 1) {
-					splits.add(t - tolerance - 1);
+					splits.add(new Integer(t - tolerance - 1));
 				}
 				while (it.hasNext()) {
 					final Entry<Integer, Collection<TimedTail>> eCurr = it.next();
-					t = ePrev.getKey();
-					final int t2 = eCurr.getKey();
+					t = ePrev.getKey().intValue();
+					final int t2 = eCurr.getKey().intValue();
 					final int diff = t2 - t - 1;
 					if (diff > 2 * tolerance) {
-						splits.add(t + tolerance);
-						splits.add(t2 - tolerance - 1);
+						splits.add(new Integer(t + tolerance));
+						splits.add(new Integer(t2 - tolerance - 1));
 					}
 					ePrev = eCurr;
 				}
-				t = ePrev.getKey();
+				t = ePrev.getKey().intValue();
 				if (in.getEnd() > t + tolerance) {
-					splits.add(t + tolerance);
+					splits.add(new Integer(t + tolerance));
 				}
 			}
 		} else {
-			int t = tails.firstKey();
+			int t = tails.firstKey().intValue();
 			if (in.getBegin() <= t - tolerance - 1) {
-				splits.add(t - tolerance - 1);
+				splits.add(new Integer(t - tolerance - 1));
 			}
-			t = tails.lastKey();
+			t = tails.lastKey().intValue();
 			if (in.getEnd() > t + tolerance) {
-				splits.add(t + tolerance);
+				splits.add(new Integer(t + tolerance));
 			}
 		}
 
@@ -602,7 +591,7 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 		final List<Interval> resultingIns = new ArrayList<>(splits.size() + 1);
 		Pair<Interval, Interval> splittedIns = null;
 		for (int i = 0; i < splits.size(); i++) {
-			splittedIns = OperationUtil.split(s, alphIdx, splits.get(i), sc);
+			splittedIns = OperationUtil.split(s, alphIdx, splits.get(i).intValue(), sc);
 			if (!splittedIns.getLeft().isEmpty()) {
 				resultingIns.add(splittedIns.getLeft());
 			}
@@ -638,6 +627,24 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 		}
 	}
 
+	private int getTolerance(Interval in, int minData, Function<TDoubleList, Integer> f) {
+		final NavigableSet<Integer> times = in.getTails().keySet();
+		if (times.size() <= 2) {
+			return getToleranceFewSlots(in, minData);
+		}
+		final TDoubleList diffs = new TDoubleArrayList(times.size() - 1);
+		final Iterator<Integer> it = times.iterator();
+		if (it.hasNext()) {
+			int prev = it.next().intValue();
+			while (it.hasNext()) {
+				final int curr = it.next().intValue();
+				diffs.add(curr - prev - 1);
+				prev = curr;
+			}
+		}
+		return f.apply(diffs).intValue();
+	}
+
 	/**
 	 * Calculates the maximum allowed size for an empty interval part depending on the MAD measure and the {@link TimedTail}s using this interval.
 	 * 
@@ -646,21 +653,10 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 	 * @return The maximum allowed size for an empty interval part
 	 */
 	private int getToleranceMAD(Interval in, int minData) {
+		return getTolerance(in, minData, this::madCalc);
+	}
 
-		final NavigableSet<Integer> times = in.getTails().keySet();
-		if (times.size() <= 2) {
-			return getToleranceFewSlots(in, minData);
-		}
-		final TDoubleList diffs = new TDoubleArrayList(times.size() - 1);
-		final Iterator<Integer> it = times.iterator();
-		if (it.hasNext()) {
-			int prev = it.next();
-			while (it.hasNext()) {
-				final int curr = it.next();
-				diffs.add(curr - prev - 1);
-				prev = curr;
-			}
-		}
+	public int madCalc(final TDoubleList diffs) {
 		final double median = StatisticsUtil.calculateMedian(diffs, true);
 		final double mad = StatisticsUtil.calculateMAD(diffs, median);
 		return (int) Math.ceil(((median + 2.5 * mad) / 2.0));
@@ -674,21 +670,10 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 	 * @return The maximum allowed size for an empty interval part
 	 */
 	private int getToleranceOutliers(Interval in, int minData) {
+		return getTolerance(in, minData, this::outlierCalc);
+	}
 
-		final NavigableSet<Integer> times = in.getTails().keySet();
-		if (times.size() <= 2) {
-			return getToleranceFewSlots(in, minData);
-		}
-		final TDoubleList diffs = new TDoubleArrayList(times.size() - 1);
-		final Iterator<Integer> it = times.iterator();
-		if (it.hasNext()) {
-			int prev = it.next();
-			while (it.hasNext()) {
-				final int curr = it.next();
-				diffs.add(curr - prev - 1);
-				prev = curr;
-			}
-		}
+	public int outlierCalc(final TDoubleList diffs) {
 		diffs.sort();
 		final double q1 = StatisticsUtil.calculateQ1(diffs, false);
 		final double q3 = StatisticsUtil.calculateQ3(diffs, false);
@@ -716,10 +701,12 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 				return 0;
 			}
 		} else {
-			final int t1 = tails.firstKey();
-			final int s1 = tails.get(t1).size();
-			final int t2 = tails.lastKey();
-			final int s2 = tails.get(t2).size();
+			final Integer t1Int = tails.firstKey();
+			final int s1 = tails.get(t1Int).size();
+			final Integer t2Int = tails.lastKey();
+			final int s2 = tails.get(t2Int).size();
+			final int t1 = t1Int.intValue();
+			final int t2 = t2Int.intValue();
 			final double perc = (double) (t2 - t1 - 1) / (double) (in.getEnd() - in.getBegin() - 1);
 			if (s1 >= minData && s2 >= minData && perc >= 0.2) {
 				return (int) Math.ceil((in.getEnd() - in.getBegin() + 1) * 0.05);

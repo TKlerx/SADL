@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,7 +8,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.models.pdta;
 
 import java.io.BufferedWriter;
@@ -17,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
 
@@ -40,7 +39,7 @@ public class PDTA implements AutomatonModel {
 
 	PDTAState root;
 	TIntObjectMap<PDTAState> states;
-	HashMap<String, Event> events;
+	Map<String, Event> events;
 
 	@Override
 	public Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord s) {
@@ -48,7 +47,7 @@ public class PDTA implements AutomatonModel {
 		final TDoubleList probabilities1 = new TDoubleArrayList(s.length());
 		final TDoubleList probabilities2 = new TDoubleArrayList(s.length());
 
-		final PDTAState currentState = root;
+		PDTAState currentState = root;
 
 		for (int i = 0; i < s.length(); i++) {
 			final String eventSymbol = s.getSymbol(i);
@@ -64,13 +63,14 @@ public class PDTA implements AutomatonModel {
 
 			probabilities1.add(currentTransition.getPropability());
 			probabilities2.add(currentTransition.getEvent().calculateProbability(time));
+			currentState = currentTransition.getTarget();
 		}
 
 		probabilities1.add(currentState.getEndProbability());
 		return new Pair<>(probabilities1, probabilities2);
 	}
 
-	public PDTA(PDTAState root, TIntObjectMap<PDTAState> states, HashMap<String, Event> events) {
+	public PDTA(PDTAState root, TIntObjectMap<PDTAState> states, Map<String, Event> events) {
 		this.root = root;
 		this.states = states;
 		this.events = events;

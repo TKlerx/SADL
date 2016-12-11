@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,12 +8,11 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.models.pta;
 
-import org.apache.commons.math3.util.Precision;
-
 import jsat.distributions.empirical.NormalRandomized;
+
+import org.apache.commons.math3.util.Precision;
 
 public class SubEvent {
 
@@ -124,18 +123,9 @@ public class SubEvent {
 		return anomalyInterval;
 	}
 
-	public void setAnomalyBounds(HalfClosedInterval bounds) {
+	public HalfClosedInterval getBounds() {
 
-		if (bounds == null || bounds.getMinimum() < 0.0) {
-			throw new IllegalArgumentException();
-		}
-
-		anomalyInterval = bounds;
-
-		if (!anomalyInterval.contains(warningInterval)) {
-
-			warningInterval = anomalyInterval.getIntersectionWith(warningInterval);
-		}
+		return boundInterval;
 	}
 
 	public void setBounds(HalfClosedInterval bounds) {
@@ -151,6 +141,20 @@ public class SubEvent {
 	public void setRightBound(double bound) {
 
 		boundInterval.setMaximum(bound);
+	}
+
+	public void setAnomalyBounds(HalfClosedInterval bounds) {
+
+		if (bounds == null || bounds.getMinimum() < 0.0) {
+			throw new IllegalArgumentException();
+		}
+
+		anomalyInterval = bounds;
+
+		if (!anomalyInterval.contains(warningInterval)) {
+
+			warningInterval = anomalyInterval.getIntersectionWith(warningInterval);
+		}
 	}
 
 	public String getNumber() {
@@ -182,36 +186,78 @@ public class SubEvent {
 		return new HalfClosedInterval(getLeftIntervalBoundInState(state), getRightIntervalBoundInState(state));
 	}
 
+	/*
+	 * public double getLeftIntervalBoundInState(PTAState state) {
+	 * 
+	 * if (state == null) {
+	 * throw new IllegalArgumentException();
+	 * }
+	 * 
+	 * if (previousSubEvent != null && state.outTransitions.containsKey(previousSubEvent.getSymbol())) {
+	 * if (this.hasLeftCriticalArea()) {
+	 * return getLeftBound();
+	 * } else if (previousSubEvent instanceof SubEventCriticalArea
+	 * && !state.outTransitions.containsKey(previousSubEvent.getPreviousSubEvent().getSymbol())) {
+	 * return previousSubEvent.getLeftBound();
+	 * }
+	 * }
+	 * 
+	 * /*
+	 * if (previousSubEvent != null) {
+	 * return Math.max(getLeftAnomalyBound(), previousSubEvent.getLeftBound());
+	 * }
+	 * 
+	 * 
+	 * return getLeftAnomalyBound();
+	 * }
+	 */
+
 	public double getLeftIntervalBoundInState(PTAState state) {
 
-		if (state == null) {
-			throw new IllegalArgumentException();
+		final SubEvent prev = this.getPreviousSubEventInState(state);
+
+		if (prev == null || prev.getRightAnomalyBound() <= getLeftAnomalyBound()) {
+			return getLeftAnomalyBound();
 		}
 
-		if (previousSubEvent != null && state.outTransitions.containsKey(previousSubEvent.getSymbol())) {
-			if (this.hasLeftCriticalArea()) {
-				return getLeftBound();
-			} else if (previousSubEvent instanceof SubEventCriticalArea
-					&& !state.outTransitions.containsKey(previousSubEvent.getPreviousSubEvent().getSymbol())) {
-				return previousSubEvent.getLeftBound();
-			}
-		}
-
-		return getLeftAnomalyBound();
+		return getLeftBound(); // TODO
 	}
+
+	/*
+	 * public double getRightIntervalBoundInState(PTAState state) {
+	 * 
+	 * 
+	 * if (state == null) {
+	 * throw new IllegalArgumentException();
+	 * }
+	 * 
+	 * final SubEvent next = this.getNextSubEventInState(state);
+	 * 
+	 * if (next != null) {
+	 * return Math.min(getRightAnomalyBound(), next.getLeftBound()); // no
+	 * }
+	 * 
+	 * return getRightAnomalyBound();
+	 * 
+	 * 
+	 * if (nextSubEvent != null && state.outTransitions.containsKey(this.getNextSubEvent().getSymbol())) {
+	 * if (this.hasRightCriticalArea()) {
+	 * return getRightBound();
+	 * } else if (nextSubEvent instanceof SubEventCriticalArea && !state.outTransitions.containsKey(nextSubEvent.getNextSubEvent().getSymbol())) {
+	 * return nextSubEvent.getRightBound();
+	 * }
+	 * }
+	 * 
+	 * return getRightAnomalyBound();
+	 * }
+	 */
 
 	public double getRightIntervalBoundInState(PTAState state) {
 
-		if (state == null) {
-			throw new IllegalArgumentException();
-		}
+		final SubEvent next = this.getNextSubEventInState(state);
 
-		if (nextSubEvent != null && state.outTransitions.containsKey(this.getNextSubEvent().getSymbol())) {
-			if (this.hasRightCriticalArea()) {
-				return getRightBound();
-			} else if (nextSubEvent instanceof SubEventCriticalArea && !state.outTransitions.containsKey(nextSubEvent.getNextSubEvent().getSymbol())) {
-				return nextSubEvent.getRightBound();
-			}
+		if (next == null || getRightAnomalyBound() <= next.getLeftAnomalyBound()) {
+			return getRightAnomalyBound();
 		}
 
 		return getRightBound();
@@ -252,6 +298,36 @@ public class SubEvent {
 	public SubEvent getNextSubEvent() {
 
 		return nextSubEvent;
+	}
+
+	public SubEvent getPreviousSubEventInState(PTAState state) {
+
+		SubEvent prev = this.getPreviousSubEvent();
+
+		while (prev != null) {
+			if (state.getOutTransitionsCount(prev.getSymbol()) > 0) {
+				return prev;
+			}
+
+			prev = prev.getPreviousSubEvent();
+		}
+
+		return null; // check
+	}
+
+	public SubEvent getNextSubEventInState(PTAState state) {
+
+		SubEvent next = this.getNextSubEvent();
+
+		while (next != null) {
+			if (state.getOutTransitionsCount(next.getSymbol()) > 0) {
+				return next;
+			}
+
+			next = next.getPreviousSubEvent();
+		}
+
+		return null; // check
 	}
 
 	public Event getEvent() {

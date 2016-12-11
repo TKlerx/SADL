@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,7 +8,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.models.pdrta;
 
 import java.io.BufferedReader;
@@ -72,11 +71,11 @@ public class PDRTA implements AutomatonModel, Serializable {
 				} else if (line.matches("^// \\d.+")) {
 					line = line.substring(3);
 					final String start = line.split(" ", 2)[0];
-					final int idx = Integer.parseInt(start);
+					final Integer idx = Integer.valueOf(start);
 					stats.put(idx, new String(line));
 				} else if (line.matches("^\\d.+")) {
 					final String start = line.split(" ", 2)[0];
-					final int idx = Integer.parseInt(start);
+					final Integer idx = Integer.valueOf(start);
 					if (line.matches("^\\d+ \\[.+")) {
 						stats.put(idx, new String(line));
 					} else {
@@ -94,6 +93,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 		return states.get(index);
 	}
 
+	@SuppressWarnings("unused")
 	public PDRTA(PDRTA a) {
 
 		input = a.input;
@@ -458,8 +458,9 @@ public class PDRTA implements AutomatonModel, Serializable {
 		input = inp;
 		states = new TIntObjectHashMap<>();
 
-		for (final Integer idx : trans.keySet()) {
-			final StateStatistic s = StateStatistic.reconstructStat(input.getAlphSize(), getHistSizes(), stats.get(idx));
+		for (final Integer idxInt : trans.keySet()) {
+			final int idx = idxInt.intValue();
+			final StateStatistic s = StateStatistic.reconstructStat(input.getAlphSize(), getHistSizes(), stats.get(idxInt));
 			states.put(idx, new PDRTAState(this, idx, s));
 		}
 		for (final Entry<Integer, String> eT : trans.entries()) {
@@ -479,7 +480,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 			final PDRTAState s = states.get(source);
 			PDRTAState t;
 			if (!states.containsKey(target)) {
-				final StateStatistic st = StateStatistic.reconstructStat(getAlphSize(), getHistSizes(), stats.get(target));
+				final StateStatistic st = StateStatistic.reconstructStat(getAlphSize(), getHistSizes(), stats.get(new Integer(target)));
 				t = new PDRTAState(this, target, st);
 				states.put(target, t);
 			} else {
@@ -493,12 +494,12 @@ public class PDRTA implements AutomatonModel, Serializable {
 			Interval newIn;
 			if (end < in.getEnd()) {
 				newIn = in.split(end);
-				s.getIntervals(input.getAlphIndex(sym)).put(newIn.getEnd(), newIn);
+				s.getIntervals(input.getAlphIndex(sym)).put(new Integer(newIn.getEnd()), newIn);
 				in = newIn;
 			}
 			if (begin > in.getBegin()) {
 				newIn = in.split(begin - 1);
-				s.getIntervals(input.getAlphIndex(sym)).put(newIn.getEnd(), newIn);
+				s.getIntervals(input.getAlphIndex(sym)).put(new Integer(newIn.getEnd()), newIn);
 			}
 			in.setTarget(t);
 			s.getStat().addInterval(input.getAlphIndex(sym), in, prob);

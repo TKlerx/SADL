@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,10 +8,8 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.models;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +55,11 @@ public class PDTTA extends PDFA {
 	protected PDTTA() {
 	}
 
-	public PDTTA(PDFA pdfa, Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions, TauEstimator tauEstimation) throws IOException {
+	protected PDTTA(TauEstimator tauEstimator) {
+		this.tauEstimator = tauEstimator;
+	}
+
+	public PDTTA(PDFA pdfa, Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions, TauEstimator tauEstimation) {
 		super(pdfa);
 		this.transitionDistributions = transitionDistributions;
 		this.tauEstimator = tauEstimation;
@@ -156,7 +158,11 @@ public class PDTTA extends PDFA {
 				logger.warn("Found no time distribution for Transition " + t);
 				list.set(i, 0);
 			} else {
-				list.set(i, tauEstimator.estimateTau(d, ts.getTimeValue(i)));
+				final double timeLikelihood = tauEstimator.estimateTau(d, ts.getTimeValue(i));
+				if (timeLikelihood < 0) {
+					throw new IllegalStateException("Time likelihood must not be negative");
+				}
+				list.set(i, timeLikelihood);
 			}
 		};
 		if (Settings.isParallel()) {
@@ -292,12 +298,12 @@ public class PDTTA extends PDFA {
 	}
 
 	@Override
-	protected boolean removeTransition(Transition t) {
+	public boolean removeTransition(Transition t) {
 		return removeTimedTransition(t) != null;
 	}
 
 	@Override
-	protected boolean restoreConsistency() {
+	public boolean restoreConsistency() {
 		return deleteIrrelevantTransitions() | super.restoreConsistency();
 	}
 
@@ -321,8 +327,11 @@ public class PDTTA extends PDFA {
 					// the training data.
 					throw new IllegalStateException("This should never happen for transition " + chosenTransition);
 				}
-				final int timeValue = (int) d.sample(1, r)[0];
+				int timeValue = (int) d.sample(1, r)[0];
 				eventList.add(chosenTransition.getSymbol());
+				if (timeValue < 0) {
+					timeValue = 0;
+				}
 				timeList.add(timeValue);
 			}
 		}

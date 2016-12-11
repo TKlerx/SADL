@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,7 +8,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.utils;
 
 import java.io.BufferedReader;
@@ -23,10 +22,14 @@ import java.io.PipedReader;
 import java.io.PipedWriter;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -43,6 +46,7 @@ import com.thoughtworks.xstream.XStream;
 
 import sadl.input.TimedInput;
 import sadl.run.datagenerators.SmacDataGenerator;
+import sadl.run.datagenerators.Temp;
 
 /**
  * 
@@ -61,12 +65,89 @@ public class IoUtils {
 		deleteFiles(paths);
 	}
 
+	public static List<Path> listFiles(Path directory, String fileEnding, boolean recursively) {
+		final List<Path> result = new ArrayList<>();
+
+		try {
+			Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+				@Override
+				public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+					if (!attrs.isDirectory() && file.toString().endsWith(fileEnding)) {
+						result.add(file);
+					}
+					return FileVisitResult.CONTINUE;
+				}
+
+				@Override
+				public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+					if(recursively) {
+						return super.preVisitDirectory(dir, attrs);
+					} else {
+						return FileVisitResult.SKIP_SUBTREE;
+					}
+				}
+			});
+		} catch (final IOException e) {
+			logger.error("Unexpected exception occured.", e);
+		}
+		return result;
+	}
+
+	public static void runGraphviz(final Path gvFile, final Path pngFile) {
+		final String[] args = { "dot", "-Tpng", gvFile.toAbsolutePath().toString(), "-o", pngFile.toAbsolutePath().toString() };
+		Process pr = null;
+		try {
+			pr = Runtime.getRuntime().exec(args);
+		} catch (final Exception e) {
+			logger.warn("Could not create plot of Model: {}", e.getMessage());
+		} finally {
+			if (pr != null) {
+				try {
+					pr.waitFor();
+				} catch (final InterruptedException e) {
+				}
+			}
+		}
+	}
+
 	public static void deleteFiles(Path[] paths) throws IOException {
 		for (final Path p : paths) {
 			if (!Files.deleteIfExists(p)) {
 				logger.warn("{} should have been explicitly deleted, but did not exist.", p);
 			}
 		}
+	}
+
+	public static void cleanDir(Path outputDir) throws IOException {
+		if (Files.notExists(outputDir)) {
+			Files.createDirectories(outputDir);
+			return;
+		}
+		Files.walk(outputDir).filter(p -> !Files.isDirectory(p)).forEach(p -> {
+			try {
+				logger.info("Deleting file {}", p);
+				Files.deleteIfExists(p);
+			} catch (final Exception e) {
+				e.printStackTrace();
+			}
+		});
+		Files.walkFileTree(outputDir, new SimpleFileVisitor<Path>() {
+			@Override
+			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+				logger.info("Deleting file {}", file);
+				Files.deleteIfExists(file);
+				return FileVisitResult.CONTINUE;
+			};
+
+			@Override
+			public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+				if (!dir.equals(outputDir)) {
+					logger.info("Deleting directory {}", dir);
+					Files.deleteIfExists(dir);
+				}
+				return FileVisitResult.CONTINUE;
+			};
+		});
 	}
 
 	public static Object deserialize(Path path) throws FileNotFoundException, IOException, ClassNotFoundException {
@@ -85,6 +166,16 @@ public class IoUtils {
 				throw new RuntimeException(e);
 			}
 		});
+	}
+
+	public static void writeTrainTestFile(Path trainTestFile, TimedInput trainSet, TimedInput testSet) throws IOException {
+		try (BufferedWriter bw = Files.newBufferedWriter(trainTestFile, StandardCharsets.UTF_8)) {
+			trainSet.toFile(bw, true);
+			bw.write('\n');
+			bw.write(Temp.TRAIN_TEST_SEP);
+			bw.write('\n');
+			testSet.toFile(bw, true);
+		}
 	}
 
 	public static Pair<TimedInput, TimedInput> readTrainTestFile(Path trainTestFile) {
@@ -132,7 +223,6 @@ public class IoUtils {
 		return null;
 	}
 
-
 	public static void serialize(Object o, Path path) throws IOException {
 		try (OutputStream fileOut = Files.newOutputStream(path); ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
 			out.writeObject(o);
@@ -178,8 +268,5 @@ public class IoUtils {
 			logger.error("Unexpected exception", e);
 		}
 	}
-
-
-
 
 }

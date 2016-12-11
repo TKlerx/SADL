@@ -1,0 +1,14 @@
+paramfile = tpta/tpta-params.pcs
+runObj = QUALITY
+#3 hours algorithm time
+cutoffTime = 10800
+#7 days smac run-time
+wallclock-limit = 604800
+deterministic = 1
+instance_file = smac-data/train
+test_instance_file = smac-data/test
+instance-suffix = txt
+test-instance-suffix = txt
+algo = java -Xmx4g -jar run/PDTTA-core-0.0.1.jar smac TPTA
+num-test-instances = 10
+deterministic = true

@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,7 +8,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.modellearner.rtiplus;
 
 import java.util.Iterator;
@@ -76,9 +75,9 @@ public class OperationUtil {
 				assert (s2.getIntervals(i).size() == 1);
 				final Set<Entry<Integer, Interval>> iRs = s1.getIntervals(i).entrySet();
 				for (final Entry<Integer, Interval> eIn : iRs) {
-					assert (eIn.getValue().getBegin() == s2.getInterval(i, eIn.getKey()).getBegin());
-					if (eIn.getValue().getEnd() < s2.getInterval(i, eIn.getKey()).getEnd()) {
-						split(s2, i, eIn.getKey(), sc);
+					assert (eIn.getValue().getBegin() == s2.getInterval(i, eIn.getKey().intValue()).getBegin());
+					if (eIn.getValue().getEnd() < s2.getInterval(i, eIn.getKey().intValue()).getEnd()) {
+						split(s2, i, eIn.getKey().intValue(), sc);
 					}
 				}
 				assert (s2.getIntervals(i).size() == s1.getIntervals(i).size());
@@ -141,8 +140,8 @@ public class OperationUtil {
 						in1.getTails().putAll(in2.getTails());
 					} else {
 						// Move subtree of s2 to s1
-						assert (s1.getIntervals(i).containsKey(in2.getEnd()));
-						s1.getIntervals(i).put(in2.getEnd(), in2);
+						assert (s1.getIntervals(i).containsKey(new Integer(in2.getEnd())));
+						s1.getIntervals(i).put(new Integer(in2.getEnd()), in2);
 						if (sc.isRed(s1)) {
 							sc.setBlue(in2.getTarget());
 						}
@@ -162,7 +161,7 @@ public class OperationUtil {
 		final Interval in = s.getInterval(symAlphIdx, time);
 
 		final Interval newIn = in.split(time);
-		s.getIntervals(symAlphIdx).put(newIn.getEnd(), newIn);
+		s.getIntervals(symAlphIdx).put(new Integer(newIn.getEnd()), newIn);
 
 		assert (newIn != in);
 		assert (newIn.getTarget() == null);

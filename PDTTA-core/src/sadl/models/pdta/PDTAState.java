@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,7 +8,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.models.pdta;
 
 import java.util.HashMap;
@@ -30,7 +29,7 @@ public class PDTAState {
 	protected double sumProbabilities = 0.0d;
 	Random rand;
 
-	public PDTAState(int id, double endProbability) { // TODO check root endProbability
+	public PDTAState(int id, double endProbability) {
 		rand = MasterSeed.nextRandom();
 		if (Double.isNaN(endProbability) || endProbability < 0.0d || endProbability > 1.0d) {
 			throw new IllegalArgumentException("Wrong parameter endProbability: " + endProbability);
@@ -65,7 +64,7 @@ public class PDTAState {
 			return null;
 		}
 
-		final Entry<Double, PDTATransition> transitionEntry = eventTransitions.floorEntry(time);
+		final Entry<Double, PDTATransition> transitionEntry = eventTransitions.floorEntry(new Double(time));
 
 		if (transitionEntry == null) {
 			return null;
@@ -124,7 +123,7 @@ public class PDTAState {
 			return null;
 		}
 
-		final Entry<Double, PDTATransition> transitionEntry = transitionsProbability.floorEntry(random);
+		final Entry<Double, PDTATransition> transitionEntry = transitionsProbability.floorEntry(new Double(random));
 
 		if (transitionEntry == null) {
 			throw new IllegalStateException("No transition selected(" + random + ")" + this);
@@ -132,7 +131,7 @@ public class PDTAState {
 
 		final PDTATransition transition = transitionEntry.getValue();
 
-		if (transitionEntry.getKey() + transition.getPropability() < random) {
+		if (transitionEntry.getKey().doubleValue() + transition.getPropability() < random) {
 			throw new IllegalStateException("No transition selected.");
 		}
 
@@ -151,8 +150,8 @@ public class PDTAState {
 			transitions.put(eventSymbol, eventTransitions);
 		}
 
-		eventTransitions.put(interval.getMinimum(), transition);
-		transitionsProbability.put(sumProbabilities, transition);
+		eventTransitions.put(new Double(interval.getMinimum()), transition);
+		transitionsProbability.put(new Double(sumProbabilities), transition);
 		sumProbabilities += probability;
 
 		if (sumProbabilities > 1.0001d) {
