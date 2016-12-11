@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,7 +8,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.input;
 
 import java.io.BufferedReader;
@@ -24,14 +23,25 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
+import jsat.distributions.Distribution;
+import sadl.constants.AnomalyInsertionType;
 import sadl.constants.ClassLabel;
+import sadl.modellearner.TauPtaLearner;
+import sadl.models.TauPTA;
+import sadl.structure.Transition;
+import sadl.utils.MasterSeed;
 
 /**
  * Class for reading a set of timed sequences from a file or writing them to a file.
@@ -50,12 +60,20 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	private final List<String> alphabetRev = new ArrayList<>();
 	private List<TimedWord> words = new ArrayList<>();
 
+	private static final double ANOMALY_PERCENTAGE = 0.1;
+	private static final double HUGE_TIME_CHANGE = 0.9;
+	private static final double SMALL_TIME_CHANGE = 0.1;
+	private static final double ANOMALY_TYPE_TWO_P_1 = 0.7;
+	private static final double ANOMALY_TYPE_TWO_P_2 = 0.9;
+	private static final int MAX_SEQUENCE_LENGTH = 1000;
+
 	private static final String[] parseSymbols = new String[] { "^\\(", "\\)$", "\\)\\s+\\(", "\\s*,\\s*", "\\s*:\\s*" };
 	private static final String[] parseSymbolsAlt = new String[] { "^\\d+ ", "$", "\\s{2}", "\\s", "\\s*:\\s*" };
 	private static final int parseStart = 0;
 	private static final int parseStartAlt = 1;
 
 	public TimedInput(List<TimedWord> words) {
+
 		this.words.addAll(words);
 		for (final TimedWord w : words) {
 			if (w.getClass() == TimedWord.class) {
@@ -66,6 +84,31 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 					}
 				}
 			}
+		}
+	}
+
+	public TimedInput(String[] alphabet) {
+
+		for (int i = 0; i < alphabet.length; i++) {
+			this.alphabet.put(alphabet[i], i);
+			alphabetRev.add(alphabet[i]);
+		}
+	}
+
+	/**
+	 * Tries to parse sequences from a file in the old or new format. If both fail, an exception is thrown.
+	 * 
+	 * @param in
+	 *            A {@link Path} that contains timed sequences in the appropriate format
+	 * @return A {@link TimedInput} that represents the timed sequences parsed
+	 * @throws IOException
+	 * @implNote The {@link #parse(Path)} and {@link #parseAlt(Path)} methods are called.
+	 */
+	public static TimedInput tryParse(Path in) throws IOException {
+		try {
+			return parse(in);
+		} catch (final IOException | IllegalArgumentException e) {
+			return parseAlt(in);
 		}
 	}
 
@@ -112,7 +155,6 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 		return parseCustom(br, parseStart, parseSymbols[0], parseSymbols[1], parseSymbols[2], parseSymbols[3], parseSymbols[4], skipFirstElement);
 
 	}
-
 
 	/**
 	 * Parses timed sequences from a file that has the following alternative format:
@@ -292,7 +334,6 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	private void loadData(Reader br, int lineOffset, String seqPrefix, String seqPostfix, String pairSep, String valueSep, String classSep,
 			boolean skipFirstElement) throws IOException {
 
-
 		try (BufferedReader in = new BufferedReader(br)) {
 
 			// Skip offset lines at the beginning of the file
@@ -333,7 +374,7 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 					}
 					word.setLabel(label);
 				}
-
+				line = line.trim();
 				// Remove sequence prefix
 				line = line.replaceAll(seqPrefix, "");
 
@@ -349,8 +390,8 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 					for (; i < splitWord.length; i++) {
 						splitPair = splitWord[i].split(valueSep, 2);
 						if (splitPair.length < 2) {
-							final String errorMessage = "Pair \"" + splitWord[i] + "\" in line " + lineCount + " is in the wrong format. Separator \"" + valueSep
-									+ "\" not found!";
+							final String errorMessage = "Pair \"" + splitWord[i] + "\" in line " + lineCount + " is in the wrong format. Separator \""
+									+ valueSep + "\" not found!";
 							final IllegalArgumentException e = new IllegalArgumentException(errorMessage);
 							logger.error(errorMessage, e);
 							throw e;
@@ -392,6 +433,7 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 	}
 
 	private boolean cleared = false;
+
 	/**
 	 * Removes all {@link TimedWord}s from the {@link TimedInput} to reduce memory consumption.
 	 */
@@ -606,11 +648,141 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 		return true;
 	}
 
+	/**
+	 * Decreases the size of the timed input.
+	 * 
+	 * @param d
+	 *            the value to decrease the sample size. Must be between 0 and 1
+	 */
 	public void decreaseSamples(double d) {
-		words = words.subList(0, (int) (words.size() * d));
+		if (d > 0 && d < 1) {
+			words = new ArrayList<>(words.subList(0, (int) (words.size() * d)));
+		}
 	}
 
 	public List<TimedWord> getWords() {
 		return Collections.unmodifiableList(words);
+	}
+
+	Random r = null;
+
+	public TimedInput insertRandomAnomalies(AnomalyInsertionType type, double anomalyPercentage) {
+		if (r == null) {
+			r = MasterSeed.nextRandom();
+		}
+		final TimedInput result = SerializationUtils.clone(this);
+		final int size = result.size();
+		final TIntList indexes = new TIntArrayList(size);
+		for (int i = 0; i < size; i++) {
+			indexes.add(i);
+		}
+		indexes.shuffle(r);
+		final int requestedAnomalies = (int) (size * anomalyPercentage);
+		for (int i = 0; i < requestedAnomalies; i++) {
+			final int index = indexes.get(i);
+			TimedWord word = result.getWord(index);
+			int typeInt;
+			if (type == AnomalyInsertionType.ALL) {
+				typeInt = r.nextInt(5) + 1;
+			} else {
+				typeInt = type.getTypeIndex();
+			}
+			final AnomalyInsertionType newType = AnomalyInsertionType.getType(typeInt);
+			word = insertAnomaly(word, newType);
+			result.words.set(index, word);
+		}
+		return result;
+	}
+
+	private TauPTA tpta = null;
+	private TimedWord insertAnomaly(TimedWord word, AnomalyInsertionType type) {
+		if (type == AnomalyInsertionType.TYPE_ONE) {
+			final int changeIndex = r.nextInt(word.length());
+			final String event = word.getSymbol(changeIndex);
+			String newEvent = getSymbol(r.nextInt(getAlphSize()));
+			while (newEvent.equals(event)) {
+				newEvent = getSymbol(r.nextInt(getAlphSize()));
+			}
+			word.symbols.set(changeIndex, newEvent);
+		} else if (type == AnomalyInsertionType.TYPE_TWO) {
+			if (tpta == null) {
+				final TauPtaLearner learner = new TauPtaLearner();
+				tpta = learner.train(this);
+			}
+			word = createAbnormalEventSequence(tpta, r);
+		} else if (type == AnomalyInsertionType.TYPE_THREE) {
+			final int changeIndex = r.nextInt(word.length());
+			final TIntList timeValues = word.getTimeValues();
+			final double changePercent = HUGE_TIME_CHANGE;
+			changeTimeValue(r, timeValues, changePercent, changeIndex);
+		} else if (type == AnomalyInsertionType.TYPE_FOUR) {
+			final TIntList timeValues = word.getTimeValues();
+			final double changePercent = SMALL_TIME_CHANGE;
+			for (int i = 0; i < timeValues.size(); i++) {
+				changeTimeValue(r, timeValues, changePercent, i);
+			}
+		} else if(type==AnomalyInsertionType.TYPE_FIVE)		{
+			final int changeIndex = r.nextInt(word.length());
+			final List<String> symbols = new ArrayList<>();
+			final TIntList timeValues = new TIntArrayList();
+			for(int i = 0;i<changeIndex;i++){
+				symbols.add(word.getSymbol(i));
+				timeValues.add(word.getTimeValue(i));
+			}
+			word = new TimedWord(symbols, timeValues, ClassLabel.ANOMALY);
+		}
+		word.setLabel(ClassLabel.ANOMALY);
+		return word;
+	}
+
+	private void changeTimeValue(Random mutation, TIntList timeValues, double changePercent, int i) {
+		int newValue = timeValues.get(i);
+		if (mutation.nextBoolean()) {
+			newValue = (int) (newValue + newValue * changePercent);
+		} else {
+			newValue = (int) (newValue - newValue * changePercent);
+		}
+		if (newValue < 0) {
+			newValue = 0;
+		}
+		timeValues.set(i, newValue);
+	}
+
+	public static TimedWord createAbnormalEventSequence(TauPTA automaton, Random mutation) {
+		final List<String> eventList = new ArrayList<>();
+		final TIntList timeList = new TIntArrayList();
+		boolean choseFinalState = false;
+		int currentState = 0;
+		while (!choseFinalState) {
+			final List<Transition> possibleTransitions = automaton.getOutTransitions(currentState, true);
+			Collections.sort(possibleTransitions, (o1, o2) -> Double.compare(o1.getProbability(), o2.getProbability()));
+			final List<Transition> topThree = possibleTransitions.stream().filter(t -> t.getProbability() > 0).limit(3).collect(Collectors.toList());
+			final double randomValue = mutation.nextDouble();
+			int chosenTransitionIndex = -1;
+			if (randomValue <= ANOMALY_TYPE_TWO_P_1) {
+				chosenTransitionIndex = 0;
+			} else if (randomValue > ANOMALY_TYPE_TWO_P_1 && randomValue < ANOMALY_TYPE_TWO_P_2) {
+				chosenTransitionIndex = 1;
+			} else {
+				chosenTransitionIndex = 2;
+			}
+			chosenTransitionIndex = Math.min(chosenTransitionIndex, topThree.size() - 1);
+			final Transition chosenTransition = topThree.get(chosenTransitionIndex);
+			if (chosenTransition.isStopTraversingTransition() || eventList.size() > MAX_SEQUENCE_LENGTH) {
+				choseFinalState = true;
+			} else {
+				currentState = chosenTransition.getToState();
+
+				final Distribution d = automaton.getTransitionDistributions().get(chosenTransition.toZeroProbTransition());
+				if (d == null) {
+					// just do it again with other random sampling
+					return createAbnormalEventSequence(automaton, mutation);
+				}
+				final int timeValue = (int) d.sample(1, mutation)[0];
+				eventList.add(chosenTransition.getSymbol());
+				timeList.add(timeValue);
+			}
+		}
+		return new TimedWord(eventList, timeList, ClassLabel.ANOMALY);
 	}
 }

@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,7 +8,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.run.commands;
 
 import java.io.BufferedWriter;
@@ -33,7 +32,6 @@ import sadl.models.pdrta.PDRTA;
 import sadl.run.factories.LearnerFactory;
 import sadl.run.factories.learn.ButlaFactory;
 import sadl.run.factories.learn.PdttaFactory;
-import sadl.run.factories.learn.PetriNetFactory;
 import sadl.run.factories.learn.RTIFactory;
 import sadl.utils.IoUtils;
 
@@ -75,9 +73,6 @@ public class TrainRun {
 				break;
 			case PDTTA:
 				lf = new PdttaFactory();
-				break;
-			case PETRI_NET:
-				lf = new PetriNetFactory();
 				break;
 			case BUTLA:
 				lf = new ButlaFactory();

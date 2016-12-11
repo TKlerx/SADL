@@ -1,0 +1,8 @@
+-seed 42
+-normalPDRTA resources/pdrta/algo_weaknesses/algo_weaknesses_normal_model.pdrta
+-anomalyPDRTAs resources/pdrta/algo_weaknesses/algo_weakness_pdtta_anomaly_model.pdrta resources/pdrta/algo_weaknesses/algo_weakness_rti_anomaly_model.pdrta
+-outDir data
+-numSets 20
+-setSize 1000
+-testAmount 0.3
+-anomalyAmount 0.5

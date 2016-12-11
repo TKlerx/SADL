@@ -1,14 +1,15 @@
-<!-- This file is part of SADL, a library for learning all sorts of (timed) 
-	automata and performing sequence-based anomaly detection. Copyright (C) 2013-2015 
-	the original author or authors. SADL is free software: you can redistribute 
-	it and/or modify it under the terms of the GNU General Public License as 
-	published by the Free Software Foundation, either version 3 of the License, 
-	or (at your option) any later version. SADL is distributed in the hope that 
-	it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty 
-	of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General 
-	Public License for more details. You should have received a copy of the GNU 
-	General Public License along with SADL. If not, see <http://www.gnu.org/licenses/>. -->
+<!--
 
+    This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
+    Copyright (C) 2013-2016  the original author or authors.
+
+    SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+    SADL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
+
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
@@ -43,17 +44,15 @@
 				<enabled>true</enabled>
 			</snapshots>
 		</repository>
-		 <repository>
-   			<id>edwardraff-repo</id>
-    		<url>http://www.edwardraff.com/maven-repo/</url>
- 		 </repository>
+		<!-- <repository> <id>edwardraff-repo</id> <url>http://www.edwardraff.com/maven-repo/</url> 
+			</repository> -->
 	</repositories>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
 		<testSourceDirectory>test</testSourceDirectory>
 		<resources>
 			<resource>
-				<directory>conf</directory>
+				<directory>resources</directory>
 				<excludes>
 					<exclude>**/*.java</exclude>
 				</excludes>
@@ -61,7 +60,7 @@
 		</resources>
 		<testResources>
 			<testResource>
-				<directory>resources</directory>
+				<directory>testResources</directory>
 				<excludes>
 					<exclude>**/*.java</exclude>
 				</excludes>
@@ -76,7 +75,7 @@
 				<executions>
 					<execution>
 						<id>attach-sources</id>
-						<phase>deploy</phase> 
+						<phase>deploy</phase>
 						<goals>
 							<goal>jar</goal>
 						</goals>
@@ -90,7 +89,7 @@
 				<executions>
 					<execution>
 						<id>attach-javadocs</id>
-						<phase>deploy</phase> 
+						<phase>deploy</phase>
 						<goals>
 							<goal>jar</goal>
 						</goals>
@@ -98,7 +97,7 @@
 				</executions>
 			</plugin>
 			<plugin>
-			<!-- TODO use sigar-native-deps maven dependency eventually -->
+				<!-- TODO use sigar-native-deps maven dependency eventually -->
 				<artifactId>maven-resources-plugin</artifactId>
 				<version>2.7</version>
 				<executions>
@@ -120,22 +119,40 @@
 				</executions>
 			</plugin>
 			<plugin>
-				<groupId>com.mycila.maven-license-plugin</groupId>
-				<artifactId>maven-license-plugin</artifactId>
-				<version>1.7.0</version>
+				<groupId>com.mycila</groupId>
+				<artifactId>license-maven-plugin</artifactId>
+				<version>2.11</version>
 				<configuration>
-					<quiet>false</quiet>
-					<header>conf/license-header.txt</header>
+					<!-- <header>com/mycila/maven/plugin/license/templates/GPL-3.txt</header> -->
+					<header>resources/license-header.txt</header>
+					<properties>
+						<owner>Timo Klerx</owner>
+						<email>tiklerx@gmail.com</email>
+					</properties>
 					<includes>
 						<include>src/**</include>
+						<include>test/**</include>
 						<include>pom.xml</include>
 					</includes>
 					<excludes>
+						<exclude>license.txt</exclude>
+						<exclude>**/README</exclude>
+						<exclude>output/**</exclude>
+						<exclude>smac/**</exclude>
+						<exclude>smac-data/**</exclude>
+						<exclude>data/**</exclude>
+						<exclude>**/*.csv</exclude>
+						<exclude>**/rti*.txt</exclude>
+						<exclude>**/*.gv</exclude>
+						<exclude>**/*.pdrta</exclude>
+						<exclude>**/*.args</exclude>
+						<exclude>**/sigar-native-libs/**</exclude>
+						<exclude>logs/**</exclude>
+						<exclude>testResources/**</exclude>
+						<exclude>bin/**</exclude>
+						<exclude>assembly/**</exclude>
 						<exclude>**/.git/**</exclude>
-						<!-- ignore files produced during a build -->
-						<exclude>**/target/**</exclude>
 					</excludes>
-					<useDefaultExcludes>false</useDefaultExcludes>
 				</configuration>
 				<executions>
 					<execution>
@@ -153,36 +170,18 @@
 					<source>1.8</source>
 					<target>1.8</target>
 					<compilerArgs>
-            			<arg>-Xlint:all</arg>
-         			</compilerArgs>
+						<arg>-Xlint:all</arg>
+					</compilerArgs>
 				</configuration>
 			</plugin>
 
-			<!--  <plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>jar-with-dependencies</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-						<configuration>
-							<descriptor>assembly/assembly.xml</descriptor>
-							<appendAssemblyId>false</appendAssemblyId>
-						</configuration>
-					</execution>
-				</executions>
-				<configuration>
-					<finalName>${project.artifactId}-${project.version}-full</finalName>
-					<archive>
-						<manifest>
-							<mainClass>${run.mainclass}</mainClass>
-						</manifest>
-					</archive>
-				</configuration>
-			</plugin>-->
+			<!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-assembly-plugin</artifactId> 
+				<executions> <execution> <id>jar-with-dependencies</id> <phase>prepare-package</phase> 
+				<goals> <goal>single</goal> </goals> <configuration> <descriptor>assembly/assembly.xml</descriptor> 
+				<appendAssemblyId>false</appendAssemblyId> </configuration> </execution> 
+				</executions> <configuration> <finalName>${project.artifactId}-${project.version}-full</finalName> 
+				<archive> <manifest> <mainClass>${run.mainclass}</mainClass> </manifest> 
+				</archive> </configuration> </plugin> -->
 			<plugin>
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>2.4</version>
@@ -199,7 +198,7 @@
 					<archive>
 						<manifest>
 							<mainClass>${run.mainclass}</mainClass>
-							<packageName>s${run.mainpackage}</packageName>
+							<packageName>${run.mainpackage}</packageName>
 							<addClasspath>true</addClasspath>
 							<classpathPrefix>lib/</classpathPrefix>
 							<useUniqueVersions>false</useUniqueVersions>
@@ -213,31 +212,39 @@
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.19.1</version>
+				<configuration>
+					<argLine>-Djava.library.path=sigar-native-libs</argLine>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
 				<version>2.10</version>
-			<configuration>
-                <artifactItems>
-                    <artifactItem>
-                        <groupId>de.upb.timok</groupId>
-                        <artifactId>trebaNative</artifactId>
-                        <type>so</type>
-                       <version>0.0.1-SNAPSHOT</version>
-                        <overWrite>true</overWrite>
-                        <outputDirectory>${basedir}/target/lib/</outputDirectory>
-                        <!--<destFileName>so</destFileName>-->
-                        <baseVersion>true</baseVersion>
-                     </artifactItem>
-                </artifactItems>
-            </configuration>
+				<configuration>
+					<artifactItems>
+						<artifactItem>
+							<groupId>de.upb.timok</groupId>
+							<artifactId>trebaNative</artifactId>
+							<type>so</type>
+							<version>0.0.1</version>
+							<overWrite>true</overWrite>
+							<outputDirectory>${basedir}/target/lib/</outputDirectory>
+							<!--<destFileName>so</destFileName> -->
+							<baseVersion>true</baseVersion>
+						</artifactItem>
+					</artifactItems>
+				</configuration>
 				<executions>
-				<execution>
-            <id>copy</id>
-            <phase>process-classes</phase>
-            <goals>
-                <goal>copy</goal>
-            </goals>
-            
-        </execution>
+					<execution>
+						<id>copy</id>
+						<phase>process-classes</phase>
+						<goals>
+							<goal>copy</goal>
+						</goals>
+
+					</execution>
 					<execution>
 						<id>copy-dependencies</id>
 						<phase>package</phase>
@@ -344,6 +351,11 @@
 	</build>
 	<dependencies>
 		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.4</version>
+		</dependency>
+		<dependency>
 			<groupId>com.opencsv</groupId>
 			<artifactId>opencsv</artifactId>
 			<version>3.6</version>
@@ -366,8 +378,11 @@
 		<dependency>
 			<groupId>de.upb.timok</groupId>
 			<artifactId>libsvm</artifactId>
-			<version>2.8</version>
+			<version>3.22</version>
 		</dependency>
+		<!--<dependency> <groupId>tw.edu.ntu.csie</groupId> <artifactId>libsvm</artifactId> 
+			<version>3.17</version> </dependency> -->
+
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-slf4j-impl</artifactId>
@@ -376,7 +391,7 @@
 		<dependency>
 			<groupId>de.upb.timok</groupId>
 			<artifactId>jcommander</artifactId>
-			<version>1.49-SNAPSHOT</version>
+			<version>1.49</version>
 		</dependency>
 		<dependency>
 			<groupId>com.thoughtworks.xstream</groupId>
@@ -391,12 +406,12 @@
 		<dependency>
 			<groupId>com.edwardraff</groupId>
 			<artifactId>JSAT</artifactId>
-			<version>0.0.2</version>
+			<version>0.0.3</version>
 		</dependency>
 		<dependency>
 			<groupId>de.upb.timok</groupId>
 			<artifactId>trebaJni</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<version>0.0.1</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
@@ -435,7 +450,7 @@
 	<!-- <parent> <groupId>de.upb.timok</groupId> <artifactId>PDTTA</artifactId> 
 		<version>0.1</version> </parent> -->
 	<groupId>de.upb.timok</groupId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.2-SNAPSHOT</version>
 	<organization>
 		<name>Timo Klerx</name>
 	</organization>

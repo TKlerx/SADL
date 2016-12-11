@@ -1,24 +1,21 @@
 #PDTTA parameters
-mergeAlpha [0,1] [0.05]
-mergeTest {ALERGIA,CHI_SQUARED, LR, EXACT_M,BINOMIAL,EXACT_B,MDI} [ALERGIA]
 kdeBandwidthEstimate {true, false} [true]
 kdeBandwidth [0.0000001,1000] [1]
 kdeBandwidth |kdeBandwidthEstimate in {false}
 kdeKernelFunction {BIWEIGHT, EPANECHNIKOV, GAUSS, TRIWEIGHT, UNIFORM, ESTIMATE} [ESTIMATE]
-smoothingPrior [0,1] [0]
 tauEstimation {DENSITY,MONTE_CARLO} [MONTE_CARLO]
-
 mcNumberOfSteps [10,100000] [1000]i
 mcNumberOfSteps | tauEstimation in {MONTE_CARLO}
 
 mcPointsToStore [10,40000] [10000]i
 mcPointsToStore | tauEstimation in {MONTE_CARLO}
 
-recursiveMergeTest {true,false} [false]
-recursiveMergeTest | mergeTest in {ALERGIA,CHI_SQUARED, LR, EXACT_M,BINOMIAL,EXACT_B}
+butlaPreprocessing {true, false}[false]
 
-mergeT0 [1,100] [3]i
-mergeT0 | mergeTest in {ALERGIA}
+butlaPreprocessingBandwidth [10000,1000000] [20000]
+butlaPreprocessingBandwidth | butlaPreprocessing in {true}
+
+
 
 #Detector parameters
 detectorMethod {SVM,DBSCAN,THRESHOLD_SINGLE,THRESHOLD_AGG_ONLY, THRESHOLD_ALL, GMEANS,XMEANS,KMEANS} [SVM]
@@ -42,7 +39,7 @@ singleTimeThreshold | detectorMethod in {THRESHOLD_ALL}
 
 
 #vector detector parameters
-featureCreator {UBER,FULL,SMALL,MINIMAL} [FULL]
+featureCreator {UBER,FULL,SMALL,MINIMAL,SINGLE} [FULL]
 featureCreator | detectorMethod in {SVM,DBSCAN,GMEANS,KMEANS,XMEANS}
 
 scalingMethod {NONE,NORMALIZE,STANDARDIZE} [NORMALIZE]
@@ -62,8 +59,8 @@ svmGammaEstimate {true,false} [true]
 svmGammaEstimate | detectorMethod in {SVM}
 
 svmGamma[0,10E15] [0]
-svmGamma | detectorMethod in {SVM}
-svmGamma | svmGammaEstimate in {false}
+svmGamma | detectorMethod in {SVM} && svmGammaEstimate in {false}
+
 
 svmEps[0,1] [0.001]
 svmEps| detectorMethod in {SVM}
@@ -71,8 +68,9 @@ svmEps| detectorMethod in {SVM}
 svmKernel[0,3] [2]i
 svmKernel| detectorMethod in {SVM}
 
+#degree depends on polynomial kernel
 svmDegree [0,2000000000] [3]i
-svmDegree | detectorMethod in {SVM}
+svmDegree | svmKernel in {1}
 
 svmProbabilityEstimate[0,1] [0]i
 svmProbabilityEstimate| detectorMethod in {SVM}
@@ -93,9 +91,9 @@ dbScanThreshold | detectorMethod in {DBSCAN}
 kmeansThreshold[0,1] [0.05]
 kmeansThreshold | detectorMethod in {GMEANS,KMEANS,XMEANS}
 
-kmeansMinPoints[0,100] [1]
-kmeansThreshold | detectorMethod in {GMEANS,KMEANS,XMEANS}
+kmeansMinPoints[0,100] [1]i
+kmeansMinPoints | detectorMethod in {GMEANS,KMEANS,XMEANS}
 
 # kMeans parameters
-kmeansK[2,1000] [10]
+kmeansK[2,1000] [10]i
 kmeansK | detectorMethod in {KMEANS}

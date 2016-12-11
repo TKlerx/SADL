@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,7 +8,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.detectors.featureCreators;
 
 import org.slf4j.Logger;
@@ -33,16 +32,20 @@ public class UberFeatureCreator extends FullFeatureCreator {
 		final TDoubleList eventDiffs = calcDiffs(eventLikelihoods);
 		final TDoubleList timeDiffs = calcDiffs(timeLikelihoods);
 
-		result.add(eventStat.getStandardDeviation());
+		double eventStdDev = eventStat.getStandardDeviation();
+		if (Double.isNaN(eventStdDev) || Double.isInfinite(eventStdDev)) {
+			eventStdDev = AnomalyDetector.ILLEGAL_VALUE;
+		}
+		result.add(eventStdDev);
 		result.add(eventLikelihoods.size());
 		result.add(eventDiffs.min());
 		result.add(eventDiffs.max());
 
-		double stdDev = timeStat.getStandardDeviation();
-		if (Double.isNaN(stdDev) || Double.isInfinite(stdDev)) {
-			stdDev = AnomalyDetector.ILLEGAL_VALUE;
+		double timeStdDev = timeStat.getStandardDeviation();
+		if (Double.isNaN(timeStdDev) || Double.isInfinite(timeStdDev)) {
+			timeStdDev = AnomalyDetector.ILLEGAL_VALUE;
 		}
-		result.add(stdDev);
+		result.add(timeStdDev);
 		result.add(timeLikelihoods.size());
 		result.add(timeDiffs.min());
 		result.add(timeDiffs.max());

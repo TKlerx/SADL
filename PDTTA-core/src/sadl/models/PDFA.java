@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,7 +8,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.models;
 
 import java.io.BufferedReader;
@@ -39,6 +38,8 @@ import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
+import gnu.trove.stack.TIntStack;
+import gnu.trove.stack.array.TIntArrayStack;
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.ClassLabel;
 import sadl.input.TimedInput;
@@ -90,27 +91,25 @@ public class PDFA implements AutomatonModel, Serializable {
 	 * 
 	 * @return true if was not consistent and consistency was restored.
 	 */
-	protected boolean checkAndRestoreConsistency() {
+	public boolean checkAndRestoreConsistency() {
 		if (!isConsistent()) {
+			logger.info("Probabilities do not match, but will be corrected");
 			return restoreConsistency();
 		}
 		return false;
 	}
 
-	protected boolean restoreConsistency() {
+	public boolean restoreConsistency() {
 		return fixProbabilities();
 	}
 
 	protected boolean isConsistent() {
 		final boolean probabilities = finalStateProbabilities.keySet().forEach(state -> checkProbability(state));
-		if (!probabilities) {
-			logger.info("Probabilities do not match, but will be corrected");
-		}
 		return probabilities;
 	}
 
 	protected boolean checkProbability(int state) {
-		final List<Transition> outgoingTransitions = getTransitions(state, true);
+		final List<Transition> outgoingTransitions = getOutTransitions(state, true);
 		final double sum = outgoingTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
 		final boolean compareResult = Precision.equals(sum, 1);
 		logger.trace("Probability sum for state {}: {} (== 1? {})", state, sum, compareResult);
@@ -126,14 +125,14 @@ public class PDFA implements AutomatonModel, Serializable {
 	}
 
 	protected boolean fixProbability(int state) {
-		List<Transition> outgoingTransitions = getTransitions(state, true);
+		List<Transition> outgoingTransitions = getOutTransitions(state, true);
 		final double sum = outgoingTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
 		// divide every probability by the sum of probabilities s.t. they sum up to 1
 		if (!Precision.equals(sum, 1)) {
 			logger.debug("Sum of transition probabilities for state {} is {}", state, sum);
-			outgoingTransitions = getTransitions(state, true);
+			outgoingTransitions = getOutTransitions(state, true);
 			outgoingTransitions.forEach(t -> changeTransitionProbability(t, t.getProbability() / sum));
-			outgoingTransitions = getTransitions(state, true);
+			outgoingTransitions = getOutTransitions(state, true);
 			final double newSum = outgoingTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
 			logger.debug("Corrected sum of transition probabilities is {}", newSum);
 			if (!Precision.equals(newSum, 1.0)) {
@@ -155,7 +154,7 @@ public class PDFA implements AutomatonModel, Serializable {
 					changeTransitionProbability(outgoingTransitions.get(i), probabilities.get(i).divide(fracSum).doubleValue());
 					// outgoingTransitions.get(i).setProbability(probabilities.get(i).divide(fracSum).doubleValue());
 				}
-				final double tempSum = getTransitions(state, true).stream().mapToDouble(t -> t.getProbability()).sum();
+				final double tempSum = getOutTransitions(state, true).stream().mapToDouble(t -> t.getProbability()).sum();
 				if (!Precision.equals(tempSum, 1.0)) {
 					BigFraction preciseSum = BigFraction.ZERO;
 					for (final BigFraction f : probabilities) {
@@ -236,6 +235,22 @@ public class PDFA implements AutomatonModel, Serializable {
 		this.abnormalFinalStates = pdfa.abnormalFinalStates;
 	}
 
+	public PDFA(TimedInput alphabet, Set<Transition> transitions, TIntDoubleMap finalStateProbabilities) {
+		this(alphabet, transitions, finalStateProbabilities, null);
+	}
+
+	public PDFA(TimedInput alphabet, Set<Transition> transitions, TIntDoubleMap finalStateProbabilities, TIntSet abnormalFinalStates) {
+		this.alphabet = alphabet;
+		this.transitions = transitions;
+		this.finalStateProbabilities = finalStateProbabilities;
+		if (abnormalFinalStates == null) {
+			this.abnormalFinalStates = new TIntHashSet();
+		} else {
+			this.abnormalFinalStates = abnormalFinalStates;
+		}
+	}
+
+	@Override
 	public int getTransitionCount() {
 		return transitions.size();
 	}
@@ -390,7 +405,47 @@ public class PDFA implements AutomatonModel, Serializable {
 		return result;
 	}
 
-	protected boolean removeTransition(Transition t) {
+	protected List<Transition> getTransitions(int state, String event) {
+		final List<Transition> result = new ArrayList<>();
+		if (event.equals(Transition.STOP_TRAVERSING_SYMBOL)) {
+			result.add(getFinalTransition(state));
+		} else {
+			for (final Transition t : transitions) {
+				if (t.getFromState() == state && t.getSymbol().equals(event)) {
+					result.add(t);
+				}
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Returns all outgoing transitions for a given state
+	 * 
+	 * @param currentState
+	 *            the given state
+	 * @param includeStoppingTransition
+	 *            whether to include final transition probabilities
+	 * @return the outgoing transitions
+	 */
+	public List<Transition> getOutTransitions(int currentState, boolean includeStoppingTransition) {
+		final List<Transition> result = new ArrayList<>();
+		for (final Transition t : transitions) {
+			if (t.getFromState() == currentState) {
+				result.add(t);
+			}
+		}
+		if (includeStoppingTransition) {
+			for (final int state : finalStateProbabilities.keys()) {
+				if (state == currentState) {
+					result.add(getFinalTransition(state));
+				}
+			}
+		}
+		return result;
+	}
+
+	public boolean removeTransition(Transition t) {
 		checkImmutable();
 		final boolean wasRemoved = transitions.remove(t);
 		if (!wasRemoved) {
@@ -421,7 +476,7 @@ public class PDFA implements AutomatonModel, Serializable {
 	}
 
 	protected Transition chooseNextTransition(int currentState) {
-		final List<Transition> possibleTransitions = getTransitions(currentState, true);
+		final List<Transition> possibleTransitions = getOutTransitions(currentState, true);
 		Collections.sort(possibleTransitions, (t1, t2) -> -Double.compare(t2.getProbability(), t1.getProbability()));
 		final double random = r.nextDouble();
 		double summedProbs = 0;
@@ -438,28 +493,36 @@ public class PDFA implements AutomatonModel, Serializable {
 		return chosenTransition;
 	}
 
+
 	/**
 	 * Returns all outgoing transitions for a given state
 	 * 
-	 * @param currentState the given state
-	 * @param includeStoppingTransition whether to include final transition probabilities
+	 * @param currentState
+	 *            the given state
+	 * @param includeStoppingTransition
+	 *            whether to include final transition probabilities
 	 * @return the outgoing transitions
 	 */
-	public List<Transition> getTransitions(int currentState, boolean includeStoppingTransition) {
-		final List<Transition> result = new ArrayList<>();
+	public Pair<List<Transition>, List<Transition>> getInOutTransitions(int currentState, boolean includeStoppingTransition) {
+		final List<Transition> outTransitions = new ArrayList<>();
+		final List<Transition> inTransitions = new ArrayList<>();
+
 		for (final Transition t : transitions) {
 			if (t.getFromState() == currentState) {
-				result.add(t);
+				outTransitions.add(t);
+			}
+			if (t.getToState() == currentState) {
+				inTransitions.add(t);
 			}
 		}
 		if (includeStoppingTransition) {
 			for (final int state : finalStateProbabilities.keys()) {
 				if (state == currentState) {
-					result.add(getFinalTransition(state));
+					outTransitions.add(getFinalTransition(state));
 				}
 			}
 		}
-		return result;
+		return Pair.create(inTransitions, outTransitions);
 	}
 
 	public Random getRandom() {
@@ -492,13 +555,61 @@ public class PDFA implements AutomatonModel, Serializable {
 	}
 
 	@Override
-	public int getNumberOfStates() {
+	public int getStateCount() {
 		return finalStateProbabilities.size();
 	}
 
 	protected void removeState(int i) {
 		checkImmutable();
 		finalStateProbabilities.remove(i);
+	}
+
+	public void cleanUp() {
+		logger.debug("{} states before cleanup", finalStateProbabilities.size());
+
+		final TIntSet reachableStates = new TIntHashSet(finalStateProbabilities.size());
+
+		final TIntStack stateStack = new TIntArrayStack();
+
+		stateStack.push(PDFA.START_STATE);
+
+		while (stateStack.size() != 0) {
+			final int currentState = stateStack.pop();
+			logger.trace("Processing state {}.", currentState);
+			reachableStates.add(currentState);
+			for (final String event : getAlphabet().getSymbols()) {
+				final Transition t = getTransition(currentState, event);
+				if (t != null && t.getProbability() > 0 && t.getToState() != currentState && !reachableStates.contains(t.getToState())) {
+					stateStack.push(t.getToState());
+				}
+			}
+		}
+		logger.debug("Found {} reachable states. Removing the others.", reachableStates.size());
+		final TIntSet statesToRemove = new TIntHashSet();
+		for (final int state : finalStateProbabilities.keys()) {
+			if (!reachableStates.contains(state)) {
+				statesToRemove.add(state);
+			}
+		}
+		for (final int state : statesToRemove.toArray()) {
+			finalStateProbabilities.remove(state);
+		}
+		if (finalStateProbabilities.size() != reachableStates.size()) {
+			final TIntSet missingStates = new TIntHashSet();
+			logger.error("Number of reachable states ({}) and all states ({}) must be the same", reachableStates.size(), finalStateProbabilities.size());
+			if (finalStateProbabilities.size() > reachableStates.size()) {
+				missingStates.addAll(finalStateProbabilities.keys());
+				missingStates.removeAll(reachableStates);
+				throw new IllegalStateException("The following states were not reachable, but final: " + missingStates);
+			} else {
+				missingStates.addAll(reachableStates);
+				missingStates.removeAll(finalStateProbabilities.keys());
+				throw new IllegalStateException("The following states were not final, but reachable: " + missingStates);
+
+			}
+
+		}
+		logger.debug("{} states after cleanup", finalStateProbabilities.size());
 	}
 
 	@Override
@@ -553,18 +664,18 @@ public class PDFA implements AutomatonModel, Serializable {
 			int count = 0;
 			for (final Transition t : transitions) {
 				if (!other.transitions.contains(t)) {
-					logger.error("Transition {} not contained in other.transitions", t);
+					logger.trace("Transition {} not contained in other.transitions", t);
 					count++;
 				}
 			}
 			for (final Transition t : other.transitions) {
 				if (!transitions.contains(t)) {
-					logger.error("Transition {} not contained in transitions", t);
+					logger.trace("Transition {} not contained in transitions", t);
 					count++;
 				}
 			}
 			if (count > 0) {
-				logger.error("{} out of {} transitions did not match", count, transitions.size());
+				logger.debug("{} out of {} transitions did not match", count, transitions.size());
 			}
 			return false;
 		}
@@ -584,7 +695,7 @@ public class PDFA implements AutomatonModel, Serializable {
 	 */
 	private Set<UntimedSequence> getAllSequences(int fromState, UntimedSequence s) {
 		final Set<UntimedSequence> result = new HashSet<>();
-		final List<Transition> outgoingTransitions = getTransitions(fromState, true);
+		final List<Transition> outgoingTransitions = getOutTransitions(fromState, true);
 		for (final Transition t : outgoingTransitions) {
 			if (t.getProbability() > 0) {
 				try {
@@ -622,7 +733,7 @@ public class PDFA implements AutomatonModel, Serializable {
 	protected TDoubleList computeEventLikelihoods(TimedWord s) {
 
 		final TDoubleList list = new TDoubleArrayList();
-		int currentState = 0;
+		int currentState = START_STATE;
 		for (int i = 0; i < s.length(); i++) {
 			final Transition t = getTransition(currentState, s.getSymbol(i));
 			// DONE this is crap, isnt it? why not return an empty list or null iff there is no transition for the given sequence? or at least put a '0' in the
@@ -640,8 +751,62 @@ public class PDFA implements AutomatonModel, Serializable {
 
 	@Override
 	public Pair<TDoubleList, TDoubleList> calculateProbabilities(TimedWord s) {
-		return Pair.create(computeEventLikelihoods(s), null);
+		return Pair.create(computeEventLikelihoods(s), new TDoubleArrayList());
 	}
 
+	// public boolean isConnected2() {
+	// final TIntStack openList = new TIntArrayStack();
+	// final TIntSet closedList = new TIntHashSet();
+	//
+	// openList.push(START_STATE);
+	// while (openList.size() > 0) {
+	// final int currentState = openList.pop();
+	// closedList.add(currentState);
+	// final List<Transition> currentTransitions = getOutTransitions(currentState, false);
+	// currentTransitions.stream().filter(t -> !closedList.contains(t.getToState())).forEach(t -> openList.push(t.getToState()));
+	// }
+	// for (final int state : getStates()) {
+	// if (!closedList.contains(state)) {
+	// return false;
+	// }
+	// }
+	// return true;
+	// }
+	public boolean isConnected() {
+		final TIntStack openList = new TIntArrayStack();
+		final TIntSet closedList = new TIntHashSet();
+
+		openList.push(START_STATE);
+		while (openList.size() > 0) {
+			final int currentState = openList.pop();
+			closedList.add(currentState);
+			final List<Transition> currentTransitions = getOutTransitions(currentState, false);
+			for (final Transition t : currentTransitions) {
+				if (!closedList.contains(t.getToState())) {
+					openList.push(t.getToState());
+				}
+			}
+		}
+		for (final int state : getStates()) {
+			if (!closedList.contains(state)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Not yet implemented!
+	 * 
+	 * @param t
+	 * @return
+	 */
+	public boolean isBridgeTransition(Transition t) {
+		throw new UnsupportedOperationException("not yet implemented...");
+	}
+
+	public Set<Transition> getTransitions() {
+		return transitions;
+	}
 
 }

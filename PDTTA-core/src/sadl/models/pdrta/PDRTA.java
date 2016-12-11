@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,7 +8,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.models.pdrta;
 
 import java.io.BufferedReader;
@@ -26,7 +25,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.function.Function;
 
 import org.apache.commons.math3.util.Pair;
@@ -35,6 +33,8 @@ import com.google.common.collect.TreeMultimap;
 
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import sadl.input.TimedWord;
 import sadl.interfaces.AutomatonModel;
 import sadl.modellearner.rtiplus.StateColoring;
@@ -52,7 +52,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 
 	private static final int minData = 10;
 
-	private final Map<Integer, PDRTAState> states;
+	private final TIntObjectMap<PDRTAState> states;
 	private final PDRTAState root;
 	private final PDRTAInput input;
 
@@ -71,11 +71,11 @@ public class PDRTA implements AutomatonModel, Serializable {
 				} else if (line.matches("^// \\d.+")) {
 					line = line.substring(3);
 					final String start = line.split(" ", 2)[0];
-					final int idx = Integer.parseInt(start);
+					final Integer idx = Integer.valueOf(start);
 					stats.put(idx, new String(line));
 				} else if (line.matches("^\\d.+")) {
 					final String start = line.split(" ", 2)[0];
-					final int idx = Integer.parseInt(start);
+					final Integer idx = Integer.valueOf(start);
 					if (line.matches("^\\d+ \\[.+")) {
 						stats.put(idx, new String(line));
 					} else {
@@ -93,14 +93,15 @@ public class PDRTA implements AutomatonModel, Serializable {
 		return states.get(index);
 	}
 
+	@SuppressWarnings("unused")
 	public PDRTA(PDRTA a) {
 
 		input = a.input;
-		states = new TreeMap<>();
-		for (final PDRTAState org : a.states.values()) {
+		states = new TIntObjectHashMap<>();
+		for (final PDRTAState org : a.states.valueCollection()) {
 			new PDRTAState(org, this);
 		}
-		for (final PDRTAState org : a.states.values()) {
+		for (final PDRTAState org : a.states.valueCollection()) {
 			for (int i = 0; i < input.getAlphSize(); i++) {
 				final Set<Entry<Integer, Interval>> ins = org.getIntervals(i).entrySet();
 				for (final Entry<Integer, Interval> eIn : ins) {
@@ -197,7 +198,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 	}
 
 	public Collection<PDRTAState> getStates() {
-		return states.values();
+		return states.valueCollection();
 	}
 
 	public void checkConsistency() {
@@ -254,14 +255,14 @@ public class PDRTA implements AutomatonModel, Serializable {
 	}
 
 	@Override
-	public int getNumberOfStates() {
+	public int getStateCount() {
 		return states.size();
 	}
 
 	public int getSize() {
 
 		int result = 0;
-		for (final PDRTAState s : states.values()) {
+		for (final PDRTAState s : states.valueCollection()) {
 			for (int i = 0; i < input.getAlphSize(); ++i) {
 				final Set<Entry<Integer, Interval>> es = s.getIntervals(i).entrySet();
 				for (final Entry<Integer, Interval> e : es) {
@@ -383,8 +384,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 			ap.append("\"\" -> 0;\n");
 
 			// Write states
-			for (final Entry<Integer, PDRTAState> eS : states.entrySet()) {
-				final PDRTAState s = eS.getValue();
+			for (final PDRTAState s : states.valueCollection()) {
 				if (found.contains(s)) {
 					ap.append(Integer.toString(s.getIndex()));
 					ap.append(" [ xlabel = \"");
@@ -448,7 +448,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 	public PDRTA(PDRTAInput in) {
 
 		input = in;
-		states = new TreeMap<>();
+		states = new TIntObjectHashMap<>();
 		root = new PDRTAState(this);
 		createTAPTA();
 	}
@@ -456,10 +456,11 @@ public class PDRTA implements AutomatonModel, Serializable {
 	private PDRTA(TreeMultimap<Integer, String> trans, TreeMultimap<Integer, String> stats, PDRTAInput inp) {
 
 		input = inp;
-		states = new TreeMap<>();
+		states = new TIntObjectHashMap<>();
 
-		for (final Integer idx : trans.keySet()) {
-			final StateStatistic s = StateStatistic.reconstructStat(input.getAlphSize(), getHistSizes(), stats.get(idx));
+		for (final Integer idxInt : trans.keySet()) {
+			final int idx = idxInt.intValue();
+			final StateStatistic s = StateStatistic.reconstructStat(input.getAlphSize(), getHistSizes(), stats.get(idxInt));
 			states.put(idx, new PDRTAState(this, idx, s));
 		}
 		for (final Entry<Integer, String> eT : trans.entries()) {
@@ -479,7 +480,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 			final PDRTAState s = states.get(source);
 			PDRTAState t;
 			if (!states.containsKey(target)) {
-				final StateStatistic st = StateStatistic.reconstructStat(getAlphSize(), getHistSizes(), stats.get(target));
+				final StateStatistic st = StateStatistic.reconstructStat(getAlphSize(), getHistSizes(), stats.get(new Integer(target)));
 				t = new PDRTAState(this, target, st);
 				states.put(target, t);
 			} else {
@@ -493,12 +494,12 @@ public class PDRTA implements AutomatonModel, Serializable {
 			Interval newIn;
 			if (end < in.getEnd()) {
 				newIn = in.split(end);
-				s.getIntervals(input.getAlphIndex(sym)).put(newIn.getEnd(), newIn);
+				s.getIntervals(input.getAlphIndex(sym)).put(new Integer(newIn.getEnd()), newIn);
 				in = newIn;
 			}
 			if (begin > in.getBegin()) {
 				newIn = in.split(begin - 1);
-				s.getIntervals(input.getAlphIndex(sym)).put(newIn.getEnd(), newIn);
+				s.getIntervals(input.getAlphIndex(sym)).put(new Integer(newIn.getEnd()), newIn);
 			}
 			in.setTarget(t);
 			s.getStat().addInterval(input.getAlphIndex(sym), in, prob);
@@ -623,17 +624,18 @@ public class PDRTA implements AutomatonModel, Serializable {
 		}
 		ap.append("}\n");
 		// Write symbol and time distributions for each state as comment
-		for (final Entry<Integer, PDRTAState> eS : states.entrySet()) {
-			if (found.contains(eS.getValue())) {
+		for (final int key : states.keys()) {
+			final PDRTAState s = states.get(key);
+			if (found.contains(s)) {
 				ap.append("// ");
-				ap.append(eS.getKey().toString());
+				ap.append(Integer.toString(key));
 				ap.append(" SYM ");
-				ap.append(eS.getValue().getStat().getSymbolProbsString());
+				ap.append(s.getStat().getSymbolProbsString());
 				ap.append("\n");
 				ap.append("// ");
-				ap.append(eS.getKey().toString());
+				ap.append(Integer.toString(key));
 				ap.append(" TIME ");
-				ap.append(eS.getValue().getStat().getTimeProbsString());
+				ap.append(s.getStat().getTimeProbsString());
 				ap.append("\n");
 			}
 		}
@@ -695,6 +697,9 @@ public class PDRTA implements AutomatonModel, Serializable {
 				return false;
 			}
 		} else if (!states.equals(other.states)) {
+			System.err.println("states are not equal.");
+			System.out.println("This.states.size=" + states.size());
+			System.out.println("other.states.size=" + other.states.size());
 			return false;
 		}
 		return true;
@@ -703,7 +708,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 	public void cleanUp() {
 
 		input.clear();
-		for (final PDRTAState s : states.values()) {
+		for (final PDRTAState s : states.valueCollection()) {
 			s.cleanUp();
 		}
 	}
@@ -715,6 +720,29 @@ public class PDRTA implements AutomatonModel, Serializable {
 		m.put("histogramPobs", this::calculateProbabilities);
 		m.put("transitionProbs", this::calculateProbsTrans);
 		return m;
+	}
+
+	@Override
+	public int getTransitionCount() {
+		int result = 0;
+		final Queue<PDRTAState> q = new ArrayDeque<>();
+		final Set<PDRTAState> found = new HashSet<>();
+		q.add(root);
+		found.add(root);
+		while (!q.isEmpty()) {
+			final PDRTAState s = q.remove();
+			for (int i = 0; i < input.getAlphSize(); i++) {
+				final Set<Entry<Integer, Interval>> ins = s.getIntervals(i).entrySet();
+				for (final Entry<Integer, Interval> eIn : ins) {
+					final Interval in = eIn.getValue();
+					final PDRTAState t = in.getTarget();
+					if (t != null) {
+						result++;
+					}
+				}
+			}
+		}
+		return result;
 	}
 
 }

@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,7 +8,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.detectors;
 
 import java.io.BufferedWriter;
@@ -32,7 +31,6 @@ import sadl.constants.ProbabilityAggregationMethod;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
 import sadl.interfaces.ProbabilisticModel;
-import sadl.models.PDTTA;
 import sadl.utils.Settings;
 
 /**
@@ -63,7 +61,7 @@ public abstract class AnomalyDetector {
 		this.aggType = aggType;
 	}
 
-	public AnomalyDetector(ProbabilityAggregationMethod aggType, PDTTA model) {
+	public AnomalyDetector(ProbabilityAggregationMethod aggType, ProbabilisticModel model) {
 		super();
 		this.aggType = aggType;
 		this.model = model;
@@ -184,6 +182,9 @@ public abstract class AnomalyDetector {
 		} else if (aggType == ProbabilityAggregationMethod.NORMALIZED_MULTIPLY) {
 			result = 0;
 			for (int i = 0; i < list.size(); i++) {
+				if (list.get(i) < 0) {
+					throw new IllegalStateException("Probability for index " + i + " is negative.");
+				}
 				result += Math.log(list.get(i));
 			}
 			result /= list.size();
@@ -194,6 +195,9 @@ public abstract class AnomalyDetector {
 				result *= list.get(i);
 			}
 			result = Math.pow(result, 1.0 / list.size());
+		}
+		if (Double.isNaN(result)) {
+			throw new IllegalStateException("Result of probability aggregation must not be NaN");
 		}
 		return result;
 	}

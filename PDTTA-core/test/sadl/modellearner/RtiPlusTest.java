@@ -1,3 +1,13 @@
+/**
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
+ * Copyright (C) 2013-2016  the original author or authors.
+ *
+ * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * SADL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package sadl.modellearner;
 
 import static org.junit.Assert.assertEquals;
@@ -8,6 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.apache.commons.lang3.SerializationUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -51,12 +62,38 @@ public class RtiPlusTest {
 			final SimplePDRTALearner l1 = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.STRICT, SplitPosition.MIDDLE, "AAO",
 					null);
 			final ProbabilisticModel p1 = l1.train(ti1);
+			for (int j = 0; j < 10; j++) {
+				final SimplePDRTALearner l2 = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.STRICT, SplitPosition.MIDDLE,
+						"AAO",
+						null);
+				final ProbabilisticModel p2 = l2.train(ti2);
+				assertEquals("PDRTAs for files " + i + " are not equal", p2, p1);
+			}
+		}
+	}
 
-			final SimplePDRTALearner l2 = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.STRICT, SplitPosition.MIDDLE, "AAO",
+	// @Test
+	public void testDeterminismBig() throws URISyntaxException, IOException {
+		// TODO fix this test
+		for (int i = 1; i <= 5; i++) {
+			final Pair<TimedInput, TimedInput> traintestSet = IoUtils
+					.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type" + i + ".txt").toURI()));
+
+			final TimedInput ti1 = traintestSet.getKey();
+			ti1.decreaseSamples(0.01);
+			final TimedInput ti2 = SerializationUtils.clone(ti1);
+
+			final SimplePDRTALearner l1 = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.STRICT, SplitPosition.MIDDLE, "AAO",
 					null);
-			final ProbabilisticModel p2 = l2.train(ti2);
 
-			assertEquals("PDRTAs for files " + i + " are not equal", p2, p1);
+			final ProbabilisticModel p1 = l1.train(ti1);
+			for (int j = 0; j < 10; j++) {
+				final SimplePDRTALearner l2 = new SimplePDRTALearner(0.05, "4", OperationTesterType.LRT, DistributionCheckType.STRICT, SplitPosition.MIDDLE, "AAO",
+						null);
+				final ProbabilisticModel p2 = l2.train(ti2);
+
+				assertEquals("PDRTAs for files " + i + " are not equal", p2, p1);
+			}
 		}
 	}
 

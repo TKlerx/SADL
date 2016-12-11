@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,7 +8,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.anomalydetecion;
 
 import java.io.IOException;
@@ -17,7 +16,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.apache.commons.lang3.time.StopWatch;
-import org.apache.commons.math3.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,8 +24,8 @@ import sadl.detectors.AnomalyDetector;
 import sadl.evaluation.Evaluation;
 import sadl.experiments.ExperimentResult;
 import sadl.input.TimedInput;
-import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.interfaces.ProbabilisticModel;
+import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.interfaces.TrainableDetector;
 import sadl.utils.IoUtils;
 
@@ -84,8 +83,8 @@ public class AnomalyDetection {
 		final ExperimentResult testResult = test(test);
 		sw.stop();
 		final long testTime = sw.getTime();
-		testResult.setExecutionTimeTesting(testTime);
 		testResult.setExecutionTimeTraining(trainTime);
+		testResult.setExecutionTimeTesting(testTime);
 		return testResult;
 	}
 

@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,7 +8,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.run;
 
 import java.io.BufferedWriter;
@@ -57,6 +56,7 @@ public class SADL {
 	boolean debug = false;
 	static boolean crash = false;
 	public static void main(String[] args) throws Exception {
+
 		try {
 			if (args.length < 1) {
 				logger.error("Not enough params!");
@@ -94,7 +94,17 @@ public class SADL {
 					logger.info("Starting SMAC with params=" + Arrays.toString(args));
 					boolean fileExisted = true;
 					final ExperimentResult result = smacRun.run(jc.getCommands().get(smac));
-					final Path resultPath = Paths.get("result.csv");
+					logger.info("Finished SMAC run.");
+					Path p = Paths.get(result.getQualifier()).getParent().getParent();
+					final Path smacData = Paths.get("smac-data");
+					String fileName = result.getAlgorithm() + "-";
+					while (!p.getFileName().equals(smacData)) {
+						fileName += p.getFileName() + "-";
+						p = p.getParent();
+					}
+					fileName += "result.csv";
+					final Path resultPath = Paths.get("results").resolve(fileName);
+					Files.createDirectories(resultPath.getParent());
 					if (!Files.exists(resultPath)) {
 						Files.createFile(resultPath);
 						fileExisted = false;
@@ -125,9 +135,11 @@ public class SADL {
 					System.exit(1);
 					break;
 			}
-		} catch (final Exception e) {
+		} catch (final Throwable e) {
 			logger.error("Unexpected exception with parameters" + Arrays.toString(args), e);
+			e.printStackTrace();
 			crash = true;
+			Thread.sleep(1000);
 		} finally {
 			System.exit(crash ? 1 : 0);
 		}

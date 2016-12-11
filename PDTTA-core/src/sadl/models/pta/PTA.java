@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,7 +8,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.models.pta;
 
 import java.io.BufferedWriter;
@@ -16,12 +15,19 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
+import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
+import sadl.constants.IntervalCreationStrategy;
 import sadl.constants.PTAOrdering;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
@@ -29,30 +35,31 @@ import sadl.models.pdta.PDTA;
 import sadl.models.pdta.PDTAState;
 
 public class PTA {
+	private static Logger logger = LoggerFactory.getLogger(PTA.class);
 
 	protected PTAState root;
 	protected LinkedHashMap<Integer, PTAState> tails = new LinkedHashMap<>();
-	protected HashMap<String, Event> events;
+	protected Map<String, Event> events;
 	protected int depth = 0;
 
-	protected LinkedList<PTAState> states = new LinkedList<>();
-	protected LinkedList<PTATransition> transitions = new LinkedList<>();
+	protected List<PTAState> states = new ArrayList<>();
+	protected List<PTATransition> transitions = new ArrayList<>();
 
 	protected boolean statesMerged = false;
 
-	public PTA(HashMap<String, Event> events) {
+	public PTA(Map<String, Event> events) {
 		this.events = events;
 		this.root = new PTAState("", null, this);
 		states.add(root);
-		tails.put(root.getId(), root);
+		tails.put(new Integer(root.getId()), root);
 	}
 
-	public PTA(HashMap<String, Event> events, TimedInput timedSequences) {
+	public PTA(Map<String, Event> events, TimedInput timedSequences) {
 		this(events);
 		this.addSequences(timedSequences);
 	}
 
-	public HashMap<String, Event> getEvents() {
+	public Map<String, Event> getEvents() {
 
 		return events;
 	}
@@ -64,12 +71,12 @@ public class PTA {
 		return tails;
 	}
 
-	public LinkedList<PTAState> getStates() {
+	public List<PTAState> getStates() {
 
 		return states;
 	}
 
-	public void setStates(LinkedList<PTAState> states) {
+	public void setStates(ArrayList<PTAState> states) {
 
 		this.states = states;
 	}
@@ -87,11 +94,16 @@ public class PTA {
 	public void addSequences(TimedInput timedSequences) {
 
 		if (timedSequences == null) {
+			logger.error("Unexpected exception occured.");
 			throw new IllegalArgumentException();
 		}
-
+		int i = 0;
 		for (final TimedWord sequence : timedSequences) {
 			this.addSequence(sequence);
+			if (i % 100 == 0) {
+				logger.trace("Added {} sequences to the PTA (size={}).", i, getStates().size());
+			}
+			i++;
 		}
 
 	}
@@ -108,6 +120,7 @@ public class PTA {
 			final Event event = events.get(eventSymbol);
 
 			if (event == null){
+				logger.error("Event {} does not exist: {}", eventSymbol, sequence);
 				throw new IllegalArgumentException("Event " + eventSymbol + " not exists: " + sequence.toString());
 			}
 
@@ -116,10 +129,11 @@ public class PTA {
 			final PTATransition transition = currentState.getTransition(subEvent.getSymbol());
 
 			if (transition == null){
-				tails.remove(currentState.id);
+				tails.remove(new Integer(currentState.id));
 				addTail = true;
 
-				final PTAState nextState = new PTAState(currentState.getWord() + eventSymbol, currentState, this);
+				// final PTAState nextState = new PTAState(currentState.getWord() + eventSymbol, currentState, this);
+				final PTAState nextState = new PTAState("", currentState, this);
 
 				final PTATransition newTransition = new PTATransition(currentState, nextState, subEvent, 1);
 				newTransition.add();
@@ -145,7 +159,8 @@ public class PTA {
 
 			final SubEvent subEvent = event.getSubEventByTime(time);
 
-			final PTAState nextState = new PTAState(currentState.getWord() + eventSymbol, currentState, this);
+			// final PTAState nextState = new PTAState(currentState.getWord() + eventSymbol, currentState, this);
+			final PTAState nextState = new PTAState("", currentState, this);
 
 			final PTATransition newTransition = new PTATransition(currentState, nextState, subEvent, 1);
 			// newTransition.addTimeValue(time);
@@ -156,7 +171,7 @@ public class PTA {
 		}
 
 		if (addTail) {
-			tails.put(currentState.getId(), currentState);
+			tails.put(new Integer(currentState.getId()), currentState);
 		}
 
 		if (sequence.length() > depth) {
@@ -165,12 +180,12 @@ public class PTA {
 
 	}
 
-	public LinkedList<PTAState> getStatesOrdered(PTAOrdering order) {
+	public ArrayList<PTAState> getStatesOrdered(PTAOrdering order) {
 
-		final LinkedList<PTAState> orderedStates = new LinkedList<>();
+		final ArrayList<PTAState> orderedStates = new ArrayList<>();
 
 		if (order == PTAOrdering.TopDown) {
-			LinkedList<PTAState> heads = new LinkedList<>();
+			ArrayList<PTAState> heads = new ArrayList<>();
 
 			for (final PTATransition transition : root.getOutTransitions()) {
 				final PTAState state = transition.getTarget();
@@ -180,7 +195,7 @@ public class PTA {
 			while (!heads.isEmpty()) {
 				orderedStates.addAll(heads);
 
-				final LinkedList<PTAState> nextHeads = new LinkedList<>();
+				final ArrayList<PTAState> nextHeads = new ArrayList<>();
 
 				for (final PTAState headState : heads) {
 					for (final PTATransition transition : headState.getOutTransitions()) {
@@ -205,15 +220,21 @@ public class PTA {
 
 				for (final PTAState tailState : currentTails.values()) {
 					final PTAState fatherState = tailState.getFatherState();
-					if (fatherState != root && !fatherState.isMarked()) {
-						nextTails.putIfAbsent(fatherState.getId(), fatherState);
+					if (fatherState.getId() != root.getId() && !fatherState.isMarked()) {
+						nextTails.putIfAbsent(new Integer(fatherState.getId()), fatherState);
 						fatherState.mark();
 					}
 				}
 
 				currentTails = nextTails;
 			}
+
+			for (final PTAState state : orderedStates) {
+				state.unmark();
+			}
+
 		} else {
+			logger.error("Unexpected exception occured.");
 			throw new IllegalArgumentException();
 		}
 
@@ -233,9 +254,9 @@ public class PTA {
 		}
 	}
 
-	public PDTA toPDTA() {
+	public PDTA toPDTA(IntervalCreationStrategy intervalCreation) {
 
-		final HashMap<Integer, PDTAState> pdtaStates = new HashMap<>();
+		final TIntObjectMap<PDTAState> pdtaStates = new TIntObjectHashMap<>();
 
 		for (final ListIterator<PTAState> iterator = states.listIterator(); iterator.hasNext();) {
 			final PTAState ptaState = iterator.next();
@@ -258,8 +279,18 @@ public class PTA {
 				final PDTAState pdrtaStateTarget = pdtaStates.get(transition.getTarget().getId());
 				final SubEvent event = transition.getEvent();
 
-				pdrtaStateSource.addTransition(event, pdrtaStateTarget, event.getIntervalInState(ptaState), (double) transition.getCount()
-						/ (outTransitionsCount + endCount));
+				HalfClosedInterval interval;
+				if (intervalCreation == IntervalCreationStrategy.OriginalButla) {
+					interval = event.getInterval();
+				} else if (intervalCreation == IntervalCreationStrategy.extendInterval) {
+					interval = event.getIntervalInState(ptaState);
+				} else if (intervalCreation == IntervalCreationStrategy.WithoutAnomalyBounds) {
+					interval = event.getBounds();
+				} else {
+					throw new IllegalArgumentException();
+				}
+
+				pdrtaStateSource.addTransition(event, pdrtaStateTarget, interval, (double) transition.getCount() / (outTransitionsCount + endCount));
 			}
 		}
 
@@ -268,35 +299,38 @@ public class PTA {
 
 	public void toGraphvizFile(Path resultPath) throws IOException {
 
-		final BufferedWriter writer = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8);
-		writer.write("digraph G {\n");
+		try (BufferedWriter writer = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8)) {
+			writer.write("digraph G {\n");
 
-		// write states
-		for (final PTAState state : states) {
-			if (state.exists()) {
-				writer.write(Integer.toString(state.getId()));
-				writer.write(" [shape=circle, label=\"" + Integer.toString(state.getId()) + "\"");
+			// write states
+			for (final PTAState state : states) {
+				if (state.exists()) {
+					writer.write(Integer.toString(state.getId()));
+					writer.write(" [shape=circle, label=\"" + Integer.toString(state.getId()) + "\"");
 
-				if (tails.containsKey(state.getId())) {
-					writer.write(", color=red");
+					if (tails.containsKey(new Integer(state.getId()))) {
+						writer.write(", color=red");
+					}
+
+					writer.write("]\n");
 				}
-
-				writer.write("]\n");
 			}
-		}
 
-		for (final PTATransition transition : transitions) {
-			if (transition.exists()) {
-				writer.write(Integer.toString(transition.getSource().getId()) + "->" + Integer.toString(transition.getTarget().getId()) + " [label=<"
-						+ transition.getEvent().getSymbol() + "(" + transition.getCount() + ")>;];\n");
+			for (final PTATransition transition : transitions) {
+				if (transition.exists()) {
+					writer.write(Integer.toString(transition.getSource().getId()) + "->" + Integer.toString(transition.getTarget().getId()) + " [label=<"
+							+ transition.getEvent().getSymbol() + "(" + transition.getCount() + ")>;];\n");
+				}
 			}
+			writer.write("}");
 		}
-		writer.write("}");
-		writer.close();
 	}
 
-	private void cleanUp(){
-
+	@SuppressWarnings("unused")
+	private void cleanUp() {
+		logger.trace("#####Clearning up the PTA...");
+		logger.trace("Before CleanUp there are {} many states in the PTA", states.size());
+		logger.trace("Before CleanUp there are {} many transitions in the PTA", transitions.size());
 		for (final Iterator<PTAState> statesIterator = states.iterator(); statesIterator.hasNext();) {
 			final PTAState state = statesIterator.next();
 
@@ -320,6 +354,9 @@ public class PTA {
 				transitionsIterator.remove();
 			}
 		}
+		logger.trace("After CleanUp there are {} many states in the PTA", states.size());
+		logger.trace("After CleanUp there are {} many transitions in the PTA", transitions.size());
+		logger.trace("Cleaned up the PTA.");
 
 	}
 

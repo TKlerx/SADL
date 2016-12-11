@@ -31,7 +31,7 @@ singleTimeThreshold | detectorMethod in {THRESHOLD_ALL}
 
 
 #vector detector parameters
-featureCreator {UBER,FULL,SMALL,MINIMAL} [FULL]
+featureCreator {UBER,FULL,SMALL,MINIMAL,SINGLE} [FULL]
 featureCreator | detectorMethod in {SVM,DBSCAN,GMEANS,KMEANS,XMEANS}
 
 scalingMethod {NONE,NORMALIZE,STANDARDIZE} [NORMALIZE]
@@ -47,12 +47,12 @@ scalingMethod | detectorMethod in {SVM,DBSCAN,GMEANS,KMEANS,XMEANS}
 svmNu[0,1] [0.1]
 svmNu| detectorMethod in {SVM}
 
-svmGammaEstimate {true,false} {true}
+svmGammaEstimate {true,false} [true]
 svmGammaEstimate | detectorMethod in {SVM}
 
 svmGamma[0,10E15] [0]
-svmGamma | detectorMethod in [SVM]
-svmGamma | svmGammaEstimate in {false}
+svmGamma | detectorMethod in {SVM} && svmGammaEstimate in {false}
+
 
 svmEps[0,1] [0.001]
 svmEps| detectorMethod in {SVM}
@@ -60,8 +60,9 @@ svmEps| detectorMethod in {SVM}
 svmKernel[0,3] [2]i
 svmKernel| detectorMethod in {SVM}
 
+#degree depends on polynomial kernel
 svmDegree [0,2000000000] [3]i
-svmDegree | detectorMethod in {SVM}
+svmDegree | svmKernel in {1}
 
 svmProbabilityEstimate[0,1] [0]i
 svmProbabilityEstimate| detectorMethod in {SVM}
@@ -82,9 +83,9 @@ dbScanThreshold | detectorMethod in {DBSCAN}
 kmeansThreshold[0,1] [0.05]
 kmeansThreshold | detectorMethod in {GMEANS,KMEANS,XMEANS}
 
-kmeansMinPoints[0,100] [1]
-kmeansThreshold | detectorMethod in {GMEANS,KMEANS,XMEANS}
+kmeansMinPoints[0,100] [1]i
+kmeansMinPoints | detectorMethod in {GMEANS,KMEANS,XMEANS}
 
 # kMeans parameters
-kmeansK[2,1000] [10]
+kmeansK[2,1000] [10]i
 kmeansK | detectorMethod in {KMEANS}

@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,10 +8,11 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.experiments;
 
 import org.apache.commons.lang3.time.DurationFormatUtils;
+
+import sadl.constants.Algoname;
 
 /**
  * 
@@ -37,7 +38,7 @@ public class ExperimentResult {
 	}
 
 	public ExperimentResult(long truePositives, long trueNegatives, long falsePositives, long falseNegatives, long executionTimeTraining,
-			long executionTimeTesting, int numberOfStates) {
+			long executionTimeTesting, int numberOfStates, String configFile) {
 		super();
 		this.truePositives = truePositives;
 		this.trueNegatives = trueNegatives;
@@ -58,6 +59,24 @@ public class ExperimentResult {
 	int maxMemoryUsage = 0;
 	int minMemoryUsage = 0;
 	double avgMemoryUsage = 0;
+	String qualifier;
+	Algoname algorithm;
+
+	public Algoname getAlgorithm() {
+		return algorithm;
+	}
+
+	public void setAlgorithm(Algoname algorithm) {
+		this.algorithm = algorithm;
+	}
+
+	public String getQualifier() {
+		return qualifier;
+	}
+
+	public void setQualifier(String qualifier) {
+		this.qualifier = qualifier;
+	}
 
 	public int getMaxMemoryUsage() {
 		return maxMemoryUsage;
@@ -137,15 +156,15 @@ public class ExperimentResult {
 
 		return "trainTime" + separator + "testTime" + separator + "minRam" + separator + "maxRam" + separator + "AvgRam" + separator + "numberOfStates"
 				+ separator + "truePositives" + separator + "falsePositives" + separator + "trueNegatives" + separator + "falseNegatives" + separator
-				+ "precision" + separator
-				+ "recall" + separator + "accuracy" + separator + "FMeasure" + separator + "PhiCoefficient";
+				+ "precision" + separator + "recall" + separator + "accuracy" + separator + "FMeasure" + separator + "PhiCoefficient";
 	}
+
 	public String toCsvString() {
 		return DurationFormatUtils.formatDurationHMS(executionTimeTraining) + "(" + executionTimeTraining + ")" + separator
 				+ DurationFormatUtils.formatDurationHMS(executionTimeTesting) + "(" + executionTimeTesting + ")" + separator + minMemoryUsage + separator
-				+ maxMemoryUsage + separator + avgMemoryUsage + separator + numberOfStates + separator + truePositives + separator
-				+ falsePositives + separator + trueNegatives + separator + falseNegatives + separator + getPrecision() + separator
-				+ getRecall() + separator + getAccuracy() + separator + getFMeasure() + separator + getPhiCoefficient();
+				+ maxMemoryUsage + separator + avgMemoryUsage + separator + numberOfStates + separator + truePositives + separator + falsePositives + separator
+				+ trueNegatives + separator + falseNegatives + separator + getPrecision() + separator + getRecall() + separator + getAccuracy() + separator
+				+ getFMeasure() + separator + getPhiCoefficient();
 	}
 
 	public double getPhiCoefficient() {
@@ -158,7 +177,6 @@ public class ExperimentResult {
 	public double getAccuracy() {
 		return (truePositives + trueNegatives) / (double) (truePositives + trueNegatives + falsePositives + falseNegatives);
 	}
-
 
 	@Override
 	public int hashCode() {
@@ -216,6 +234,5 @@ public class ExperimentResult {
 		result.setNumberOfStates(Math.max(this.getNumberOfStates(), other.getNumberOfStates()));
 		return result;
 	}
-
 
 }

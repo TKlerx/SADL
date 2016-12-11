@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,7 +8,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.models.pdrta;
 
 import java.io.Serializable;
@@ -248,8 +247,8 @@ public class StateStatistic implements Serializable {
 		final int[] part1SymCount = Arrays.copyOf(st.symbolCount, st.symbolCount.length);
 		final int[] part2SymCount = new int[st.symbolCount.length];
 		for (final Entry<Integer, Collection<TimedTail>> eCol : mSym.asMap().entrySet()) {
-			part1SymCount[eCol.getKey()] -= eCol.getValue().size();
-			part2SymCount[eCol.getKey()] += eCol.getValue().size();
+			part1SymCount[eCol.getKey().intValue()] -= eCol.getValue().size();
+			part2SymCount[eCol.getKey().intValue()] += eCol.getValue().size();
 		}
 
 		return calcInterimLRT(a, part1SymCount, part2SymCount, advancedPooling, cr);
@@ -283,8 +282,8 @@ public class StateStatistic implements Serializable {
 		final int[] part1TimeCount = Arrays.copyOf(st.timeCount, st.timeCount.length);
 		final int[] part2TimeCount = new int[st.timeCount.length];
 		for (final Entry<Integer, Collection<TimedTail>> eCol : mHist.asMap().entrySet()) {
-			part1TimeCount[eCol.getKey()] -= eCol.getValue().size();
-			part2TimeCount[eCol.getKey()] += eCol.getValue().size();
+			part1TimeCount[eCol.getKey().intValue()] -= eCol.getValue().size();
+			part2TimeCount[eCol.getKey().intValue()] += eCol.getValue().size();
 		}
 
 		return calcInterimLRT(a, part1TimeCount, part2TimeCount, advancedPooling, cr);
@@ -324,7 +323,11 @@ public class StateStatistic implements Serializable {
 		}
 
 		// LRT_FIX : Check if params or count.length (example in paper says count.length)
-		// Does not work with param -> Degrees of Freedom for compared states may not be equal then
+		// Does not work with params -> Degrees of Freedom for compared states may not be equal then
+		// *****
+		// Tested whether or not to subtract 1 of the degrees of freedom
+		// -> Results are equal and decided to use subtraction according to paper
+		// -> Contradiction with Verwer's implementation of LRT with pooling
 		if (params > 0) {
 			return new LikelihoodValue(ratio, count.length - 1);
 		} else {

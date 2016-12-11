@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,7 +8,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.oneclassclassifier.clustering;
 
 import java.util.List;
@@ -77,10 +76,10 @@ public class DbScanClassifier extends NumericClassifier {
 		final DataSet<?> dataSet = DatasetTransformationUtils.doublesToDataSet(data);
 		clusterResult = MyDBSCAN.createClusterListFromAssignmentArray(dbscan.cluster(dataSet, eps, n, pointCats), dataSet);
 		final int clusterCount = clusterResult.size();
-		logger.info("DBSCAN found {} many clusters.", clusterCount);
+		logger.info("DBSCAN found {} clusters.", clusterCount);
 		int count = 0;
 		for (int i = 0; i < clusterCount; i++) {
-			logger.info("Cluster {} has {} many points.", i, clusterResult.get(i).size());
+			logger.debug("Cluster {} has {} points.", i, clusterResult.get(i).size());
 			count += clusterResult.get(i).size();
 		}
 		logger.info("Original dataset size={}", data.size());
@@ -95,7 +94,7 @@ public class DbScanClassifier extends NumericClassifier {
 				threshold);
 		// check whether one of the points is a core point!
 		for (final VecPaired<VecPaired<Vec, Integer>, Double> vecPaired : neighbours) {
-			final int dataSetIndex = vecPaired.getVector().getPair();
+			final int dataSetIndex = vecPaired.getVector().getPair().intValue();
 			final Vec v = vecPaired.getVector().getVector();
 			if (pointCats[dataSetIndex] != MyDBSCAN.NOISE) {
 				if (isCorePoint(v)) {
@@ -113,7 +112,7 @@ public class DbScanClassifier extends NumericClassifier {
 			return false;
 		}
 		for (final VecPaired<VecPaired<Vec, Integer>, Double> vecPaired : neighbours) {
-			final int dataSetIndex = vecPaired.getVector().getPair();
+			final int dataSetIndex = vecPaired.getVector().getPair().intValue();
 			if (pointCats[dataSetIndex] != MyDBSCAN.NOISE) {
 				nonNoisePoints++;
 				if (nonNoisePoints >= n) {

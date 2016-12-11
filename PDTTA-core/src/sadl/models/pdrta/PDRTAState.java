@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,7 +8,6 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.models.pdrta;
 
 import java.io.Serializable;
@@ -44,7 +43,7 @@ public class PDRTAState implements Serializable {
 			intervals.add(Interval.createInitialIntervalMap(ta.getMinTimeDelay(), ta.getMaxTimeDelay()));
 		}
 		stat = StateStatistic.initStat(ta.getAlphSize(), ta.getHistSizes());
-		index = automaton.addState(this, automaton.getNumberOfStates());
+		index = automaton.addState(this, automaton.getStateCount());
 	}
 
 	protected PDRTAState(PDRTA ta, int idx, StateStatistic st) {
@@ -133,6 +132,12 @@ public class PDRTAState implements Serializable {
 	public double getProbabilityTrans(int symAplhIdx, int timeDel) {
 
 		final Interval in = getInterval(symAplhIdx, timeDel);
+		return getProbabilityTrans(symAplhIdx, in);
+
+	}
+
+	public double getProbabilityTrans(int symAplhIdx, Interval in) {
+
 		if (in == null) {
 			return 0.0;
 		} else {
@@ -142,6 +147,10 @@ public class PDRTAState implements Serializable {
 
 	public int getTotalOutEvents() {
 		return stat.getTotalOutEvents();
+	}
+
+	public double getSequenceEndProb() {
+		return stat.getTailEndProb();
 	}
 
 	int getSymCount(int symAlphIdx) {
@@ -164,7 +173,7 @@ public class PDRTAState implements Serializable {
 			return null;
 		}
 		final NavigableMap<Integer, Interval> intMap = intervals.get(alphIdx);
-		final Integer key = intMap.ceilingKey(time);
+		final Integer key = intMap.ceilingKey(new Integer(time));
 		if (key == null) {
 			return null;
 		} else {

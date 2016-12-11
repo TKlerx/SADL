@@ -1,6 +1,6 @@
 /**
  * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
- * Copyright (C) 2013-2015  the original author or authors.
+ * Copyright (C) 2013-2016  the original author or authors.
  *
  * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  *
@@ -8,10 +8,12 @@
  *
  * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package sadl.models.pta;
 
 import java.util.Collection;
+
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 
 public class PTATransition {
 
@@ -40,17 +42,38 @@ public class PTATransition {
 
 	public void add() {
 		final String eventSymbol = event.getSymbol();
+		TIntObjectMap<PTATransition> eventInTransition;
 
-		source.outTransitions.put(eventSymbol, this);
-		target.inTransitions.get(eventSymbol).put(source.getId(), this);
+		if (target.inTransitions.containsKey(eventSymbol)) {
+			eventInTransition = target.inTransitions.get(eventSymbol);
 
+		} else {
+			eventInTransition = new TIntObjectHashMap<>();
+			target.inTransitions.putIfAbsent(eventSymbol, eventInTransition);
+		}
+
+		final PTATransition redundantOutTransition = source.outTransitions.put(eventSymbol, this);
+		final PTATransition redundantInTransition = eventInTransition.put(source.getId(), this);
 		target.pta.transitions.add(this);
+
+		if (redundantOutTransition != null || redundantInTransition != null) {
+			throw new IllegalArgumentException("Transition already exists.");
+		}
 	}
 
 	public void remove() {
 		final String eventSymbol = event.getSymbol();
-		source.outTransitions.remove(eventSymbol);
-		target.inTransitions.get(eventSymbol).remove(source.getId());
+		final TIntObjectMap<PTATransition> eventInTransition = target.inTransitions.get(eventSymbol);
+
+		PTATransition outTrans = source.outTransitions.remove(eventSymbol);
+		PTATransition inTrans = eventInTransition.remove(source.getId());
+		if (outTrans == null || inTrans == null) {
+			throw new RuntimeException();
+		}
+
+		if (eventInTransition.isEmpty()) {
+			target.inTransitions.remove(eventSymbol);
+		}
 		removed = true;
 	}
 
