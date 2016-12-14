@@ -2,7 +2,7 @@ package sadl.modellearner.rtiplus.analysis;
 
 import gnu.trove.list.TIntList;
 
-public class FixedSplit implements DistributuionAnalysis {
+public class FixedSplit implements DistributionAnalysis {
 
 	private final TIntList fixedSplit;
 

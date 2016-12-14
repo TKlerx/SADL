@@ -16,7 +16,7 @@ import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.linked.TIntLinkedList;
 import gnu.trove.procedure.TIntProcedure;
 
-public class QuantileAnalysis implements DistributuionAnalysis {
+public class QuantileAnalysis implements DistributionAnalysis {
 
 	private final int numQuantiles;
 
