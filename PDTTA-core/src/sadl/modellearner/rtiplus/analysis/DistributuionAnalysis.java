@@ -12,6 +12,7 @@
 package sadl.modellearner.rtiplus.analysis;
 
 import gnu.trove.list.TIntList;
+import gnu.trove.list.linked.TIntLinkedList;
 
 public interface DistributuionAnalysis {
 
@@ -21,12 +22,16 @@ public interface DistributuionAnalysis {
 			throw new IllegalArgumentException("The lists for values and desitiy have to be of the same size!");
 		}
 
+		if (values.size() == 0) {
+			return new TIntLinkedList(0);
+		}
+
 		final TIntList result = analyzeDistribution(values, frequencies);
 
-		if (result.size() > 0 && result.get(0) <= min) {
+		while (result.size() > 0 && result.get(0) <= min) {
 			result.removeAt(0);
 		}
-		if (result.size() > 0 && result.get(result.size() - 1) >= max) {
+		while (result.size() > 0 && result.get(result.size() - 1) >= max) {
 			result.removeAt(result.size() - 1);
 		}
 
