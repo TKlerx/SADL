@@ -6,7 +6,7 @@ import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.linked.TIntLinkedList;
 
-public abstract class OutlierDistanceAnalysis implements DistributuionAnalysis {
+public abstract class OutlierDistanceAnalysis implements DistributionAnalysis {
 
 	private final double factor;
 

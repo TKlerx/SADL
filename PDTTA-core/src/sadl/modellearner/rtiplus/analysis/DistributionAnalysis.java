@@ -14,7 +14,7 @@ package sadl.modellearner.rtiplus.analysis;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.linked.TIntLinkedList;
 
-public interface DistributuionAnalysis {
+public interface DistributionAnalysis {
 
 	public default TIntList performAnalysis(TIntList values, TIntList frequencies, int min, int max) {
 
