@@ -14,9 +14,17 @@ package sadl.modellearner.rtiplus.analysis;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.linked.TIntLinkedList;
 
-public interface DistributionAnalysis {
+public abstract class DistributionAnalysis {
 
-	public default TIntList performAnalysis(TIntList values, TIntList frequencies, int min, int max) {
+	private final DistributionAnalysis fewElementsAnalysis;
+	private final int fewElementsLimit;
+
+	public DistributionAnalysis(DistributionAnalysis fewElementsAnalysis, int fewElementsLimit) {
+		this.fewElementsAnalysis = fewElementsAnalysis;
+		this.fewElementsLimit = fewElementsLimit;
+	}
+
+	public final TIntList performAnalysis(TIntList values, TIntList frequencies, int begin, int end) {
 
 		if (values == null || frequencies == null || values.size() != frequencies.size()) {
 			throw new IllegalArgumentException("The lists for values and desitiy have to be of the same size!");
@@ -26,18 +34,23 @@ public interface DistributionAnalysis {
 			return new TIntLinkedList(0);
 		}
 
-		final TIntList result = analyzeDistribution(values, frequencies);
+		final TIntList result;
+		if (values.size() <= fewElementsLimit) {
+			result = fewElementsAnalysis.analyzeDistribution(values, frequencies, begin, end);
+		} else {
+			result = analyzeDistribution(values, frequencies, begin, end);
+		}
 
-		while (result.size() > 0 && result.get(0) <= min) {
+		while (result.size() > 0 && result.get(0) < begin) {
 			result.removeAt(0);
 		}
-		while (result.size() > 0 && result.get(result.size() - 1) >= max) {
+		while (result.size() > 0 && result.get(result.size() - 1) >= end) {
 			result.removeAt(result.size() - 1);
 		}
 
 		return result;
 	}
 
-	TIntList analyzeDistribution(TIntList values, TIntList frequencies);
+	abstract TIntList analyzeDistribution(TIntList values, TIntList frequencies, int begin, int end);
 
 }

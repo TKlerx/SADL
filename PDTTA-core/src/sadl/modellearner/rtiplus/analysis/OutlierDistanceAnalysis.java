@@ -6,11 +6,12 @@ import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.linked.TIntLinkedList;
 
-public abstract class OutlierDistanceAnalysis implements DistributionAnalysis {
+public abstract class OutlierDistanceAnalysis extends DistributionAnalysis {
 
 	private final double factor;
 
-	public OutlierDistanceAnalysis(double strength) {
+	public OutlierDistanceAnalysis(double strength, DistributionAnalysis fewElementsAnalysis, int fewElementsLimit) {
+		super(fewElementsAnalysis, fewElementsLimit);
 
 		if (strength <= 0.0) {
 			throw new IllegalArgumentException("The strength must be positive!");
@@ -19,7 +20,7 @@ public abstract class OutlierDistanceAnalysis implements DistributionAnalysis {
 	}
 
 	@Override
-	public TIntList analyzeDistribution(TIntList values, TIntList frequencies) {
+	TIntList analyzeDistribution(TIntList values, TIntList frequencies, int begin, int end) {
 
 		final TDoubleList distValues = new TDoubleArrayList(values.size() - 1);
 		final TIntIterator it = values.iterator();
