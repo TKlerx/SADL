@@ -16,11 +16,16 @@ import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.linked.TIntLinkedList;
 import gnu.trove.procedure.TIntProcedure;
 
-public class QuantileAnalysis implements DistributionAnalysis {
+public class QuantileAnalysis extends DistributionAnalysis {
 
 	private final int numQuantiles;
 
 	public QuantileAnalysis(int numQuantiles) {
+		this(numQuantiles, null, -1);
+	}
+
+	public QuantileAnalysis(int numQuantiles, DistributionAnalysis fewElementsAnalysis, int fewElementsLimit) {
+		super(fewElementsAnalysis, fewElementsLimit);
 
 		if (numQuantiles <= 0) {
 			throw new IllegalArgumentException("The number of quantiles have to be greater than zero!");
@@ -30,10 +35,10 @@ public class QuantileAnalysis implements DistributionAnalysis {
 	}
 
 	@Override
-	public TIntList analyzeDistribution(TIntList values, TIntList density) {
+	TIntList analyzeDistribution(TIntList values, TIntList frequency, int begin, int end) {
 
 		final TIntList result = new TIntArrayList();
-		final TIntList indexes = computeIndexes(density);
+		final TIntList indexes = computeIndexes(frequency);
 		if (indexes.size() > 0) {
 			final double[] splitIndexes = calcSplitIndexes(indexes.get(indexes.size() - 1));
 			int j = 0;

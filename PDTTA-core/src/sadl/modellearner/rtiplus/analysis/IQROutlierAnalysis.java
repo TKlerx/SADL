@@ -6,7 +6,11 @@ import sadl.modellearner.rtiplus.StatisticsUtil;
 public class IQROutlierAnalysis extends OutlierDistanceAnalysis {
 
 	public IQROutlierAnalysis(double strength) {
-		super(strength);
+		this(strength, null, -1);
+	}
+
+	public IQROutlierAnalysis(double strength, DistributionAnalysis fewElementsAnalysis, int fewElementsLimit) {
+		super(strength, fewElementsAnalysis, fewElementsLimit);
 	}
 
 	@Override
