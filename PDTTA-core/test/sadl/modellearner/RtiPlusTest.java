@@ -128,7 +128,6 @@ public class RtiPlusTest {
 			final ProbabilisticModel p = l.train(ti);
 
 			final Path path = Paths.get(this.getClass().getResource("/pdrta/pdrta_" + i + ".aut").toURI());
-			System.out.println(path.toAbsolutePath().toString());
 			IoUtils.serialize(p, path);
 			final ProbabilisticModel cP = (ProbabilisticModel) IoUtils.deserialize(path);
 

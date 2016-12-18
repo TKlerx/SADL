@@ -436,6 +436,7 @@ public class StateStatistic implements Serializable {
 	protected double getTailEndProb() {
 
 		if (trainMode) {
+			// Total in count is always greater zero
 			return 1.0 - ((double) totalOutCount / (double) totalInCount);
 		} else {
 			return tailEndProb;
@@ -452,7 +453,11 @@ public class StateStatistic implements Serializable {
 	protected double getTransProb(int symIdx, Interval in) {
 
 		if (trainMode) {
-			return (double) in.getTails().size() / (double) totalOutCount;
+			if (totalOutCount > 0) {
+				return (double) in.getTails().size() / (double) totalOutCount;
+			} else {
+				return 0.0;
+			}
 		} else {
 			if (intervalProbs.containsKey(symIdx)) {
 				final TObjectDoubleHashMap<Interval> m = intervalProbs.get(symIdx);
@@ -478,8 +483,15 @@ public class StateStatistic implements Serializable {
 		}
 
 		if (trainMode) {
-			final double timeP = (double) timeCount[t.getHistBarIndex()] / (double) totalOutCount;
-			final double symP = (double) symbolCount[t.getSymbolAlphIndex()] / (double) totalOutCount;
+			final double timeP;
+			final double symP;
+			if (totalOutCount > 0) {
+				timeP = (double) timeCount[t.getHistBarIndex()] / (double) totalOutCount;
+				symP = (double) symbolCount[t.getSymbolAlphIndex()] / (double) totalOutCount;
+			} else {
+				timeP = 0.0;
+				symP = 0.0;
+			}
 			return new double[] { symP, (timeP / histBarSizes[t.getHistBarIndex()]) };
 		} else {
 			final double timeP = (timeProbs[t.getHistBarIndex()] / histBarSizes[t.getHistBarIndex()]);
@@ -843,6 +855,10 @@ public class StateStatistic implements Serializable {
 
 	void cleanUp(PDRTAState s) {
 
+		if (s.getStat() != this) {
+			throw new RuntimeException("State and statistic are not matching");
+		}
+
 		if (!trainMode) {
 			throw new UnsupportedOperationException("Clean up can only be performed in train mode");
 		}
@@ -851,9 +867,7 @@ public class StateStatistic implements Serializable {
 		for (int i = 0; i < symbolCount.length; i++) {
 			final NavigableMap<Integer, Interval> ins = s.getIntervals(i);
 			for (final Interval in : ins.values()) {
-				if (in.getTarget() != null) {
-					addToMap(i, in, getTransProb(i, in));
-				}
+				addToMap(i, in, getTransProb(i, in));
 			}
 		}
 

@@ -149,7 +149,7 @@ public class SearchingPDRTALearner extends SimplePDRTALearner {
 		Transition t;
 		while ((t = getMostVisitedTrans(a, sc)) != null && !(preExit && t.in.getTails().size() >= PDRTA.getMinData())) {
 			if (directory != null) {
-				draw(a, true, directory, counter);
+				draw(a, sc, true, directory, counter);
 			}
 			logger.debug("Automaton contains {} states and {} transitions", a.getStateCount(), a.getSize());
 			logger.debug("Found most visited transition  {}  containing {} tails", t.toString(), t.in.getTails().size());
@@ -262,7 +262,7 @@ public class SearchingPDRTALearner extends SimplePDRTALearner {
 		a.checkConsistency();
 		assert (a.getStateCount() == sc.getNumRedStates());
 		if (directory != null) {
-			draw(a, true, directory, counter);
+			draw(a, sc, true, directory, counter);
 		}
 	}
 

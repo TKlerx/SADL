@@ -105,7 +105,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 			for (int i = 0; i < input.getAlphSize(); i++) {
 				final Set<Entry<Integer, Interval>> ins = org.getIntervals(i).entrySet();
 				for (final Entry<Integer, Interval> eIn : ins) {
-					final Interval cIn = getState(org.getIndex()).getInterval(i, eIn.getKey());
+					final Interval cIn = getState(org.getIndex()).getInterval(i, eIn.getKey().intValue());
 					assert(cIn.getBegin() == eIn.getValue().getBegin());
 					assert(cIn.getEnd() == eIn.getValue().getEnd());
 					assert(cIn.getTails().size() == eIn.getValue().getTails().size());
