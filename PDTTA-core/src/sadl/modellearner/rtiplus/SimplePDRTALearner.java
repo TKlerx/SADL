@@ -410,7 +410,7 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 		while ((t = getMostVisitedTrans(a, sc)) != null && !(preExit && t.in.getTails().size() < PDRTA.getMinData())) {
 			if (mainModel == a) {
 				if (directory != null) {
-					draw(a, true, directory, counter);
+					draw(a, sc, true, directory, counter);
 				}
 				logger.debug("Automaton contains {} states and {} transitions", a.getStateCount(), a.getSize());
 				logger.debug("Found most visited transition  {}  containing {} tails", t.toString(), t.in.getTails().size());
@@ -498,17 +498,17 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 
 		a.checkConsistency();
 		if (directory != null) {
-			draw(a, true, directory, counter);
+			draw(a, sc, true, directory, counter);
 		}
 	}
 
-	void draw(PDRTA a, boolean withInp, Path path, int counter) {
+	void draw(PDRTA a, StateColoring sc, boolean withInp, Path path, int counter) {
 
 		final String fileName = "step_" + counter;
 		final Path gvFile = path.resolve(fileName + ".gv");
 		final Path pngFile = path.resolve(fileName + ".png");
 		try (final BufferedWriter bw = Files.newBufferedWriter(gvFile)) {
-			a.toDOTLang(bw, 0.0, withInp);
+			a.toDOTLang(bw, 0.0, withInp, sc);
 		} catch (final Exception e) {
 			logger.error("Not able to store PDRTA in Graphviz format: {}", e.getMessage());
 		}
