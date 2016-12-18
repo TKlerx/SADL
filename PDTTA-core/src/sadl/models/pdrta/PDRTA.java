@@ -697,9 +697,6 @@ public class PDRTA implements AutomatonModel, Serializable {
 				return false;
 			}
 		} else if (!states.equals(other.states)) {
-			System.err.println("states are not equal.");
-			System.out.println("This.states.size=" + states.size());
-			System.out.println("other.states.size=" + other.states.size());
 			return false;
 		}
 		return true;
