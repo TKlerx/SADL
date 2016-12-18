@@ -71,7 +71,7 @@ public class RtiPlusTest {
 		}
 	}
 
-	// @Test
+	@Test
 	public void testDeterminismBig() throws URISyntaxException, IOException {
 		// TODO fix this test
 		for (int i = 1; i <= 5; i++) {
@@ -96,7 +96,7 @@ public class RtiPlusTest {
 		}
 	}
 
-	// @Test
+	@Test
 	public void testDeterminismNaive() throws URISyntaxException, IOException {
 
 		for (int i = 1; i <= 5; i++) {
