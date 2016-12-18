@@ -71,14 +71,26 @@ fewRangeRatio | fewHist == FREQUENCY || fewIda == FREQUENCY
 iqrStrength real [0,5] [1.0]
 iqrStrength | hist == IQR || ida == IQR
 
+iqrOnlyFarOuts categorical {true, false} [false]
+iqrOnlyFarOuts | hist == IQR || ida == IQR
+
 fewIqrStrength real [0,5] [1.0]
 fewIqrStrength | fewHist == IQR || fewIda == IQR
+
+fewIqrOnlyFarOuts categorical {true, false} [false]
+fewIqrOnlyFarOuts | fewHist == IQR || fewIda == IQR
 
 madStrength real [0,5] [1.0]
 madStrength | hist == MAD || ida == MAD
 
+madConservatism categorical {VERY_CONSERVATIVE, MODERATELY_CONSERVATIVE, POORLY_CONSERVATIVE} [MODERATELY_CONSERVATIVE]
+madConservatism | hist == MAD || ida == MAD
+
 fewMadStrength real [0,5] [1.0]
 fewMadStrength | fewHist == MAD || fewIda == MAD
+
+fewMadConservatism categorical {VERY_CONSERVATIVE, MODERATELY_CONSERVATIVE, POORLY_CONSERVATIVE} [MODERATELY_CONSERVATIVE]
+fewMadConservatism | fewHist == MAD || fewIda == MAD
 
 splitVals integer [0,1000] [100] # No list are possible with SMAC
 splitVals | hist == FIXED || ida == FIXED

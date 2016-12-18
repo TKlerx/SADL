@@ -29,6 +29,7 @@ import sadl.modellearner.rtiplus.analysis.FixedSplit;
 import sadl.modellearner.rtiplus.analysis.FrequencyAnalysis;
 import sadl.modellearner.rtiplus.analysis.IQROutlierAnalysis;
 import sadl.modellearner.rtiplus.analysis.MADOutlierAnalysis;
+import sadl.modellearner.rtiplus.analysis.MADOutlierAnalysis.MADConservatism;
 import sadl.modellearner.rtiplus.analysis.QuantileAnalysis;
 import sadl.modellearner.rtiplus.analysis.StrictAnalysis;
 import sadl.modellearner.rtiplus.tester.FishersMethodTester;
@@ -68,8 +69,8 @@ public class RTIFactory implements LearnerFactory {
 
 		DISABLED(null),
 		STRICT(new StrictAnalysis()),
-		MAD(new MADOutlierAnalysis(1.0, new FrequencyAnalysis(10, 0.25), 2)),
-		IQR(new IQROutlierAnalysis(1.0, new FrequencyAnalysis(10, 0.25), 2)),
+		MAD(new MADOutlierAnalysis(1.0, MADConservatism.MODERATELY_CONSERVATIVE, new FrequencyAnalysis(10, 0.25), 2)),
+		IQR(new IQROutlierAnalysis(1.0, false, new FrequencyAnalysis(10, 0.25), 2)),
 		FREQUENCY(new FrequencyAnalysis(10, 0.25)),
 		QUANTILE(new QuantileAnalysis(4)),
 		FIXED(new FixedSplit(new TIntArrayList(new int[] { 1, 42, 1337 })));
@@ -237,8 +238,12 @@ public class RTIFactory implements LearnerFactory {
 		@Parameter(names = "-iqrStrength")
 		double strength = 1.0;
 
+		@Parameter(names = "-iqrOnlyFarOuts")
+		boolean onlyFarOuts = false;
+
 		DistributionAnalysis createAnalysis(boolean isIda) {
-			return new IQROutlierAnalysis(strength, createDistributionAnalysis(isIda ? fewIda : fewHist, true, isIda), isIda ? fewIdaLimit : fewHistLimit);
+			return new IQROutlierAnalysis(strength, onlyFarOuts, createDistributionAnalysis(isIda ? fewIda : fewHist, true, isIda),
+					isIda ? fewIdaLimit : fewHistLimit);
 		}
 	}
 
@@ -247,8 +252,11 @@ public class RTIFactory implements LearnerFactory {
 		@Parameter(names = "-fewIqrStrength")
 		double fewStrength = 1.0;
 
+		@Parameter(names = "-fewIqrOnlyFarOuts")
+		boolean onlyFarOuts = false;
+
 		DistributionAnalysis createAnalysis() {
-			return new IQROutlierAnalysis(fewStrength);
+			return new IQROutlierAnalysis(fewStrength, onlyFarOuts);
 
 		}
 	}
@@ -263,8 +271,12 @@ public class RTIFactory implements LearnerFactory {
 		@Parameter(names = "-madStrength")
 		double strength = 1.0;
 
+		@Parameter(names = "-madConservatism")
+		MADConservatism conservatism = MADConservatism.MODERATELY_CONSERVATIVE;
+
 		DistributionAnalysis createAnalysis(boolean isIda) {
-			return new MADOutlierAnalysis(strength, createDistributionAnalysis(isIda ? fewIda : fewHist, true, isIda), isIda ? fewIdaLimit : fewHistLimit);
+			return new MADOutlierAnalysis(strength, conservatism, createDistributionAnalysis(isIda ? fewIda : fewHist, true, isIda),
+					isIda ? fewIdaLimit : fewHistLimit);
 		}
 	}
 
@@ -273,8 +285,11 @@ public class RTIFactory implements LearnerFactory {
 		@Parameter(names = "-fewMadStrength")
 		double fewStrength = 1.0;
 
+		@Parameter(names = "-fewMadConservatism")
+		MADConservatism conservatism = MADConservatism.MODERATELY_CONSERVATIVE;
+
 		DistributionAnalysis createAnalysis() {
-			return new MADOutlierAnalysis(fewStrength);
+			return new MADOutlierAnalysis(fewStrength, conservatism);
 
 		}
 	}

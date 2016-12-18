@@ -5,12 +5,15 @@ import sadl.modellearner.rtiplus.StatisticsUtil;
 
 public class IQROutlierAnalysis extends OutlierDistanceAnalysis {
 
-	public IQROutlierAnalysis(double strength) {
-		this(strength, null, -1);
+	private final boolean onlyFarOuts;
+
+	public IQROutlierAnalysis(double strength, boolean onlyFarOuts) {
+		this(strength, onlyFarOuts, null, -1);
 	}
 
-	public IQROutlierAnalysis(double strength, DistributionAnalysis fewElementsAnalysis, int fewElementsLimit) {
+	public IQROutlierAnalysis(double strength, boolean onlyFarOuts, DistributionAnalysis fewElementsAnalysis, int fewElementsLimit) {
 		super(strength, fewElementsAnalysis, fewElementsLimit);
+		this.onlyFarOuts = onlyFarOuts;
 	}
 
 	@Override
@@ -19,7 +22,8 @@ public class IQROutlierAnalysis extends OutlierDistanceAnalysis {
 		distValues.sort();
 		final double q1 = StatisticsUtil.calculateQ1(distValues, false);
 		final double q3 = StatisticsUtil.calculateQ3(distValues, false);
-		return (int) Math.ceil(((q3 + (q3 - q1) * 1.5) / 2.0));
+		final double coeff = onlyFarOuts ? 3.0 : 1.5;
+		return (int) Math.ceil(((q3 + (q3 - q1) * coeff) / 2.0));
 	}
 
 }
