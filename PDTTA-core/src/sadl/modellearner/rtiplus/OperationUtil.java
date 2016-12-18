@@ -13,9 +13,12 @@ package sadl.modellearner.rtiplus;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedMap;
 
 import org.apache.commons.lang3.tuple.Pair;
 
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
 import sadl.modellearner.rtiplus.tester.LikelihoodValue;
 import sadl.models.pdrta.Interval;
 import sadl.models.pdrta.PDRTA;
@@ -169,7 +172,12 @@ public class OperationUtil {
 		assert (s.getInterval(symAlphIdx, time) == newIn);
 
 		if (!newIn.isEmpty()) {
-			if (!in.isEmpty()) {
+			if (in.isEmpty()) {
+				// replace in by newIn
+				newIn.setTarget(in.getTarget());
+				in.setTarget(null);
+			} else if (sc != null) {
+				// Recreate sub APTAs for both intervals
 				// Create new sub APTA for first interval
 				PDRTAState state = a.createState();
 				newIn.setTarget(state);
@@ -193,13 +201,22 @@ public class OperationUtil {
 					state.addTail(e.getValue());
 				}
 				a.createSubTAPTA(state);
-			} else {
-				newIn.setTarget(in.getTarget());
-				in.setTarget(null);
 			}
 		}
 
 		return Pair.of(newIn, in);
+	}
+
+	@SuppressWarnings("boxing")
+	public static Pair<TIntList, TIntList> distributionsMapToLists(SortedMap<Integer, Integer> distributionsMap) {
+
+		final TIntList values = new TIntArrayList(distributionsMap.size());
+		final TIntList frequencies = new TIntArrayList(distributionsMap.size());
+		distributionsMap.entrySet().forEach(e -> {
+			values.add(e.getKey());
+			frequencies.add(e.getValue());
+		});
+		return Pair.of(values, frequencies);
 	}
 
 }

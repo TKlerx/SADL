@@ -14,13 +14,18 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
-import org.apache.commons.math3.util.Precision;
+import org.apache.commons.lang3.tuple.Pair;
 
 import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.map.TIntIntMap;
+import gnu.trove.map.hash.TIntIntHashMap;
 import sadl.input.TimedInput;
 import sadl.input.TimedWord;
+import sadl.modellearner.rtiplus.OperationUtil;
+import sadl.modellearner.rtiplus.analysis.DistributionAnalysis;
 
 /**
  * 
@@ -41,11 +46,14 @@ public class PDRTAInput implements Serializable {
 
 	private final TimedInput inp;
 
-	public PDRTAInput(TimedInput inp, String histBins, boolean expand) {
+	public PDRTAInput(TimedInput inp, DistributionAnalysis histoBinDistributionAnalyis, double expansionRate) {
 
 		this.inp = inp;
-		final TIntList timePoints = loadTimeDelays(expand);
-		setHistBorders(timePoints, histBins);
+		final Pair<TIntList, TIntList> timePoints = loadTimeDelays();
+		minTimeDelay = timePoints.getLeft().get(0);
+		maxTimeDelay = timePoints.getLeft().get(timePoints.getLeft().size() - 1);
+		expand(expansionRate);
+		this.histoBorders = histoBinDistributionAnalyis.performAnalysis(timePoints.getLeft(), timePoints.getRight(), minTimeDelay, maxTimeDelay).toArray();
 		init();
 	}
 
@@ -70,89 +78,37 @@ public class PDRTAInput implements Serializable {
 		// inp.clearWords();
 	}
 
-	private TIntList loadTimeDelays(boolean expand) {
+	private void expand(double expansionRate) {
 
-		final TIntList timePoints = new TIntArrayList();
-		maxTimeDelay = Integer.MIN_VALUE;
-		minTimeDelay = Integer.MAX_VALUE;
-
-		int timeDelay;
-		for (final TimedWord w : inp) {
-			for (int i = 0; i < w.length(); i++) {
-				timeDelay = w.getTimeValue(i);
-				if (timeDelay > maxTimeDelay) {
-					maxTimeDelay = timeDelay;
-				}
-				if (timeDelay < minTimeDelay) {
-					minTimeDelay = timeDelay;
-				}
-				timePoints.add(timeDelay);
-			}
-		}
-
-		if (expand) {
-			final int val = (int) Math.rint((maxTimeDelay - minTimeDelay) * 0.05);
+		if (expansionRate > 0.0) {
+			final int val = (int) Math.rint((maxTimeDelay - minTimeDelay) * expansionRate);
 			minTimeDelay -= val;
 			maxTimeDelay += val;
 			if (minTimeDelay < 0) {
 				minTimeDelay = 0;
 			}
 		}
-
-		return timePoints;
 	}
 
-	private void setHistBorders(TIntList timePoints, String histBins) {
+	@SuppressWarnings("boxing")
+	private Pair<TIntList, TIntList> loadTimeDelays() {
 
-		boolean err = false;
-		if (histBins == null) {
-			err = true;
-		} else {
-			final String[] b = histBins.split("-", -1);
-			if (b.length == 1) {
-				try {
-					final int numHistoBins = Integer.parseInt(b[0]);
-					calcHistBorders(timePoints, numHistoBins);
-				} catch (final NumberFormatException e) {
-					err = true;
-				}
-			} else {
-				if (!(b[0].equals("") || !b[b.length - 1].equals(""))) {
-					err = true;
-				} else {
-					histoBorders = new int[b.length - 2];
-					for (int i = 1; i < (b.length - 1); i++) {
-						try {
-							histoBorders[i - 1] = Integer.parseInt(b[i]);
-						} catch (final NumberFormatException e) {
-							err = true;
-						}
-					}
-				}
+		final TIntIntMap timeDistr = new TIntIntHashMap();
+
+		int timeDelay;
+		for (final TimedWord w : inp) {
+			for (int i = 0; i < w.length(); i++) {
+				timeDelay = w.getTimeValue(i);
+				timeDistr.adjustOrPutValue(timeDelay, 1, 1);
 			}
 		}
-		if (err) {
-			throw new IllegalArgumentException(
-					"Wrong parameter: HISTOGRAM_BINS must be " + "a sequence of borders -b1-b2-...-bn- or the number of bins to use");
-		}
-	}
 
-	private void calcHistBorders(TIntList timePoints, int numHistoBins) {
+		final SortedMap<Integer, Integer> sortedTimeDistr = new TreeMap<>();
+		timeDistr.forEachEntry((k, v) -> {
+			return sortedTimeDistr.put(k, v) == null;
+		});
 
-		timePoints.sort();
-		histoBorders = new int[numHistoBins - 1];
-		for (int i = 1; i < numHistoBins; i++) {
-			final double idx = ((double) i / (double) numHistoBins) * (timePoints.size() - 1);
-			final double idxFloor = Math.floor(idx);
-			if (Precision.equals(idx, idxFloor)) {
-				histoBorders[i - 1] = timePoints.get((int) idx);
-			} else {
-				final double vFloor = timePoints.get((int) idxFloor);
-				final double vCeil = timePoints.get((int) (idxFloor + 1.0));
-				final double val = (vFloor * (1.0 - (idx - idxFloor))) + (vCeil * (idx - idxFloor));
-				histoBorders[i - 1] = (int) Math.rint(val);
-			}
-		}
+		return OperationUtil.distributionsMapToLists(sortedTimeDistr);
 	}
 
 	/**

@@ -843,11 +843,17 @@ public class StateStatistic implements Serializable {
 
 	void cleanUp(PDRTAState s) {
 
+		if (!trainMode) {
+			throw new UnsupportedOperationException("Clean up can only be performed in train mode");
+		}
+
 		intervalProbs = new TIntObjectHashMap<>();
 		for (int i = 0; i < symbolCount.length; i++) {
 			final NavigableMap<Integer, Interval> ins = s.getIntervals(i);
 			for (final Interval in : ins.values()) {
-				addToMap(i, in, getTransProb(i, in));
+				if (in.getTarget() != null) {
+					addToMap(i, in, getTransProb(i, in));
+				}
 			}
 		}
 
@@ -874,6 +880,7 @@ public class StateStatistic implements Serializable {
 		totalInCount = -1;
 	}
 
+	@FunctionalInterface
 	public interface CalcRatio {
 		double calc(int v1, int t1, int v2, int t2);
 	}

@@ -10,6 +10,7 @@
  */
 package sadl.modellearner.rtiplus;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.NavigableSet;
 
@@ -17,8 +18,12 @@ import com.google.common.collect.TreeMultimap;
 
 import sadl.input.TimedInput;
 import sadl.interfaces.ProbabilisticModel;
+import sadl.modellearner.rtiplus.analysis.DistributionAnalysis;
+import sadl.modellearner.rtiplus.analysis.QuantileAnalysis;
 import sadl.modellearner.rtiplus.boolop.OrOperator;
+import sadl.modellearner.rtiplus.tester.LikelihoodRatioTester;
 import sadl.modellearner.rtiplus.tester.NaiveLikelihoodRatioTester;
+import sadl.modellearner.rtiplus.tester.OperationTester;
 import sadl.models.pdrta.Interval;
 import sadl.models.pdrta.PDRTA;
 import sadl.models.pdrta.PDRTAInput;
@@ -31,25 +36,80 @@ import sadl.utils.Settings;
  */
 public class SearchingPDRTALearner extends SimplePDRTALearner {
 
-	private final int maxMergesToSearch = 10;
-	private final int maxSplitsToSearch = 10;
+	public enum SearchMeasure {
+		AIC, SIZE
+	}
 
-	public SearchingPDRTALearner(double sig, String histBins, OperationTesterType testerType, DistributionCheckType distrCheckType, SplitPosition splitPos,
-			String boolOps, String dir) {
-		super(sig, histBins, testerType, distrCheckType, splitPos, boolOps, dir);
+	private final int maxOperationsToSearch;
+	private final boolean searchParallel;
+	private final SearchMeasure measure;
+
+	/**
+	 * Creates a searching RTI+ learner as it was implemented by Verwer
+	 * 
+	 * @param sig
+	 * @param numHistoBins
+	 * @param doNotMergeWithRoot
+	 * @param testParallel
+	 * @param searchMeasure
+	 * @param searchParallel
+	 * @param dir
+	 */
+	public SearchingPDRTALearner(double sig, int numHistoBins, boolean doNotMergeWithRoot, boolean testParallel, SearchMeasure searchMeasure,
+			boolean searchParallel, Path dir) {
+
+		this(sig, new QuantileAnalysis(numHistoBins), new LikelihoodRatioTester(false), SplitPosition.LEFT, doNotMergeWithRoot, testParallel, 10, searchMeasure,
+				searchParallel, "AOO", dir);
+	}
+
+	/**
+	 * Creates a searching RTI+ learner without IDA
+	 * 
+	 * @param sig
+	 * @param histoBinDistritutionAnalysis
+	 * @param operationTester
+	 * @param splitPos
+	 * @param doNotMergeWithRoot
+	 * @param testParallel
+	 * @param maxOperationsToSearch
+	 * @param searchMeasure
+	 * @param searchParallel
+	 * @param boolOps
+	 * @param dir
+	 */
+	public SearchingPDRTALearner(double sig, DistributionAnalysis histoBinDistritutionAnalysis, OperationTester operationTester, SplitPosition splitPos,
+			boolean doNotMergeWithRoot, boolean testParallel, int maxOperationsToSearch, SearchMeasure searchMeasure, boolean searchParallel, String boolOps,
+			Path dir) {
+
+		this(sig, histoBinDistritutionAnalysis, operationTester, splitPos, doNotMergeWithRoot, testParallel, null, true, false, 0.0, maxOperationsToSearch,
+				searchMeasure, searchParallel, boolOps, dir);
+	}
+
+	public SearchingPDRTALearner(double sig, DistributionAnalysis histoBinDistritutionAnalysis, OperationTester operationTester, SplitPosition splitPos,
+			boolean doNotMergeWithRoot, boolean testParallel, DistributionAnalysis intervalDistributionAnalysis, boolean removeBorderGapsOnly,
+			boolean performIDAActively, double intervalExpansionRate, int maxOperationsToSearch, SearchMeasure searchMeasure, boolean searchParallel,
+			String boolOps, Path dir) {
+
+		super(sig, histoBinDistritutionAnalysis, operationTester, splitPos, doNotMergeWithRoot, testParallel, intervalDistributionAnalysis,
+				removeBorderGapsOnly, performIDAActively, intervalExpansionRate, boolOps, dir);
+
+		this.maxOperationsToSearch = maxOperationsToSearch;
+		this.searchParallel = searchParallel;
+		this.measure = searchMeasure;
 	}
 
 	@Override
+	@SuppressWarnings("boxing")
 	public ProbabilisticModel train(TimedInput trainingSequences) {
 
 		logger.info("RTI+: Building automaton from input sequences");
 
-		final boolean expand = distrCheckType.compareTo(DistributionCheckType.STRICT) > 0;
-		final PDRTAInput in = new PDRTAInput(trainingSequences, histBinsStr, expand);
+		final boolean expand = intervalDistriAnalysis != null;
+		final PDRTAInput in = new PDRTAInput(trainingSequences, histoBinDistriAnalysis, expand ? intervalExpRate : 0.0);
 		final PDRTA a = new PDRTA(in);
 
 		// TODO log new params
-		logger.info("Parameters are: significance={} distrCheckType={}", significance, distrCheckType);
+		logger.info("Parameters are: significance={} distrCheckType={}", significance);
 		logger.info("Histogram Bins are: {}", a.getHistBinsString());
 
 		logger.info("*** Performing searching RTI+ ***");
@@ -58,7 +118,12 @@ public class SearchingPDRTALearner extends SimplePDRTALearner {
 		sc.setRed(a.getRoot());
 		tester.setColoring(sc);
 		mainModel = a;
-		greedyRTIplus(a, sc);
+		search(a, sc);
+
+		if (intervalDistriAnalysis != null && !performIDAActively) {
+			logger.info("Running IDA passively after training");
+			runIDAPassively(a);
+		}
 
 		logger.info("Final PDRTA contains {} states and {} transitions", a.getStateCount(), a.getSize());
 		logger.info("Trained PDRTA with quality: Likelihood={} and AIC={}", Math.exp(NaiveLikelihoodRatioTester.calcLikelihood(a).getRatio()), calcAIC(a));
@@ -72,9 +137,10 @@ public class SearchingPDRTALearner extends SimplePDRTALearner {
 	}
 
 	// TODO Try to reduce duplicated code regarding SimplePDRTALearner.complete(...)
-	private void greedyRTIplus(PDRTA a, StateColoring sc) {
+	@SuppressWarnings("boxing")
+	private void search(PDRTA a, StateColoring sc) {
 
-		final boolean preExit = (bOp[2] instanceof OrOperator) && distrCheckType.equals(DistributionCheckType.DISABLED);
+		final boolean preExit = (bOp[2] instanceof OrOperator) && (intervalDistriAnalysis == null);
 		if (preExit) {
 			logger.info("Pre-Exiting algorithm when number of tails falls below minData");
 		}
@@ -89,18 +155,19 @@ public class SearchingPDRTALearner extends SimplePDRTALearner {
 			logger.debug("Found most visited transition  {}  containing {} tails", t.toString(), t.in.getTails().size());
 			counter++;
 
-			if (!distrCheckType.equals(DistributionCheckType.DISABLED)) {
+			if (intervalDistriAnalysis != null) {
 				logger.debug("Checking data distribution");
-				final List<Interval> idaIns = checkDistribution(t.source, t.symAlphIdx, distrCheckType, sc);
+				final List<Interval> idaIns = perfomIDA(t.source, t.symAlphIdx, t.in.getEnd(), sc);
 				if (idaIns.size() > 0) {
 					logger.debug("#{} DO: Split interval due to IDA into {} intervals", counter, idaIns.size());
-					// TODO Printing the intervals may be to expensive just for logging
-					final StringBuilder sb = new StringBuilder();
-					for (final Interval in : idaIns) {
-						sb.append("  ");
-						sb.append(in.toString());
+					if (logger.isTraceEnabled()) {
+						final StringBuilder sb = new StringBuilder();
+						for (final Interval in : idaIns) {
+							sb.append("  ");
+							sb.append(in.toString());
+						}
+						logger.trace("Resulting intervals are:{}", sb.toString());
 					}
-					logger.trace("Resulting intervals are:{}", sb.toString());
 					continue;
 				} else {
 					logger.debug("No splits because of data distributuion were perfomed in:  {}", t.in.toString());
@@ -126,7 +193,7 @@ public class SearchingPDRTALearner extends SimplePDRTALearner {
 			final TreeMultimap<Double, Refinement> all = TreeMultimap.create();
 			int c = 0;
 			for (final Refinement r : splits) {
-				if (c >= maxSplitsToSearch) {
+				if (c >= maxOperationsToSearch) {
 					break;
 				}
 				final PDRTA copy = new PDRTA(a);
@@ -134,9 +201,18 @@ public class SearchingPDRTALearner extends SimplePDRTALearner {
 				final Refinement cR = new Refinement(copy, r, cColoring);
 				cR.refine();
 				complete(copy, cColoring);
-				// TODO Create algo param for selecting between AIC and size
-				// final double modelScore = copy.getSize();
-				final double modelScore = calcAIC(copy);
+				double modelScore;
+				switch (measure) {
+					case AIC:
+						modelScore = calcAIC(copy);
+						break;
+					case SIZE:
+						modelScore = copy.getSize();
+						break;
+					default:
+						modelScore = copy.getSize();
+						break;
+				}
 				all.put(modelScore, r);
 				c++;
 			}
@@ -144,7 +220,7 @@ public class SearchingPDRTALearner extends SimplePDRTALearner {
 			logger.debug("Calculating sizes for merges");
 			c = 0;
 			for (final Refinement r : merges) {
-				if (c >= maxMergesToSearch) {
+				if (c >= maxOperationsToSearch) {
 					break;
 				}
 				final PDRTA copy = new PDRTA(a);
@@ -152,14 +228,23 @@ public class SearchingPDRTALearner extends SimplePDRTALearner {
 				final Refinement cR = new Refinement(copy, r, cColoring);
 				cR.refine();
 				complete(copy, cColoring);
-				// TODO Create algo param for selecting between AIC and size
-				// final double modelScore = copy.getSize();
-				final double modelScore = calcAIC(copy);
+				double modelScore;
+				switch (measure) {
+					case AIC:
+						modelScore = calcAIC(copy);
+						break;
+					case SIZE:
+						modelScore = copy.getSize();
+						break;
+					default:
+						modelScore = copy.getSize();
+						break;
+				}
 				all.put(modelScore, r);
 				c++;
 			}
 
-			assert (all.size() <= (maxMergesToSearch + maxSplitsToSearch));
+			assert (all.size() <= (2 * maxOperationsToSearch));
 			if (!all.isEmpty()) {
 				final double minSize = all.keySet().first();
 				final Refinement r = all.get(minSize).last();

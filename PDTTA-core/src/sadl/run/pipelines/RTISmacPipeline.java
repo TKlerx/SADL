@@ -47,15 +47,16 @@ import sadl.experiments.ExperimentResult;
 import sadl.interfaces.ProbabilisticModel;
 import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.modellearner.rtiplus.SearchingPDRTALearner;
+import sadl.modellearner.rtiplus.SearchingPDRTALearner.SearchMeasure;
 import sadl.modellearner.rtiplus.SimplePDRTALearner;
-import sadl.modellearner.rtiplus.SimplePDRTALearner.DistributionCheckType;
-import sadl.modellearner.rtiplus.SimplePDRTALearner.OperationTesterType;
 import sadl.modellearner.rtiplus.SimplePDRTALearner.SplitPosition;
 import sadl.models.pdrta.PDRTA;
 import sadl.oneclassclassifier.LibSvmClassifier;
 import sadl.oneclassclassifier.OneClassClassifier;
 import sadl.oneclassclassifier.ThresholdClassifier;
 import sadl.oneclassclassifier.clustering.DbScanClassifier;
+import sadl.run.factories.learn.RTIFactory.DistributionAnalysisType;
+import sadl.run.factories.learn.RTIFactory.OperationTesterType;
 import sadl.utils.MasterSeed;
 import sadl.utils.Settings;
 
@@ -89,7 +90,7 @@ public class RTISmacPipeline implements Serializable {
 	private double sig;
 
 	@Parameter(names = "-hist", required = true, arity = 1)
-	private String hist;
+	private int hist;
 
 	@Parameter(names = "-greedy", arity = 0)
 	boolean greedy = false;
@@ -98,7 +99,7 @@ public class RTISmacPipeline implements Serializable {
 	OperationTesterType tester = OperationTesterType.LRT;
 
 	@Parameter(names = "-ida", arity = 1)
-	DistributionCheckType distrCheck = DistributionCheckType.DISABLED;
+	DistributionAnalysisType distrCheck = DistributionAnalysisType.DISABLED;
 
 	@Parameter(names = "-sm", arity = 1)
 	SplitPosition splitPos = SplitPosition.MIDDLE;
@@ -107,7 +108,7 @@ public class RTISmacPipeline implements Serializable {
 	String boolOps = "AAA";
 
 	@Parameter(names = "-steps", arity = 1)
-	String stepsDir = null;
+	Path stepsDir = null;
 
 	// Detector parameters
 	@Parameter(names = "-aggregateSublists", arity = 1)
@@ -250,9 +251,9 @@ public class RTISmacPipeline implements Serializable {
 
 		final ProbabilisticModelLearner learner;
 		if (!greedy) {
-			learner = new SimplePDRTALearner(sig, hist, tester, distrCheck, splitPos, boolOps, stepsDir);
+			learner = new SimplePDRTALearner(sig, hist, false, false, stepsDir);
 		} else {
-			learner = new SearchingPDRTALearner(sig, hist, tester, distrCheck, splitPos, boolOps, stepsDir);
+			learner = new SearchingPDRTALearner(sig, hist, false, false, SearchMeasure.SIZE, false, stepsDir);
 		}
 		final AnomalyDetection detection = new AnomalyDetection(anomalyDetector, learner);
 		final ProbabilisticModel m = detection.train(Paths.get(dataString));
