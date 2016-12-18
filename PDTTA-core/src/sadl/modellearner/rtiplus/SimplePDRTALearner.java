@@ -320,7 +320,7 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 	protected NavigableSet<Refinement> getMergeRefs(Transition t, StateColoring sc) {
 
 		final Function<PDRTAState, Optional<Refinement>> testMerge = red -> {
-			if (doNotMergeWithRoot && red.equals(red.getPDRTA().getRoot())) {
+			if (!doNotMergeWithRoot || !red.equals(red.getPDRTA().getRoot())) {
 				double score = tester.testMerge(red, t.target);
 				if (mainModel == t.ta) {
 					logger.trace("Score: {} (MERGE {} with {})", score, red.getIndex(), t.target.getIndex());
