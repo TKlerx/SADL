@@ -55,7 +55,7 @@ public class FrequencyAnalysis extends DistributionAnalysis {
 
 		if (freq < trustedFrequency) {
 			final double trustRate = (double) freq / (double) trustedFrequency;
-			return (int) Math.rint(range * rangeRatio * trustRate);
+			return (int) Math.rint(range * rangeRatio * (1.0 - trustRate));
 		} else {
 			return 0;
 		}
