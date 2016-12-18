@@ -1,91 +1,179 @@
-#RTI+ parameters
-sig [0,1] [0.5]
-hist [1,100] [15]i
-em {LRT, LRT_ADV, NAIVE_LRT, FM, FM_ADV} [LRT]
-#ida {DISABLED, STRICT_BORDER, STRICT, MAD_BORDER, MAD, OUTLIER_BORDER, OUTLIER} [DISABLED]
-sp {LEFT, MIDDLE, RIGHT} [MIDDLE]
+#####################################
+########## RTI+ parameters ##########
+#####################################
 
-bop {AAA, AOO} [AAA]
+sig real [0,1] [0.5]
+
+
+### Histogram bins ###
+hist categorical {FIXED, QUANTILE, STRICT, MAD, IQR, FREQUENCY} [QUANTILE]
+fewHist categorical {DISABLED, FIXED, QUANTILE, STRICT, MAD, IQR, FREQUENCY} [DISABLED]
+
+fewHistLimit integer [1,10] [2]
+fewHistLimit | fewHist in {FIXED, QUANTILE, STRICT, MAD, IQR, FREQUENCY}
+
+
+### Evidence measure ###
+em categorical {LRT, LRT_ADV, NAIVE_LRT, FM, FM_ADV} [LRT]
+sp categorical {LEFT, MIDDLE, RIGHT} [MIDDLE]
+noMergeRoot categorical {true, false} [false]
+testParallel categorical {true, false} [false]
+
+bop categorical {AAA, AOO} [AAA]
 bop | em in {LRT, LRT_ADV, FM, FM_ADV}
 
 
-#Detector parameters
-detectorMethod {SVM,DBSCAN,THRESHOLD_SINGLE,THRESHOLD_AGG_ONLY, THRESHOLD_ALL, GMEANS,XMEANS,KMEANS} [SVM]
+### IDA ###
+ida categorical {DISABLED, STRICT, MAD, IQR, FREQUENCY, FIXED, QUANTILE} [DISABLED]
+
+fewIda categorical {DISABLED, STRICT, MAD, IQR, FREQUENCY, FIXED, QUANTILE} [DISABLED]
+fewIda | ida in {STRICT, MAD, IQR, FREQUENCY, FIXED, QUANTILE}
+
+fewIdaLimit integer [1,10] [2]
+fewIdaLimit | fewIda in {STRICT, MAD, IQR, FREQUENCY, FIXED, QUANTILE}
+
+remBorderOnly categorical {true, false} [false]
+remBorderOnly | ida in {STRICT, MAD, IQR, FREQUENCY, FIXED, QUANTILE}
+
+idaActively categorical {true, false} [false]
+idaActively | ida in {STRICT, MAD, IQR, FREQUENCY, FIXED, QUANTILE}
+
+intervalExpRate real [0,0.5] [0.1]
+intervalExpRate | ida in {STRICT, MAD, IQR, FREQUENCY, FIXED, QUANTILE}
+
+
+### Searching ###
+search categorical {true, false} [false]
+
+maxOpsToSearch integer [1,20] [5]
+maxOpsToSearch | search == true
+
+searchMeasure categorical {SIZE, AIC} [SIZE]
+searchMeasure | search == true
+
+searchPara categorical {true, false} [false]
+searchPara | search == true
+
+
+### Distribution Analysis Params ###
+trustedFreq integer [1,100] [10]
+trustedFreq | hist == FREQUENCY || ida == FREQUENCY
+
+fewTrustedFreq integer [1,100] [10]
+fewTrustedFreq | fewHist == FREQUENCY || fewIda == FREQUENCY
+
+rangeRatio real [0,1] [0.2]
+rangeRatio | hist == FREQUENCY || ida == FREQUENCY
+
+fewRangeRatio real [0,1] [0.2]
+fewRangeRatio | fewHist == FREQUENCY || fewIda == FREQUENCY
+
+iqrStrength real [0,5] [1.0]
+iqrStrength | hist == IQR || ida == IQR
+
+fewIqrStrength real [0,5] [1.0]
+fewIqrStrength | fewHist == IQR || fewIda == IQR
+
+madStrength real [0,5] [1.0]
+madStrength | hist == MAD || ida == MAD
+
+fewMadStrength real [0,5] [1.0]
+fewMadStrength | fewHist == MAD || fewIda == MAD
+
+splitVals integer [0,1000] [100] # No list are possible with SMAC
+splitVals | hist == FIXED || ida == FIXED
+
+fewSplitVals integer [0,1000] [100] # No list are possible with SMAC
+fewSplitVals | fewHist == FIXED || fewIda == FIXED
+
+numQuantiles integer [1,100] [15]
+numQuantiles | hist == QUANTILE || ida == QUANTILE
+
+fewNumQuantiles integer [1,100] [15]
+fewNumQuantiles | fewHist == QUANTILE || fewIda == QUANTILE
+
+
+
+
+#########################################
+########## Detector parameters ##########
+#########################################
+
+detectorMethod categorical {SVM, DBSCAN, THRESHOLD_SINGLE, THRESHOLD_AGG_ONLY, THRESHOLD_ALL, GMEANS, XMEANS, KMEANS} [SVM]
 # Must be tested first!
-# aggregateSublists {true,false} [false] 
+# aggregateSublists categorical {true, false} [false] 
 
-skipFirstElement {true,false}[false]
+skipFirstElement categorical {true,false} [false]
 
-#Threshold parameters
-aggregatedEventThreshold [0,1] [0.00033]
-aggregatedEventThreshold | detectorMethod in {THRESHOLD_SINGLE,THRESHOLD_AGG_ONLY,THRESHOLD_ALL}
 
-aggregatedTimeThreshold [0,1] [0.0067]
-aggregatedTimeThreshold | detectorMethod in {THRESHOLD_AGG_ONLY,THRESHOLD_ALL}
+### Threshold parameters ###
+aggregatedEventThreshold real [0,1] [0.00033]
+aggregatedEventThreshold | detectorMethod in {THRESHOLD_SINGLE, THRESHOLD_AGG_ONLY, THRESHOLD_ALL}
 
-singleEventThreshold [0.0,1.0] [0.00001]
+aggregatedTimeThreshold real [0,1] [0.0067]
+aggregatedTimeThreshold | detectorMethod in {THRESHOLD_AGG_ONLY, THRESHOLD_ALL}
+
+singleEventThreshold real [0,1] [0.00001]
 singleEventThreshold | detectorMethod in {THRESHOLD_ALL}
 
-singleTimeThreshold [0.0,1.0] [0.00001]
+singleTimeThreshold real [0,1] [0.00001]
 singleTimeThreshold | detectorMethod in {THRESHOLD_ALL}
 
 
-#vector detector parameters
-featureCreator {UBER,FULL,SMALL,MINIMAL,SINGLE} [FULL]
-featureCreator | detectorMethod in {SVM,DBSCAN,GMEANS,KMEANS,XMEANS}
+### vector detector parameters ###
+featureCreator categorical {UBER, FULL, SMALL, MINIMAL,SINGLE} [FULL]
+featureCreator | detectorMethod in {SVM, DBSCAN, GMEANS, KMEANS, XMEANS}
 
-scalingMethod {NONE,NORMALIZE,STANDARDIZE} [NORMALIZE]
-scalingMethod | detectorMethod in {SVM,DBSCAN,GMEANS,KMEANS,XMEANS}
+scalingMethod categorical {NONE, NORMALIZE, STANDARDIZE} [NORMALIZE]
+scalingMethod | detectorMethod in {SVM, DBSCAN, GMEANS, KMEANS, XMEANS}
 #forbidden because senseless
-{detectorMethod=DBSCAN,scalingMethod=NONE}
-{detectorMethod=GMEANS,scalingMethod=NONE}
-{detectorMethod=XMEANS,scalingMethod=NONE}
-{detectorMethod=KMEANS,scalingMethod=NONE}
+{detectorMethod=DBSCAN, scalingMethod=NONE}
+{detectorMethod=GMEANS, scalingMethod=NONE}
+{detectorMethod=XMEANS, scalingMethod=NONE}
+{detectorMethod=KMEANS, scalingMethod=NONE}
 
 
-#svm parameters
-svmNu[0,1] [0.1]
-svmNu| detectorMethod in {SVM}
+### svm parameters ###
+svmNu real [0,1] [0.1]
+svmNu | detectorMethod in {SVM}
 
-svmGammaEstimate {true,false} [true]
+svmGammaEstimate categorical {true, false} [true]
 svmGammaEstimate | detectorMethod in {SVM}
 
-svmGamma[0,10E15] [0]
+svmGamma real [0,10E15] [0]
 svmGamma | detectorMethod in {SVM} && svmGammaEstimate in {false}
 
+svmEps real [0,1] [0.001]
+svmEps | detectorMethod in {SVM}
 
-svmEps[0,1] [0.001]
-svmEps| detectorMethod in {SVM}
-
-svmKernel[0,3] [2]i
-svmKernel| detectorMethod in {SVM}
+svmKernel integer [0,3] [2]
+svmKernel | detectorMethod in {SVM}
 
 #degree depends on polynomial kernel
-svmDegree [0,2000000000] [3]i
+svmDegree integer [0,2000000000] [3]
 svmDegree | svmKernel in {1}
 
-svmProbabilityEstimate[0,1] [0]i
-svmProbabilityEstimate| detectorMethod in {SVM}
+svmProbabilityEstimate integer [0,1] [0]
+svmProbabilityEstimate | detectorMethod in {SVM}
 
 
-#db scan parameters
-dbScanN[1,100] [5]i
+### db scan parameters ###
+dbScanN integer [1,100] [5]
 dbScanN | detectorMethod in {DBSCAN}
 
-dbScanEps[0,1] [0.05]
+dbScanEps real [0,1] [0.05]
 dbScanEps | detectorMethod in {DBSCAN}
 
-dbScanThreshold[0,1] [0.05]
+dbScanThreshold real [0,1] [0.05]
 dbScanThreshold | detectorMethod in {DBSCAN}
 
 
-#kMeans/xMeans/gMeans parameter
-kmeansThreshold[0,1] [0.05]
-kmeansThreshold | detectorMethod in {GMEANS,KMEANS,XMEANS}
+### kMeans/xMeans/gMeans parameters ###
+kmeansThreshold real [0,1] [0.05]
+kmeansThreshold | detectorMethod in {GMEANS, KMEANS, XMEANS}
 
-kmeansMinPoints[0,100] [1]i
-kmeansMinPoints | detectorMethod in {GMEANS,KMEANS,XMEANS}
+kmeansMinPoints integer [0,100] [1]
+kmeansMinPoints | detectorMethod in {GMEANS, KMEANS, XMEANS}
 
-# kMeans parameters
-kmeansK[2,1000] [10]i
+kmeansK integer [2,1000] [10]
 kmeansK | detectorMethod in {KMEANS}
