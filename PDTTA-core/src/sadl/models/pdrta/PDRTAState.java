@@ -36,12 +36,12 @@ public class PDRTAState implements Serializable {
 	private final StateStatistic stat;
 	private final int index;
 
-	PDRTAState(PDRTA ta) {
+	PDRTAState(int idx, PDRTA ta) {
 
 		automaton = ta;
 		intervals = new ArrayList<>(Collections.nCopies(ta.getAlphSize(), null));
 		stat = StateStatistic.initStat(ta.getAlphSize(), ta.getHistSizes());
-		index = automaton.addState(this, automaton.getStateCount());
+		index = idx;
 	}
 
 	PDRTAState(PDRTA ta, int idx, StateStatistic st) {
@@ -49,10 +49,7 @@ public class PDRTAState implements Serializable {
 		automaton = ta;
 		intervals = new ArrayList<>(Collections.nCopies(ta.getAlphSize(), null));
 		stat = st;
-		index = automaton.addState(this, idx);
-		if (index != idx) {
-			throw new IllegalStateException("Index " + idx + " already exists!");
-		}
+		index = idx;
 	}
 
 	public PDRTA getPDRTA() {
@@ -82,10 +79,7 @@ public class PDRTAState implements Serializable {
 			}
 		}
 		stat = new StateStatistic(s.stat);
-		index = automaton.addState(this, s.getIndex());
-		if (index != s.index) {
-			throw new IllegalStateException("Index " + s.index + " already exists!");
-		}
+		index = s.getIndex();
 	}
 
 	/**
@@ -237,6 +231,11 @@ public class PDRTAState implements Serializable {
 			// Clean up all present intervals
 			getIntervals(i).map(m -> m.values()).ifPresent(col -> col.stream().filter(in -> in != null).forEach(in -> in.cleanUp()));
 		}
+	}
+
+	void recycle(){
+		stat.recycle();
+		Collections.fill(intervals, null);
 	}
 
 }

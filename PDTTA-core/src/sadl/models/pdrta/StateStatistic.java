@@ -900,6 +900,14 @@ public class StateStatistic implements Serializable {
 		totalInCount = -1;
 	}
 
+	void recycle() {
+
+		Arrays.fill(timeCount, 0);
+		Arrays.fill(symbolCount, 0);
+		totalOutCount = 0;
+		totalInCount = 0;
+	}
+
 	@FunctionalInterface
 	public interface CalcRatio {
 		double calc(int v1, int t1, int v2, int t2);

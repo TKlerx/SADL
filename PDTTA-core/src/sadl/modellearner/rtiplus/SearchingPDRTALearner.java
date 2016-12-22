@@ -151,8 +151,10 @@ public class SearchingPDRTALearner extends SimplePDRTALearner {
 			if (directory != null) {
 				draw(a, sc, true, directory, counter);
 			}
-			logger.debug("Automaton contains {} states and {} transitions", a.getStateCount(), a.getSize());
-			logger.debug("Found most visited transition  {}  containing {} tails", t.toString(), t.in.getTails().size());
+			if (logger.isDebugEnabled()) {
+				logger.debug("Automaton contains {} states and {} transitions", a.getStateCount(), a.getSize());
+				logger.debug("Found most visited transition  {}  containing {} tails", t.toString(), t.in.getTails().size());
+			}
 			counter++;
 
 			if (intervalDistriAnalysis != null) {

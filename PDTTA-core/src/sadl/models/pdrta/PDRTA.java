@@ -38,8 +38,11 @@ import com.google.common.collect.TreeMultimap;
 
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.linked.TIntLinkedList;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
 import sadl.input.TimedWord;
 import sadl.interfaces.AutomatonModel;
 import sadl.modellearner.rtiplus.StateColoring;
@@ -58,6 +61,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 	private static final int minData = 10;
 
 	private final TIntObjectMap<PDRTAState> states;
+	private final TIntLinkedList recycledStatesQueue;
 	private final PDRTAState root;
 	private final PDRTAInput input;
 
@@ -102,8 +106,10 @@ public class PDRTA implements AutomatonModel, Serializable {
 
 		input = a.input;
 		states = new TIntObjectHashMap<>();
+		recycledStatesQueue = new TIntLinkedList(a.recycledStatesQueue);
 		for (final PDRTAState org : a.states.valueCollection()) {
-			new PDRTAState(org, this);
+			final PDRTAState cS = new PDRTAState(org, this);
+			states.put(cS.getIndex(), cS);
 		}
 		for (final PDRTAState org : a.states.valueCollection()) {
 			for (int i = 0; i < input.getAlphSize(); i++) {
@@ -196,7 +202,9 @@ public class PDRTA implements AutomatonModel, Serializable {
 	}
 
 	public Collection<PDRTAState> getStates() {
-		return states.valueCollection();
+
+		final TIntSet recycled = new TIntHashSet(recycledStatesQueue);
+		return states.valueCollection().stream().filter(s -> !recycled.contains(s.getIndex())).collect(Collectors.toSet());
 	}
 
 	public void checkConsistency() {
@@ -238,7 +246,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 		q.add(root);
 		while (!q.isEmpty()) {
 			final PDRTAState s = q.poll();
-			final PDRTAState s2 = states.get(s.getIndex());
+			final PDRTAState s2 = getState(s.getIndex());
 			if (s != s2) {
 				throw new IllegalStateException("State (" + s.getIndex() + ") is not in map!");
 			}
@@ -250,20 +258,20 @@ public class PDRTA implements AutomatonModel, Serializable {
 				}
 			}
 		}
-		if (counter != states.size()) {
-			throw new IllegalStateException("Found " + counter + " sates in structure but " + states.size() + " states are in map!");
+		if (counter != getStateCount()) {
+			throw new IllegalStateException("Found " + counter + " sates in structure but " + getStateCount() + " states are in map!");
 		}
 	}
 
 	@Override
 	public int getStateCount() {
-		return states.size();
+		return states.size() - recycledStatesQueue.size();
 	}
 
 	public int getSize() {
 
 		int result = 0;
-		for (final PDRTAState s : states.valueCollection()) {
+		for (final PDRTAState s : getStates()) {
 			// Count intervals for state
 			result += s.getIntervals().stream().filter(m -> m != null).flatMap(m -> m.values().stream()).filter(in -> in != null).mapToInt(in -> 1).sum();
 		}
@@ -276,8 +284,12 @@ public class PDRTA implements AutomatonModel, Serializable {
 
 	public boolean containsState(PDRTAState s) {
 
-		final PDRTAState s2 = states.get(s.getIndex());
+		final PDRTAState s2 = getState(s.getIndex());
 		if (s2 != null && s == s2) {
+			final TIntSet recycled = new TIntHashSet(recycledStatesQueue);
+			if (recycled.contains(s.getIndex())) {
+				return false;
+			}
 			return true;
 		} else {
 			return false;
@@ -385,7 +397,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 		ap.append("\"\" -> 0;\n");
 
 		// Write states
-		for (final PDRTAState s : states.valueCollection()) {
+		for (final PDRTAState s : getStates()) {
 			if (found.contains(s)) {
 				ap.append(Integer.toString(s.getIndex()));
 				ap.append(" [ xlabel = \"");
@@ -406,16 +418,6 @@ public class PDRTA implements AutomatonModel, Serializable {
 		ap.append(sb.toString());
 
 		ap.append("}");
-	}
-
-	int addState(PDRTAState s, int idx) {
-
-		while (states.containsKey(idx)) {
-			idx++;
-		}
-		final PDRTAState x1 = states.put(idx, s);
-		assert (x1 == null);
-		return idx;
 	}
 
 	protected boolean hasInput() {
@@ -446,7 +448,8 @@ public class PDRTA implements AutomatonModel, Serializable {
 
 		input = in;
 		states = new TIntObjectHashMap<>();
-		root = new PDRTAState(this);
+		recycledStatesQueue = new TIntLinkedList();
+		root = acquireState();
 		createTAPTA();
 	}
 
@@ -454,11 +457,13 @@ public class PDRTA implements AutomatonModel, Serializable {
 
 		input = inp;
 		states = new TIntObjectHashMap<>();
+		recycledStatesQueue = new TIntLinkedList();
 
 		// Create states with statistic
 		for (final Integer sourceIdx : trans.keySet()) {
-			final StateStatistic s = StateStatistic.reconstructStat(input.getAlphSize(), getHistSizes(), stats.get(sourceIdx));
-			new PDRTAState(this, sourceIdx.intValue(), s);
+			final StateStatistic st = StateStatistic.reconstructStat(input.getAlphSize(), getHistSizes(), stats.get(sourceIdx));
+			final PDRTAState s = new PDRTAState(this, sourceIdx.intValue(), st);
+			states.put(s.getIndex(), s);
 		}
 		// Create transitions
 		for (final Entry<Integer, String> eT : trans.entries()) {
@@ -475,13 +480,14 @@ public class PDRTA implements AutomatonModel, Serializable {
 			} else {
 				prob = Double.parseDouble(split[9].substring(2));
 			}
-			final PDRTAState s = states.get(source);
+			final PDRTAState s = getState(source);
 			PDRTAState t;
 			if (!states.containsKey(target)) {
 				final StateStatistic st = StateStatistic.reconstructStat(getAlphSize(), getHistSizes(), stats.get(new Integer(target)));
 				t = new PDRTAState(this, target, st);
+				states.put(t.getIndex(), t);
 			} else {
-				t = states.get(target);
+				t = getState(target);
 			}
 			// Create interval for source state
 			Optional<NavigableMap<Integer, Interval>> ins = s.getIntervals(input.getAlphIndex(sym));
@@ -525,7 +531,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 			assert (in.getTarget() == null);
 			final Set<Entry<Integer, TimedTail>> tails = in.getTails().entries();
 			if (!tails.isEmpty()) {
-				final PDRTAState target = new PDRTAState(this);
+				final PDRTAState target = acquireState();
 				in.setTarget(target);
 				for (final Entry<Integer, TimedTail> e : tails) {
 					target.addTail(e.getValue());
@@ -545,7 +551,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 			final Set<Entry<Integer, TimedTail>> tails = interval.getTails().entries();
 			assert (interval.getTarget() == null);
 			if (!tails.isEmpty()) {
-				interval.setTarget(new PDRTAState(this));
+				interval.setTarget(acquireState());
 			}
 			for (final Entry<Integer, TimedTail> e : tails) {
 				TimedTail tail = e.getValue();
@@ -558,7 +564,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 					// Interval has to be present, was created within the addTail method
 					in = ts.getInterval(tail.getSymbolAlphIndex(), tail.getTimeDelay()).get();
 					if (in.getTarget() == null) {
-						in.setTarget(new PDRTAState(this));
+						in.setTarget(acquireState());
 					}
 					ts = in.getTarget();
 				}
@@ -568,26 +574,33 @@ public class PDRTA implements AutomatonModel, Serializable {
 		}
 	}
 
-	public PDRTAState createState() {
-		return new PDRTAState(this);
+	public PDRTAState acquireState() {
+
+		if (!recycledStatesQueue.isEmpty()) {
+			return states.get(recycledStatesQueue.removeAt(0));
+		}
+		final PDRTAState s = new PDRTAState(states.size(), this);
+		states.put(states.size(), s);
+		return s;
 	}
 
-	public void removeSubAPTA(PDRTAState s, StateColoring sc) {
+	public void recycleSubAPTA(PDRTAState s, StateColoring sc) {
 
-		removeState(s, sc);
 		for (final PDRTAState t : s.getTargets()) {
-			removeSubAPTA(t, sc);
+			recycleSubAPTA(t, sc);
 		}
+		recycleState(s, sc);
 	}
 
 	public static int getMinData() {
 		return minData;
 	}
 
-	public void removeState(PDRTAState s, StateColoring sc) {
+	public void recycleState(PDRTAState s, StateColoring sc) {
 
 		if (states.containsKey(s.getIndex()) && states.get(s.getIndex()) == s) {
-			states.remove(s.getIndex());
+			recycledStatesQueue.add(s.getIndex());
+			s.recycle();
 			if (sc.isBlue(s)) {
 				sc.remove(s);
 			}
@@ -624,16 +637,15 @@ public class PDRTA implements AutomatonModel, Serializable {
 		}
 		ap.append("}\n");
 		// Write symbol and time distributions for each state as comment
-		for (final int key : states.keys()) {
-			final PDRTAState s = states.get(key);
+		for (final PDRTAState s : getStates()) {
 			if (found.contains(s)) {
 				ap.append("// ");
-				ap.append(Integer.toString(key));
+				ap.append(Integer.toString(s.getIndex()));
 				ap.append(" SYM ");
 				ap.append(s.getStat().getSymbolProbsString());
 				ap.append("\n");
 				ap.append("// ");
-				ap.append(Integer.toString(key));
+				ap.append(Integer.toString(s.getIndex()));
 				ap.append(" TIME ");
 				ap.append(s.getStat().getTimeProbsString());
 				ap.append("\n");
@@ -662,6 +674,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 		result = prime * result + ((input == null) ? 0 : input.hashCode());
 		result = prime * result + ((root == null) ? 0 : root.hashCode());
 		result = prime * result + ((states == null) ? 0 : states.hashCode());
+		result = prime * result + ((recycledStatesQueue == null) ? 0 : recycledStatesQueue.hashCode());
 		return result;
 	}
 
@@ -699,12 +712,24 @@ public class PDRTA implements AutomatonModel, Serializable {
 		} else if (!states.equals(other.states)) {
 			return false;
 		}
+		if (recycledStatesQueue == null) {
+			if (other.recycledStatesQueue != null) {
+				return false;
+			}
+		} else if (!recycledStatesQueue.equals(other.recycledStatesQueue)) {
+			return false;
+		}
 		return true;
 	}
 
 	public void cleanUp() {
 
 		input.clear();
+		final boolean success = recycledStatesQueue.forEach(idx -> states.remove(idx) != null);
+		if (!success) {
+			throw new IllegalStateException("Not all recycled states could be found in state map");
+		}
+		recycledStatesQueue.clear();
 		for (final PDRTAState s : states.valueCollection()) {
 			s.cleanUp();
 		}
