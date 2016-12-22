@@ -12,11 +12,15 @@ package sadl.models.pdrta;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * 
@@ -25,9 +29,6 @@ import java.util.TreeMap;
  */
 public class PDRTAState implements Serializable {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 
 	private final PDRTA automaton;
@@ -35,24 +36,18 @@ public class PDRTAState implements Serializable {
 	private final StateStatistic stat;
 	private final int index;
 
-	protected PDRTAState(PDRTA ta) {
+	PDRTAState(PDRTA ta) {
 
 		automaton = ta;
-		intervals = new ArrayList<>();
-		for (int i = 0; i < ta.getAlphSize(); ++i) {
-			intervals.add(Interval.createInitialIntervalMap(ta.getMinTimeDelay(), ta.getMaxTimeDelay()));
-		}
+		intervals = new ArrayList<>(Collections.nCopies(ta.getAlphSize(), null));
 		stat = StateStatistic.initStat(ta.getAlphSize(), ta.getHistSizes());
 		index = automaton.addState(this, automaton.getStateCount());
 	}
 
-	protected PDRTAState(PDRTA ta, int idx, StateStatistic st) {
+	PDRTAState(PDRTA ta, int idx, StateStatistic st) {
 
 		automaton = ta;
-		intervals = new ArrayList<>();
-		for (int i = 0; i < ta.getAlphSize(); ++i) {
-			intervals.add(Interval.createInitialIntervalMap(ta.getMinTimeDelay(), ta.getMaxTimeDelay()));
-		}
+		intervals = new ArrayList<>(Collections.nCopies(ta.getAlphSize(), null));
 		stat = st;
 		index = automaton.addState(this, idx);
 		if (index != idx) {
@@ -71,14 +66,20 @@ public class PDRTAState implements Serializable {
 	protected PDRTAState(PDRTAState s, PDRTA a) {
 
 		automaton = a;
-		intervals = new ArrayList<>();
+		intervals = new ArrayList<>(Collections.nCopies(automaton.getAlphSize(), null));
 		for (int i = 0; i < automaton.getAlphSize(); ++i) {
-			final NavigableMap<Integer, Interval> newIns = new TreeMap<>();
-			final Set<Entry<Integer, Interval>> ins = s.getIntervals(i).entrySet();
-			for (final Entry<Integer, Interval> eIn : ins) {
-				newIns.put(eIn.getKey(), new Interval(eIn.getValue()));
+			final Optional<Set<Entry<Integer, Interval>>> ins = s.getIntervals(i).map(m -> m.entrySet());
+			if (ins.isPresent()) {
+				final NavigableMap<Integer, Interval> newIns = new TreeMap<>();
+				for (final Entry<Integer, Interval> eIn : ins.get()) {
+					if (eIn.getValue() != null) {
+						newIns.put(eIn.getKey(), new Interval(eIn.getValue()));
+					} else {
+						newIns.put(eIn.getKey(), null);
+					}
+				}
+				intervals.set(i, newIns);
 			}
-			intervals.add(newIns);
 		}
 		stat = new StateStatistic(s.stat);
 		index = automaton.addState(this, s.getIndex());
@@ -99,9 +100,14 @@ public class PDRTAState implements Serializable {
 				stat.addToStats(tail);
 				final TimedTail t = tail.getNextTail();
 				if (t != null) {
-					final Interval in = getInterval(t.getSymbolAlphIndex(), t.getTimeDelay());
-					assert (in != null);
-					in.addTail(t);
+					Optional<NavigableMap<Integer, Interval>> inMap = getIntervals(t.getSymbolAlphIndex());
+					if (!inMap.isPresent()) {
+						inMap = Optional.of(Interval.createInitialIntervalMap(automaton.getMinTimeDelay(), automaton.getMaxTimeDelay()));
+						intervals.set(t.getSymbolAlphIndex(), inMap.get());
+					}
+					assert (inMap.get().size() == 1);
+					// Always contains existing initial interval
+					inMap.get().firstEntry().getValue().addTail(t);
 				}
 			} else {
 				throw new IllegalArgumentException("The given TimedTail must not be null!");
@@ -111,18 +117,17 @@ public class PDRTAState implements Serializable {
 		}
 	}
 
-	public PDRTAState getTarget(TimedTail tail) {
+	public Collection<PDRTAState> getTargets() {
+		return intervals.stream().filter(m -> m != null).flatMap(m -> m.values().stream()).filter(in -> in != null).map(in -> in.getTarget())
+				.collect(Collectors.toSet());
+	}
+
+	public Optional<PDRTAState> getTarget(TimedTail tail) {
 		return getTarget(tail.getSymbolAlphIndex(), tail.getTimeDelay());
 	}
 
-	public PDRTAState getTarget(int symAlphIdx, int timeDel) {
-
-		final Interval in = getInterval(symAlphIdx, timeDel);
-		if (in == null) {
-			return null;
-		} else {
-			return in.getTarget();
-		}
+	public Optional<PDRTAState> getTarget(int symAlphIdx, int timeDel) {
+		return getInterval(symAlphIdx, timeDel).map(in -> in.getTarget());
 	}
 
 	public double getProbabilityTrans(TimedTail tail) {
@@ -131,12 +136,16 @@ public class PDRTAState implements Serializable {
 
 	public double getProbabilityTrans(int symAplhIdx, int timeDel) {
 
-		final Interval in = getInterval(symAplhIdx, timeDel);
+		final Optional<Interval> in = getInterval(symAplhIdx, timeDel);
 		return getProbabilityTrans(symAplhIdx, in);
 
 	}
 
 	public double getProbabilityTrans(int symAplhIdx, Interval in) {
+		return getProbabilityTrans(symAplhIdx, Optional.ofNullable(in));
+	}
+
+	public double getProbabilityTrans(int symAplhIdx, Optional<Interval> in) {
 
 		if (in == null) {
 			return 0.0;
@@ -153,37 +162,24 @@ public class PDRTAState implements Serializable {
 		return stat.getTailEndProb();
 	}
 
-	int getSymCount(int symAlphIdx) {
-
-		int count = 0;
-		final Set<Entry<Integer, Interval>> ins = getIntervals(symAlphIdx).entrySet();
-		for (final Entry<Integer, Interval> eIn : ins) {
-			count += eIn.getValue().getTails().size();
-		}
-		return count;
+	public List<NavigableMap<Integer, Interval>> getIntervals() {
+		return intervals;
 	}
 
-	public NavigableMap<Integer, Interval> getIntervals(int alphIdx) {
-		return intervals.get(alphIdx);
+	public Optional<NavigableMap<Integer, Interval>> getIntervals(int alphIdx) {
+		return Optional.ofNullable(intervals.get(alphIdx));
 	}
 
-	public Interval getInterval(int alphIdx, int time) {
+	public Optional<Interval> getInterval(int alphIdx, int time) {
 
-		if (alphIdx < 0) {
-			return null;
+		if (alphIdx < 0 || alphIdx >= automaton.getAlphSize()) {
+			return Optional.empty();
 		}
-		final NavigableMap<Integer, Interval> intMap = intervals.get(alphIdx);
-		final Integer key = intMap.ceilingKey(new Integer(time));
-		if (key == null) {
-			return null;
-		} else {
-			final Interval in = intMap.get(key);
-			if (in.contains(time)) {
-				return in;
-			} else {
-				return null;
-			}
+		final Optional<Interval> in = getIntervals(alphIdx).map(m -> m.ceilingEntry(new Integer(time))).map(e -> e.getValue());
+		if (in.isPresent()) {
+			assert (in.get().contains(time));
 		}
+		return in;
 	}
 
 	@Override
@@ -238,10 +234,8 @@ public class PDRTAState implements Serializable {
 
 		stat.cleanUp(this);
 		for (int i = 0; i < automaton.getAlphSize(); i++) {
-			final NavigableMap<Integer, Interval> m = intervals.get(i);
-			for (final Interval in : m.values()) {
-				in.cleanUp();
-			}
+			// Clean up all present intervals
+			getIntervals(i).map(m -> m.values()).ifPresent(col -> col.stream().filter(in -> in != null).forEach(in -> in.cleanUp()));
 		}
 	}
 

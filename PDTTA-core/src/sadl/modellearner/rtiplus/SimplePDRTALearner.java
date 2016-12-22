@@ -19,12 +19,12 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
 import java.util.Optional;
@@ -265,12 +265,15 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 
 		for (final PDRTAState s : a.getStates()) {
 			for (int i = 0; i < a.getAlphSize(); i++) {
-				for (final Entry<Integer, Interval> e : s.getIntervals(i).entrySet()) {
-					if (!e.getValue().isEmpty()) {
-						final PDRTAState target = e.getValue().getTarget();
-						final List<Interval> newIntervals = perfomIDA(s, i, e.getKey().intValue(), null);
-						for (final Interval in : newIntervals) {
-							in.setTarget(target);
+				// Get all present intervals for s and symbol i
+				final Optional<List<Interval>> ins = s.getIntervals(i).map(m -> m.values().stream().filter(in -> in != null).collect(Collectors.toList()));
+				if (ins.isPresent()) {
+					for (final Interval in : ins.get()) {
+						assert (!in.isEmpty());
+						final PDRTAState target = in.getTarget();
+						final List<Interval> newIntervals = perfomIDA(s, i, in.getEnd(), null);
+						for (final Interval newIn : newIntervals) {
+							newIn.setTarget(target);
 						}
 					}
 				}
@@ -284,28 +287,17 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 		Transition trans = null;
 		for (final PDRTAState r : sc) {
 			for (int i = 0; i < a.getAlphSize(); i++) {
-				final Set<Entry<Integer, Interval>> ins = r.getIntervals(i).entrySet();
-				for (final Entry<Integer, Interval> eIn : ins) {
-					final Interval in = eIn.getValue();
-					assert (in.getTarget() == null || sc.isBlue(in.getTarget()) || sc.isRed(in.getTarget()));
-					if (sc.isBlue(in.getTarget())) {
-						if (maxVisit < in.getTails().size()) {
-							maxVisit = in.getTails().size();
-							trans = new Transition(a, r, i, in, in.getTarget());
-						} else if (maxVisit == in.getTails().size() && trans != null) {
-							if (trans.source.getIndex() >= r.getIndex()) {
-								if (trans.source.getIndex() > r.getIndex()) {
-									trans = new Transition(a, r, i, in, in.getTarget());
-								} else if (trans.target.getIndex() >= in.getTarget().getIndex()) {
-									if (trans.target.getIndex() > in.getTarget().getIndex()) {
-										trans = new Transition(a, r, i, in, in.getTarget());
-									} else if (trans.symAlphIdx >= i) {
-										if (trans.symAlphIdx > i) {
-											trans = new Transition(a, r, i, in, in.getTarget());
-										} else if (trans.in.getBegin() > in.getBegin()) {
-											trans = new Transition(a, r, i, in, in.getTarget());
-										}
-									}
+				final Optional<Collection<Interval>> ins = r.getIntervals(i).map(m -> m.values());
+				if (ins.isPresent()) {
+					for (final Interval in : ins.get()) {
+						if (in != null) {
+							assert (!in.isEmpty());
+							assert (sc.isBlue(in.getTarget()) || sc.isRed(in.getTarget()));
+							if (sc.isBlue(in.getTarget())) {
+								final Transition candidate = new Transition(a, r, i, in, in.getTarget());
+								if (maxVisit < in.getTails().size() || (maxVisit == in.getTails().size() && candidate.compareTo(trans) > 0)) {
+									maxVisit = in.getTails().size();
+									trans = candidate;
 								}
 							}
 						}
@@ -541,15 +533,22 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 
 	public List<Interval> perfomIDA(PDRTAState s, int alphIdx, int timeDelay, StateColoring sc) {
 
-		final NavigableMap<Integer, Interval> ins = s.getIntervals(alphIdx);
-		if (sc != null && ins.size() != 1) {
+		final Optional<NavigableMap<Integer, Interval>> ins = s.getIntervals(alphIdx);
+		if (!ins.isPresent()) {
+			throw new IllegalArgumentException("No intervals exist for ((" + s.getIndex() + "))--" + s.getPDRTA().getSymbol(alphIdx) + "--");
+		}
+
+		if (sc != null && ins.get().size() != 1) {
 			return Collections.emptyList();
 		}
 
-		final Interval in = ins.ceilingEntry(new Integer(timeDelay)).getValue();
-		if (in.isEmpty()) {
-			return Collections.emptyList();
+		final Interval in = ins.get().ceilingEntry(new Integer(timeDelay)).getValue();
+		if (in == null) {
+			throw new IllegalArgumentException(
+					"Tansition ((" + s.getIndex() + "))--" + s.getPDRTA().getSymbol(alphIdx) + "-[..., " + timeDelay + ", ...]--> does not exist");
 		}
+
+		assert (!in.isEmpty());
 
 		final SortedMap<Integer, Integer> tails = in.getTails().asMap().entrySet().stream()
 				.collect(Collectors.toMap(e -> e.getKey(), e -> new Integer(e.getValue().size()), (e1, e2) -> {
@@ -572,7 +571,7 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 		final int minTime = tails.firstKey().intValue();
 		final int maxTime = tails.lastKey().intValue();
 		final List<Interval> resultingIns = new ArrayList<>(removeBorderGapsOnly ? 3 : (splits.size() + 1));
-		Pair<Interval, Interval> splittedIns = null;
+		Pair<Optional<Interval>, Optional<Interval>> splittedIns = null;
 		for (int i = 0; i < splits.size(); i++) {
 			if (removeBorderGapsOnly && i > 0 && i < (splits.size() - 1) && (splits.get(i) < minTime || splits.get(i) >= maxTime)) {
 				// If only border gaps should be removed, only the first an last split will be performed if they are smaller the min time delay or greater equal
@@ -580,12 +579,12 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 				continue;
 			}
 			splittedIns = OperationUtil.split(s, alphIdx, splits.get(i), sc);
-			if (!splittedIns.getLeft().isEmpty()) {
-				resultingIns.add(splittedIns.getLeft());
+			if (splittedIns.getLeft().isPresent()) {
+				resultingIns.add(splittedIns.getLeft().get());
 			}
 		}
-		if (splittedIns != null && !splittedIns.getRight().isEmpty()) {
-			resultingIns.add(splittedIns.getRight());
+		if (splittedIns != null && splittedIns.getRight().isPresent()) {
+			resultingIns.add(splittedIns.getRight().get());
 		}
 
 		return resultingIns;
@@ -597,7 +596,7 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 		return (2.0 * lv.getParam()) - (2.0 * lv.getRatio());
 	}
 
-	static class Transition {
+	static class Transition implements Comparable<Transition> {
 		PDRTA ta;
 		PDRTAState source, target;
 		Interval in;
@@ -605,7 +604,7 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 
 		Transition(PDRTA a, PDRTAState s, int alphIdx, Interval i, PDRTAState t) {
 			assert (i.getTarget() == t);
-			assert (s.getInterval(alphIdx, i.getEnd()) == i);
+			assert (s.getInterval(alphIdx, i.getEnd()).get() == i);
 			ta = a;
 			source = s;
 			symAlphIdx = alphIdx;
@@ -618,6 +617,88 @@ public class SimplePDRTALearner implements ProbabilisticModelLearner {
 			final String s = "((" + source.getIndex() + "))---" + ta.getSymbol(symAlphIdx) + "-[" + in.getBegin() + "," + in.getEnd() + "]--->(("
 					+ target.getIndex() + "))";
 			return s;
+		}
+
+		@Override
+		public int hashCode() {
+
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((in == null) ? 0 : in.hashCode());
+			result = prime * result + ((source == null) ? 0 : source.hashCode());
+			result = prime * result + symAlphIdx;
+			result = prime * result + ((target == null) ? 0 : target.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+
+			if (this == obj) {
+				return true;
+			}
+			if (obj == null) {
+				return false;
+			}
+			if (getClass() != obj.getClass()) {
+				return false;
+			}
+			final Transition other = (Transition) obj;
+			if (in == null) {
+				if (other.in != null) {
+					return false;
+				}
+			} else if (!in.equals(other.in)) {
+				return false;
+			}
+			if (source == null) {
+				if (other.source != null) {
+					return false;
+				}
+			} else if (!source.equals(other.source)) {
+				return false;
+			}
+			if (symAlphIdx != other.symAlphIdx) {
+				return false;
+			}
+			if (target == null) {
+				if (other.target != null) {
+					return false;
+				}
+			} else if (!target.equals(other.target)) {
+				return false;
+			}
+			return true;
+		}
+
+		@Override
+		public int compareTo(Transition t) {
+
+			if (this.source.getIndex() > t.source.getIndex()) {
+				return 1;
+			} else if (this.source.getIndex() < t.source.getIndex()) {
+				return -1;
+			}
+
+			if (this.target.getIndex() > t.target.getIndex()) {
+				return 1;
+			} else if (this.target.getIndex() < t.target.getIndex()) {
+				return -1;
+			}
+
+			if (this.symAlphIdx > t.symAlphIdx) {
+				return 1;
+			} else if (this.symAlphIdx < t.symAlphIdx) {
+				return -1;
+			}
+
+			if (this.in.getBegin() > t.in.getBegin()) {
+				return 1;
+			} else if (this.in.getBegin() < t.in.getBegin()) {
+				return -1;
+			}
+
+			return 0;
 		}
 	}
 

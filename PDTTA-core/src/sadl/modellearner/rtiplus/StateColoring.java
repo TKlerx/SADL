@@ -13,13 +13,10 @@ package sadl.modellearner.rtiplus;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
 
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.procedure.TIntProcedure;
 import gnu.trove.set.hash.TIntHashSet;
-import sadl.models.pdrta.Interval;
 import sadl.models.pdrta.PDRTA;
 import sadl.models.pdrta.PDRTAState;
 
@@ -50,14 +47,10 @@ public class StateColoring implements Iterable<PDRTAState> {
 		if (s != null && !redStates.contains(s.getIndex())) {
 			redStates.add(s.getIndex());
 			blueStates.remove(s.getIndex());
-			for (int i = 0; i < a.getAlphSize(); i++) {
-				final Set<Entry<Integer, Interval>> ins = s.getIntervals(i).entrySet();
-				for (final Entry<Integer, Interval> eIn : ins) {
-					final PDRTAState t = eIn.getValue().getTarget();
-					if (t != null && !redStates.contains(t.getIndex())) {
-						assert (a.containsState(t));
-						blueStates.add(t.getIndex());
-					}
+			for (final PDRTAState t : s.getTargets()) {
+				if (t != null && !redStates.contains(t.getIndex())) {
+					assert (a.containsState(t));
+					blueStates.add(t.getIndex());
 				}
 			}
 		}

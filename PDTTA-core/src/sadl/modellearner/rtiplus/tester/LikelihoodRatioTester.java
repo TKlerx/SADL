@@ -12,6 +12,8 @@ package sadl.modellearner.rtiplus.tester;
 
 import java.util.Collection;
 import java.util.Map.Entry;
+import java.util.NavigableMap;
+import java.util.Optional;
 import java.util.Set;
 
 import com.google.common.collect.HashMultimap;
@@ -51,24 +53,30 @@ public class LikelihoodRatioTester implements OperationTester {
 
 	LikelihoodValue intTestSplit(PDRTAState s, int symAlphIdx, int time, CalcRatio cr) {
 
-		final PDRTAState t = s.getTarget(symAlphIdx, time);
-		assert (t != null);
+		final Optional<PDRTAState> t = s.getTarget(symAlphIdx, time);
+		if (!t.isPresent()) {
+			throw new IllegalArgumentException("Transition has no target state");
+		}
 
 		if (!stateColoring.isRed(s)) {
 			throw new IllegalArgumentException("s must be red!");
-		} else if (!stateColoring.isBlue(t)) {
+		} else if (!stateColoring.isBlue(t.get())) {
 			throw new IllegalArgumentException("Target must be blue!");
 		}
 
 		// Abort because LRT will never be calculated for any state in the tree
-		if (t.getTotalOutEvents() < (2 * PDRTA.getMinData())) {
+		if (t.get().getTotalOutEvents() < (2 * PDRTA.getMinData())) {
 			return new LikelihoodValue();
 		}
 
 		final Multimap<Integer, TimedTail> mHist = HashMultimap.create();
 		final Multimap<Integer, TimedTail> mSym = HashMultimap.create();
-		final Set<Entry<Integer, TimedTail>> tails = s.getInterval(symAlphIdx, time).getTails().entries();
-		for (final Entry<Integer, TimedTail> eT : tails) {
+		final Optional<Set<Entry<Integer, TimedTail>>> tails = s.getInterval(symAlphIdx, time).map(in -> in.getTails().entries());
+		if (!tails.isPresent()) {
+			throw new IllegalArgumentException("Transition does not contain sequences");
+		}
+
+		for (final Entry<Integer, TimedTail> eT : tails.get()) {
 			if (eT.getKey().intValue() <= time && eT.getValue().getNextTail() != null) {
 				mHist.put(new Integer(eT.getValue().getNextTail().getHistBarIndex()), eT.getValue().getNextTail());
 				mSym.put(new Integer(eT.getValue().getNextTail().getSymbolAlphIndex()), eT.getValue().getNextTail());
@@ -76,7 +84,7 @@ public class LikelihoodRatioTester implements OperationTester {
 		}
 
 		final LikelihoodValue lv = new LikelihoodValue();
-		lv.add(recTestSplit(t, mHist, mSym, cr));
+		lv.add(recTestSplit(t.get(), mHist, mSym, cr));
 
 		// TODO delete. only for debug
 		// System.out.println("p=" + (-2.0 * lv.ratio) + " , df="
@@ -148,25 +156,30 @@ public class LikelihoodRatioTester implements OperationTester {
 		Multimap<Integer, TimedTail> mNextHist, mNextSym;
 		Collection<TimedTail> m;
 		for (int i = 0; i < a.getAlphSize(); i++) {
-			assert (s.getIntervals(i).size() == 1);
-			in = s.getIntervals(i).firstEntry().getValue();
-			if (in.getTails().size() > 0) {
-				assert (in.getTarget() != null);
-				mNextHist = HashMultimap.create();
-				mNextSym = HashMultimap.create();
-				m = mSym.get(new Integer(i));
-				for (final TimedTail tail : m) {
-					assert (in.containsTail(tail));
-					nt = tail.getNextTail();
-					if (nt != null) {
-						mNextHist.put(new Integer(nt.getHistBarIndex()), nt);
-						mNextSym.put(new Integer(nt.getSymbolAlphIndex()), nt);
+			final Optional<NavigableMap<Integer, Interval>> ins = s.getIntervals(i);
+			if (ins.isPresent()) {
+				// Only non-red states with initial intervals are processed
+				assert (s.getIntervals(i).get().size() == 1);
+				// Interval is always present
+				in = s.getIntervals(i).get().firstEntry().getValue();
+				if (in.getTails().size() > 0) {
+					assert (in.getTarget() != null);
+					mNextHist = HashMultimap.create();
+					mNextSym = HashMultimap.create();
+					m = mSym.get(new Integer(i));
+					for (final TimedTail tail : m) {
+						assert (in.containsTail(tail));
+						nt = tail.getNextTail();
+						if (nt != null) {
+							mNextHist.put(new Integer(nt.getHistBarIndex()), nt);
+							mNextSym.put(new Integer(nt.getSymbolAlphIndex()), nt);
+						}
 					}
-				}
-				// LRT_FIX : Operator for calculation interruption (thesis: AND, impl: OR, own: AND) => stop recursion
-				// In case of AND => if((in.getTails().size() < 2 * minData) before calculating new maps!
-				if (!SimplePDRTALearner.bOp[2].eval((in.getTails().size() - mNextHist.size()) < minData, mNextHist.size() < minData)) {
-					lv.add(recTestSplit(in.getTarget(), mNextHist, mNextSym, cr));
+					// LRT_FIX : Operator for calculation interruption (thesis: AND, impl: OR, own: AND) => stop recursion
+					// In case of AND => if((in.getTails().size() < 2 * minData) before calculating new maps!
+					if (!SimplePDRTALearner.bOp[2].eval((in.getTails().size() - mNextHist.size()) < minData, mNextHist.size() < minData)) {
+						lv.add(recTestSplit(in.getTarget(), mNextHist, mNextSym, cr));
+					}
 				}
 			}
 		}

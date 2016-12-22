@@ -23,9 +23,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NavigableMap;
+import java.util.NavigableSet;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.math3.util.Pair;
 
@@ -93,7 +98,6 @@ public class PDRTA implements AutomatonModel, Serializable {
 		return states.get(index);
 	}
 
-	@SuppressWarnings("unused")
 	public PDRTA(PDRTA a) {
 
 		input = a.input;
@@ -103,18 +107,21 @@ public class PDRTA implements AutomatonModel, Serializable {
 		}
 		for (final PDRTAState org : a.states.valueCollection()) {
 			for (int i = 0; i < input.getAlphSize(); i++) {
-				final Set<Entry<Integer, Interval>> ins = org.getIntervals(i).entrySet();
-				for (final Entry<Integer, Interval> eIn : ins) {
-					final Interval cIn = getState(org.getIndex()).getInterval(i, eIn.getKey().intValue());
-					assert(cIn.getBegin() == eIn.getValue().getBegin());
-					assert(cIn.getEnd() == eIn.getValue().getEnd());
-					assert(cIn.getTails().size() == eIn.getValue().getTails().size());
-					if (eIn.getValue().getTarget() != null) {
-						assert(cIn.getTarget() == eIn.getValue().getTarget());
-						cIn.setTarget(getState(eIn.getValue().getTarget().getIndex()));
-						assert(cIn.getTarget() != eIn.getValue().getTarget());
-					} else {
-						assert(cIn.getTarget() == null);
+				final Optional<Set<Entry<Integer, Interval>>> ins = org.getIntervals(i).map(m -> m.entrySet());
+				if (ins.isPresent()) {
+					for (final Entry<Integer, Interval> eIn : ins.get()) {
+						final Optional<Interval> cIn = getState(org.getIndex()).getInterval(i, eIn.getKey().intValue());
+						if (eIn.getValue() != null) {
+							assert (cIn.isPresent());
+							assert (cIn.get().getBegin() == eIn.getValue().getBegin());
+							assert (cIn.get().getEnd() == eIn.getValue().getEnd());
+							assert (cIn.get().getTails().size() == eIn.getValue().getTails().size());
+							assert (cIn.get().getTarget() == eIn.getValue().getTarget());
+							cIn.get().setTarget(getState(eIn.getValue().getTarget().getIndex()));
+							assert (cIn.get().getTarget() != eIn.getValue().getTarget());
+						} else {
+							assert (!cIn.isPresent());
+						}
 					}
 				}
 			}
@@ -122,7 +129,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 
 		root = getState(a.root.getIndex());
 
-		assert(states.size() == a.states.size());
+		assert (states.size() == a.states.size());
 
 	}
 
@@ -145,17 +152,13 @@ public class PDRTA implements AutomatonModel, Serializable {
 			p = s.getStat().getHistProb(t);
 			symP.add(p[0]);
 			timeP.add(p[1]);
-			final Interval in = s.getInterval(t.getSymbolAlphIndex(), t.getTimeDelay());
-			s = in.getTarget();
-			t = t.getNextTail();
-			if (s == null) {
-				if (in.getBegin() == input.getMinTimeDelay() && in.getEnd() == input.getMaxTimeDelay()) {
-					// return Pair.create(new TDoubleArrayList(0), new TDoubleArrayList(new double[] { -2.0 }));
-					return Pair.create(new TDoubleArrayList(new double[] { 0.0 }), new TDoubleArrayList(0));
-				} else {
-					// return Pair.create(new TDoubleArrayList(0), new TDoubleArrayList(new double[] { -3.0 }));
-					return Pair.create(new TDoubleArrayList(new double[] { 0.0 }), new TDoubleArrayList(0));
-				}
+			final Optional<Interval> in = s.getInterval(t.getSymbolAlphIndex(), t.getTimeDelay());
+			if (in.isPresent()) {
+				s = in.get().getTarget();
+				t = t.getNextTail();
+			} else {
+				// return Pair.create(new TDoubleArrayList(0), new TDoubleArrayList(new double[] { -3.0 }));
+				return Pair.create(new TDoubleArrayList(new double[] { 0.0 }), new TDoubleArrayList(0));
 			}
 		}
 		symP.add(s.getStat().getTailEndProb());
@@ -177,19 +180,14 @@ public class PDRTA implements AutomatonModel, Serializable {
 				// return new TDoubleArrayList(new double[] { -2.0 });
 				return new TDoubleArrayList(new double[] { 0.0 });
 			}
-			final Interval in = s.getInterval(t.getSymbolAlphIndex(), t.getTimeDelay());
-			assert(in != null);
+			final Optional<Interval> in = s.getInterval(t.getSymbolAlphIndex(), t.getTimeDelay());
 			transP.add(s.getStat().getTransProb(t.getSymbolAlphIndex(), in));
-			s = in.getTarget();
-			t = t.getNextTail();
-			if (s == null) {
-				if (in.getBegin() == input.getMinTimeDelay() && in.getEnd() == input.getMaxTimeDelay()) {
-					// return new TDoubleArrayList(new double[] { -3.0 });
-					return new TDoubleArrayList(new double[] { 0.0 });
-				} else {
-					// return new TDoubleArrayList(new double[] { -4.0 });
-					return new TDoubleArrayList(new double[] { 0.0 });
-				}
+			if (in.isPresent()) {
+				s = in.get().getTarget();
+				t = t.getNextTail();
+			} else {
+				// return new TDoubleArrayList(new double[] { -3.0 });
+				return new TDoubleArrayList(new double[] { 0.0 });
 			}
 		}
 		transP.add(s.getStat().getTailEndProb());
@@ -204,23 +202,30 @@ public class PDRTA implements AutomatonModel, Serializable {
 	public void checkConsistency() {
 
 		// Checking that a path for each sequence exists
-		for (int i = 0; i < input.getAlphSize(); i++) {
-			final Set<Entry<Integer, Interval>> ins = root.getIntervals(i).entrySet();
-			for (final Entry<Integer, Interval> eIn : ins) {
-				final Set<Entry<Integer, TimedTail>> tails = eIn.getValue().getTails().entries();
-				for (final Entry<Integer, TimedTail> eTail : tails) {
-					TimedTail t = eTail.getValue();
-					PDRTAState source = root, target;
-					while (t != null) {
-						assert(source.getInterval(t.getSymbolAlphIndex(), t.getTimeDelay()).getTails().containsValue(t));
-						target = source.getTarget(t);
-						if (target == null) {
-							throw new IllegalStateException("The tail (" + input.getSymbol(t.getSymbolAlphIndex()) + "," + t.getTimeDelay()
-							+ ") has no transition from state ((" + source.getIndex() + "))!");
-						}
-						source = target;
-						t = t.getNextTail();
+		// Get all tails that are leaving root
+		final List<TimedTail> rootTails = root.getIntervals().stream().filter(m -> m != null).flatMap(m -> m.values().stream()).filter(in -> in != null)
+				.flatMap(in -> in.getTails().entries().stream()).map(e -> e.getValue()).collect(Collectors.toList());
+
+		if (rootTails.size() < input.size()) {
+			throw new IllegalStateException("Sequences are missing in the root state");
+		}
+
+		for (TimedTail t : rootTails) {
+			PDRTAState source = root;
+			while (t != null) {
+				final Optional<Interval> in = source.getInterval(t.getSymbolAlphIndex(), t.getTimeDelay());
+				if (in.isPresent()) {
+					final NavigableSet<TimedTail> inTails = in.get().getTails().get(new Integer(t.getTimeDelay()));
+					if (inTails == null || !inTails.contains(t)) {
+						throw new IllegalStateException("The tail (" + input.getSymbol(t.getSymbolAlphIndex()) + "," + t.getTimeDelay()
+						+ ") was not found in transition ((" + source.getIndex() + "))--" + input.getSymbol(t.getSymbolAlphIndex()) + "-["
+						+ in.get().getBegin() + "," + in.get().getEnd() + "]-->((" + in.get().getTarget().getIndex() + "))");
 					}
+					source = in.get().getTarget();
+					t = t.getNextTail();
+				} else {
+					throw new IllegalStateException("The tail (" + input.getSymbol(t.getSymbolAlphIndex()) + "," + t.getTimeDelay()
+					+ ") has no transition from state ((" + source.getIndex() + "))!");
 				}
 			}
 		}
@@ -233,19 +238,15 @@ public class PDRTA implements AutomatonModel, Serializable {
 		q.add(root);
 		while (!q.isEmpty()) {
 			final PDRTAState s = q.poll();
-			PDRTAState s2 = states.get(s.getIndex());
+			final PDRTAState s2 = states.get(s.getIndex());
 			if (s != s2) {
 				throw new IllegalStateException("State (" + s.getIndex() + ") is not in map!");
 			}
 			counter++;
-			for (int i = 0; i < input.getAlphSize(); i++) {
-				final Set<Entry<Integer, Interval>> ins = s.getIntervals(i).entrySet();
-				for (final Entry<Integer, Interval> eIn : ins) {
-					s2 = eIn.getValue().getTarget();
-					if (s2 != null && !seen.contains(s2)) {
-						seen.add(s2);
-						q.add(s2);
-					}
+			for (final PDRTAState t : s.getTargets()) {
+				if (!seen.contains(t)) {
+					seen.add(t);
+					q.add(t);
 				}
 			}
 		}
@@ -263,15 +264,8 @@ public class PDRTA implements AutomatonModel, Serializable {
 
 		int result = 0;
 		for (final PDRTAState s : states.valueCollection()) {
-			for (int i = 0; i < input.getAlphSize(); ++i) {
-				final Set<Entry<Integer, Interval>> es = s.getIntervals(i).entrySet();
-				for (final Entry<Integer, Interval> e : es) {
-					final Interval in = e.getValue();
-					if (in.getTarget() != null) {
-						result++;
-					}
-				}
-			}
+			// Count intervals for state
+			result += s.getIntervals().stream().filter(m -> m != null).flatMap(m -> m.values().stream()).filter(in -> in != null).mapToInt(in -> 1).sum();
 		}
 		return result;
 	}
@@ -318,19 +312,23 @@ public class PDRTA implements AutomatonModel, Serializable {
 	public String toString() {
 
 		final StringBuilder sb = new StringBuilder();
-		toDOTLang(sb);
+		try {
+			toDOTLang(sb);
+		} catch (final IOException e) {
+			e.printStackTrace();
+		}
 		return sb.toString();
 	}
 
-	public void toDOTLang(Appendable ap) {
+	public void toDOTLang(Appendable ap) throws IOException {
 		toDOTLang(ap, 0.0, false);
 	}
 
-	public void toDOTLang(Appendable ap, double minP, boolean withInput) {
+	public void toDOTLang(Appendable ap, double minP, boolean withInput) throws IOException {
 		toDOTLang(ap, minP, withInput, null);
 	}
 
-	public void toDOTLang(Appendable ap, double minP, boolean withInput, StateColoring sc) {
+	public void toDOTLang(Appendable ap, double minP, boolean withInput, StateColoring sc) throws IOException {
 
 		// Write transitions with high probability
 		final StringBuilder sb = new StringBuilder();
@@ -341,74 +339,73 @@ public class PDRTA implements AutomatonModel, Serializable {
 		while (!q.isEmpty()) {
 			final PDRTAState s = q.remove();
 			for (int i = 0; i < input.getAlphSize(); i++) {
-				final Set<Entry<Integer, Interval>> ins = s.getIntervals(i).entrySet();
-				for (final Entry<Integer, Interval> eIn : ins) {
-					final Interval in = eIn.getValue();
-					final double p = s.getStat().getTransProb(i, in);
-					final PDRTAState t = in.getTarget();
-					if (t != null && p >= minP) {
-						if (!found.contains(t)) {
-							q.add(t);
-							found.add(t);
+				final Optional<Set<Entry<Integer, Interval>>> ins = s.getIntervals(i).map(m -> m.entrySet());
+				if (ins.isPresent()) {
+					for (final Entry<Integer, Interval> eIn : ins.get()) {
+						if (eIn.getValue() != null) {
+							final Interval in = eIn.getValue();
+							final double p = s.getStat().getTransProb(i, in);
+							final PDRTAState t = in.getTarget();
+							if (t != null && p >= minP) {
+								if (!found.contains(t)) {
+									q.add(t);
+									found.add(t);
+								}
+								// Write transition
+								sb.append(s.getIndex());
+								sb.append(" -> ");
+								sb.append(t.getIndex());
+								sb.append(" [ label = \"");
+								sb.append(getSymbol(i));
+								sb.append(" [");
+								sb.append(in.getBegin());
+								sb.append(", ");
+								sb.append(in.getEnd());
+								sb.append("] p=");
+								sb.append(p);
+								if (withInput) {
+									sb.append(" n=");
+									sb.append(in.getTails().size());
+								}
+								sb.append("\" ];\n");
+							}
 						}
-						// Write transition
-						sb.append(s.getIndex());
-						sb.append(" -> ");
-						sb.append(t.getIndex());
-						sb.append(" [ label = \"");
-						sb.append(getSymbol(i));
-						sb.append(" [");
-						sb.append(in.getBegin());
-						sb.append(", ");
-						sb.append(in.getEnd());
-						sb.append("] p=");
-						sb.append(p);
-						if (withInput) {
-							sb.append(" n=");
-							sb.append(in.getTails().size());
-						}
-						sb.append("\" ];\n");
 					}
 				}
 			}
 		}
 
-		try {
-			writeStatData(ap, found);
+		writeStatData(ap, found);
 
-			// Write automaton in DOT language
-			ap.append("digraph PDRTA {\n");
-			ap.append("rankdir=LR;\n");
-			ap.append("node[style = filled, fillcolor = white, shape = circle];\n");
-			ap.append("\"\"[style = invis, shape = none, margin = 0, width = 0, heigth = 0];\n");
-			ap.append("\"\" -> 0;\n");
+		// Write automaton in DOT language
+		ap.append("digraph PDRTA {\n");
+		ap.append("rankdir=LR;\n");
+		ap.append("node[style = filled, fillcolor = white, shape = circle];\n");
+		ap.append("\"\"[style = invis, shape = none, margin = 0, width = 0, heigth = 0];\n");
+		ap.append("\"\" -> 0;\n");
 
-			// Write states
-			for (final PDRTAState s : states.valueCollection()) {
-				if (found.contains(s)) {
-					ap.append(Integer.toString(s.getIndex()));
-					ap.append(" [ xlabel = \"");
-					ap.append(Double.toString(s.getStat().getTailEndProb()));
-					ap.append("\"");
-					if (sc != null) {
-						if (sc.isRed(s)) {
-							ap.append(", fillcolor = \"#FFA9A9\"");
-						} else if (sc.isBlue(s)) {
-							ap.append(", fillcolor = \"#A9D1FF\"");
-						}
+		// Write states
+		for (final PDRTAState s : states.valueCollection()) {
+			if (found.contains(s)) {
+				ap.append(Integer.toString(s.getIndex()));
+				ap.append(" [ xlabel = \"");
+				ap.append(Double.toString(s.getStat().getTailEndProb()));
+				ap.append("\"");
+				if (sc != null) {
+					if (sc.isRed(s)) {
+						ap.append(", fillcolor = \"#FFA9A9\"");
+					} else if (sc.isBlue(s)) {
+						ap.append(", fillcolor = \"#A9D1FF\"");
 					}
-					ap.append(" ];\n");
 				}
+				ap.append(" ];\n");
 			}
-
-			// Add transitions
-			ap.append(sb.toString());
-
-			ap.append("}");
-		} catch (final IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
+
+		// Add transitions
+		ap.append(sb.toString());
+
+		ap.append("}");
 	}
 
 	int addState(PDRTAState s, int idx) {
@@ -417,7 +414,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 			idx++;
 		}
 		final PDRTAState x1 = states.put(idx, s);
-		assert(x1 == null);
+		assert (x1 == null);
 		return idx;
 	}
 
@@ -425,11 +422,11 @@ public class PDRTA implements AutomatonModel, Serializable {
 		return !input.isEmpty();
 	}
 
-	protected int getMaxTimeDelay() {
+	public int getMaxTimeDelay() {
 		return input.getMaxTimeDelay();
 	}
 
-	protected int getMinTimeDelay() {
+	public int getMinTimeDelay() {
 		return input.getMinTimeDelay();
 	}
 
@@ -458,11 +455,12 @@ public class PDRTA implements AutomatonModel, Serializable {
 		input = inp;
 		states = new TIntObjectHashMap<>();
 
-		for (final Integer idxInt : trans.keySet()) {
-			final int idx = idxInt.intValue();
-			final StateStatistic s = StateStatistic.reconstructStat(input.getAlphSize(), getHistSizes(), stats.get(idxInt));
-			states.put(idx, new PDRTAState(this, idx, s));
+		// Create states with statistic
+		for (final Integer sourceIdx : trans.keySet()) {
+			final StateStatistic s = StateStatistic.reconstructStat(input.getAlphSize(), getHistSizes(), stats.get(sourceIdx));
+			new PDRTAState(this, sourceIdx.intValue(), s);
 		}
+		// Create transitions
 		for (final Entry<Integer, String> eT : trans.entries()) {
 			// 75 -> 76 [ label = "0 [3, 989] p=1.0" ];
 			final String[] split = eT.getValue().split(" ");
@@ -482,27 +480,28 @@ public class PDRTA implements AutomatonModel, Serializable {
 			if (!states.containsKey(target)) {
 				final StateStatistic st = StateStatistic.reconstructStat(getAlphSize(), getHistSizes(), stats.get(new Integer(target)));
 				t = new PDRTAState(this, target, st);
-				states.put(target, t);
 			} else {
 				t = states.get(target);
 			}
-			Interval in = s.getInterval(input.getAlphIndex(sym), end);
-			assert(in != null);
-			assert(in.getTarget() == null);
-			assert(s.getStat().getTransProb(input.getAlphIndex(sym), in) == 0.0);
-			assert(in.contains(begin));
-			Interval newIn;
-			if (end < in.getEnd()) {
-				newIn = in.split(end);
-				s.getIntervals(input.getAlphIndex(sym)).put(new Integer(newIn.getEnd()), newIn);
-				in = newIn;
+			// Create interval for source state
+			Optional<NavigableMap<Integer, Interval>> ins = s.getIntervals(input.getAlphIndex(sym));
+			if (!ins.isPresent()) {
+				final NavigableMap<Integer, Interval> m = new TreeMap<>();
+				m.put(new Integer(input.getMaxTimeDelay()), null);
+				ins = Optional.of(m);
+				s.getIntervals().set(input.getAlphIndex(sym), ins.get());
 			}
-			if (begin > in.getBegin()) {
-				newIn = in.split(begin - 1);
-				s.getIntervals(input.getAlphIndex(sym)).put(new Integer(newIn.getEnd()), newIn);
+			assert (ins.get().ceilingEntry(new Integer(end)).getValue() == null);
+			final Interval newIn = new Interval(begin, end);
+			ins.get().put(new Integer(end), newIn);
+			if (!ins.get().containsKey(new Integer(begin - 1)) && begin > input.getMinTimeDelay()) {
+				// Put empty dummy below new interval
+				ins.get().put(new Integer(begin - 1), null);
 			}
-			in.setTarget(t);
-			s.getStat().addInterval(input.getAlphIndex(sym), in, prob);
+			assert (newIn.getTarget() == null);
+			assert (s.getStat().getTransProb(input.getAlphIndex(sym), newIn) == 0.0);
+			newIn.setTarget(t);
+			s.getStat().addInterval(input.getAlphIndex(sym), newIn, prob);
 		}
 		root = states.get(0);
 	}
@@ -515,31 +514,37 @@ public class PDRTA implements AutomatonModel, Serializable {
 		createSubTAPTA(root);
 	}
 
+	// TODO Get this working
 	public void createSubTAPTA_rec_new(PDRTAState s) {
 
-		for (int i = 0; i < input.getAlphSize(); i++) {
-			assert(s.getIntervals(i).size() == 1);
-			final Interval interval = s.getIntervals(i).lastEntry().getValue();
-			assert(interval.getTarget() == null);
-			final Set<Entry<Integer, TimedTail>> tails = interval.getTails().entries();
-			if (!tails.isEmpty() && interval.getTarget() == null) {
+		// Get all present intervals of s
+		final List<Interval> ins = s.getIntervals().stream().filter(m -> m != null).flatMap(m -> m.values().stream()).filter(in -> in != null)
+				.collect(Collectors.toList());
+
+		for (final Interval in : ins) {
+			assert (in.getTarget() == null);
+			final Set<Entry<Integer, TimedTail>> tails = in.getTails().entries();
+			if (!tails.isEmpty()) {
 				final PDRTAState target = new PDRTAState(this);
-				interval.setTarget(target);
+				in.setTarget(target);
 				for (final Entry<Integer, TimedTail> e : tails) {
 					target.addTail(e.getValue());
 				}
-				createSubTAPTA(target);
+				createSubTAPTA_rec_new(target);
 			}
 		}
 	}
 
 	public void createSubTAPTA(PDRTAState s) {
 
-		for (int i = 0; i < input.getAlphSize(); i++) {
-			assert (s.getIntervals(i).size() == 1);
-			final Interval interval = s.getIntervals(i).lastEntry().getValue();
+		// Get all present intervals of s
+		final List<Interval> ins = s.getIntervals().stream().filter(m -> m != null).flatMap(m -> m.values().stream()).filter(in -> in != null)
+				.collect(Collectors.toList());
+
+		for (final Interval interval : ins) {
 			final Set<Entry<Integer, TimedTail>> tails = interval.getTails().entries();
-			if (!tails.isEmpty() && interval.getTarget() == null) {
+			assert (interval.getTarget() == null);
+			if (!tails.isEmpty()) {
 				interval.setTarget(new PDRTAState(this));
 			}
 			for (final Entry<Integer, TimedTail> e : tails) {
@@ -550,7 +555,8 @@ public class PDRTA implements AutomatonModel, Serializable {
 					ts.addTail(tail);
 					assert (in.containsTail(tail));
 					tail = tail.getNextTail();
-					in = ts.getInterval(tail.getSymbolAlphIndex(), tail.getTimeDelay());
+					// Interval has to be present, was created within the addTail method
+					in = ts.getInterval(tail.getSymbolAlphIndex(), tail.getTimeDelay()).get();
 					if (in.getTarget() == null) {
 						in.setTarget(new PDRTAState(this));
 					}
@@ -569,14 +575,8 @@ public class PDRTA implements AutomatonModel, Serializable {
 	public void removeSubAPTA(PDRTAState s, StateColoring sc) {
 
 		removeState(s, sc);
-
-		for (int i = 0; i < input.getAlphSize(); i++) {
-			final Set<Entry<Integer, Interval>> ins = s.getIntervals(i).entrySet();
-			for (final Entry<Integer, Interval> eIn : ins) {
-				if (eIn.getValue().getTarget() != null) {
-					removeSubAPTA(eIn.getValue().getTarget(), sc);
-				}
-			}
+		for (final PDRTAState t : s.getTargets()) {
+			removeSubAPTA(t, sc);
 		}
 	}
 
@@ -721,25 +721,7 @@ public class PDRTA implements AutomatonModel, Serializable {
 
 	@Override
 	public int getTransitionCount() {
-		int result = 0;
-		final Queue<PDRTAState> q = new ArrayDeque<>();
-		final Set<PDRTAState> found = new HashSet<>();
-		q.add(root);
-		found.add(root);
-		while (!q.isEmpty()) {
-			final PDRTAState s = q.remove();
-			for (int i = 0; i < input.getAlphSize(); i++) {
-				final Set<Entry<Integer, Interval>> ins = s.getIntervals(i).entrySet();
-				for (final Entry<Integer, Interval> eIn : ins) {
-					final Interval in = eIn.getValue();
-					final PDRTAState t = in.getTarget();
-					if (t != null) {
-						result++;
-					}
-				}
-			}
-		}
-		return result;
+		return getSize();
 	}
 
 }
