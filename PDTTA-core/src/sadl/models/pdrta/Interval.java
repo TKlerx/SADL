@@ -259,6 +259,10 @@ public class Interval implements Serializable {
 	 *            The target to be set
 	 */
 	public void setTarget(PDRTAState state) {
+
+		if (state == null) {
+			throw new IllegalArgumentException("The target state of an interval must not be null");
+		}
 		target = state;
 	}
 
@@ -301,7 +305,7 @@ public class Interval implements Serializable {
 	 * @param e
 	 *            The inclusive end of the interval
 	 */
-	private Interval(int b, int e) {
+	Interval(int b, int e) {
 
 		if (b <= e) {
 			begin = b;

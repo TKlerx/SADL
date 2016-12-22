@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Function;
@@ -81,7 +82,6 @@ public class AlgoWeakTwo {
 	private static final int FILE_SIZE = 1000;
 	private static final int ANOMALY_COUNT = 300;
 	private static final double ANOMALY_RATE = 0.5;
-
 
 	public static void main(String[] args) throws IOException {
 		Path outputFolder = Paths.get("output3");
@@ -179,7 +179,6 @@ public class AlgoWeakTwo {
 		}
 	}
 
-
 	public static void writeNormalData(Path p, Supplier<String> supp) throws IOException {
 		try (BufferedWriter bw = Files.newBufferedWriter(p)) {
 			for (int i = 0; i < FILE_SIZE; i++) {
@@ -232,15 +231,15 @@ public class AlgoWeakTwo {
 	private TimedWord sampleSeq(PDRTA a, ClassLabel label) {
 		final List<String> symbols = new ArrayList<>();
 		final TIntList delays = new TIntArrayList();
-		PDRTAState s = a.getRoot();
-		while (s != null) {
-			final Pair<Integer, Integer> pair = samplePair(s);
+		Optional<PDRTAState> s = Optional.of(a.getRoot());
+		while (s.isPresent()) {
+			final Pair<Integer, Integer> pair = samplePair(s.get());
 			if (pair == null) {
-				s = null;
+				s = Optional.empty();
 			} else {
 				symbols.add(a.getSymbol(pair.getLeft().intValue()));
 				delays.add(pair.getRight().intValue());
-				s = s.getTarget(pair.getLeft().intValue(), pair.getRight().intValue());
+				s = s.get().getTarget(pair.getLeft().intValue(), pair.getRight().intValue());
 			}
 		}
 
@@ -250,11 +249,15 @@ public class AlgoWeakTwo {
 	private Pair<Integer, Integer> samplePair(PDRTAState s) {
 		final List<AlphIn> transitions = new ArrayList<>();
 		for (int i = 0; i < s.getPDRTA().getAlphSize(); i++) {
-			final Collection<Interval> ins = s.getIntervals(i).values();
-			for (final Interval in : ins) {
-				final double transProb = s.getProbabilityTrans(i, in);
-				if (transProb > 0.0) {
-					transitions.add(new AlphIn(i, in, transProb));
+			final Optional<Collection<Interval>> ins = s.getIntervals(i).map(m -> m.values());
+			if (ins.isPresent()) {
+				for (final Interval in : ins.get()) {
+					if (in != null) {
+						final double transProb = s.getProbabilityTrans(i, in);
+						if (transProb > 0.0) {
+							transitions.add(new AlphIn(i, in, transProb));
+						}
+					}
 				}
 			}
 		}
@@ -300,7 +303,6 @@ public class AlgoWeakTwo {
 		}
 		return index;
 	}
-
 
 	Map<String, PDTTA> automata = new HashMap<>();
 

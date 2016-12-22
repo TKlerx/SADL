@@ -10,6 +10,8 @@
  */
 package sadl.modellearner.rtiplus.tester;
 
+import java.util.Optional;
+
 import jsat.distributions.ChiSquared;
 import sadl.modellearner.rtiplus.OperationUtil;
 import sadl.modellearner.rtiplus.StateColoring;
@@ -29,12 +31,14 @@ public class NaiveLikelihoodRatioTester implements OperationTester {
 	@Override
 	public double testSplit(PDRTAState red, int symAlphIdx, int time) {
 
-		final PDRTAState t = red.getTarget(symAlphIdx, time);
-		assert (t != null);
+		final Optional<PDRTAState> t = red.getTarget(symAlphIdx, time);
+		if (!t.isPresent()) {
+			throw new IllegalArgumentException("Transition has no target state");
+		}
 
 		if (!stateColoring.isRed(red)) {
 			throw new IllegalArgumentException("Source must be red!");
-		} else if (!stateColoring.isBlue(t)) {
+		} else if (!stateColoring.isBlue(t.get())) {
 			throw new IllegalArgumentException("Target must be blue!");
 		}
 

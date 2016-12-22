@@ -10,8 +10,13 @@
  */
 package sadl.modellearner.rtiplus;
 
+import com.google.common.collect.TreeMultimap;
+
+import sadl.models.pdrta.Interval;
 import sadl.models.pdrta.PDRTA;
 import sadl.models.pdrta.PDRTAState;
+import sadl.models.pdrta.TimedTail;
+import sadl.utils.Settings;
 
 /**
  * 
@@ -94,33 +99,33 @@ class Refinement implements Comparable<Refinement> {
 	@Override
 	public String toString() {
 
-		String s = null;
+		final StringBuilder sb = new StringBuilder();
 		if (type == OpType.MERGE) {
-			s = "merge (" + source.getIndex() + ")>-<(" + target.getIndex() + ") to (" + source.getIndex() + ")";
+			sb.append("merge (").append(source.getIndex()).append(")>-<(").append(target.getIndex()).append(") to (").append(source.getIndex()).append(")");
 		} else if (type == OpType.SPLIT) {
-			s = "split ((" + source.getIndex() + "))---" + source.getPDRTA().getSymbol(symbolAlphIdx) + "-["
-					+ source.getInterval(symbolAlphIdx, time).getBegin() + ","
-					+ source.getInterval(symbolAlphIdx, time).getEnd() + "]---> @ " + time;
-			// if (LOG_LVL.compareTo(LogLvl.DEBUG_DEEP) >= 0) {
-			// s = s + "  Distr.: [";
-			// Interval in = source.getInterval(symbolAlphIdx, time);
-			// TreeMultimap<Integer, TimedTail> t = in.getTails();
-			// for (int i = in.getBegin(); i <= in.getEnd(); i++) {
-			// if (i == time + 1) {
-			// s = s + " ][";
-			// }
-			// s = s + " " + i + "/";
-			// if (t.containsKey(i)) {
-			// s = s + t.get(i).size();
-			// } else {
-			// s = s + "0";
-			// }
-			// }
-			// s = s + " ]";
-			// }
+			sb.append("split ((").append(source.getIndex()).append("))---").append(source.getPDRTA().getSymbol(symbolAlphIdx)).append("-[")
+			.append(source.getInterval(symbolAlphIdx, time).get().getBegin()).append(",").append(source.getInterval(symbolAlphIdx, time).get().getEnd())
+			.append("]---> @ ").append(time);
+			if (Settings.isDebug()) {
+				sb.append("  Distr.: [");
+				final Interval in = source.getInterval(symbolAlphIdx, time).get();
+				final TreeMultimap<Integer, TimedTail> t = in.getTails();
+				for (int i = in.getBegin(); i <= in.getEnd(); i++) {
+					if (i == time + 1) {
+						sb.append(" ][");
+					}
+					sb.append(" ").append(i).append("/");
+					if (t.containsKey(new Integer(i))) {
+						sb.append(t.get(new Integer(i)).size());
+					} else {
+						sb.append("0");
+					}
+				}
+				sb.append(" ]");
+			}
 		}
-		s += " Score: " + score;
-		return s;
+		sb.append(" Score: ").append(score);
+		return sb.toString();
 	}
 
 	void refine() {

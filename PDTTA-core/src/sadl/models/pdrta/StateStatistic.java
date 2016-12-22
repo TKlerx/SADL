@@ -15,6 +15,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
+import java.util.Optional;
+import java.util.function.Function;
 
 import com.google.common.collect.Multimap;
 
@@ -443,6 +445,10 @@ public class StateStatistic implements Serializable {
 		}
 	}
 
+	protected double getTransProb(int symIdx, Interval in) {
+		return getTransProb(symIdx, Optional.ofNullable(in));
+	}
+
 	/**
 	 * Returns the probability for a given transition to be used by {@link TimedTail}s
 	 * 
@@ -450,20 +456,19 @@ public class StateStatistic implements Serializable {
 	 *            The transition to get the probability for
 	 * @return The probability the transition to be used by {@link TimedTail}s
 	 */
-	protected double getTransProb(int symIdx, Interval in) {
+	protected double getTransProb(int symIdx, Optional<Interval> in) {
 
 		if (trainMode) {
 			if (totalOutCount > 0) {
-				return (double) in.getTails().size() / (double) totalOutCount;
+				final Function<Interval, Double> calcRelFreq = i -> new Double((double) i.getTails().size() / (double) totalOutCount);
+				return in.map(calcRelFreq).orElse(new Double(0.0)).doubleValue();
 			} else {
 				return 0.0;
 			}
 		} else {
 			if (intervalProbs.containsKey(symIdx)) {
 				final TObjectDoubleHashMap<Interval> m = intervalProbs.get(symIdx);
-				if (m.containsKey(in)) {
-					return m.get(in);
-				}
+				return in.map(i -> new Double(m.get(i))).orElse(new Double(0.0)).doubleValue();
 			}
 			return 0.0;
 		}
@@ -865,10 +870,11 @@ public class StateStatistic implements Serializable {
 
 		intervalProbs = new TIntObjectHashMap<>();
 		for (int i = 0; i < symbolCount.length; i++) {
-			final NavigableMap<Integer, Interval> ins = s.getIntervals(i);
-			for (final Interval in : ins.values()) {
-				addToMap(i, in, getTransProb(i, in));
-			}
+			final Optional<NavigableMap<Integer, Interval>> ins = s.getIntervals(i);
+			// Persist the probability for each present interval in a map
+			final int symAlphIdx = i;
+			ins.map(m -> m.values())
+			.ifPresent(col -> col.stream().filter(in -> in != null).forEach(in -> addToMap(symAlphIdx, in, getTransProb(symAlphIdx, in))));
 		}
 
 		symbolProbs = new double[symbolCount.length];
