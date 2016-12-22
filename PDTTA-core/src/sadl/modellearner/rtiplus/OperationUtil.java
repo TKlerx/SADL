@@ -117,7 +117,6 @@ public class OperationUtil {
 		final PDRTA a = s1.getPDRTA();
 		assert (a == s2.getPDRTA());
 		assert (!sc.isRed(s2));
-		a.removeState(s2, sc);
 
 		LikelihoodValue lv = null;
 		if (test) {
@@ -186,6 +185,8 @@ public class OperationUtil {
 			}
 		}
 
+		a.recycleState(s2, sc);
+
 		return lv;
 	}
 
@@ -223,7 +224,7 @@ public class OperationUtil {
 			} else if (sc != null) {
 				// Recreate sub APTAs for both intervals
 				// Create new sub APTA for first interval
-				final PDRTAState newState = a.createState();
+				final PDRTAState newState = a.acquireState();
 				newIn.setTarget(newState);
 				if (sc.isRed(s)) {
 					sc.setBlue(newState);
@@ -231,8 +232,8 @@ public class OperationUtil {
 				newIn.getTails().entries().forEach(e -> newState.addTail(e.getValue()));
 				a.createSubTAPTA(newState);
 				// Create new sub APTA for second interval
-				a.removeSubAPTA(in.getTarget(), sc);
-				final PDRTAState state = a.createState();
+				a.recycleSubAPTA(in.getTarget(), sc);
+				final PDRTAState state = a.acquireState();
 				in.setTarget(state);
 				if (sc.isRed(s)) {
 					sc.setBlue(state);
