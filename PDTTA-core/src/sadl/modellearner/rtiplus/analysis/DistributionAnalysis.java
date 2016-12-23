@@ -35,7 +35,7 @@ public abstract class DistributionAnalysis {
 		}
 
 		final TIntList result;
-		if (values.size() <= fewElementsLimit) {
+		if (values.size() <= fewElementsLimit && fewElementsAnalysis != null) {
 			result = fewElementsAnalysis.analyzeDistribution(values, frequencies, begin, end);
 		} else {
 			result = analyzeDistribution(values, frequencies, begin, end);
