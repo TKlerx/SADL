@@ -1,10 +1,20 @@
+/**
+ * This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
+ * Copyright (C) 2013-2016  the original author or authors.
+ *
+ * SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * SADL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package sadl.modellearner.rtiplus.analysis;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
 import jsat.DataSet;
 import jsat.SimpleDataSet;
 import jsat.classifiers.DataPoint;
@@ -22,24 +32,18 @@ public abstract class JsatClusteringAnalysis extends ClusteringAnalysis {
 	}
 
 	@Override
-	List<TIntList> computeClusters(TIntList values, TIntList frequencies) {
-
-		// To array
-		final List<double[]> data = new ArrayList<>(values.size());
-		for (int i = 0; i < values.size(); i++) {
-			data.add(new double[] { values.get(i), frequencies.get(i) });
-		}
+	List<TDoubleList> computeClusters(List<double[]> data) {
 
 		final DataSet<SimpleDataSet> ds = DatasetTransformationUtils.doublesToDataSet(data);
 
 		final List<List<DataPoint>> c = computeJsatClusters(ds);
 
-		final List<TIntList> clusters = new ArrayList<>(c.size());
+		final List<TDoubleList> clusters = new ArrayList<>(c.size());
 		for (final List<DataPoint> clu : c) {
 			if (clu.size() > 0) {
-				final TIntList l = new TIntArrayList(clu.size());
+				final TDoubleList l = new TDoubleArrayList(clu.size());
 				for (final DataPoint d : clu) {
-					l.add((int) d.getNumericalValues().get(0));
+					l.add(d.getNumericalValues().get(0));
 				}
 				clusters.add(l);
 			}
