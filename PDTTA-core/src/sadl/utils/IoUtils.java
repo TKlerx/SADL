@@ -42,6 +42,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.thoughtworks.xstream.XStream;
 
 import sadl.input.TimedInput;
@@ -103,8 +105,12 @@ public class IoUtils {
 		} finally {
 			if (pr != null) {
 				try {
-					pr.waitFor();
+					final int exitCode = pr.waitFor();
+					if (exitCode != 0) {
+						logger.error("Graphviz ended with errorCode={}", Integer.toString(exitCode));
+					}
 				} catch (final InterruptedException e) {
+					logger.error("Unexpected exception.", e);
 				}
 			}
 		}
@@ -116,6 +122,20 @@ public class IoUtils {
 				logger.warn("{} should have been explicitly deleted, but did not exist.", p);
 			}
 		}
+	}
+
+	public static BiMap<String, String> loadMapping(Path mappingFile) throws IOException {
+		final BiMap<String, String> result = HashBiMap.create();
+		try (BufferedReader br = Files.newBufferedReader(mappingFile)) {
+			String line = "";
+			while ((line = br.readLine()) != null) {
+				final String[] split = line.split("\\s*->\\s*", 2);
+				final String eventId = split[0];
+				final String eventName = split[1];
+				result.put(eventId, eventName);
+			}
+		}
+		return result;
 	}
 
 	public static void cleanDir(Path outputDir) throws IOException {

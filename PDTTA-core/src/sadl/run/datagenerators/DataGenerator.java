@@ -74,7 +74,7 @@ public class DataGenerator implements Serializable {
 			final TauPtaLearner learner = new TauPtaLearner();
 			final TauPTA pta = learner.train(trainingTimedSequences);
 			IoUtils.serialize(pta, outputDir.resolve(Paths.get("pta_normal.ser")));
-			pta.toGraphvizFile(outputDir.resolve(Paths.get("pta_normal.dot")), false);
+			pta.toGraphvizFile(outputDir.resolve(Paths.get("pta_normal.dot")));
 			// try (BufferedWriter br = Files.newBufferedWriter(outputDir.resolve(Paths.get("normal_sequences")), StandardCharsets.UTF_8)) {
 			// logger.info("sampling normal sequences");
 			// for (int i = 0; i < 1000000; i++) {
@@ -89,7 +89,7 @@ public class DataGenerator implements Serializable {
 					logger.info("inserting Anomaly Type {}", type);
 					anomaly1.makeAbnormal(type);
 					try {
-						anomaly1.toGraphvizFile(outputDir.resolve(Paths.get("pta_abnormal_" + type.getTypeIndex() + ".dot")), false);
+						anomaly1.toGraphvizFile(outputDir.resolve(Paths.get("pta_abnormal_" + type.getTypeIndex() + ".dot")));
 						IoUtils.serialize(anomaly1, outputDir.resolve(Paths.get("pta_abnormal_" + type.getTypeIndex() + ".ser")));
 						final TauPTA des = (TauPTA) IoUtils.deserialize(outputDir.resolve(Paths.get("pta_abnormal_" + type.getTypeIndex() + ".ser")));
 						if (!anomaly1.equals(des)) {

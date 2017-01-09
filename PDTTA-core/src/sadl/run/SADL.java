@@ -11,6 +11,7 @@
 package sadl.run;
 
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -65,76 +66,7 @@ public class SADL {
 
 			// final String[] reducedArgs = Arrays.copyOfRange(args, 1, args.length);
 
-			final SADL main = new SADL();
-			final JCommander jc = new JCommander(main);
-			jc.setAcceptUnknownOptions(true);
-
-			final TestRun testRun = new TestRun(false);
-			final TrainRun trainRun = new TrainRun(false);
-			final SmacRun smacRun = new SmacRun();
-
-			jc.addCommand(test, testRun);
-			jc.addCommand(train, trainRun);
-			jc.addCommand(smac, smacRun);
-
-			jc.parse(args);
-
-			// Debug/parallel param has to be in front of commands: JCommander specific
-			Settings.setDebug(main.debug);
-			Settings.setParallel(main.parallel);
-
-			switch (jc.getParsedCommand()) {
-				case test:
-					testRun.run();
-					break;
-				case train:
-					trainRun.run(jc.getCommands().get(train));
-					break;
-				case smac:
-					logger.info("Starting SMAC with params=" + Arrays.toString(args));
-					boolean fileExisted = true;
-					final ExperimentResult result = smacRun.run(jc.getCommands().get(smac));
-					logger.info("Finished SMAC run.");
-					Path p = Paths.get(result.getQualifier()).getParent().getParent();
-					final Path smacData = Paths.get("smac-data");
-					String fileName = result.getAlgorithm() + "-";
-					while (!p.getFileName().equals(smacData)) {
-						fileName += p.getFileName() + "-";
-						p = p.getParent();
-					}
-					fileName += "result.csv";
-					final Path resultPath = Paths.get("results").resolve(fileName);
-					Files.createDirectories(resultPath.getParent());
-					if (!Files.exists(resultPath)) {
-						Files.createFile(resultPath);
-						fileExisted = false;
-					}
-					final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-					try (BufferedWriter bw = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8, StandardOpenOption.APPEND)) {
-						if (!fileExisted) {
-							bw.append("time");
-							bw.append(" ; ");
-							bw.append("arg array");
-							bw.append(" ; ");
-							bw.append(ExperimentResult.CsvHeader());
-							bw.append('\n');
-						}
-						bw.append(df.format(new Date()));
-						bw.append(" ; ");
-						bw.append(Arrays.toString(args));
-						bw.append("; ");
-						bw.append(result.toCsvString());
-						bw.append('\n');
-					}
-					break;
-				default:
-					// TODO Print usage
-					jc.usage();
-					logger.error("Wrong mode param!");
-					System.exit(1);
-					break;
-			}
+			run(args);
 		} catch (final Throwable e) {
 			logger.error("Unexpected exception with parameters" + Arrays.toString(args), e);
 			e.printStackTrace();
@@ -142,6 +74,77 @@ public class SADL {
 			Thread.sleep(1000);
 		} finally {
 			System.exit(crash ? 1 : 0);
+		}
+	}
+
+	public static void run(String[] args) throws IOException {
+		final SADL main = new SADL();
+		final JCommander jc = new JCommander(main);
+		jc.setAcceptUnknownOptions(true);
+
+		final TestRun testRun = new TestRun();
+		final TrainRun trainRun = new TrainRun();
+		final SmacRun smacRun = new SmacRun();
+
+		jc.addCommand(test, testRun);
+		jc.addCommand(train, trainRun);
+		jc.addCommand(smac, smacRun);
+
+		jc.parse(args);
+
+		// Debug/parallel param has to be in front of commands: JCommander specific
+		Settings.setDebug(main.debug);
+		Settings.setParallel(main.parallel);
+
+		switch (jc.getParsedCommand()) {
+			case test:
+				testRun.run(jc.getCommands().get(test));
+				break;
+			case train:
+				trainRun.run(jc.getCommands().get(train));
+				break;
+			case smac:
+				logger.info("Starting SMAC with params=" + Arrays.toString(args));
+				boolean fileExisted = true;
+				final ExperimentResult result = smacRun.run(jc.getCommands().get(smac));
+				logger.info("Finished SMAC run.");
+				Path p = Paths.get(result.getQualifier()).getParent().getParent();
+				final Path smacData = Paths.get("smac-data");
+				String fileName = result.getAlgorithm() + "-";
+				while (!p.getFileName().equals(smacData)) {
+					fileName += p.getFileName() + "-";
+					p = p.getParent();
+				}
+				fileName += "result.csv";
+				final Path resultPath = Paths.get("results").resolve(fileName);
+				Files.createDirectories(resultPath.getParent());
+				if (!Files.exists(resultPath)) {
+					Files.createFile(resultPath);
+					fileExisted = false;
+				}
+				final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+				try (BufferedWriter bw = Files.newBufferedWriter(resultPath, StandardCharsets.UTF_8, StandardOpenOption.APPEND)) {
+					if (!fileExisted) {
+						bw.append("time");
+						bw.append(" ; ");
+						bw.append("arg array");
+						bw.append(" ; ");
+						bw.append(ExperimentResult.CsvHeader());
+						bw.append('\n');
+					}
+					bw.append(df.format(new Date()));
+					bw.append(" ; ");
+					bw.append(Arrays.toString(args));
+					bw.append("; ");
+					bw.append(result.toCsvString());
+					bw.append('\n');
+				}
+				break;
+			default:
+				jc.usage();
+				logger.error("Wrong mode param!");
+				throw new RuntimeException("Wrong mode param!");
 		}
 	}
 
