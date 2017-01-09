@@ -90,6 +90,8 @@ public class AlergiaTest {
 
 	@Test
 	public void testArtificialBig() throws IOException {
+		logger.info("Starting testArtificialBig...");
+
 		final PDFA a = generatePdfaBig();
 		final List<TimedWord> words = new ArrayList<>();
 		for (int i = 0; i < 1000; i++) {
@@ -110,12 +112,14 @@ public class AlergiaTest {
 			logger.info("Treba PDFA has {} states.", pdfaTreba.getStateCount());
 			assertEquals(120, pdfaTreba.getStateCount());
 		} else {
-			System.out.println("Did not do any test because OS is not linux and treba cannot be loaded.");
+			System.out.println("Did not do any test because OS is not linux or treba cannot be loaded.");
 		}
+		logger.info("Finished testArtificialBig.");
 	}
 
 	@Test
 	public void testArtificialSmall() throws IOException {
+		logger.info("Starting testArtificialSmall...");
 		final PDFA a = generatePdfaSmall();
 		final List<TimedWord> words = new ArrayList<>();
 		for (int i = 0; i < 10000; i++) {
@@ -136,12 +140,14 @@ public class AlergiaTest {
 			logger.info("Treba PDFA has {} states.", pdfaTreba.getStateCount());
 			assertEquals(3, pdfaTreba.getStateCount());
 		} else {
-			System.out.println("Did not do any test because OS is not linux and treba cannot be loaded.");
+			System.out.println("Did not do any test because OS is not linux or treba cannot be loaded.");
 		}
+		logger.info("Finished testArtificialSmall.");
 	}
 
 	@Test
 	public void testLoopBigNonRecPaperMerge() throws URISyntaxException, IOException {
+		logger.info("Starting testLoopBigNonRecPaperMerge...");
 		final Alergia alergia = new Alergia(0.05, false, MergeMethod.ALERGIA_PAPER);
 		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI()));
 		final PDFA pdfa = alergia.train(trainTest.getKey());
@@ -152,10 +158,12 @@ public class AlergiaTest {
 		final ExperimentResult actual = detection.test(trainTest.getValue());
 		assertEquals(expected, actual);
 		assertEquals(808, pdfa.getStateCount());
+		logger.info("Finished testLoopBigNonRecPaperMerge.");
 	}
 
 	@Test
 	public void testLoopBigNonRecTrebaMerge() throws URISyntaxException, IOException {
+		logger.info("Starting testLoopBigNonRecTrebaMerge...");
 		final Alergia alergia = new Alergia(0.05, false, MergeMethod.TREBA);
 		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI()));
 		final PDFA pdfa = alergia.train(trainTest.getKey());
@@ -166,10 +174,12 @@ public class AlergiaTest {
 		final ExperimentResult actual = detection.test(trainTest.getValue());
 		assertEquals(expected, actual);
 		assertEquals(808, pdfa.getStateCount());
+		logger.info("Finished testLoopBigNonRecTrebaMerge.");
 	}
 
 	@Test
 	public void testLoopBigRecPaperMerge() throws URISyntaxException, IOException {
+		logger.info("Starting testLoopBigRecPaperMerge...");
 		final Alergia alergia = new Alergia(0.05, true, MergeMethod.ALERGIA_PAPER);
 		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI()));
 		final PDFA pdfa = alergia.train(trainTest.getKey());
@@ -180,10 +190,12 @@ public class AlergiaTest {
 		final ExperimentResult actual = detection.test(trainTest.getValue());
 		assertEquals(expected, actual);
 		assertEquals(882, pdfa.getStateCount());
+		logger.info("Finished testLoopBigRecPaperMerge.");
 	}
 
 	@Test
 	public void testLoopBigRecTrebaMerge() throws URISyntaxException, IOException {
+		logger.info("Starting testLoopBigRecTrebaMerge...");
 		final Alergia alergia = new Alergia(0.05, true, MergeMethod.TREBA);
 		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI()));
 		final PDFA pdfa = alergia.train(trainTest.getKey());
@@ -194,13 +206,14 @@ public class AlergiaTest {
 		final ExperimentResult actual = detection.test(trainTest.getValue());
 		assertEquals(expected, actual);
 		assertEquals(808, pdfa.getStateCount());
+		logger.info("Finished testLoopBigRecTrebaMerge.");
 	}
 
 	@Test
 	public void testRbBigNonRecPaperMerge() throws URISyntaxException, IOException {
+		logger.info("Starting testRbBigNonRecPaperMerge...");
 		final AlergiaRedBlue alergia = new AlergiaRedBlue(0.05, false, MergeMethod.ALERGIA_PAPER);
-		final Pair<TimedInput, TimedInput> trainTest = IoUtils
-				.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI()));
+		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI()));
 		final PDFA pdfaAlergia = alergia.train(trainTest.getKey());
 		final AnomalyDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, new AggregatedSingleFeatureCreator(),
 				new ThresholdClassifier(Math.exp(-5)));
@@ -209,10 +222,12 @@ public class AlergiaTest {
 		final ExperimentResult actual = detection.test(trainTest.getValue());
 		assertEquals(expected, actual);
 		assertEquals(2, pdfaAlergia.getStateCount());
+		logger.info("Finished testRbBigNonRecPaperMerge.");
 	}
 
 	@Test
 	public void testRbBigNonRecTrebaMerge() throws URISyntaxException, IOException {
+		logger.info("Starting testRbBigNonRecTrebaMerge...");
 		final AlergiaRedBlue alergia = new AlergiaRedBlue(0.05, false, MergeMethod.TREBA);
 		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI()));
 		final PDFA pdfa = alergia.train(trainTest.getKey());
@@ -223,11 +238,13 @@ public class AlergiaTest {
 		final ExperimentResult actual = detection.test(trainTest.getValue());
 		assertEquals(expected, actual);
 		assertEquals(2, pdfa.getStateCount());
+		logger.info("Finished testRbBigNonRecTrebaMerge.");
 
 	}
 
 	@Test
 	public void testRbBigRecPaperMerge() throws URISyntaxException, IOException {
+		logger.info("Starting testRbBigRecPaperMerge...");
 		final AlergiaRedBlue alergia = new AlergiaRedBlue(0.05, true, MergeMethod.ALERGIA_PAPER);
 		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI()));
 		final PDFA pdfaAlergia = alergia.train(trainTest.getKey());
@@ -238,10 +255,12 @@ public class AlergiaTest {
 		final ExperimentResult alergiaActual = detection.test(trainTest.getValue());
 		assertEquals(alergiaEexpected, alergiaActual);
 		assertEquals(108, pdfaAlergia.getStateCount());
+		logger.info("Finished testRbBigRecPaperMerge.");
 	}
 
 	@Test
 	public void testRbBigRecTrebaMerge() throws URISyntaxException, IOException {
+		logger.info("Starting testRbBigRecTrebaMerge...");
 		final AlergiaRedBlue alergia = new AlergiaRedBlue(0.05, true, MergeMethod.TREBA);
 		final Pair<TimedInput, TimedInput> trainTest = IoUtils.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI()));
 		final PDFA pdfaAlergia = alergia.train(trainTest.getKey());
@@ -252,42 +271,52 @@ public class AlergiaTest {
 		final ExperimentResult actual = detection.test(trainTest.getValue());
 		assertEquals(expected, actual);
 		assertEquals(70, pdfaAlergia.getStateCount());
+		logger.info("Finished testRbBigRecTrebaMerge.");
 	}
 
 	@Test
 	public void testRbSmallNonRecPaperMerge() throws URISyntaxException, IOException {
+		logger.info("Starting testRbSmallNonRecPaperMerge...");
 		final AlergiaRedBlue alergia = new AlergiaRedBlue(0.8, false, MergeMethod.ALERGIA_PAPER);
 		final TimedInput trainAlergia = TimedInput.parse(Paths.get(this.getClass().getResource("/pdfa/alergia_0.inp").toURI()));
 		final PDFA pdfaAlergia = alergia.train(trainAlergia);
 		assertEquals(2, pdfaAlergia.getStateCount());
+		logger.info("Finished testRbSmallNonRecPaperMerge.");
 	}
 
 	@Test
 	public void testRbSmallNonRecTrebaMerge() throws URISyntaxException, IOException {
+		logger.info("Starting testRbSmallNonRecTrebaMerge...");
 		final AlergiaRedBlue alergia = new AlergiaRedBlue(0.8, false, MergeMethod.TREBA);
 		final TimedInput trainAlergia = TimedInput.parse(Paths.get(this.getClass().getResource("/pdfa/alergia_0.inp").toURI()));
 		final PDFA pdfaAlergia = alergia.train(trainAlergia);
 		assertEquals(2, pdfaAlergia.getStateCount());
+		logger.info("Finished testRbSmallNonRecTrebaMerge.");
 	}
 
 	@Test
 	public void testRbSmallRecPaperMerge() throws URISyntaxException, IOException {
+		logger.info("Starting testRbSmallRecPaperMerge...");
 		final AlergiaRedBlue alergia = new AlergiaRedBlue(0.8, true, MergeMethod.ALERGIA_PAPER);
 		final TimedInput trainAlergia = TimedInput.parse(Paths.get(this.getClass().getResource("/pdfa/alergia_0.inp").toURI()));
 		final PDFA pdfaAlergia = alergia.train(trainAlergia);
 		assertEquals(2, pdfaAlergia.getStateCount());
+		logger.info("Finished testRbSmallRecPaperMerge.");
 	}
 
 	@Test
 	public void testRbSmallRecTrebaMerge() throws URISyntaxException, IOException {
+		logger.info("Starting testRbSmallRecTrebaMerge...");
 		final AlergiaRedBlue alergia = new AlergiaRedBlue(0.8, true, MergeMethod.TREBA);
 		final TimedInput trainAlergia = TimedInput.parse(Paths.get(this.getClass().getResource("/pdfa/alergia_0.inp").toURI()));
 		final PDFA pdfaAlergia = alergia.train(trainAlergia);
 		assertEquals(2, pdfaAlergia.getStateCount());
+		logger.info("Finished testRbSmallRecTrebaMerge.");
 	}
 
 	@Test
 	public void testTrebaBigNonRec() throws URISyntaxException, IOException {
+		logger.info("Starting testTrebaBigNonRec...");
 		if (LibraryChecker.trebaDepsInstalled()) {
 			final TrebaPdfaLearner treba = new TrebaPdfaLearner(0.05, false, MergeTest.ALERGIA, 0.0, 0);
 			final Pair<TimedInput, TimedInput> trainTest = IoUtils
@@ -302,12 +331,15 @@ public class AlergiaTest {
 			assertEquals(trebaExpected, trebaActual);
 			assertEquals(42, pdfaTreba.getStateCount());
 		} else {
-			System.out.println("Did not do any test because OS is not linux and treba cannot be loaded.");
+			System.out.println("Did not do any test because OS is not linux or treba cannot be loaded.");
 		}
+		logger.info("Finished testTrebaBigNonRec.");
+
 	}
 
 	@Test
 	public void testTrebaBigRec() throws URISyntaxException, IOException {
+		logger.info("Starting testTrebaBigRec...");
 		if (LibraryChecker.trebaDepsInstalled()) {
 			final TrebaPdfaLearner treba = new TrebaPdfaLearner(0.05, true, MergeTest.ALERGIA, 0.0, 0);
 			final Pair<TimedInput, TimedInput> trainTest = IoUtils
@@ -322,12 +354,15 @@ public class AlergiaTest {
 			assertEquals(trebaExpected, trebaActual);
 			assertEquals(356, pdfaTreba.getStateCount());
 		} else {
-			System.out.println("Did not do any test because OS is not linux and treba cannot be loaded.");
+			System.out.println("Did not do any test because OS is not linux or treba cannot be loaded.");
 		}
+		logger.info("Finished testTrebaBigRec.");
+
 	}
 
 	@Test
 	public void testTrebaSmallNonRec() throws URISyntaxException, IOException {
+		logger.info("Starting testTrebaSmallNonRec...");
 		if (LibraryChecker.trebaDepsInstalled()) {
 			final TrebaPdfaLearner treba = new TrebaPdfaLearner(0.8, false, MergeTest.ALERGIA, 0.0, 0);
 			final TimedInput trainTreba = TimedInput.parse(Paths.get(this.getClass().getResource("/pdfa/alergia_0.inp").toURI()));
@@ -335,12 +370,15 @@ public class AlergiaTest {
 			logger.info("Treba PDFA has {} states.", pdfaTreba.getStateCount());
 			assertEquals(2, pdfaTreba.getStateCount());
 		} else {
-			System.out.println("Did not do any test because OS is not linux and treba cannot be loaded.");
+			System.out.println("Did not do any test because OS is not linux or treba cannot be loaded.");
 		}
+		logger.info("Finished testTrebaSmallNonRec.");
+
 	}
 
 	@Test
 	public void testTrebaSmallRec() throws URISyntaxException, IOException {
+		logger.info("Starting testTrebaSmallRec...");
 		if (LibraryChecker.trebaDepsInstalled()) {
 			final TrebaPdfaLearner treba = new TrebaPdfaLearner(0.8, true, MergeTest.ALERGIA, 0.0, 0);
 			final TimedInput trainTreba = TimedInput.parse(Paths.get(this.getClass().getResource("/pdfa/alergia_0.inp").toURI()));
@@ -348,8 +386,9 @@ public class AlergiaTest {
 			logger.info("Treba PDFA has {} states.", pdfaTreba.getStateCount());
 			assertEquals(3, pdfaTreba.getStateCount());
 		} else {
-			System.out.println("Did not do any test because OS is not linux and treba cannot be loaded.");
+			System.out.println("Did not do any test because OS is not linux or treba cannot be loaded.");
 		}
+		logger.info("Finished testTrebaSmallRec.");
 	}
 
 }
