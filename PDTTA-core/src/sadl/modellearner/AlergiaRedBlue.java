@@ -64,7 +64,7 @@ public class AlergiaRedBlue extends Alergia {
 		logger.info("Starting to learn PDFA with ALERGIA-red-blue (java)...");
 		final IntBinaryOperator mergeTest = this::alergiaCompatibilityTest;
 		pta = new FTA(trainingSequences);
-		logger.debug("PTA has {} many states", pta.getStateCount());
+		logger.info("PTA has {} many states", pta.getStateCount());
 		final TIntIntMap stateColoring = new TIntIntHashMap();
 		final Set<Integer> redStates = new LinkedHashSet<>();
 		final Queue<Integer> blueStates = new LinkedList<>();

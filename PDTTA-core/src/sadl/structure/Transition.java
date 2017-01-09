@@ -68,7 +68,7 @@ public class Transition implements Serializable, Comparable<Transition> {
 		int result = 1;
 		result = prime * result + fromState;
 		long temp;
-		temp = Double.doubleToLongBits(probability);
+		temp = Double.doubleToLongBits(getProbability());
 		result = prime * result + (int) (temp ^ temp >>> 32);
 		result = prime * result + ((symbol == null) ? 0 : symbol.hashCode());
 		result = prime * result + toState;
@@ -90,7 +90,7 @@ public class Transition implements Serializable, Comparable<Transition> {
 		if (fromState != other.fromState) {
 			return false;
 		}
-		if (Double.doubleToLongBits(probability) != Double.doubleToLongBits(other.probability)) {
+		if (Double.doubleToLongBits(getProbability()) != Double.doubleToLongBits(other.getProbability())) {
 			return false;
 		}
 		if (!symbol.equals(other.symbol)) {
@@ -104,7 +104,7 @@ public class Transition implements Serializable, Comparable<Transition> {
 
 	@Override
 	public String toString() {
-		return "Transition [fromState=" + fromState + ", toState=" + toState + ", symbol=" + symbol + ", probability=" + probability + "]";
+		return "Transition [fromState=" + fromState + ", toState=" + toState + ", symbol=" + symbol + ", probability=" + getProbability() + "]";
 	}
 
 	public ZeroProbTransition toZeroProbTransition() {

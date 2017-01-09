@@ -280,7 +280,7 @@ public class FTA {
 
 	public PDFA toPdfa() {
 		final Set<Transition> probTransitions = new HashSet<>();
-		final TIntDoubleMap finalStateProbabilities = new TIntDoubleHashMap();
+		final TIntDoubleMap finalStateProbabilities = new TIntDoubleHashMap(11, 0.5f, -1, -1d);
 		final TIntIntMap stateOcurrenceCount = new TIntIntHashMap(finalStateCount.size());
 		for (final Transition t : transitions) {
 			final int value = transitionCount.get(t.toZeroProbTransition());
@@ -303,7 +303,7 @@ public class FTA {
 			final int transitionVisits = transitionCount.get(t.toZeroProbTransition());
 			probTransitions.add(new Transition(t.getFromState(), t.getToState(), t.getSymbol(), (double) transitionVisits / stateVisits));
 		}
-		return new PDFA(getAlphabet(), probTransitions, finalStateProbabilities, null);
+		return new PDFA(getAlphabet(), probTransitions, finalStateProbabilities, null, stateOcurrenceCount);
 	}
 
 	public void cleanUp() {

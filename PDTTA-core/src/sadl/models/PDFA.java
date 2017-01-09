@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.math3.exception.MathArithmeticException;
 import org.apache.commons.math3.fraction.BigFraction;
 import org.apache.commons.math3.util.Pair;
@@ -35,7 +36,9 @@ import org.slf4j.LoggerFactory;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.map.TIntDoubleMap;
+import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
+import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import gnu.trove.stack.TIntStack;
@@ -57,6 +60,7 @@ import sadl.utils.MasterSeed;
  *
  */
 public class PDFA implements AutomatonModel, Serializable {
+	// TODO create branch to use frequencies instead of probabilities for states and transitions
 
 	private static final long serialVersionUID = -3584763240370878883L;
 
@@ -70,8 +74,9 @@ public class PDFA implements AutomatonModel, Serializable {
 
 	protected TimedInput alphabet;
 	protected Set<Transition> transitions = new HashSet<>();
-	protected TIntDoubleMap finalStateProbabilities = new TIntDoubleHashMap();
+	protected TIntDoubleMap finalStateProbabilities = new TIntDoubleHashMap(11, 0.5f, -1, -1d);
 	protected TIntSet abnormalFinalStates = new TIntHashSet();
+	protected TIntIntMap stateOcurrenceCount = new TIntIntHashMap(11, 0.5f, -1, -1);
 
 	protected boolean immutable = false;
 
@@ -131,6 +136,8 @@ public class PDFA implements AutomatonModel, Serializable {
 		if (!Precision.equals(sum, 1)) {
 			logger.debug("Sum of transition probabilities for state {} is {}", state, sum);
 			outgoingTransitions = getOutTransitions(state, true);
+			logger.debug("# outgoing transitions={}", outgoingTransitions.size());
+			logger.trace("outgoing transitions={}", outgoingTransitions);
 			outgoingTransitions.forEach(t -> changeTransitionProbability(t, t.getProbability() / sum));
 			outgoingTransitions = getOutTransitions(state, true);
 			final double newSum = outgoingTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
@@ -233,6 +240,7 @@ public class PDFA implements AutomatonModel, Serializable {
 		this.transitions = pdfa.transitions;
 		this.finalStateProbabilities = pdfa.finalStateProbabilities;
 		this.abnormalFinalStates = pdfa.abnormalFinalStates;
+		this.stateOcurrenceCount = pdfa.stateOcurrenceCount;
 	}
 
 	public PDFA(TimedInput alphabet, Set<Transition> transitions, TIntDoubleMap finalStateProbabilities) {
@@ -240,6 +248,11 @@ public class PDFA implements AutomatonModel, Serializable {
 	}
 
 	public PDFA(TimedInput alphabet, Set<Transition> transitions, TIntDoubleMap finalStateProbabilities, TIntSet abnormalFinalStates) {
+		this(alphabet, transitions, finalStateProbabilities, abnormalFinalStates, null);
+	}
+
+	public PDFA(TimedInput alphabet, Set<Transition> transitions, TIntDoubleMap finalStateProbabilities, TIntSet abnormalFinalStates,
+			TIntIntMap stateOccCount) {
 		this.alphabet = alphabet;
 		this.transitions = transitions;
 		this.finalStateProbabilities = finalStateProbabilities;
@@ -248,6 +261,7 @@ public class PDFA implements AutomatonModel, Serializable {
 		} else {
 			this.abnormalFinalStates = abnormalFinalStates;
 		}
+		this.stateOcurrenceCount = stateOccCount;
 	}
 
 	@Override
@@ -293,75 +307,121 @@ public class PDFA implements AutomatonModel, Serializable {
 		}
 	}
 
-	public void toGraphvizFile(Path graphvizResult, boolean compressed, Map<String, String> idReplacement) throws IOException {
-		try (BufferedWriter writer = Files.newBufferedWriter(graphvizResult, StandardCharsets.UTF_8)) {
-			writer.write("digraph G {\n");
-			// start states
-			writer.write("qi [shape = point ];");
-			// write states
-			for (final int state : finalStateProbabilities.keys()) {
-				writer.write(Integer.toString(state));
-				writer.write(" [shape=");
-				final boolean abnormal = getFinalTransition(state).isAbnormal();
-				final double finalProb = getFinalStateProbability(state);
-				if (finalProb > 0 || (compressed && finalProb > 0.01)) {
-					writer.write("double");
-				}
-				writer.write("circle");
-				if (abnormal) {
-					writer.write(", color=red");
-				}
-				if (finalProb > 0 || (compressed && finalProb > 0.01)) {
-					writer.write(", label=\"");
-					writer.write(Integer.toString(state));
-					writer.write("&#92;np= ");
-					writer.write(Double.toString(Precision.round(finalProb, 2)));
-					writer.write("\"");
-				}
-				writer.write("];\n");
-			}
-			writer.write("qi -> 0;");
-			// write transitions
-			for (final Transition t : transitions) {
-				if (compressed && t.getProbability() <= 0.01) {
-					continue;
-				}
-				// 0 -> 0 [label=0.06];
-				writer.write(Integer.toString(t.getFromState()));
-				writer.write(" -> ");
-				writer.write(Integer.toString(t.getToState()));
-				writer.write(" [label=<");
-				if (idReplacement != null && idReplacement.containsKey(t.getSymbol())) {
-					writer.write(idReplacement.get(t.getSymbol()));
-				} else {
-					writer.write(t.getSymbol());
-				}
-				if (t.getProbability() > 0) {
-					writer.write(" p=");
-					writer.write(Double.toString(Precision.round(t.getProbability(), 2)));
-				}
-				if (t.isAbnormal()) {
-					writer.write("<BR/>");
-					writer.write("<FONT COLOR=\"red\">");
-					writer.write(Integer.toString(t.getAnomalyInsertionType().getTypeIndex()));
-					writer.write("</FONT>");
-				}
-				writer.write(">");
-				if (t.isAbnormal()) {
-					writer.write(" color=\"red\"");
-				}
-				writer.write(";];\n");
-
-			}
-			writer.write("}");
-			writer.flush();
-			writer.close();
-		}
-
+	public void toGraphvizFile(BufferedWriter writer) throws IOException {
+		toGraphvizFile(writer, 0);
 	}
 
-	public void toGraphvizFile(Path graphvizResult, boolean compressed) throws IOException {
-		toGraphvizFile(graphvizResult, compressed, Collections.emptyMap());
+	public void toGraphvizFile(BufferedWriter writer, double compressThreshold) throws IOException {
+		toGraphvizFile(writer, compressThreshold, null);
+	}
+
+	public void toGraphvizFile(BufferedWriter writer, double compressThreshold, Map<String, String> idReplacement) throws IOException {
+		toGraphvizFile(writer, compressThreshold, idReplacement);
+	}
+
+	public PDFA compress(double probabilityThreshold) {
+		final PDFA clone = SerializationUtils.clone(this);
+		clone.makeMutable();
+		final Set<Transition> toRemove = new HashSet<>();
+		for (final Transition t : clone.transitions) {
+			if (t.getProbability() < probabilityThreshold) {
+				toRemove.add(t);
+			}
+		}
+		for (final Transition t : toRemove) {
+			clone.removeTransition(t);
+		}
+		clone.cleanUp();
+		clone.cleanUpTransitions();
+		clone.fixProbabilities();
+		return clone;
+	}
+
+	public void toGraphvizFile(BufferedWriter writer, double finalProbTreshold, Map<String, String> idReplacement, int digits) throws IOException {
+		writer.write("digraph G {\n");
+		// start states
+		writer.write("qi [shape = point ];");
+		// write states
+		for (final int state : finalStateProbabilities.keys()) {
+			writer.write(Integer.toString(state));
+			writer.write(" [shape=");
+			final boolean abnormal = getFinalTransition(state).isAbnormal();
+			final double finalProb = getFinalStateProbability(state);
+			if (finalProb > finalProbTreshold) {
+				writer.write("double");
+			}
+			writer.write("circle");
+			if (abnormal) {
+				writer.write(", color=red");
+			}
+			final StringBuilder label = new StringBuilder();
+			label.append(Integer.toString(state));
+			if (finalProb > finalProbTreshold) {
+				label.append("&#92;np= ");
+				label.append(Double.toString(Precision.round(finalProb, digits)));
+			}
+			if (stateOcurrenceCount.containsKey(state)) {
+				label.append("&#92;nn~ ");
+				label.append(Integer.toString(stateOcurrenceCount.get(state)));
+			}
+			if (label.length() > 0) {
+				writer.write(", label=\"");
+				writer.write(label.toString());
+				writer.write("\"");
+			}
+			writer.write("];\n");
+		}
+		writer.write("qi -> 0;");
+		// write transitions
+		for (final Transition t : transitions) {
+			// 0 -> 0 [label=0.06];
+			writer.write(Integer.toString(t.getFromState()));
+			writer.write(" -> ");
+			writer.write(Integer.toString(t.getToState()));
+			writer.write(" [label=<");
+			if (idReplacement != null && idReplacement.containsKey(t.getSymbol())) {
+				writer.write(idReplacement.get(t.getSymbol()));
+			} else {
+				writer.write(t.getSymbol());
+			}
+			if (t.getProbability() > 0) {
+				writer.write(" p=");
+				writer.write(Double.toString(Precision.round(t.getProbability(), digits)));
+			}
+			if (t.isAbnormal()) {
+				writer.write("<BR/>");
+				writer.write("<FONT COLOR=\"red\">");
+				writer.write(Integer.toString(t.getAnomalyInsertionType().getTypeIndex()));
+				writer.write("</FONT>");
+			}
+			writer.write(">");
+			if (t.isAbnormal()) {
+				writer.write(" color=\"red\"");
+			}
+			writer.write(";];\n");
+
+		}
+		writer.write("}");
+		writer.flush();
+		writer.close();
+	}
+
+	public void toGraphvizFile(Path graphvizResult, double compressThreshold, Map<String, String> idReplacement, int digits) throws IOException {
+		try (BufferedWriter bw = Files.newBufferedWriter(graphvizResult)) {
+			toGraphvizFile(bw, compressThreshold, idReplacement, digits);
+		}
+	}
+
+	public void toGraphvizFile(Path graphvizResult, double compressThreshold, Map<String, String> idReplacement) throws IOException {
+		toGraphvizFile(graphvizResult, compressThreshold, idReplacement);
+	}
+
+	public void toGraphvizFile(Path graphvizResult, double compressThreshold) throws IOException {
+		toGraphvizFile(graphvizResult, compressThreshold, null, 2);
+	}
+
+	public void toGraphvizFile(Path graphvizResult) throws IOException {
+		toGraphvizFile(graphvizResult, 0);
 	}
 
 	public void addFinalState(int state, double probability) {
@@ -493,7 +553,6 @@ public class PDFA implements AutomatonModel, Serializable {
 		return chosenTransition;
 	}
 
-
 	/**
 	 * Returns all outgoing transitions for a given state
 	 * 
@@ -562,6 +621,19 @@ public class PDFA implements AutomatonModel, Serializable {
 	protected void removeState(int i) {
 		checkImmutable();
 		finalStateProbabilities.remove(i);
+		stateOcurrenceCount.remove(i);
+	}
+
+	protected void cleanUpTransitions() {
+		final Set<Transition> toRemove = new HashSet<>();
+		for (final Transition t : transitions) {
+			if (!finalStateProbabilities.containsKey(t.getFromState()) || !finalStateProbabilities.containsKey(t.getToState())) {
+				toRemove.add(t);
+			}
+		}
+		for (final Transition t : toRemove) {
+			this.removeTransition(t);
+		}
 	}
 
 	public void cleanUp() {
@@ -689,8 +761,10 @@ public class PDFA implements AutomatonModel, Serializable {
 	/**
 	 * returns all possible sequences concatenated with the given sequence
 	 * 
-	 * @param fromState the state from where to gather the sequences
-	 * @param s the sequence taken from the root node so far
+	 * @param fromState
+	 *            the state from where to gather the sequences
+	 * @param s
+	 *            the sequence taken from the root node so far
 	 * @return test
 	 */
 	private Set<UntimedSequence> getAllSequences(int fromState, UntimedSequence s) {

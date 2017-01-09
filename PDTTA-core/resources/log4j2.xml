@@ -21,8 +21,8 @@
 			<ThresholdFilter level="ERROR" onMatch="ACCEPT" />
 			<PatternLayout pattern="(%d{DEFAULT}) %-5p [%t] [%c{1}.%M:%L] - %m%n" />
 		</File> -->
-		<RollingFile name="infoFileAppender" fileName="logs/info.log"
-            filePattern="logs/info-%d{yyyy-MM-dd}-%i.log">
+		<RollingFile name="infoFileAppender" fileName="logs/sadl-info.log"
+            filePattern="logs/sadl-info-%d{yyyy-MM-dd}-%i.log">
             <ThresholdFilter level="INFO" onMatch="ACCEPT" />
 			<PatternLayout pattern="(%d{DEFAULT}) %-5p [%t] [%c{1}.%M:%L] - %m%n" />
             <Policies>
@@ -31,8 +31,8 @@
             </Policies>
             <DefaultRolloverStrategy max="2000"/>
         </RollingFile>
-		<RollingFile name="errFileAppender" fileName="logs/error.log"
-            filePattern="logs/error-%d{yyyy-MM-dd}-%i.log">
+		<RollingFile name="errFileAppender" fileName="logs/sadl-error.log"
+            filePattern="logs/sadl-error-%d{yyyy-MM-dd}-%i.log">
 			<ThresholdFilter level="ERROR" onMatch="ACCEPT" />
 			<PatternLayout pattern="(%d{DEFAULT}) %-5p [%t] [%c{1}.%M:%L] - %m%n" />
             <Policies>
@@ -54,7 +54,8 @@
 		</Console>
 	</Appenders>
 	<Loggers>
-		<!-- <Logger name="sadl.integration" level="debug"/> -->
+		<!-- <Logger name="sadl.models" level="trace"/> -->
+		<Logger name="sadl.integration" level="debug" />
 		<Logger name="sadl" level="info">
 			<AppenderRef ref="console" />
 			<AppenderRef ref="infoFileAppender" />

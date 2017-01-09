@@ -10,7 +10,6 @@
  */
 package sadl.run.commands;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,7 +27,6 @@ import sadl.constants.Algoname;
 import sadl.input.TimedInput;
 import sadl.interfaces.ProbabilisticModel;
 import sadl.interfaces.ProbabilisticModelLearner;
-import sadl.models.pdrta.PDRTA;
 import sadl.run.factories.LearnerFactory;
 import sadl.run.factories.learn.ButlaFactory;
 import sadl.run.factories.learn.PdttaFactory;
@@ -40,8 +38,6 @@ public class TrainRun {
 
 	private static final Logger logger = LoggerFactory.getLogger(TrainRun.class);
 
-	private final boolean smacMode;
-
 	@Parameter
 	private List<String> mainParams;
 
@@ -52,8 +48,7 @@ public class TrainRun {
 	@Parameter(names = "-out", arity = 1)
 	Path out = Paths.get("sadl_train_out.model");
 
-	public TrainRun(boolean smacMode) {
-		this.smacMode = smacMode;
+	public TrainRun() {
 	}
 
 	public ProbabilisticModel run(JCommander jc) {
@@ -90,48 +85,26 @@ public class TrainRun {
 		@SuppressWarnings("null")
 		final ProbabilisticModelLearner ml = lf.create();
 
-		if (!smacMode) {
-			try {
-				trainSeqs = TimedInput.parse(in);
-				// trainSeqs = IoUtils.readTrainTestFile(in).getFirst();
-			} catch (final IOException e) {
-				logger.error("Error when reading training sequences from file!", e);
-			}
+		try {
+			trainSeqs = TimedInput.parse(in);
+			// trainSeqs = IoUtils.readTrainTestFile(in).getFirst();
+		} catch (final IOException e) {
+			logger.error("Error when reading training sequences from file!", e);
 		}
-
+		if (trainSeqs.size() <= 0) {
+			logger.warn("Empty training set provided. Nothind to do.");
+			return null;
+		}
 		final ProbabilisticModel m = ml.train(trainSeqs);
 
-		if (!smacMode) {
-			try {
-				final Path parent = out.getParent();
-				if (parent != null) {
-					Files.createDirectories(parent);
-					if (m instanceof PDRTA) {
-						// TODO Remove this some time
-						final Path out2 = Paths.get(out.toAbsolutePath().toString() + ".gv");
-						try (final BufferedWriter bw = Files.newBufferedWriter(out2)) {
-							((PDRTA) m).toDOTLang(bw);
-						}
-						final String[] args = { "dot", "-Tpng", out2.toAbsolutePath().toString(), "-o", out.toAbsolutePath().toString() + ".png" };
-						Process pr = null;
-						try {
-							pr = Runtime.getRuntime().exec(args);
-						} catch (final Exception e) {
-							logger.warn("Could not create plot of PDRTA: {}", e.getMessage());
-						} finally {
-							if (pr != null) {
-								try {
-									pr.waitFor();
-								} catch (final InterruptedException e) {
-								}
-							}
-						}
-					}
-					IoUtils.serialize(m, out);
-				}
-			} catch (final IOException e) {
-				logger.error("Error when storing model in file!", e);
+		try {
+			final Path parent = out.toAbsolutePath().getParent();
+			if (parent != null) {
+				Files.createDirectories(parent);
+				IoUtils.serialize(m, out);
 			}
+		} catch (final IOException e) {
+			logger.error("Error when storing model in file!", e);
 		}
 
 		return m;

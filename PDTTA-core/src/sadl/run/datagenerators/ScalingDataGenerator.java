@@ -120,7 +120,7 @@ public class ScalingDataGenerator {
 		}
 		states.put(0, 0.0);
 		structure.checkAndRestoreConsistency();
-		structure.toGraphvizFile(outputFolder.resolve("pdfa.gv"), false);
+		structure.toGraphvizFile(outputFolder.resolve("pdfa.gv"));
 		final Map<ZeroProbTransition, ContinuousDistribution> transitionDistributions = new HashMap<>();
 		for (final Transition t : transitions) {
 			transitionDistributions.put(t.toZeroProbTransition(), new Uniform(TIME_LOW, TIME_HIGH));
