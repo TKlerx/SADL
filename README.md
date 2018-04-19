@@ -7,7 +7,7 @@ Sequence-based Anomaly Detection Library
 * PDTTA
 * PDFA
 
-##Implemented Automaton Inference Algorithms
+## Implemented Automaton Inference Algorithms
 * RTI+
 * ALERGIA
 * BUTLA
