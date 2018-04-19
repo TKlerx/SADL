@@ -1,0 +1,464 @@
+<!--
+
+    This file is part of SADL, a library for learning all sorts of (timed) automata and performing sequence-based anomaly detection.
+    Copyright (C) 2013-2018  the original author or authors.
+
+    SADL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+    SADL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>PDTTA-core</artifactId>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<license.inceptionYear>2013</license.inceptionYear>
+		<github.global.server>github</github.global.server>
+		<run.mainclass>sadl.run.SADL</run.mainclass>
+		<run.mainpackage>sadl.run</run.mainpackage>
+	</properties>
+	<licenses>
+		<license>
+			<name>gpl_v3</name>
+			<url>http://www.gnu.org/licenses</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+	<scm>
+		<url>https://github.com/TKlerx/SADL</url>
+		<connection>scm:git:git://github.com/TKlerx/SADL.git</connection>
+		<developerConnection>scm:git:git@github.TKlerx/SADL.git</developerConnection>
+	</scm>
+	<repositories>
+		<repository>
+			<id>SADL-mvn-repo</id>
+			<url>https://raw.github.com/TKlerx/SADL/mvn-repo/</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+		<!-- <repository> <id>edwardraff-repo</id> <url>http://www.edwardraff.com/maven-repo/</url> 
+			</repository> -->
+	</repositories>
+	<build>
+		<sourceDirectory>src</sourceDirectory>
+		<testSourceDirectory>test</testSourceDirectory>
+		<resources>
+			<resource>
+				<directory>resources</directory>
+				<excludes>
+					<exclude>**/*.java</exclude>
+				</excludes>
+			</resource>
+		</resources>
+		<testResources>
+			<testResource>
+				<directory>testResources</directory>
+				<excludes>
+					<exclude>**/*.java</exclude>
+				</excludes>
+			</testResource>
+		</testResources>
+		<plugins>
+			<!-- Bundle sources -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>2.1.1</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<phase>deploy</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<configuration>
+					<additionalparam>-Xdoclint:none</additionalparam>
+					<additionalOptions>-Xdoclint:none</additionalOptions>
+				</configuration>
+				<version>2.10.3</version>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<phase>deploy</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<!-- TODO use sigar-native-deps maven dependency eventually -->
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>2.7</version>
+				<executions>
+					<execution>
+						<id>copy-resources</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${basedir}/target/lib</outputDirectory>
+							<resources>
+								<resource>
+									<directory>${basedir}/sigar-native-libs</directory>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>com.mycila</groupId>
+				<artifactId>license-maven-plugin</artifactId>
+				<version>2.11</version>
+				<configuration>
+					<!-- <header>com/mycila/maven/plugin/license/templates/GPL-3.txt</header> -->
+					<header>resources/license-header.txt</header>
+					<properties>
+						<owner>Timo Klerx</owner>
+						<email>tiklerx@gmail.com</email>
+					</properties>
+					<includes>
+						<include>src/**</include>
+						<include>test/**</include>
+						<include>pom.xml</include>
+					</includes>
+					<excludes>
+						<exclude>license.txt</exclude>
+						<exclude>**/README</exclude>
+						<exclude>output/**</exclude>
+						<exclude>smac/**</exclude>
+						<exclude>smac-data/**</exclude>
+						<exclude>data/**</exclude>
+						<exclude>**/*.csv</exclude>
+						<exclude>**/rti*.txt</exclude>
+						<exclude>**/*.gv</exclude>
+						<exclude>**/*.pdrta</exclude>
+						<exclude>**/*.args</exclude>
+						<exclude>**/sigar-native-libs/**</exclude>
+						<exclude>logs/**</exclude>
+						<exclude>testResources/**</exclude>
+						<exclude>bin/**</exclude>
+						<exclude>assembly/**</exclude>
+						<exclude>**/.git/**</exclude>
+					</excludes>
+				</configuration>
+				<executions>
+					<execution>
+						<phase>process-sources</phase>
+						<goals>
+							<goal>format</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.1</version>
+				<configuration>
+					<source>8</source>
+					<target>8</target>
+					<compilerArgs>
+						<arg>-Xlint:all</arg>
+					</compilerArgs>
+				</configuration>
+			</plugin>
+
+			<!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-assembly-plugin</artifactId> 
+				<executions> <execution> <id>jar-with-dependencies</id> <phase>prepare-package</phase> 
+				<goals> <goal>single</goal> </goals> <configuration> <descriptor>assembly/assembly.xml</descriptor> 
+				<appendAssemblyId>false</appendAssemblyId> </configuration> </execution> 
+				</executions> <configuration> <finalName>${project.artifactId}-${project.version}-full</finalName> 
+				<archive> <manifest> <mainClass>${run.mainclass}</mainClass> </manifest> 
+				</archive> </configuration> </plugin> -->
+			<plugin>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.4</version>
+				<executions>
+					<execution>
+						<id>default-jar</id>
+						<phase>package</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<archive>
+						<manifest>
+							<mainClass>${run.mainclass}</mainClass>
+							<packageName>${run.mainpackage}</packageName>
+							<addClasspath>true</addClasspath>
+							<classpathPrefix>lib/</classpathPrefix>
+							<useUniqueVersions>false</useUniqueVersions>
+						</manifest>
+						<manifestEntries>
+							<mode>development</mode>
+							<url>https://github.com/TKlerx/SADL</url>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.19.1</version>
+				<configuration>
+					<argLine>-Djava.library.path=sigar-native-libs</argLine>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>2.10</version>
+				<configuration>
+					<artifactItems>
+						<artifactItem>
+							<groupId>de.upb.timok</groupId>
+							<artifactId>trebaNative</artifactId>
+							<type>so</type>
+							<version>0.0.1</version>
+							<overWrite>true</overWrite>
+							<outputDirectory>${basedir}/target/lib/</outputDirectory>
+							<!--<destFileName>so</destFileName> -->
+							<baseVersion>true</baseVersion>
+						</artifactItem>
+					</artifactItems>
+				</configuration>
+				<executions>
+					<execution>
+						<id>copy</id>
+						<phase>process-classes</phase>
+						<goals>
+							<goal>copy</goal>
+						</goals>
+
+					</execution>
+					<execution>
+						<id>copy-dependencies</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.directory}/lib</outputDirectory>
+							<overWriteReleases>false</overWriteReleases>
+							<overWriteSnapshots>true</overWriteSnapshots>
+							<overWriteIfNewer>true</overWriteIfNewer>
+							<useBaseVersion>true</useBaseVersion>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>maven-deploy-plugin</artifactId>
+				<version>2.8.2</version>
+				<configuration>
+					<altDeploymentRepository>internal.repo::default::file://${project.build.directory}/mvn-repo</altDeploymentRepository>
+					<deployAtEnd>true</deployAtEnd>
+
+				</configuration>
+				<executions>
+					<execution>
+						<id>default-deploy</id>
+						<phase>deploy</phase>
+						<goals>
+							<goal>deploy</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>com.github.github</groupId>
+				<artifactId>site-maven-plugin</artifactId>
+				<version>0.12</version>
+				<configuration>
+					<message>Maven artifacts for ${project.artifactId} (v.
+						${project.version})</message>  <!-- git commit message -->
+					<noJekyll>true</noJekyll>                                  <!-- disable webpage processing -->
+					<outputDirectory>${project.build.directory}/mvn-repo</outputDirectory> <!-- matches distribution management repository url above -->
+					<branch>refs/heads/mvn-repo</branch>                       <!-- remote branch name -->
+					<includes>
+						<include>**/*</include>
+					</includes>
+					<repositoryName>SADL</repositoryName>      <!-- github repo name -->
+					<repositoryOwner>TKlerx</repositoryOwner>    <!-- github username -->
+					<merge>true</merge>
+					<github.site.dryRun>true</github.site.dryRun>
+				</configuration>
+				<executions>
+					<!-- run site-maven-plugin's 'site' target as part of the build's normal 
+						'deploy' phase -->
+					<execution>
+						<goals>
+							<goal>site</goal>
+						</goals>
+						<phase>deploy</phase>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+		<pluginManagement>
+			<plugins>
+				<!--This plugin's configuration is used to store Eclipse m2e settings 
+					only. It has no influence on the Maven build itself. -->
+				<plugin>
+					<groupId>org.eclipse.m2e</groupId>
+					<artifactId>lifecycle-mapping</artifactId>
+					<version>1.0.0</version>
+					<configuration>
+						<lifecycleMappingMetadata>
+							<pluginExecutions>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>
+											com.mycila.maven-license-plugin
+										</groupId>
+										<artifactId>
+											maven-license-plugin
+										</artifactId>
+										<versionRange>
+											[1.7.0,)
+										</versionRange>
+										<goals>
+											<goal>format</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+							</pluginExecutions>
+						</lifecycleMappingMetadata>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-release-plugin</artifactId>
+					<version>2.5.1</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
+	<dependencies>
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.4</version>
+		</dependency>
+		<dependency>
+			<groupId>com.opencsv</groupId>
+			<artifactId>opencsv</artifactId>
+			<version>3.6</version>
+		</dependency>
+		<dependency>
+			<groupId>net.sf.trove4j</groupId>
+			<artifactId>trove4j</artifactId>
+			<version>3.0.3</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.4</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-math3</artifactId>
+			<version>3.5</version>
+		</dependency>
+		<dependency>
+			<groupId>de.upb.timok</groupId>
+			<artifactId>libsvm</artifactId>
+			<version>3.22</version>
+		</dependency>
+		<!--<dependency> <groupId>tw.edu.ntu.csie</groupId> <artifactId>libsvm</artifactId> 
+			<version>3.17</version> </dependency> -->
+
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-slf4j-impl</artifactId>
+			<version>2.2</version>
+		</dependency>
+		<dependency>
+			<groupId>de.upb.timok</groupId>
+			<artifactId>jcommander</artifactId>
+			<version>1.49</version>
+		</dependency>
+		<dependency>
+			<groupId>com.thoughtworks.xstream</groupId>
+			<artifactId>xstream</artifactId>
+			<version>1.4.10</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>2.2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.edwardraff</groupId>
+			<artifactId>JSAT</artifactId>
+			<version>0.0.3</version>
+		</dependency>
+		<dependency>
+			<groupId>de.upb.timok</groupId>
+			<artifactId>trebaJni</artifactId>
+			<version>0.0.1</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.8.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.4.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20141113</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>18.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.fusesource</groupId>
+			<artifactId>sigar</artifactId>
+			<version>1.6.4</version>
+		</dependency>
+		<dependency>
+			<groupId>org.fusesource</groupId>
+			<artifactId>sigar</artifactId>
+			<version>1.6.4</version>
+			<classifier>native</classifier>
+		</dependency>
+	</dependencies>
+	<name>PDTTA</name>
+
+	<!-- <parent> <groupId>de.upb.timok</groupId> <artifactId>PDTTA</artifactId> 
+		<version>0.1</version> </parent> -->
+	<groupId>com.github.tklerx</groupId>
+	<version>0.0.2-SNAPSHOT</version>
+	<organization>
+		<name>Timo Klerx</name>
+	</organization>
+</project>
