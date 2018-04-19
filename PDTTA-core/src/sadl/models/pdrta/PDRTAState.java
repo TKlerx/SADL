@@ -29,8 +29,8 @@ import java.util.stream.Collectors;
  */
 public class PDRTAState implements Serializable {
 
-	private static final long serialVersionUID = 1L;
 
+	private static final long serialVersionUID = -8410558226100140350L;
 	private final PDRTA automaton;
 	private final List<NavigableMap<Integer, Interval>> intervals;
 	private final StateStatistic stat;

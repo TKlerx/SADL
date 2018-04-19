@@ -68,7 +68,8 @@ public class RTIFactory implements LearnerFactory {
 	public enum DistributionAnalysisType {
 
 		DISABLED(null),
-		STRICT(new StrictAnalysis()),
+		// FIXME Using strict analysis fails!
+		// STRICT(new StrictAnalysis()),
 		MAD(new MADOutlierAnalysis(1.0, MADConservatism.MODERATELY_CONSERVATIVE, new FrequencyAnalysis(10, 0.25), 2)),
 		IQR(new IQROutlierAnalysis(1.0, false, new FrequencyAnalysis(10, 0.25), 2)),
 		FREQUENCY(new FrequencyAnalysis(10, 0.25)),
@@ -158,8 +159,10 @@ public class RTIFactory implements LearnerFactory {
 		switch (type) {
 			case DISABLED:
 				return null;
-			case STRICT:
-				return fewData ? fewDataStrictAnalysisParams.createAnalysis() : strictAnalysisParams.createAnalysis(isIda);
+				// FIXME @fwitter
+				// Use again if strict bug fixed
+				// case STRICT:
+				// return fewData ? fewDataStrictAnalysisParams.createAnalysis() : strictAnalysisParams.createAnalysis(isIda);
 			case FREQUENCY:
 				return fewData ? fewDataFrequencyAnalysisParams.createAnalysis() : frequencyAnalysisParams.createAnalysis(isIda);
 			case IQR:

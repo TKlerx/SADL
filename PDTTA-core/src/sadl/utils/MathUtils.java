@@ -11,8 +11,20 @@
 package sadl.utils;
 
 public class MathUtils {
-	public double AUC(){
+	public double AUC() {
 		// http://cs.ru.nl/~tomh/onderwijs/dm/dm_files/roc_auc.pdf
 		return -1;
+	}
+
+	public static boolean doubleArrayEquals(double[] d1s, double[] d2s) {
+		if (d1s.length != d2s.length) {
+			return false;
+		}
+		for (int i = 0; i < d1s.length; i++) {
+			if (Double.doubleToLongBits(d1s[i]) != Double.doubleToLongBits(d2s[i])) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

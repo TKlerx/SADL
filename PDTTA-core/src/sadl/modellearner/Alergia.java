@@ -51,7 +51,7 @@ public class Alergia implements PdfaLearner {
 	}
 
 	public Alergia(double alpha, boolean recursiveMergeTest) {
-		this.alpha = alpha;
+		this(alpha);
 		this.recursiveMergeTest = recursiveMergeTest;
 	}
 

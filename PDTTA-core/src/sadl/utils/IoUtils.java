@@ -31,6 +31,7 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -45,6 +46,9 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.security.NoTypePermission;
+import com.thoughtworks.xstream.security.NullPermission;
+import com.thoughtworks.xstream.security.PrimitiveTypePermission;
 
 import sadl.input.TimedInput;
 import sadl.run.datagenerators.SmacDataGenerator;
@@ -82,7 +86,7 @@ public class IoUtils {
 
 				@Override
 				public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
-					if(recursively) {
+					if (recursively) {
 						return super.preVisitDirectory(dir, attrs);
 					} else {
 						return FileVisitResult.SKIP_SUBTREE;
@@ -267,11 +271,23 @@ public class IoUtils {
 		}
 	}
 
+	static String[] xmlSerializationClasses = new String[] { "sadl.**", "jsat.**", "gnu.trove.**", "java.util.TreeMap", "com.google.common.**",
+	"java.lang.String" };
+
 	public static Object xmlDeserialize(Path path) {
+
 		try {
 			final String xml = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
-			final XStream x = new XStream();
-			return x.fromXML(xml);
+			final XStream xstream = new XStream();
+			// clear out existing permissions and set own ones
+			xstream.addPermission(NoTypePermission.NONE);
+			// allow some basics
+			xstream.addPermission(NullPermission.NULL);
+			xstream.addPermission(PrimitiveTypePermission.PRIMITIVES);
+			xstream.allowTypeHierarchy(Collection.class);
+			// allow any type from the same package
+			xstream.allowTypesByWildcard(xmlSerializationClasses);
+			return xstream.fromXML(xml);
 		} catch (final Exception e) {
 			logger.error("Unexpected exception", e);
 		}
@@ -281,12 +297,46 @@ public class IoUtils {
 	public static void xmlSerialize(Object o, Path path) {
 		String xml;
 		try {
-			final XStream x = new XStream();
-			xml = x.toXML(o);
+			final XStream xstream = new XStream();
+			// clear out existing permissions and set own ones
+			xstream.addPermission(NoTypePermission.NONE);
+			// allow some basics
+			xstream.addPermission(NullPermission.NULL);
+			xstream.addPermission(PrimitiveTypePermission.PRIMITIVES);
+			xstream.allowTypeHierarchy(Collection.class);
+			// allow any type from the same package
+			xstream.allowTypesByWildcard(xmlSerializationClasses);
+			xml = xstream.toXML(o);
 			Files.write(path, xml.getBytes());
 		} catch (final Exception e) {
 			logger.error("Unexpected exception", e);
 		}
 	}
+	// TODO implement JSON Deserialization
+	// public static Object jsonDeserialize(Path path) {
+	//
+	// try {
+	// final Gson gson = new Gson();
+	// try (BufferedReader br = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+	// return gson.fromJson(br, Object.class);
+	// }
+	// } catch (final Exception e) {
+	// logger.error("Unexpected exception", e);
+	// }
+	// return null;
+	// }
+	//
+	// public static void jsonSerialize(Object o, Path path) {
+	// try {
+	// final Gson gson = new Gson();
+	// final String objectJson = gson.toJson(o);
+	// try (BufferedWriter bw = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
+	// // gson.toJson(o, bw);
+	// bw.write(objectJson);
+	// }
+	// } catch (final Exception e) {
+	// logger.error("Unexpected exception", e);
+	// }
+	// }
 
 }

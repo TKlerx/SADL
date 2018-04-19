@@ -174,6 +174,64 @@ public class RtiPlusTest {
 	}
 
 	@Test
+	public void testXmlSerialization() throws URISyntaxException, IOException, ClassNotFoundException {
+		final String travis = System.getenv("TRAVIS");
+		if (travis != null && travis.equalsIgnoreCase("true")) {
+			// This test fails in travis
+			logger.info("Skipped testXmlSerialization because of travis.");
+			return;
+		}
+		logger.info("Starting testXmlSerialization...");
+
+		for (int i = 1; i <= 5; i++) {
+
+			final TimedInput ti = TimedInput.parse(Paths.get(this.getClass().getResource("/pdrta/test_" + i + ".inp").toURI()));
+
+			final SimplePDRTALearner l = new SimplePDRTALearner(0.05, new QuantileAnalysis(4), new LikelihoodRatioTester(false), SplitPosition.MIDDLE, false,
+					false, new FrequencyAnalysis(10, 0.2), false, true, 0.01, "AAO", null);
+			final ProbabilisticModel p = l.train(ti);
+
+			final Path path = Paths.get(this.getClass().getResource("/pdrta/pdrta_" + i + ".aut").toURI());
+			IoUtils.xmlSerialize(p, path);
+			final ProbabilisticModel cP = (ProbabilisticModel) IoUtils.xmlDeserialize(path);
+
+			assertEquals("PDRTAs for files " + i + " are not equal", p, cP);
+		}
+		logger.info("Finished testXmlSerialization.");
+
+	}
+
+	// @Test
+	// public void testJsonSerialization() throws URISyntaxException, IOException, ClassNotFoundException {
+	// final String travis = System.getenv("TRAVIS");
+	// if (travis != null && travis.equalsIgnoreCase("true")) {
+	// // This test fails in travis
+	// logger.info("Skipped testJsonSerialization because of travis.");
+	// return;
+	// }
+	// logger.info("Starting testJsonSerialization...");
+	//
+	// for (int i = 1; i <= 5; i++) {
+	//
+	// final TimedInput ti = TimedInput.parse(Paths.get(this.getClass().getResource("/pdrta/test_" + i + ".inp").toURI()));
+	//
+	// final SimplePDRTALearner l = new SimplePDRTALearner(0.05, new QuantileAnalysis(4), new LikelihoodRatioTester(false), SplitPosition.MIDDLE, false,
+	// false, new FrequencyAnalysis(10, 0.2), false, true, 0.01, "AAO", null);
+	// final ProbabilisticModel p = l.train(ti);
+	//
+	// final Path path = Paths.get(this.getClass().getResource("/pdrta/pdrta_" + i + ".aut").toURI());
+	// logger.info("Serializing PDRTA {}...", Integer.toString(i));
+	// IoUtils.jsonSerialize(p, path);
+	// logger.info("Deserializing PDRTA {}...", Integer.toString(i));
+	// final ProbabilisticModel cP = (ProbabilisticModel) IoUtils.jsonDeserialize(path);
+	//
+	// assertEquals("PDRTAs for files " + i + " are not equal", p, cP);
+	// }
+	// logger.info("Finished testJsonSerialization.");
+	//
+	// }
+
+	@Test
 	public void testCorrectness() throws URISyntaxException, IOException, ClassNotFoundException {
 		final String travis = System.getenv("TRAVIS");
 		if (travis != null && travis.equalsIgnoreCase("true")) {

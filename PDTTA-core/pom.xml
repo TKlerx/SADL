@@ -10,7 +10,8 @@
     You should have received a copy of the GNU General Public License along with SADL.  If not, see <http://www.gnu.org/licenses/>.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>PDTTA-core</artifactId>
@@ -167,8 +168,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.1</version>
 				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
+					<source>8</source>
+					<target>8</target>
 					<compilerArgs>
 						<arg>-Xlint:all</arg>
 					</compilerArgs>
@@ -284,7 +285,8 @@
 				<artifactId>site-maven-plugin</artifactId>
 				<version>0.11</version>
 				<configuration>
-					<message>Maven artifacts for ${project.artifactId} (v. ${project.version})</message>  <!-- git commit message -->
+					<message>Maven artifacts for ${project.artifactId} (v.
+						${project.version})</message>  <!-- git commit message -->
 					<noJekyll>true</noJekyll>                                  <!-- disable webpage processing -->
 					<outputDirectory>${project.build.directory}/mvn-repo</outputDirectory> <!-- matches distribution management repository url above -->
 					<branch>refs/heads/mvn-repo</branch>                       <!-- remote branch name -->
@@ -396,7 +398,7 @@
 		<dependency>
 			<groupId>com.thoughtworks.xstream</groupId>
 			<artifactId>xstream</artifactId>
-			<version>1.4.8</version>
+			<version>1.4.10</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
@@ -416,7 +418,7 @@
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
-			<version>2.3.1</version>
+			<version>2.8.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
