@@ -21,6 +21,15 @@
 			<ThresholdFilter level="ERROR" onMatch="ACCEPT" />
 			<PatternLayout pattern="(%d{DEFAULT}) %-5p [%t] [%c{1}.%M:%L] - %m%n" />
 		</File> -->
+		<RollingFile name="debugFileAppender" fileName="logs/sadl-error.log"
+            filePattern="logs/sadl-debug-%d{yyyy-MM-dd}-%i.log">
+			<PatternLayout pattern="(%d{DEFAULT}) %-5p [%t] [%c{1}.%M:%L] - %m%n" />
+            <Policies>
+                <TimeBasedTriggeringPolicy />
+                <SizeBasedTriggeringPolicy size="100 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="2000"/>
+        </RollingFile>
 		<RollingFile name="infoFileAppender" fileName="logs/sadl-info.log"
             filePattern="logs/sadl-info-%d{yyyy-MM-dd}-%i.log">
             <ThresholdFilter level="INFO" onMatch="ACCEPT" />
@@ -55,7 +64,9 @@
 	</Appenders>
 	<Loggers>
 		<!-- <Logger name="sadl.models" level="trace"/> -->
-		<Logger name="sadl.integration" level="debug" />
+		<Logger name="sadl.integration" level="debug" >
+			<AppenderRef ref="debugFileAppender" />
+		</Logger>
 		<Logger name="sadl" level="info">
 			<AppenderRef ref="console" />
 			<AppenderRef ref="infoFileAppender" />
