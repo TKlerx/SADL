@@ -21,6 +21,7 @@
 		<github.global.server>github</github.global.server>
 		<run.mainclass>sadl.run.SADL</run.mainclass>
 		<run.mainpackage>sadl.run</run.mainpackage>
+		<surefire.module.opens></surefire.module.opens>
 	</properties>
 	<licenses>
 		<license>
@@ -216,7 +217,7 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.19.1</version>
 				<configuration>
-					<argLine>-Djava.library.path=sigar-native-libs</argLine>
+					<argLine>-Djava.library.path=sigar-native-libs ${surefire.module.opens}</argLine>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -443,6 +444,15 @@
 		</dependency>
 	</dependencies>
 	<name>PDTTA</name>
+	<profiles>
+		<profile>
+			<id>modern-jdk-serialization</id>
+			<activation><jdk>[9,)</jdk></activation>
+			<properties>
+				<surefire.module.opens>--add-opens java.base/java.util=ALL-UNNAMED</surefire.module.opens>
+			</properties>
+		</profile>
+	</profiles>
 
 	<!-- <parent> <groupId>de.upb.timok</groupId> <artifactId>PDTTA</artifactId> 
 		<version>0.1</version> </parent> -->
