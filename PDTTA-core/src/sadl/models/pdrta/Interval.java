@@ -325,7 +325,8 @@ public class Interval implements Serializable {
 		int result = 1;
 		result = prime * result + begin;
 		result = prime * result + end;
-		result = prime * result + ((target == null) ? 0 : target.getIndex());
+		// Cyclic deserialization can hash this interval before the target index is restored.
+		// Only use the interval's own fields so persisted probability-map keys stay valid.
 		return result;
 	}
 
