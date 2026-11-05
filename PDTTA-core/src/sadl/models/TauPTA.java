@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -337,26 +338,47 @@ public class TauPTA extends PDTTA {
 	// the outcome of ALL values. 10%
 
 	public void makeAbnormal(AnomalyInsertionType newAnomalyType) {
+		makeAbnormal(newAnomalyType, Collections.emptyMap());
+	}
+
+	/** Uses the supplied alias-to-base mapping for Type 1 substitutions and Type 2 path selection. */
+	public void makeAbnormal(AnomalyInsertionType newAnomalyType, Map<String, String> baseSymbols) {
 		if (this.anomalyType != AnomalyInsertionType.NONE) {
 			logger.error(
 					"A TauPTA can only have one type of anomaly. This one already has AnomalyInsertionType {}, which should be overwritten with {}. The overwriting was not done!",
 					this.anomalyType, anomalyType);
 			return;
 		}
+		if (newAnomalyType == AnomalyInsertionType.TYPE_ONE && !baseSymbols.isEmpty()
+				&& Arrays.stream(alphabet.getSymbols()).map(symbol -> baseSymbols.getOrDefault(symbol, symbol)).distinct().limit(2).count() < 2) {
+			throw new IllegalArgumentException("Type 1 requires at least two base event symbols");
+		}
 		final Set<UntimedSequence> typeTwoPaths = newAnomalyType == AnomalyInsertionType.TYPE_TWO ? getAllSequences() : null;
 		if (typeTwoPaths != null && typeTwoPaths.size() < 2) {
 			throw new IllegalArgumentException("Type 2 requires at least two complete paths to keep a normal path");
 		}
+		final List<UntimedSequence> projectedTypeTwoPaths = typeTwoPaths != null && !baseSymbols.isEmpty()
+				? selectExportedAnomalyPaths(typeTwoPaths, baseSymbols) : null;
 		immutable = false;
 		setAnomalyType(newAnomalyType);
 		if (anomalyType == AnomalyInsertionType.TYPE_ONE) {
 			logger.debug("TransitionCount before inserting {} anomalies={}", anomalyType, getTransitionCount());
 			// choose a random state on every height and modify the symbol of an outgoing transition of that state to another random symbol
-			insertPerLevelAnomaly(this::computeTransitionCandicatesType13, this::changeTransitionEvent);
+			final Map<Integer, Set<String>> exportedEventsByState = new HashMap<>();
+			if (!baseSymbols.isEmpty()) {
+				indexExportedEvents(START_STATE, new ArrayList<>(), baseSymbols, new HashMap<>(), exportedEventsByState);
+			}
+			insertPerLevelAnomaly(this::computeTransitionCandicatesType13,
+					candidates -> changeTransitionEvent(candidates, baseSymbols, exportedEventsByState));
 			logger.debug("TransitionCount after inserting {} anomalies={}", anomalyType, getTransitionCount());
 		} else if (anomalyType == AnomalyInsertionType.TYPE_TWO) {
 			// Reserve at least one complete path for the normal model.
-			abnormalSequences = insertSequentialAnomaly(typeTwoPaths, this::insertAnomaly2, typeTwoPaths.size() - 1);
+			if (projectedTypeTwoPaths == null) {
+				abnormalSequences = insertSequentialAnomaly(typeTwoPaths, this::insertAnomaly2, typeTwoPaths.size() - 1);
+			} else {
+				abnormalSequences = projectedTypeTwoPaths;
+				abnormalSequences.forEach(path -> labelWithAnomaly(path, AnomalyInsertionType.TYPE_TWO));
+			}
 		} else if (anomalyType == AnomalyInsertionType.TYPE_THREE) {
 			// choose a random state on every height and modify its time probability drastically (the modification of the time values is only done when sampling
 			// them)
@@ -392,6 +414,30 @@ public class TauPTA extends PDTTA {
 		if (!hasAbnormalTransition) {
 			throw new IllegalStateException("TauPTA should be abnormal but has no abnormal transitions!");
 		}
+	}
+
+	private List<UntimedSequence> selectExportedAnomalyPaths(Set<UntimedSequence> paths, Map<String, String> baseSymbols) {
+		final Map<List<String>, List<UntimedSequence>> groups = new HashMap<>();
+		final Map<List<String>, Long> frequencies = new HashMap<>();
+		for (final UntimedSequence path : paths) {
+			final List<String> symbols = new ArrayList<>(path.length());
+			int state = START_STATE;
+			for (final String symbol : path.getEvents()) {
+				symbols.add(baseSymbols.getOrDefault(symbol, symbol));
+				state = getTransition(state, symbol).getToState();
+			}
+			groups.computeIfAbsent(symbols, key -> new ArrayList<>()).add(path);
+			// Each complete path in the prefix tree has its own terminating count.
+			frequencies.merge(symbols, (long) finalStateCount.get(state), Long::sum);
+		}
+		if (groups.size() < 2) {
+			throw new IllegalArgumentException("Type 2 requires at least two distinct exported paths to keep a normal path");
+		}
+		return groups.keySet().stream()
+				.sorted(Comparator.<List<String>>comparingLong(frequencies::get).thenComparing(Object::toString))
+				.limit(Math.min(SEQUENTIAL_ANOMALY_K, groups.size() - 1))
+				.flatMap(symbols -> groups.get(symbols).stream())
+				.collect(Collectors.toList());
 	}
 
 	private List<UntimedSequence> insertSequentialAnomaly(Set<UntimedSequence> allSequences, IntUnaryOperator f, int maxAnomalies) {
@@ -576,19 +622,43 @@ public class TauPTA extends PDTTA {
 		return result;
 	}
 
-	private int changeTransitionEvent(List<Transition> possibleTransitions) {
+	private void indexExportedEvents(int state, List<String> prefix, Map<String, String> baseSymbols,
+			Map<List<String>, Set<String>> eventsByPrefix, Map<Integer, Set<String>> eventsByState) {
+		// States reached through aliases of the same prefix share one set of normal outgoing events.
+		final Set<String> allowed = eventsByPrefix.computeIfAbsent(List.copyOf(prefix), key -> new HashSet<>());
+		eventsByState.put(state, allowed);
+		for (final Transition transition : getOutTransitions(state, false)) {
+			final String symbol = transition.getSymbol();
+			final String base = baseSymbols.getOrDefault(symbol, symbol);
+			allowed.add(base);
+			prefix.add(base);
+			indexExportedEvents(transition.getToState(), prefix, baseSymbols, eventsByPrefix, eventsByState);
+			prefix.remove(prefix.size() - 1);
+		}
+	}
+
+	private int changeTransitionEvent(List<Transition> possibleTransitions, Map<String, String> baseSymbols,
+			Map<Integer, Set<String>> exportedEventsByState) {
 		final TIntSet currentStates = new TIntHashSet(possibleTransitions.stream().mapToInt(t -> t.getFromState()).distinct().toArray());
 		while (currentStates.size() > 0) {
 			final Transition chosenTransition = CollectionUtils.chooseRandomObject(possibleTransitions, r);
 			final int chosenFromState = chosenTransition.getFromState();
 			final List<Transition> stateTransitions = possibleTransitions.stream().filter(t -> t.getFromState() == chosenFromState).collect(Collectors.toList());
 			final List<String> notOccuringEvents = new ArrayList<>(Arrays.asList(alphabet.getSymbols()));
-			for (final Transition t : stateTransitions) {
-				notOccuringEvents.remove(t.getSymbol());
+			if (baseSymbols.isEmpty()) {
+				for (final Transition transition : stateTransitions) {
+					notOccuringEvents.remove(transition.getSymbol());
+				}
+			} else {
+				final Set<String> allowed = exportedEventsByState.get(chosenFromState);
+				notOccuringEvents.removeIf(symbol -> allowed.contains(baseSymbols.getOrDefault(symbol, symbol)));
 			}
 			if (notOccuringEvents.size() == 0 || stateTransitions.size() == 0) {
 				logger.warn("Not possible to change an event in state {}", chosenFromState);
 				currentStates.remove(chosenFromState);
+				if (!baseSymbols.isEmpty()) {
+					possibleTransitions.removeIf(transition -> transition.getFromState() == chosenFromState);
+				}
 				continue;
 			} else {
 				final String chosenEvent = notOccuringEvents.get(r.nextInt(notOccuringEvents.size()));
