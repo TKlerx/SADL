@@ -133,6 +133,11 @@ public class SmacDataGeneratorMixed implements Serializable {
 						boolean wasAnormal = false;
 						TimedWord seq = null;
 						final TauPTA chosen = CollectionUtils.chooseRandomObject(abnormalPtas, anomalyChooser);
+						if (chosen.getAnomalyType() == AnomalyInsertionType.TYPE_THREE) {
+							anomalyOccurences.adjustOrPutValue(chosen, 1, 1);
+							testSequences.add(chosen.createTypeThreeAnomaly(SmacDataGenerator.sampleTypeThreeControl(pta)));
+							continue;
+						}
 						while (!wasAnormal) {
 							seq = chosen.sampleSequence();
 							wasAnormal = seq.isAnomaly();
