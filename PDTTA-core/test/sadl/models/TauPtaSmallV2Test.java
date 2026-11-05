@@ -27,14 +27,14 @@ import sadl.modellearner.TauPtaLearner;
 import sadl.utils.IoUtils;
 import sadl.utils.MasterSeed;
 
-public class TauPtaTestSmallV2 {
+public class TauPtaSmallV2Test {
 	@BeforeClass
 	public static void resetSeed() {
 		MasterSeed.reset();
 	}
 	@Test
 	public void testTauPTATimedInputAbnormal() throws IOException, URISyntaxException, ClassNotFoundException {
-		Path p = Paths.get(TauPtaTestSmallV2.class.getResource("/taupta/small/rti_small.txt").toURI());
+		Path p = Paths.get(TauPtaSmallV2Test.class.getResource("/taupta/small/rti_small.txt").toURI());
 		final TimedInput trainingTimedSequences = TimedInput.parseAlt(p, 1);
 		final TauPtaLearner learner = new TauPtaLearner();
 		final TauPTA pta = learner.train(trainingTimedSequences);

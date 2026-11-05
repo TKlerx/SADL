@@ -27,7 +27,7 @@ import sadl.modellearner.TauPtaLearner;
 import sadl.utils.IoUtils;
 import sadl.utils.MasterSeed;
 
-public class TauPtaTestV2 {
+public class TauPtaV2Test {
 
 	@BeforeClass
 	public static void resetSeed() {
@@ -36,7 +36,7 @@ public class TauPtaTestV2 {
 
 	@Test
 	public void testTauPTATimedInputAbnormal() throws IOException, URISyntaxException, ClassNotFoundException {
-		Path p = Paths.get(TauPtaTestV2.class.getResource("/taupta/medium/rti_medium.txt").toURI());
+		Path p = Paths.get(TauPtaV2Test.class.getResource("/taupta/medium/rti_medium.txt").toURI());
 		final TimedInput trainingTimedSequences = TimedInput.parseAlt(p, 1);
 		final TauPtaLearner learner = new TauPtaLearner();
 		final TauPTA pta = learner.train(trainingTimedSequences);

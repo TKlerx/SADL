@@ -11,6 +11,7 @@
 package sadl.modellearner;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assume.assumeFalse;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -58,12 +59,7 @@ public class RtiPlusTest {
 
 	@Test
 	public void testDeterminism() throws URISyntaxException, IOException {
-		final String travis = System.getenv("TRAVIS");
-		if (travis != null && travis.equalsIgnoreCase("true")) {
-			// This test fails in travis
-			logger.info("Skipped testDeterminism because of travis.");
-			return;
-		}
+		assumeFalse("Legacy test skipped when TRAVIS=true", "true".equalsIgnoreCase(System.getenv("TRAVIS")));
 		logger.info("Starting testDeterminism...");
 
 		for (int i = 1; i <= 5; i++) {
@@ -84,12 +80,7 @@ public class RtiPlusTest {
 
 	@Test
 	public void testDeterminismBig() throws URISyntaxException, IOException {
-		final String travis = System.getenv("TRAVIS");
-		if (travis != null && travis.equalsIgnoreCase("true")) {
-			// This test fails in travis
-			logger.info("Skipped testDeterminismBig because of travis.");
-			return;
-		}
+		assumeFalse("Legacy test skipped when TRAVIS=true", "true".equalsIgnoreCase(System.getenv("TRAVIS")));
 		logger.info("Starting testDeterminismBig...");
 
 		for (int i = 1; i <= 5; i++) {
@@ -118,12 +109,7 @@ public class RtiPlusTest {
 
 	@Test
 	public void testDeterminismNaive() throws URISyntaxException, IOException {
-		final String travis = System.getenv("TRAVIS");
-		if (travis != null && travis.equalsIgnoreCase("true")) {
-			// This test fails in travis
-			logger.info("Skipped testDeterminismNaive because of travis.");
-			return;
-		}
+		assumeFalse("Legacy test skipped when TRAVIS=true", "true".equalsIgnoreCase(System.getenv("TRAVIS")));
 		logger.info("Starting testDeterminismNaive...");
 
 		for (int i = 1; i <= 5; i++) {
@@ -147,12 +133,7 @@ public class RtiPlusTest {
 
 	@Test
 	public void testSerialization() throws URISyntaxException, IOException, ClassNotFoundException {
-		final String travis = System.getenv("TRAVIS");
-		if (travis != null && travis.equalsIgnoreCase("true")) {
-			// This test fails in travis
-			logger.info("Skipped testSerialization because of travis.");
-			return;
-		}
+		assumeFalse("Legacy test skipped when TRAVIS=true", "true".equalsIgnoreCase(System.getenv("TRAVIS")));
 		logger.info("Starting testSerialization...");
 
 		for (int i = 1; i <= 5; i++) {
@@ -175,12 +156,7 @@ public class RtiPlusTest {
 
 	@Test
 	public void testXmlSerialization() throws URISyntaxException, IOException, ClassNotFoundException {
-		final String travis = System.getenv("TRAVIS");
-		if (travis != null && travis.equalsIgnoreCase("true")) {
-			// This test fails in travis
-			logger.info("Skipped testXmlSerialization because of travis.");
-			return;
-		}
+		assumeFalse("Legacy test skipped when TRAVIS=true", "true".equalsIgnoreCase(System.getenv("TRAVIS")));
 		logger.info("Starting testXmlSerialization...");
 
 		for (int i = 1; i <= 5; i++) {
@@ -233,12 +209,7 @@ public class RtiPlusTest {
 
 	@Test
 	public void testCorrectness() throws URISyntaxException, IOException, ClassNotFoundException {
-		final String travis = System.getenv("TRAVIS");
-		if (travis != null && travis.equalsIgnoreCase("true")) {
-			// This test fails in travis
-			logger.info("Skipped testCorrectness because of travis.");
-			return;
-		}
+		assumeFalse("Legacy test skipped when TRAVIS=true", "true".equalsIgnoreCase(System.getenv("TRAVIS")));
 		logger.info("Starting testCorrectness...");
 
 		for (int i = 1; i <= 5; i++) {

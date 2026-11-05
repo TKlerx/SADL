@@ -28,8 +28,8 @@ mvn -B -f trebaJni/trebaNative/pom.xml install
 mvn -B test
 ```
 
-GitHub CI runs these commands without disabling tests or setting `TRAVIS`
-(some historical tests return early when that variable is set). Windows can
+GitHub CI runs the full suite with `TRAVIS` unset. Setting `TRAVIS=true`
+reports the affected historical tests as skipped. Windows can
 run the Java tests but cannot validate the Linux JNI library.
 
 ## Saved model trust
