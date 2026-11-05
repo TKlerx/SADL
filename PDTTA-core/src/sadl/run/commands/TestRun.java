@@ -19,7 +19,6 @@ import java.nio.file.Paths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
 import sadl.constants.DetectorMethod;
@@ -42,7 +41,8 @@ import sadl.oneclassclassifier.LibSvmClassifier;
 import sadl.oneclassclassifier.OneClassClassifier;
 import sadl.oneclassclassifier.ThresholdClassifier;
 import sadl.oneclassclassifier.clustering.DbScanClassifier;
-import sadl.utils.IoUtils;
+import sadl.run.SavedModelLoader;
+import sadl.run.SavedModelWorker;
 
 public class TestRun {
 
@@ -124,7 +124,9 @@ public class TestRun {
 	public TestRun() {
 	}
 
-	public ExperimentResult run(JCommander jc) {
+	public ExperimentResult run(Path modelReady, long streamBytes) throws IOException {
+		testModel = SavedModelLoader.load(modelFile, streamBytes);
+		SavedModelWorker.confirmLoaded(modelReady);
 
 		FeatureCreator featureCreator;
 		AnomalyDetector anomalyDetector;
@@ -152,11 +154,6 @@ public class TestRun {
 		}
 		anomalyDetector = new VectorDetector(aggType, featureCreator, classifier);
 
-		try {
-			testModel = (ProbabilisticModel) IoUtils.deserialize(modelFile);
-		} catch (final Exception e) {
-			logger.error("Error when loading model from file!", e);
-		}
 		try {
 			testSeqs = TimedInput.parse(testIn);
 		} catch (final IOException e) {

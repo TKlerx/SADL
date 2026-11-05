@@ -57,6 +57,10 @@ public class SADL {
 	boolean debug = false;
 	static boolean crash = false;
 	public static void main(String[] args) throws Exception {
+		main(args, SavedModelWorker.DEFAULT);
+	}
+
+	static void main(String[] args, SavedModelWorker.Budget budget) throws Exception {
 
 		try {
 			if (args.length < 1) {
@@ -66,7 +70,10 @@ public class SADL {
 
 			// final String[] reducedArgs = Arrays.copyOfRange(args, 1, args.length);
 
-			run(args);
+			run(args, null, budget);
+		} catch (final SavedModelLoader.LoadException e) {
+			System.err.println("Model load failed: " + e.getMessage());
+			crash = true;
 		} catch (final Throwable e) {
 			logger.error("Unexpected exception with parameters" + Arrays.toString(args), e);
 			e.printStackTrace();
@@ -78,6 +85,10 @@ public class SADL {
 	}
 
 	public static void run(String[] args) throws IOException {
+		run(args, null, SavedModelWorker.DEFAULT);
+	}
+
+	static void run(String[] args, Path modelReady, SavedModelWorker.Budget budget) throws IOException {
 		final SADL main = new SADL();
 		final JCommander jc = new JCommander(main);
 		jc.setAcceptUnknownOptions(true);
@@ -98,7 +109,11 @@ public class SADL {
 
 		switch (jc.getParsedCommand()) {
 			case test:
-				testRun.run(jc.getCommands().get(test));
+				if (modelReady == null) {
+					SavedModelWorker.evaluate(args, budget);
+				} else {
+					testRun.run(modelReady, budget.streamBytes());
+				}
 				break;
 			case train:
 				trainRun.run(jc.getCommands().get(train));

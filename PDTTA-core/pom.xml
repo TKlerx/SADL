@@ -167,10 +167,9 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.1</version>
+				<version>3.13.0</version>
 				<configuration>
-					<source>8</source>
-					<target>8</target>
+					<release>21</release>
 					<compilerArgs>
 						<arg>-Xlint:all</arg>
 					</compilerArgs>
