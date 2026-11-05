@@ -20,6 +20,7 @@ import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -122,22 +123,7 @@ public class SmacDataGenerator implements Serializable {
 						for (int i = 0; i < TRAIN_SIZE; i++) {
 							trainSequences.add(currentPta.sampleSequence());
 						}
-						// PTAs of Type 2 and 4 always produce abnormal sequences
-						// it is possible to sample abnormal and normal sequences with abnormal ptas of the other types (1,3,5).
-						// but I don't know how the distribution is, so to be fair, i sample all anomalies the same
-						for (int i = 0; i < TEST_SIZE; i++) {
-							if (r.nextDouble() < ANOMALY_PERCENTAGE) {
-								boolean wasAnormal = false;
-								TimedWord seq = null;
-								while (!wasAnormal) {
-									seq = anomaly.sampleSequence();
-									wasAnormal = seq.isAnomaly();
-								}
-								testSequences.add(seq);
-							} else {
-								testSequences.add(currentPta.sampleSequence());
-							}
-						}
+						testSequences.addAll(sampleModelTestSet(currentPta, anomaly, TEST_SIZE, ANOMALY_PERCENTAGE, r));
 						final TimedInput trainset = new TimedInput(trainSequences);
 						final TimedInput testset = new TimedInput(testSequences);
 						final String prep = split == EventsCreationStrategy.SplitEvents ? "prep" : "noPrep";
@@ -156,7 +142,41 @@ public class SmacDataGenerator implements Serializable {
 			}
 		}
 	}
+	static List<TimedWord> sampleModelTestSet(TauPTA normal, TauPTA abnormal, int size, double anomalyPercentage, Random random) {
+		final List<TimedWord> samples = new ArrayList<>(size);
+		if (abnormal.getAnomalyType() == AnomalyInsertionType.TYPE_THREE) {
+			if (size % 2 != 0) {
+				throw new IllegalArgumentException("Type 3 test sets require an even number of samples");
+			}
+			for (int i = 0; i < size; i += 2) {
+				final TimedWord control = sampleTypeThreeControl(normal);
+				samples.add(control);
+				samples.add(abnormal.createTypeThreeAnomaly(control));
+			}
+			Collections.shuffle(samples, random);
+			return samples;
+		}
+		for (int i = 0; i < size; i++) {
+			if (random.nextDouble() < anomalyPercentage) {
+				TimedWord sample;
+				do {
+					sample = abnormal.sampleSequence();
+				} while (!sample.isAnomaly());
+				samples.add(sample);
+			} else {
+				samples.add(normal.sampleSequence());
+			}
+		}
+		return samples;
+	}
 
-
-
+	static TimedWord sampleTypeThreeControl(TauPTA normal) {
+		for (int attempt = 0; attempt < 1000; attempt++) {
+			final TimedWord control = normal.sampleSequence();
+			if (control.length() > 0) {
+				return control;
+			}
+		}
+		throw new IllegalStateException("Type 3 requires a nonempty control trace");
+	}
 }

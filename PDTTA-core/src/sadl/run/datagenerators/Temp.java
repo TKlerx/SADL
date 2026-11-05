@@ -208,22 +208,7 @@ public class Temp {
 		for (int i = 0; i < TRAIN_SIZE; i++) {
 			trainSequences.add(pta.sampleSequence());
 		}
-		// PTAs of Type 2 and 4 always produce abnormal sequences
-		// it is possible to sample abnormal and normal sequences with abnormal ptas of the other types (1,3,5).
-		// but I don't know how the distribution is, so to be fair, i sample all anomalies the same
-		for (int i = 0; i < TEST_SIZE; i++) {
-			if (r.nextDouble() < ANOMALY_PERCENTAGE) {
-				boolean wasAnormal = false;
-				TimedWord seq = null;
-				while (!wasAnormal) {
-					seq = anomaly.sampleSequence();
-					wasAnormal = seq.isAnomaly();
-				}
-				testSequences.add(seq);
-			} else {
-				testSequences.add(pta.sampleSequence());
-			}
-		}
+		testSequences.addAll(SmacDataGenerator.sampleModelTestSet(pta, anomaly, TEST_SIZE, ANOMALY_PERCENTAGE, r));
 		IoUtils.writeTrainTestFile(dataOutputFile, new TimedInput(trainSequences), new TimedInput(testSequences));
 	}
 
@@ -319,6 +304,10 @@ public class Temp {
 				TimedWord seq = null;
 				// could be replaced by do... while
 				final TauPTA chosen = CollectionUtils.chooseRandomObject(abnormalPtas, r);
+				if (chosen.getAnomalyType() == AnomalyInsertionType.TYPE_THREE) {
+					testSequences.add(chosen.createTypeThreeAnomaly(SmacDataGenerator.sampleTypeThreeControl(normalPta)));
+					continue;
+				}
 				while (!wasAnormal) {
 					seq = chosen.sampleSequence();
 					wasAnormal = seq.isAnomaly();

@@ -745,6 +745,42 @@ public class TauPTA extends PDTTA {
 		}
 	}
 
+	/**
+	 * Creates a timing anomaly from a control drawn from the corresponding normal model.
+	 */
+	public TimedWord createTypeThreeAnomaly(TimedWord control) {
+		if (getAnomalyType() != AnomalyInsertionType.TYPE_THREE || control.length() == 0) {
+			throw new IllegalArgumentException("A Type 3 model and a nonempty control trace are required");
+		}
+		final List<String> symbols = new ArrayList<>(control.length());
+		int markedIndex = -1;
+		int state = START_STATE;
+		for (int i = 0; i < control.length(); i++) {
+			final String symbol = control.getSymbol(i);
+			symbols.add(symbol);
+			final Transition transition = getTransition(state, symbol);
+			if (transition == null) {
+				throw new IllegalArgumentException("The control trace is outside the Type 3 model");
+			}
+			if (markedIndex == -1 && transition.isAbnormal()) {
+				markedIndex = i;
+			}
+			state = transition.getToState();
+		}
+
+		// Perturb an unmarked path too so the choice of paths does not depend on the label.
+		final int index = markedIndex == -1 ? r.nextInt(control.length()) : markedIndex;
+		final TIntList delays = new TIntArrayList(control.getTimeValues());
+		final int original = delays.get(index);
+		final int changed = changeTimeValue(original, ANOMALY_3_CHANGE_RATE);
+		if (changed == original) {
+			delays.set(index, original == 0 ? 1 : original - 1);
+		} else {
+			delays.set(index, changed);
+		}
+		return new TimedWord(symbols, delays, ClassLabel.ANOMALY);
+	}
+
 	private int changeTimeValue(int value, double factor) {
 		int result = 0;
 		if (r.nextBoolean()) {
