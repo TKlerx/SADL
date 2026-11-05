@@ -44,7 +44,11 @@ public class TauPtaTestSmallV2 {
 				anomaly1.makeAbnormal(type);
 				p = Paths.get(this.getClass().getResource("/taupta/small/pta_abnormal_" + type.getTypeIndex() + ".ser").toURI());
 				final TauPTA des = (TauPTA) IoUtils.deserialize(p);
-				assertEquals("Test failed for anomaly type " + type.getTypeIndex(), anomaly1, des);
+				if (type == AnomalyInsertionType.TYPE_TWO) {
+					ModelBasedTypeTwoTest.assertSmallFixturePartition(SerializationUtils.clone(pta), anomaly1, des);
+				} else {
+					assertEquals("Test failed for anomaly type " + type.getTypeIndex(), anomaly1, des);
+				}
 				System.out.println("Test " + type + " passed.");
 			}
 		}

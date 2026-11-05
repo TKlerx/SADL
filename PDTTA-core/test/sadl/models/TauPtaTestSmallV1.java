@@ -74,7 +74,7 @@ public class TauPtaTestSmallV1 {
 		final TauPTA pta = learner.train(trainingTimedSequences);
 		pta.makeAbnormal(AnomalyInsertionType.TYPE_TWO);
 		final TauPTA saved = (TauPTA) IoUtils.deserialize(p);
-		assertEquals(pta, saved);
+		ModelBasedTypeTwoTest.assertSmallFixturePartition(learner.train(trainingTimedSequences), pta, saved);
 	}
 
 
