@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -340,7 +341,7 @@ public class TauPTA extends PDTTA {
 		makeAbnormal(newAnomalyType, Collections.emptyMap());
 	}
 
-	/** Uses the supplied alias-to-base mapping when choosing Type 1 replacement events. */
+	/** Uses the supplied alias-to-base mapping for Type 1 substitutions and Type 2 path selection. */
 	public void makeAbnormal(AnomalyInsertionType newAnomalyType, Map<String, String> baseSymbols) {
 		if (this.anomalyType != AnomalyInsertionType.NONE) {
 			logger.error(
@@ -363,7 +364,12 @@ public class TauPTA extends PDTTA {
 		if (anomalyType == AnomalyInsertionType.TYPE_ONE) {
 			logger.debug("TransitionCount before inserting {} anomalies={}", anomalyType, getTransitionCount());
 			// choose a random state on every height and modify the symbol of an outgoing transition of that state to another random symbol
-			insertPerLevelAnomaly(this::computeTransitionCandicatesType13, candidates -> changeTransitionEvent(candidates, baseSymbols));
+			final Map<Integer, Set<String>> exportedEventsByState = new HashMap<>();
+			if (!baseSymbols.isEmpty()) {
+				indexExportedEvents(START_STATE, new ArrayList<>(), baseSymbols, new HashMap<>(), exportedEventsByState);
+			}
+			insertPerLevelAnomaly(this::computeTransitionCandicatesType13,
+					candidates -> changeTransitionEvent(candidates, baseSymbols, exportedEventsByState));
 			logger.debug("TransitionCount after inserting {} anomalies={}", anomalyType, getTransitionCount());
 		} else if (anomalyType == AnomalyInsertionType.TYPE_TWO) {
 			// Reserve at least one complete path for the normal model.
@@ -616,16 +622,36 @@ public class TauPTA extends PDTTA {
 		return result;
 	}
 
-	private int changeTransitionEvent(List<Transition> possibleTransitions, Map<String, String> baseSymbols) {
+	private void indexExportedEvents(int state, List<String> prefix, Map<String, String> baseSymbols,
+			Map<List<String>, Set<String>> eventsByPrefix, Map<Integer, Set<String>> eventsByState) {
+		// States reached through aliases of the same prefix share one set of normal outgoing events.
+		final Set<String> allowed = eventsByPrefix.computeIfAbsent(List.copyOf(prefix), key -> new HashSet<>());
+		eventsByState.put(state, allowed);
+		for (final Transition transition : getOutTransitions(state, false)) {
+			final String symbol = transition.getSymbol();
+			final String base = baseSymbols.getOrDefault(symbol, symbol);
+			allowed.add(base);
+			prefix.add(base);
+			indexExportedEvents(transition.getToState(), prefix, baseSymbols, eventsByPrefix, eventsByState);
+			prefix.remove(prefix.size() - 1);
+		}
+	}
+
+	private int changeTransitionEvent(List<Transition> possibleTransitions, Map<String, String> baseSymbols,
+			Map<Integer, Set<String>> exportedEventsByState) {
 		final TIntSet currentStates = new TIntHashSet(possibleTransitions.stream().mapToInt(t -> t.getFromState()).distinct().toArray());
 		while (currentStates.size() > 0) {
 			final Transition chosenTransition = CollectionUtils.chooseRandomObject(possibleTransitions, r);
 			final int chosenFromState = chosenTransition.getFromState();
 			final List<Transition> stateTransitions = possibleTransitions.stream().filter(t -> t.getFromState() == chosenFromState).collect(Collectors.toList());
 			final List<String> notOccuringEvents = new ArrayList<>(Arrays.asList(alphabet.getSymbols()));
-			for (final Transition t : stateTransitions) {
-				final String base = baseSymbols.getOrDefault(t.getSymbol(), t.getSymbol());
-				notOccuringEvents.removeIf(symbol -> base.equals(baseSymbols.getOrDefault(symbol, symbol)));
+			if (baseSymbols.isEmpty()) {
+				for (final Transition transition : stateTransitions) {
+					notOccuringEvents.remove(transition.getSymbol());
+				}
+			} else {
+				final Set<String> allowed = exportedEventsByState.get(chosenFromState);
+				notOccuringEvents.removeIf(symbol -> allowed.contains(baseSymbols.getOrDefault(symbol, symbol)));
 			}
 			if (notOccuringEvents.size() == 0 || stateTransitions.size() == 0) {
 				logger.warn("Not possible to change an event in state {}", chosenFromState);

@@ -107,6 +107,43 @@ public class ModelAnomalyExportTest {
 		assertTrue(substitutions > 0);
 	}
 
+
+	@Test
+	public void typeOneRejectsEventsAllowedUnderAnotherAliasOfTheExportedPrefix() throws Exception {
+		final TimedInput training = TimedInput.parse(new StringReader(
+				"(a.1,10) (x.1,20):0\n(a.2,30) (y.1,20):0\n(x.1,20):0\n(y.1,20):0"));
+		final Map<String, String> baseSymbols = Map.of("a.1", "a", "a.2", "a", "x.1", "x", "y.1", "y");
+		final TauPTA model = new TauPtaLearner().train(training);
+		model.setRandom(new Random(29) {
+			@Override
+			public int nextInt(int bound) {
+				return bound == 3 ? 2 : 0;
+			}
+		});
+		model.makeAbnormal(AnomalyInsertionType.TYPE_ONE, baseSymbols);
+		model.setRandom(new Random(2));
+
+		final List<TimedWord> anomalous = new ArrayList<>();
+		for (int i = 0; i < 100; i++) {
+			final TimedWord word = model.sampleSequence();
+			if (word.isAnomaly()) {
+				anomalous.add(word);
+			}
+		}
+		assertTrue("Expected at least one Type 1 sample", !anomalous.isEmpty());
+		final Path file = temporary.newFile().toPath();
+		ModelAnomalyExport.write(file, training, new TimedInput(anomalous), baseSymbols);
+		final var export = IoUtils.readTrainTestFile(file);
+		assertEquals("a", export.getKey().get(1).getSymbol(0));
+		assertEquals("y", export.getKey().get(1).getSymbol(1));
+		for (final TimedWord word : export.getValue()) {
+			assertEquals(2, word.length());
+			assertEquals("a", word.getSymbol(0));
+			assertEquals("Type 1 must not replace x with y because the exported prefix a already allows y", "a", word.getSymbol(1));
+			assertTrue(word.isAnomaly());
+		}
+	}
+
 	@Test
 	public void typeOneRequiresARealBaseSymbolSubstitution() throws Exception {
 		final TimedInput input = TimedInput.parse(new StringReader("(a.1,10) (a.1,20):0\n(a.2,10) (a.2,20):0"));
