@@ -343,6 +343,10 @@ public class TauPTA extends PDTTA {
 					this.anomalyType, anomalyType);
 			return;
 		}
+		final Set<UntimedSequence> typeTwoPaths = newAnomalyType == AnomalyInsertionType.TYPE_TWO ? getAllSequences() : null;
+		if (typeTwoPaths != null && typeTwoPaths.size() < 2) {
+			throw new IllegalArgumentException("Type 2 requires at least two complete paths to keep a normal path");
+		}
 		immutable = false;
 		setAnomalyType(newAnomalyType);
 		if (anomalyType == AnomalyInsertionType.TYPE_ONE) {
@@ -351,8 +355,8 @@ public class TauPTA extends PDTTA {
 			insertPerLevelAnomaly(this::computeTransitionCandicatesType13, this::changeTransitionEvent);
 			logger.debug("TransitionCount after inserting {} anomalies={}", anomalyType, getTransitionCount());
 		} else if (anomalyType == AnomalyInsertionType.TYPE_TWO) {
-			// label the k least probable paths as anomaly (every transition on the path is labeled as abnormal)
-			abnormalSequences = insertSequentialAnomaly(this::insertAnomaly2);
+			// Reserve at least one complete path for the normal model.
+			abnormalSequences = insertSequentialAnomaly(typeTwoPaths, this::insertAnomaly2, typeTwoPaths.size() - 1);
 		} else if (anomalyType == AnomalyInsertionType.TYPE_THREE) {
 			// choose a random state on every height and modify its time probability drastically (the modification of the time values is only done when sampling
 			// them)
@@ -360,13 +364,16 @@ public class TauPTA extends PDTTA {
 		} else if (anomalyType == AnomalyInsertionType.TYPE_FOUR) {
 			// choose the k most probable sequences and modify every time value for every transition on the path slightly (the modification of the time values
 			// is only done when sampling them)
-			insertSequentialAnomaly(this::insertAnomaly4);
+			insertSequentialAnomaly(getAllSequences(), this::insertAnomaly4, SEQUENTIAL_ANOMALY_K);
 		} else if (anomalyType == AnomalyInsertionType.TYPE_FIVE) {
 			insertPerLevelAnomaly(this::computeTransitionCandicatesType5, this::addFinalStateProbability);
 		} else {
 			throw new IllegalArgumentException("the AnomalyInsertionType " + newAnomalyType + " is not supported.");
 		}
-		checkForAbnormalTransitions();
+		// Type 2 can select the empty path, which has a stop but no event transition to mark.
+		if (anomalyType != AnomalyInsertionType.TYPE_TWO) {
+			checkForAbnormalTransitions();
+		}
 		this.checkAndRestoreConsistency();
 		immutable = true;
 	}
@@ -387,8 +394,7 @@ public class TauPTA extends PDTTA {
 		}
 	}
 
-	private List<UntimedSequence> insertSequentialAnomaly(IntUnaryOperator f) {
-		final Set<UntimedSequence> allSequences = getAllSequences();
+	private List<UntimedSequence> insertSequentialAnomaly(Set<UntimedSequence> allSequences, IntUnaryOperator f, int maxAnomalies) {
 		final TObjectDoubleMap<UntimedSequence> sequenceProbabilities = computeEventProbabilities(allSequences);
 		// this function may be one lamba with the streaming interface
 		// List<UntimedSequence> abnormalSequences = getAllSequences().stream().sort(one way or the other depending on the type of anomaly).take First $K$
@@ -404,7 +410,7 @@ public class TauPTA extends PDTTA {
 			}
 		};
 		logger.debug("Transitions.size()={}", transitions.size());
-		final int cap = Math.min(SEQUENTIAL_ANOMALY_K, allSequences.size());
+		final int cap = Math.min(SEQUENTIAL_ANOMALY_K, maxAnomalies);
 		return allSequences.stream().sorted(c).limit(cap).peek(s -> labelWithAnomaly(s, getAnomalyType())).collect(Collectors.toList());
 		// allSequences.sort((t1, t2) -> Double.compare(sequenceProbabilities.get(t1), sequenceProbabilities.get(t2)));
 		// final List<UntimedSequence> abnormalSequences = function.apply(allSequences);
@@ -658,16 +664,17 @@ public class TauPTA extends PDTTA {
 		@SuppressWarnings("hiding")
 		AnomalyInsertionType anomalyType = AnomalyInsertionType.NONE;
 		int timedAnomalyCounter = 0;
+		final boolean typeTwo = getAnomalyType() == AnomalyInsertionType.TYPE_TWO;
 		while (!choseFinalState) {
 			List<Transition> possibleTransitions = getOutTransitions(currentState, true);
 			double random = r.nextDouble();
 			double newProbSum = -1;
-			if (getAnomalyType() == AnomalyInsertionType.TYPE_TWO || getAnomalyType() == AnomalyInsertionType.TYPE_FOUR) {
-				// Filter out all transitions that do not belong to the sequential anomaly type and are no stopping transitions
-				// The TauPTA should have a field containing its anomaly type. So if the TauPTA is of anomaly type 2, then only transitions with anomaly type 2
-				// are allowed to be chosen.
+			if (typeTwo || getAnomalyType() == AnomalyInsertionType.TYPE_FOUR) {
+				// Marked event transitions can share a prefix with a normal path. Only selected Type 2 paths may stop.
+				final boolean canStop = !typeTwo || abnormalSequences.stream().anyMatch(path -> path.getEvents().equals(eventList));
 				possibleTransitions = possibleTransitions.stream()
-						.filter(t -> (t.getAnomalyInsertionType() == getAnomalyType() || t.isStopTraversingTransition())).collect(Collectors.toList());
+						.filter(t -> t.isStopTraversingTransition() ? canStop : t.getAnomalyInsertionType() == getAnomalyType())
+						.collect(Collectors.toList());
 				// after that normalize s.t. the remaining transition probs sum up to one (or make the random value smaller)
 				newProbSum = possibleTransitions.stream().mapToDouble(t -> t.getProbability()).sum();
 				if (!Precision.equals(newProbSum, 1)) {
@@ -738,7 +745,7 @@ public class TauPTA extends PDTTA {
 		if (anomalyType == AnomalyInsertionType.TYPE_THREE || anomalyType == AnomalyInsertionType.TYPE_FOUR) {
 			logger.debug("{} out of {} transitions are marked with anomaly {}", timedAnomalyCounter, eventList.size(), anomalyType);
 		}
-		if (anomalyType != AnomalyInsertionType.NONE) {
+		if (typeTwo || anomalyType != AnomalyInsertionType.NONE) {
 			return new TimedWord(eventList, timeList, ClassLabel.ANOMALY);
 		} else {
 			return new TimedWord(eventList, timeList, ClassLabel.NORMAL);

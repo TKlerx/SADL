@@ -281,6 +281,7 @@ public class Temp {
 			final TauPtaLearner learner = new TauPtaLearner();
 			normalPta = learner.train(input);
 			abnormalPtas = createAbnormalPtas(normalPta);
+			abnormalPtas.get(AnomalyInsertionType.TYPE_TWO.getTypeIndex() - 1).removeAbnormalSequences(normalPta);
 			mixedModelPtas.put(key, Pair.of(normalPta, abnormalPtas));
 			logger.info("Finished TauPTA creation.");
 		} else {
