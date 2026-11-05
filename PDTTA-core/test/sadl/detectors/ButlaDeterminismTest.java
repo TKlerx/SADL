@@ -11,6 +11,7 @@
 package sadl.detectors;
 
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeFalse;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -64,12 +65,7 @@ public class ButlaDeterminismTest {
 
 	@Test
 	public void thresholdDeterminismTest() throws IOException, URISyntaxException {
-		final String travis = System.getenv("TRAVIS");
-		if (travis != null && travis.equalsIgnoreCase("true")) {
-			// This test fails in travis
-			logger.info("Skipped thresholdDeterminismTest because of travis.");
-			return;
-		}
+		assumeFalse("Legacy test skipped when TRAVIS=true", "true".equalsIgnoreCase(System.getenv("TRAVIS")));
 		logger.info("Starting thresholdDeterminismTest...");
 
 		double fMeasure = -1;

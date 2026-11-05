@@ -24,7 +24,6 @@ import org.junit.Test;
 
 import sadl.input.TimedInput;
 import sadl.models.TauPTA;
-import sadl.models.TauPtaTestV1;
 
 public class TauPtaLearnerTest {
 
@@ -46,7 +45,7 @@ public class TauPtaLearnerTest {
 
 	@Test
 	public void test() throws IOException, URISyntaxException {
-		final TimedInput train = TimedInput.parseAlt(Paths.get(TauPtaTestV1.class.getResource("/taupta/medium/rti_medium.txt").toURI()), 1);
+		final TimedInput train = TimedInput.parseAlt(Paths.get(TauPtaLearnerTest.class.getResource("/taupta/medium/rti_medium.txt").toURI()), 1);
 		@SuppressWarnings("deprecation")
 		final TauPTA oldPta = new TauPTA(train);
 		final TauPtaLearner learner = new TauPtaLearner();

@@ -11,6 +11,7 @@
 package sadl.detectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assume.assumeFalse;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -50,12 +51,7 @@ public class ThresholdDetectorTest {
 
 	@Test
 	public void testAggregatedThresholdDetector() throws IOException, URISyntaxException {
-		final String travis = System.getenv("TRAVIS");
-		if (travis != null && travis.equalsIgnoreCase("true")) {
-			// This test fails in travis
-			logger.info("Skipped testAggregatedThresholdDetector because of travis.");
-			return;
-		}
+		assumeFalse("Legacy test skipped when TRAVIS=true", "true".equalsIgnoreCase(System.getenv("TRAVIS")));
 		logger.info("Starting testAggregatedThresholdDetector...");
 		final PdttaLearner learner = new PdttaLearner(new AlergiaRedBlue(0.05, true));
 		// final AggregatedThresholdDetector detector = new AggregatedThresholdDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, -5, -8,
