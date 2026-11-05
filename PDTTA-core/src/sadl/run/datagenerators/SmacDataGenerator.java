@@ -10,11 +10,8 @@
  */
 package sadl.run.datagenerators;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
@@ -81,10 +78,12 @@ public class SmacDataGenerator implements Serializable {
 			int k = 0;
 			// parse timed sequences
 			TimedInput trainingTimedSequences = TimedInput.parseAlt(Paths.get(dataString), 1);
+			Map<String, String> baseSymbols = Map.of();
 			if (split == EventsCreationStrategy.SplitEvents) {
 				final ButlaPdtaLearner butla = new ButlaPdtaLearner(10000, EventsCreationStrategy.SplitEvents, KDEFormelVariant.OriginalKDE);
 				final Pair<TimedInput, Map<String, Event>> p = butla.splitEventsInTimedSequences(trainingTimedSequences);
 				trainingTimedSequences = p.getKey();
+				baseSymbols = ModelAnomalyExport.baseSymbols(p.getValue());
 			}
 			final Random r = MasterSeed.nextRandom();
 			final List<TimedWord> trainSequences = new ArrayList<>();
@@ -116,7 +115,7 @@ public class SmacDataGenerator implements Serializable {
 						testSequences.clear();
 						final TauPTA anomaly = SerializationUtils.clone(currentPta);
 						logger.info("inserting Anomaly Type {}", type);
-						anomaly.makeAbnormal(type);
+						anomaly.makeAbnormal(type, baseSymbols);
 						if (type == AnomalyInsertionType.TYPE_TWO) {
 							anomaly.removeAbnormalSequences(currentPta);
 						}
@@ -128,13 +127,7 @@ public class SmacDataGenerator implements Serializable {
 						final TimedInput testset = new TimedInput(testSequences);
 						final String prep = split == EventsCreationStrategy.SplitEvents ? "prep" : "noPrep";
 						final Path outputFile = outputDir.resolve(Paths.get("tpta-" + prep + "-" + df.format(k) + "_smac_type" + type.getTypeIndex() + ".txt"));
-						try (BufferedWriter bw = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
-							trainset.toFile(bw, true);
-							bw.write('\n');
-							bw.write(TRAIN_TEST_SEP);
-							bw.write('\n');
-							testset.toFile(bw, true);
-						}
+						ModelAnomalyExport.write(outputFile, trainset, testset, baseSymbols);
 						logger.info("Wrote file #{} ({})", k, outputFile);
 						k++;
 					}

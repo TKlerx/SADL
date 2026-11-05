@@ -75,6 +75,7 @@ public class Temp {
 		final EventsCreationStrategy[] splitEvents = { EventsCreationStrategy.DontSplitEvents, EventsCreationStrategy.SplitEvents };
 		TimedInput trainingTimedSequences;
 		TimedInput splitTrainingTimedSequences = null;
+		Map<String, String> splitEventMapping = Map.of();
 		logger.info("Parsing input file {}...", inputFile);
 		final TimedInput unsplitTrainingTimedSequences = TimedInput.tryParse(inputFile);
 		DATA_TYPE = Paths.get(folderName);
@@ -106,6 +107,7 @@ public class Temp {
 							final int eventCountBeforeSplit = unsplitTrainingTimedSequences.getAlphSize();
 							final Pair<TimedInput, Map<String, Event>> p = butla.splitEventsInTimedSequences(unsplitTrainingTimedSequences);
 							splitTrainingTimedSequences = p.getKey();
+							splitEventMapping = ModelAnomalyExport.baseSymbols(p.getValue());
 							if (unsplitTrainingTimedSequences.size() > 13000) {
 								if (eventCountBeforeSplit < splitTrainingTimedSequences.getAlphSize()) {
 									reasonableSplitPerformed = true;
@@ -129,9 +131,10 @@ public class Temp {
 				final int typeIndex = type.getTypeIndex();
 				final String typeFolderString = typeIndex == AnomalyInsertionType.ALL.getTypeIndex() ? "mixed" : "type" + typeIndex;
 				final TimedInput input = trainingTimedSequences;
+				final Map<String, String> exportMapping = split == EventsCreationStrategy.SplitEvents ? splitEventMapping : Map.of();
 				final Consumer<Path> anomalyGenerator = (Path dataOutputFile) -> {
 					try {
-						generateModelAnomaly(input, dataOutputFile, type);
+						generateModelAnomaly(input, dataOutputFile, type, exportMapping);
 					} catch (final Exception e) {
 						e.printStackTrace();
 						logger.error("Unexpected exception", e);
@@ -156,11 +159,11 @@ public class Temp {
 		}
 	}
 
-	private void generateModelAnomaly(TimedInput input, Path dataOutputFile, AnomalyInsertionType type) throws IOException {
+	private void generateModelAnomaly(TimedInput input, Path dataOutputFile, AnomalyInsertionType type, Map<String, String> baseSymbols) throws IOException {
 		if (type != AnomalyInsertionType.ALL) {
-			generateSingleModelAnomaly(input, dataOutputFile, type);
+			generateSingleModelAnomaly(input, dataOutputFile, type, baseSymbols);
 		} else {
-			generateMixedModelAnomaly(input, dataOutputFile);
+			generateMixedModelAnomaly(input, dataOutputFile, baseSymbols);
 		}
 	}
 
@@ -182,7 +185,8 @@ public class Temp {
 
 	Map<Path, Pair<TauPTA, TauPTA>> singleModelPtas = new HashMap<>();
 
-	private void generateSingleModelAnomaly(TimedInput trainingTimedSequences, Path dataOutputFile, AnomalyInsertionType type) throws IOException {
+	private void generateSingleModelAnomaly(TimedInput trainingTimedSequences, Path dataOutputFile, AnomalyInsertionType type,
+			Map<String, String> baseSymbols) throws IOException {
 		final List<TimedWord> trainSequences = new ArrayList<>();
 		final List<TimedWord> testSequences = new ArrayList<>();
 		final Path key = dataOutputFile.getParent().getParent();
@@ -195,7 +199,7 @@ public class Temp {
 			pta = learner.train(trainingTimedSequences);
 			anomaly = SerializationUtils.clone(pta);
 			logger.info("inserting Anomaly Type {} into tpta", type);
-			anomaly.makeAbnormal(type);
+			anomaly.makeAbnormal(type, baseSymbols);
 			if (type == AnomalyInsertionType.TYPE_TWO) {
 				anomaly.removeAbnormalSequences(pta);
 			}
@@ -209,7 +213,7 @@ public class Temp {
 			trainSequences.add(pta.sampleSequence());
 		}
 		testSequences.addAll(SmacDataGenerator.sampleModelTestSet(pta, anomaly, TEST_SIZE, ANOMALY_PERCENTAGE, r));
-		IoUtils.writeTrainTestFile(dataOutputFile, new TimedInput(trainSequences), new TimedInput(testSequences));
+		ModelAnomalyExport.write(dataOutputFile, new TimedInput(trainSequences), new TimedInput(testSequences), baseSymbols);
 	}
 
 	int[] intIndex;
@@ -249,7 +253,7 @@ public class Temp {
 		}
 	}
 
-	private List<TauPTA> createAbnormalPtas(TauPTA normalPta) {
+	private List<TauPTA> createAbnormalPtas(TauPTA normalPta, Map<String, String> baseSymbols) {
 		final List<TauPTA> abnormalPtas = new ArrayList<>();
 		for (final AnomalyInsertionType type : AnomalyInsertionType.values()) {
 			if (type != AnomalyInsertionType.NONE && type != AnomalyInsertionType.ALL) {
@@ -259,7 +263,7 @@ public class Temp {
 				}
 				final TauPTA anomaly = SerializationUtils.clone(normalPta);
 				logger.info("inserting Anomaly Type {}", type);
-				anomaly.makeAbnormal(type);
+				anomaly.makeAbnormal(type, baseSymbols);
 				abnormalPtas.add(type.getTypeIndex() - 1, anomaly);
 				if (type == AnomalyInsertionType.TYPE_TWO) {
 					anomaly.removeAbnormalSequences(normalPta);
@@ -271,7 +275,7 @@ public class Temp {
 
 	Map<Path, Pair<TauPTA, List<TauPTA>>> mixedModelPtas = new HashMap<>();
 
-	private void generateMixedModelAnomaly(TimedInput input, Path dataOutputFile) throws IOException {
+	private void generateMixedModelAnomaly(TimedInput input, Path dataOutputFile, Map<String, String> baseSymbols) throws IOException {
 		final Path key = dataOutputFile.getParent().getParent();
 		final Pair<TauPTA, List<TauPTA>> result = mixedModelPtas.get(key);
 		TauPTA normalPta;
@@ -280,7 +284,7 @@ public class Temp {
 			logger.info("Learning TPTA for mixed anomalies...");
 			final TauPtaLearner learner = new TauPtaLearner();
 			normalPta = learner.train(input);
-			abnormalPtas = createAbnormalPtas(normalPta);
+			abnormalPtas = createAbnormalPtas(normalPta, baseSymbols);
 			abnormalPtas.get(AnomalyInsertionType.TYPE_TWO.getTypeIndex() - 1).removeAbnormalSequences(normalPta);
 			mixedModelPtas.put(key, Pair.of(normalPta, abnormalPtas));
 			logger.info("Finished TauPTA creation.");
@@ -318,6 +322,6 @@ public class Temp {
 				testSequences.add(normalPta.sampleSequence());
 			}
 		}
-		IoUtils.writeTrainTestFile(dataOutputFile, new TimedInput(trainSequences), new TimedInput(testSequences));
+		ModelAnomalyExport.write(dataOutputFile, new TimedInput(trainSequences), new TimedInput(testSequences), baseSymbols);
 	}
 }
