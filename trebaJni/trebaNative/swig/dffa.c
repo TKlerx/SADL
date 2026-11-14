@@ -373,7 +373,7 @@ int dffa_alergia_test(struct dffa *dffa, int qu, int qv, double alpha) {
     return 1;
 }
 
-int dffa_merge_compatible(struct dffa *dffa, int qu, int qv, double alpha, int (*mergetest)(), int recursive) {
+int dffa_merge_compatible(struct dffa *dffa, int qu, int qv, double alpha, int (*mergetest)(struct dffa *, int, int, double), int recursive) {
     int i;
     if (mergetest(dffa,qu,qv,alpha) == 0) {
 	return 0;
@@ -562,7 +562,7 @@ struct dffa *dffa_accessible(struct dffa *dffa) {
 struct dffa *dffa_state_merge(struct observations *o, PROB alpha, int test, int recursive) {
     struct dffa *dffa;
     int qb, qr, i, j, lastblue, round;
-    static int (*merge_test)() = &dffa_alergia_test;
+    static int (*merge_test)(struct dffa *, int, int, double) = &dffa_alergia_test;
     switch (test) {
     case MERGE_TEST_ALERGIA:
 	merge_test = &dffa_alergia_test;
