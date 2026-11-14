@@ -445,6 +445,31 @@
 	<name>PDTTA</name>
 	<profiles>
 		<profile>
+			<id>treba-quality</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-pmd-plugin</artifactId>
+						<version>3.28.0</version>
+						<configuration>
+							<includes>
+								<include>sadl/modellearner/Mdi*Learner.java</include>
+								<include>sadl/modellearner/TrebaNativeParityLearner.java</include>
+							</includes>
+							<rulesets><ruleset>${project.basedir}/conf/treba-quality.xml</ruleset></rulesets>
+							<minimumTokens>75</minimumTokens>
+						</configuration>
+						<executions>
+							<execution>
+								<goals><goal>check</goal><goal>cpd-check</goal></goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		<profile>
 			<id>treba-parity-mutation</id>
 			<build>
 				<plugins>
@@ -461,10 +486,12 @@
 						<configuration>
 							<targetClasses>
 								<param>sadl.modellearner.TrebaNativeParityLearner*</param>
+								<param>sadl.modellearner.MdiTrebaLearner*</param>
 							</targetClasses>
 							<targetTests>
 								<param>sadl.modellearner.TrebaNativeParityTest</param>
 								<param>sadl.modellearner.TrebaNativeParityCasesTest</param>
+								<param>sadl.modellearner.MdiTrebaTest</param>
 							</targetTests>
 							<outputFormats>
 								<param>HTML</param>

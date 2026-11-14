@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.TreeMap;
+import java.util.function.BiPredicate;
 
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;
@@ -43,7 +44,11 @@ public final class TrebaNativeParityLearner implements PdfaLearner {
     @Override
     public PDFA train(TimedInput sequences) {
         final PrefixTree tree = prefixTree(sequences);
-        final State root = tree.root();
+        mergeRedBlue(tree.root(), minimumVisits, this::compatible);
+        return toPdfa(tree.root(), sequences, tree.alphabetSize(), smoothingPrior);
+    }
+
+    static void mergeRedBlue(State root, int minimumVisits, BiPredicate<State, State> compatible) {
         final List<State> red = new ArrayList<>();
         red.add(root);
         root.red = true;
@@ -53,7 +58,7 @@ public final class TrebaNativeParityLearner implements PdfaLearner {
             State match = null;
             for (State candidate : red) {
                 candidate.updateTotal();
-                if (compatible(candidate, blue)) {
+                if (compatible.test(candidate, blue)) {
                     match = candidate;
                     break;
                 }
@@ -66,7 +71,6 @@ public final class TrebaNativeParityLearner implements PdfaLearner {
                 fold(match, blue);
             }
         }
-        return toPdfa(root, sequences, tree.alphabetSize(), smoothingPrior);
     }
 
     record PrefixTree(State root, int alphabetSize) {}
