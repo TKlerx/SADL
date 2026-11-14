@@ -29,6 +29,12 @@ mvn -B -Dtest=TrebaAlergiaReferenceCapture -Dsurefire.failIfNoSpecifiedTests=fal
     -Dtreba.reference.output="$out" test
 diff -u "$capture/native-depth.csv" "$out/native-depth.csv"
 diff -u "$capture/native-benchmark.tsv" "$out/native-benchmark.tsv"
+diff -u "$capture/native-smoothing.tsv" "$out/native-smoothing.tsv"
+diff -u "$capture/native-pdtta-smoothing.tsv" "$out/native-pdtta-smoothing.tsv"
 ```
 
 The linker flag permits unresolved spinlock references in unrelated functions of the shared library. The C probe invokes the library's own ALERGIA functions directly. The explicit Maven capture requires working JNI and fails if it cannot load Treba. The benchmark rows use zero-based indices within the evaluation split. Probability vectors include the stopping probability when the sequence can be traversed in full. A missing transition ends the vector with zero.
+
+The smoothing references use two copies of `(a,1) (b,2)`, alpha 0.05, recursion enabled, a minimum of three visits, and a prior of 0.5. The PDFA capture includes native smoothing self-loops. The PDTTA capture records the same native learner after the existing timing fit removes unobserved transitions and normalizes the remaining probabilities. A dash denotes an absent transition.
+
+The public `PdttaLearner` overloads that select `MergeTest.ALERGIA` now delegate to Java, including calls from `Pipeline` and `NewSmacPipeline`. Their existing prior, alpha, recursion, and minimum-visit settings carry through. The six other native merge tests remain available through the same overloads.
