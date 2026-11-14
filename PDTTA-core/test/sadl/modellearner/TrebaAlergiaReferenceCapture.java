@@ -10,6 +10,8 @@
  */
 package sadl.modellearner;
 
+import java.io.StringReader;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 import sadl.constants.MergeMethod;
@@ -32,6 +34,33 @@ import static org.junit.Assert.assertTrue;
 
 /** Explicitly run this capture with -Dtest=TrebaAlergiaReferenceCapture. */
 public class TrebaAlergiaReferenceCapture {
+    @Test
+    public void captureNonzeroSmoothing() throws Exception {
+        assertTrue("Live Treba JNI is required", LibraryChecker.trebaDepsInstalled());
+        final Path output = Path.of(System.getProperty("treba.reference.output"));
+        Files.createDirectories(output);
+        final var input = TimedInput.parse(new StringReader("(a,1) (b,2)\n(a,1) (b,2)\n"));
+        final var learner = new TrebaPdfaLearner(0.05, true, MergeTest.ALERGIA, 0.5, 3);
+        writeSmoothing(output.resolve("native-smoothing.tsv"), learner.train(input));
+        writeSmoothing(output.resolve("native-pdtta-smoothing.tsv"), new PdttaLearner(learner).train(input));
+    }
+
+    private static void writeSmoothing(Path output, PDFA model) throws Exception {
+        try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(output))) {
+            writer.println("state\tstop\ta-target\ta-probability\tb-target\tb-probability");
+            for (int i = 0; i < model.getStateCount(); i++) {
+                final var a = model.getTransition(i, "a");
+                final var b = model.getTransition(i, "b");
+                writer.printf("%d\t%s\t%s\t%s%n", i, model.getFinalStateProbability(i),
+                        a == null ? "-\t-" : a.getToState() + "\t" + a.getProbability(),
+                        b == null ? "-\t-" : b.getToState() + "\t" + b.getProbability());
+            }
+            if (writer.checkError()) {
+                throw new java.io.IOException("Could not write smoothing capture " + output);
+            }
+        }
+    }
+
     @Test
     public void captureBenchmark() throws Exception {
         assertTrue("Live Treba JNI is required", LibraryChecker.trebaDepsInstalled());

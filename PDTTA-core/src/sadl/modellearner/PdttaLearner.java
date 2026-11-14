@@ -81,13 +81,12 @@ public class PdttaLearner implements ProbabilisticModelLearner {
 	// }
 
 	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest) {
-		this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest, mergeTest), kdeKernelFunction, kdeBandwidth, null);
+		this(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, 0.0);
 	}
 
 	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
 			double smoothingPrior) {
-		this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest, mergeTest, smoothingPrior), kdeKernelFunction, kdeBandwidth);
-
+		this(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, 3, null);
 	}
 
 	// public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
@@ -97,8 +96,10 @@ public class PdttaLearner implements ProbabilisticModelLearner {
 
 	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
 			double smoothingPrior, int mergeT0, TauEstimator tauEstimation) {
-		this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest, mergeTest, smoothingPrior, mergeT0), kdeKernelFunction, kdeBandwidth, tauEstimation);
-
+		this(mergeTest == MergeTest.ALERGIA
+				? new TrebaNativeParityLearner(mergeAlpha, recursiveMergeTest, mergeT0, smoothingPrior)
+				: new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest, mergeTest, smoothingPrior, mergeT0),
+				kdeKernelFunction, kdeBandwidth, tauEstimation);
 	}
 
 	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, MergeTest mergeTest) {

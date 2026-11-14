@@ -11,9 +11,11 @@
 package sadl.modellearner;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -25,6 +27,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import sadl.constants.MergeTest;
+import sadl.input.TimedInput;
+import sadl.models.PDFA;
 import sadl.run.SADL;
 
 public class TrebaNativeParityCliTest {
@@ -51,7 +56,55 @@ public class TrebaNativeParityCliTest {
                 List.of(Files.readString(cwd.resolve("sadl_test_res.csv")).split(";")).subList(6, 10));
     }
 
+    @Test
+    public void legacyAlergiaConstructorMatchesNativeSmoothingWithoutJni() throws Exception {
+        final Path cwd = temporary.getRoot().toPath();
+        final Path nativeLibrary = cwd.resolve("native_libs/libtreba.so");
+        Files.createDirectories(nativeLibrary.getParent());
+        Files.writeString(nativeLibrary, "This is deliberately not a loadable shared library.");
+        final Path reference = Path.of("..", "specs", "treba-alergia-parity").toAbsolutePath();
+        runJava(cwd, LegacyAlergiaProbe.class, reference.toString());
+    }
+
+    public static class LegacyAlergiaProbe {
+        public static void main(String[] args) throws Exception {
+            final var input = TimedInput.parse(new StringReader("(a,1) (b,2)\n(a,1) (b,2)\n"));
+            final Path reference = Path.of(args[0]);
+            checkModel(new TrebaNativeParityLearner(0.05, true, 3, 0.5).train(input), reference.resolve("native-smoothing.tsv"));
+            checkModel(new PdttaLearner(0.05, true, null, -1, MergeTest.ALERGIA, 0.5).train(input),
+                    reference.resolve("native-pdtta-smoothing.tsv"));
+        }
+
+        private static void checkModel(PDFA model, Path reference) throws Exception {
+            final var rows = Files.readAllLines(reference);
+            assertEquals(rows.size() - 1, model.getStateCount());
+            for (String line : rows.subList(1, rows.size())) {
+                final var row = line.split("\\t");
+                final int state = Integer.parseInt(row[0]);
+                assertEquals(Double.parseDouble(row[1]), model.getFinalStateProbability(state), 1e-12);
+                checkTransition(model, state, "a", row[2], row[3]);
+                checkTransition(model, state, "b", row[4], row[5]);
+            }
+        }
+
+        private static void checkTransition(PDFA model, int state, String symbol, String target, String probability) {
+            final var transition = model.getTransition(state, symbol);
+            if ("-".equals(target)) {
+                assertNull(transition);
+            } else {
+                assertEquals(Integer.parseInt(target), transition.getToState());
+                assertEquals(Double.parseDouble(probability), transition.getProbability(), 1e-12);
+            }
+        }
+    }
+
     private static void run(Path cwd, String... arguments) throws Exception {
+        final var args = new ArrayList<>(List.of("-parallel", "false"));
+        args.addAll(List.of(arguments));
+        runJava(cwd, SADL.class, args.toArray(String[]::new));
+    }
+
+    private static void runJava(Path cwd, Class<?> entryPoint, String... arguments) throws Exception {
         final Path bin = Path.of(System.getProperty("java.home"), "bin");
         final Path java = Files.isRegularFile(bin.resolve("java")) ? bin.resolve("java") : bin.resolve("java.exe");
         final String classpath = System.getProperty("surefire.test.class.path", System.getProperty("java.class.path"));
@@ -60,7 +113,7 @@ public class TrebaNativeParityCliTest {
             entries.add(Path.of(entry).toAbsolutePath().toString());
         }
         final var command = new ArrayList<>(List.of(java.toString(), "-cp", String.join(File.pathSeparator, entries),
-                SADL.class.getName(), "-parallel", "false"));
+                entryPoint.getName()));
         command.addAll(List.of(arguments));
         final Path output = cwd.resolve("cli.log");
         final Process child = new ProcessBuilder(command).directory(cwd.toFile()).redirectErrorStream(true)

@@ -22,25 +22,33 @@ import sadl.input.TimedInput;
 import sadl.models.PDFA;
 import sadl.structure.Transition;
 
-/** Treba's ALERGIA state-merging order and zero-prior probabilities. */
+/** Treba's ALERGIA state-merging order and probability estimation. */
 public final class TrebaNativeParityLearner implements PdfaLearner {
     private final double alpha;
     private final boolean recursive;
     private final int minimumVisits;
+    private final double smoothingPrior;
 
     public TrebaNativeParityLearner(double alpha, boolean recursive, int minimumVisits) {
+        this(alpha, recursive, minimumVisits, 0.0);
+    }
+
+    TrebaNativeParityLearner(double alpha, boolean recursive, int minimumVisits, double smoothingPrior) {
         this.alpha = alpha;
         this.recursive = recursive;
         this.minimumVisits = minimumVisits;
+        this.smoothingPrior = smoothingPrior;
     }
 
     @Override
     public PDFA train(TimedInput sequences) {
         final State root = new State();
+        int alphabetSize = 0;
         for (var word : sequences) {
             State state = root;
             for (int i = 0; i < word.length(); i++) {
                 final int symbol = sequences.getAlphIndex(word.getSymbol(i));
+                alphabetSize = Math.max(alphabetSize, symbol + 1);
                 final Arc arc = state.arcs.computeIfAbsent(symbol, key -> new Arc(new State(), 0));
                 arc.count++;
                 state.total++;
@@ -72,7 +80,7 @@ public final class TrebaNativeParityLearner implements PdfaLearner {
                 fold(match, blue);
             }
         }
-        return toPdfa(root, sequences);
+        return toPdfa(root, sequences, alphabetSize);
     }
 
     private Arc firstBlue(List<State> red) {
@@ -158,7 +166,7 @@ public final class TrebaNativeParityLearner implements PdfaLearner {
         }
     }
 
-    private static PDFA toPdfa(State root, TimedInput alphabet) {
+    private PDFA toPdfa(State root, TimedInput alphabet, int alphabetSize) {
         final var states = new ArrayList<State>();
         final var transitions = new HashSet<Transition>();
         final var stopping = new TIntDoubleHashMap();
@@ -167,7 +175,8 @@ public final class TrebaNativeParityLearner implements PdfaLearner {
         for (int i = 0; i < states.size(); i++) {
             final State state = states.get(i);
             state.updateTotal();
-            stopping.put(i, state.total == 0 ? 0.0 : (double) state.stops / state.total);
+            final double total = state.total + (alphabetSize + 1) * smoothingPrior;
+            stopping.put(i, total == 0 ? 0.0 : (state.stops + smoothingPrior) / total);
             for (var entry : state.arcs.entrySet()) {
                 final Arc arc = entry.getValue();
                 if (arc.target.id == -1) {
@@ -175,7 +184,14 @@ public final class TrebaNativeParityLearner implements PdfaLearner {
                     states.add(arc.target);
                 }
                 transitions.add(new Transition(i, arc.target.id, alphabet.getSymbol(entry.getKey()),
-                        (double) arc.count / state.total));
+                        (arc.count + smoothingPrior) / total));
+            }
+            if (smoothingPrior > 0) {
+                for (int symbol = 0; symbol < alphabetSize; symbol++) {
+                    if (!state.arcs.containsKey(symbol)) {
+                        transitions.add(new Transition(i, i, alphabet.getSymbol(symbol), smoothingPrior / total));
+                    }
+                }
             }
         }
         final var result = new PDFA(alphabet, transitions, stopping, null, new TIntIntHashMap());
