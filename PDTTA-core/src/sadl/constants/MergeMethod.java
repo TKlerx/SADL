@@ -19,5 +19,6 @@ public enum MergeMethod {
 	 * Check states fully recursively for similarity.
 	 */
 	ALERGIA_PAPER,
-	TREBA_NATIVE_PARITY
+	TREBA_NATIVE_PARITY,
+	MDI_PAPER
 }
