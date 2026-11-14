@@ -83,10 +83,15 @@ struct observations *observations_uniq(struct observations *ohead) {
     return (ohead);
 }
 
+static int compare_observation_pointers(const void *a, const void *b) {
+    struct observations *left = *(struct observations *const *)a;
+    struct observations *right = *(struct observations *const *)b;
+    return obssortcmp(&left, &right);
+}
+
 struct observations *observations_sort(struct observations *ohead) {
     struct observations *o, **sptr, *curro, *lasto;
     int i, numobs;
-    int (*sorter)() = obssortcmp;
     for (o = ohead, numobs = 0; o != NULL; o = o->next) {
 	numobs++;
     }
@@ -97,7 +102,7 @@ struct observations *observations_sort(struct observations *ohead) {
     for (o = ohead, i = 0; o != NULL; o = o->next, i++) {
 	*(sptr+i) = o;
     }
-    qsort(sptr, numobs, sizeof(struct observations *), sorter);
+    qsort(sptr, numobs, sizeof(struct observations *), compare_observation_pointers);
     for (i = 1, ohead = lasto = *sptr, lasto->next = NULL; i < numobs; i++) {	
 	curro = *(sptr+i);
 	curro->next = NULL;
