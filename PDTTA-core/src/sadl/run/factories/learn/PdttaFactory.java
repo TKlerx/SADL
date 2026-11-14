@@ -16,7 +16,6 @@ import com.beust.jcommander.Parameters;
 import sadl.constants.KdeKernelFunction;
 import sadl.constants.MergeMethod;
 import sadl.constants.TauEstimation;
-import sadl.modellearner.AlergiaRedBlue;
 import sadl.modellearner.PdfaLearner;
 import sadl.modellearner.PdttaLearner;
 
@@ -108,7 +107,7 @@ public class PdttaFactory implements PdfaDefaultFactory, TptaDefaultFactory {
 
 	@Override
 	public PdttaLearner create() {
-		final PdfaLearner pdfaLearner = new AlergiaRedBlue(getMergeAlpha(), isRecursiveMergeTest(), getMergeMethod(), getMergeT0());
+		final PdfaLearner pdfaLearner = createPdfaLearner();
 		final PdttaLearner learner = new PdttaLearner(pdfaLearner, getKernelFunction(), getBandwidth(), getTauEstimator());
 		return learner;
 	}
