@@ -13,6 +13,10 @@ The KL terms compare complete sequence probabilities, including stopping. Equiva
 
 [Original MDI publication](https://research.dial.uclouvain.be/entities/publication/efe4d816-a786-4e84-b38b-79ab112dafe8) and [thesis §2.4.2.2, equations 2.20–2.23](https://digital.ub.uni-paderborn.de/hs/download/pdf/2445002#page=40).
 
+## SADL's paper mode
+
+`MDI_PAPER` implements the published signed divergence criterion. SADL selects candidates in red/blue order and only considers blue states that meet the configured minimum visit count. Candidate order and the visit cutoff can affect the learned automaton even when the scoring rule is identical.
+
 ## Vendored Treba behavior
 
 `TrebaPdfaLearner` sorts and deduplicates observations, sets the minimum visit count and smoothing prior, and dispatches MDI directly to `dffa_mdi`. That routine uses red/blue selection, tests red candidates in order, accepts the first score strictly below alpha, and folds the blue state into the selected red state. It uses the visit cutoff and has no ALERGIA-style recursion flag. Smoothing applies when converting counts into the output WFSA.
