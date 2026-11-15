@@ -139,7 +139,7 @@ The tasks.md should be immediately executable - each task must be specific enoug
 
 **CRITICAL**: Tasks MUST be organized by user story to enable independent implementation and testing.
 
-**Tests are OPTIONAL**: Only generate test tasks if explicitly requested in the feature specification or if user requests TDD approach.
+**Test-first behavior changes and bug fixes**: Follow the SADL constitution and project TDD skill. For each behavior change or bug fix, generate a task to add a failing JUnit 4 test at the agreed public boundary and verify its failure before the corresponding implementation task. For other work, include tests when the specification or user requests them.
 
 ### Checklist Format (REQUIRED)
 
