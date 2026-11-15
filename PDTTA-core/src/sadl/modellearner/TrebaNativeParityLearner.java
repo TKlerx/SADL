@@ -42,27 +42,13 @@ public final class TrebaNativeParityLearner implements PdfaLearner {
 
     @Override
     public PDFA train(TimedInput sequences) {
-        final State root = new State();
-        int alphabetSize = 0;
-        for (var word : sequences) {
-            State state = root;
-            for (int i = 0; i < word.length(); i++) {
-                final int symbol = sequences.getAlphIndex(word.getSymbol(i));
-                alphabetSize = Math.max(alphabetSize, symbol + 1);
-                final Arc arc = state.arcs.computeIfAbsent(symbol, key -> new Arc(new State(), 0));
-                arc.count++;
-                state.total++;
-                state = arc.target;
-            }
-            state.stops++;
-            state.total++;
-        }
-
+        final PrefixTree tree = prefixTree(sequences);
+        final State root = tree.root();
         final List<State> red = new ArrayList<>();
         red.add(root);
         root.red = true;
         Arc incoming;
-        while ((incoming = firstBlue(red)) != null) {
+        while ((incoming = firstBlue(red, minimumVisits)) != null) {
             final State blue = incoming.target;
             State match = null;
             for (State candidate : red) {
@@ -80,10 +66,32 @@ public final class TrebaNativeParityLearner implements PdfaLearner {
                 fold(match, blue);
             }
         }
-        return toPdfa(root, sequences, alphabetSize);
+        return toPdfa(root, sequences, tree.alphabetSize(), smoothingPrior);
     }
 
-    private Arc firstBlue(List<State> red) {
+    record PrefixTree(State root, int alphabetSize) {}
+
+    static PrefixTree prefixTree(TimedInput sequences) {
+        final State root = new State();
+        int alphabetSize = 0;
+        for (var word : sequences) {
+            State state = root;
+            for (int i = 0; i < word.length(); i++) {
+                final int symbol = sequences.getAlphIndex(word.getSymbol(i));
+                alphabetSize = Math.max(alphabetSize, symbol + 1);
+                final Arc arc = state.arcs.computeIfAbsent(symbol, key -> new Arc(new State(), 0));
+                arc.count++;
+                state.total++;
+                state = arc.target;
+            }
+            state.stops++;
+            state.total++;
+        }
+
+        return new PrefixTree(root, alphabetSize);
+    }
+
+    static Arc firstBlue(List<State> red, int minimumVisits) {
         for (State state : red) {
             for (Arc arc : state.arcs.values()) {
                 if (!arc.target.red) {
@@ -166,7 +174,7 @@ public final class TrebaNativeParityLearner implements PdfaLearner {
         }
     }
 
-    private PDFA toPdfa(State root, TimedInput alphabet, int alphabetSize) {
+    static PDFA toPdfa(State root, TimedInput alphabet, int alphabetSize, double smoothingPrior) {
         final var states = new ArrayList<State>();
         final var transitions = new HashSet<Transition>();
         final var stopping = new TIntDoubleHashMap();
