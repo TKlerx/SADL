@@ -27,6 +27,21 @@ import static org.junit.Assert.assertTrue;
 /** Run explicitly with -Dtest=TrebaMdiReferenceCapture on Linux with JNI. */
 public class TrebaMdiReferenceCapture {
     @Test
+    public void captureDefinedBranchingAutomaton() throws Exception {
+        assertTrue("Live Treba JNI is required", LibraryChecker.trebaDepsInstalled());
+        final var input = TimedInput.parse(new java.io.StringReader(
+                "(a,1) (b,2)\n(a,1) (b,2)\n(a,1) (c,3)\n"));
+        final var model = new TrebaPdfaLearner(0.0, false, MergeTest.MDI, 0.0, 1).train(input);
+        final var lines = new ArrayList<String>();
+        for (int state = 0; state < model.getStateCount(); state++) {
+            lines.add("stop\t" + state + "\t" + model.getFinalStateProbability(state));
+        }
+        model.getTransitions().stream().sorted().forEach(arc -> lines.add("arc\t" + arc.getFromState() + "\t"
+                + arc.getSymbol() + "\t" + arc.getToState() + "\t" + arc.getProbability()));
+        Files.write(Path.of(System.getProperty("treba.reference.output") + ".branching.tsv"), lines);
+    }
+
+    @Test
     public void captureNativeTrainToTest() throws Exception {
         assertTrue("Live Treba JNI is required", LibraryChecker.trebaDepsInstalled());
         final Path inputs = Path.of(getClass().getResource("/saved-model-compatibility/train.inp").toURI()).getParent();

@@ -20,5 +20,6 @@ public enum MergeMethod {
 	 */
 	ALERGIA_PAPER,
 	TREBA_NATIVE_PARITY,
-	MDI_PAPER
+	MDI_PAPER,
+	MDI_TREBA
 }

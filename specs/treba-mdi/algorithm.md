@@ -26,3 +26,15 @@ The active native scorer is `dffa_mdi_score2`. It traverses blue continuations, 
 Two details need explicit reference cases. In `dffa_mdi_parallel`, a blue stopping state without matching red termination can reach a read of uninitialized `frbprob`. The sibling loop also updates path accumulators in place across siblings. Record compiler and flags, compare fresh processes and optimization levels, and reserve normative assertions for defined behavior. A repeated output from an undefined path is an observation from one build.
 
 [Native scorer and red/blue loop](../../trebaJni/trebaNative/swig/dffa.c) and [SADL JNI dispatch](../../PDTTA-core/src/sadl/modellearner/TrebaPdfaLearner.java).
+
+## Java Treba mode
+
+Select `-mergeMethod MDI_TREBA` in PDTTA training or the PDFA factory. Java uses the native red/blue order, strict cutoff, and sibling accumulator order. The [branching capture](native-branching.tsv) scored 0.025467994179750857 in 20 fresh processes under each of the original two build settings. Run the existing score probe with the argument `branching` to reproduce it.
+
+For a blue-only arc, the scorer carries the blue arc's conditional probability into the candidate path and uses the blue subtree's conditional stopping and continuation probabilities. This keeps the branch intact and gives a defined contribution. When both states exist and only blue can stop, the candidate uses the pooled stopping count divided by the pooled visit count. These rules define the Java scorer where the C implementation leaves a path term or stopping value unspecified. The frozen blue-only C score remains a historical observation. Legacy `-mergeTest MDI` still selects native Treba.
+
+The frozen PDTTA comparison crosses this undefined scoring path. The Java rule yields three states and an event vector of `[0.5, 0.5, 1, 1]` on the normal trace. The native capture has one state and yields `[0.5, 0.25, 0.5, 0.25]`. Both accept the normal trace and reject the unseen symbol. Java fits each observed transition separately on this fixture, so its three time scores are approximately 0.335762. Native pools the two `a` positions and assigns about 0.343829 at those positions.
+
+The [weighted branching PDFA](native-branching-pdfa.tsv) captures two copies of `ab` and one of `ac`, with alpha zero and minimum visits one. Java and C have matching topology, arc probabilities and stopping probabilities. A zero cutoff rejects nonnegative merge scores, so this capture checks the weighted prefix tree and output conversion. The cutoff and branching score probes exercise decisions at the exact captured C score and its two adjacent doubles. The Maven capture also writes the branching PDFA using the output path with `.branching.tsv` appended.
+
+Run `mvn -B -Ptreba-quality verify` for scoped PMD and CPD checks. PMD flags method cyclomatic complexity of 12 or higher. CPD flags duplicated spans of 75 tokens or more. Both checks cover the Java Treba and MDI learners. Run `mvn -B -Ptreba-parity-mutation '-DtargetClasses=sadl.modellearner.MdiTrebaLearner*' test-compile` for the focused MDI mutation run.

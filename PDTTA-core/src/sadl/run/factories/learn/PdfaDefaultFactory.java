@@ -14,6 +14,7 @@ import sadl.constants.MergeMethod;
 import sadl.interfaces.ProbabilisticModelLearner;
 import sadl.modellearner.AlergiaRedBlue;
 import sadl.modellearner.MdiPaperLearner;
+import sadl.modellearner.MdiTrebaLearner;
 import sadl.modellearner.PdfaLearner;
 import sadl.modellearner.TrebaNativeParityLearner;
 import sadl.run.factories.LearnerFactory;
@@ -35,6 +36,9 @@ public interface PdfaDefaultFactory extends LearnerFactory {
 	}
 
 	default PdfaLearner createPdfaLearner() {
+		if (getMergeMethod() == MergeMethod.MDI_TREBA) {
+			return new MdiTrebaLearner(getMergeAlpha(), getMergeT0());
+		}
 		if (getMergeMethod() == MergeMethod.MDI_PAPER) {
 			return new MdiPaperLearner(getMergeAlpha(), getMergeT0());
 		}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="Treba learner complexity" xmlns="http://pmd.sourceforge.net/ruleset/2.0.0">
+    <description>Limit method complexity in the Java Treba and MDI learners.</description>
+    <rule ref="category/java/design.xml/CyclomaticComplexity">
+        <properties>
+            <property name="methodReportLevel" value="12"/>
+        </properties>
+    </rule>
+</ruleset>
