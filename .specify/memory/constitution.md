@@ -10,7 +10,7 @@ Treat CLI commands, timed input, and persisted models as compatibility boundarie
 
 ## Verify the native path
 
-Use the [CI workflow](../../.github/workflows/ci.yml) as the full validation baseline. It builds the JNI library against GSL on Linux with JDK 21 and runs the Maven reactor tests. Use targeted tests during development and the full workflow before merging.
+Use the [CI workflow](../../.github/workflows/ci.yml) as the full validation baseline. It builds the JNI library against GSL on Linux with JDK 25 and runs the Maven reactor tests. Use targeted tests during development and the full workflow before merging.
 
 ## Governance
 
