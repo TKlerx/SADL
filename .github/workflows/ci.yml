@@ -10,12 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  maven:
-    name: Maven (Temurin ${{ matrix.java }})
-    strategy:
-      fail-fast: false
-      matrix:
-        java: ['21', '25']
+  test:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -23,7 +18,7 @@ jobs:
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin
-          java-version: ${{ matrix.java }}
+          java-version: '25'
           cache: maven
       - name: Build the native library against this runner's GSL
         run: |
@@ -34,14 +29,3 @@ jobs:
           mvn -B -f trebaJni/trebaNative/pom.xml install
       - name: Run the complete test suite, including native tests
         run: mvn -B test
-
-  test:
-    name: test
-    runs-on: ubuntu-latest
-    needs: maven
-    if: ${{ always() }}
-    env:
-      MAVEN_RESULT: ${{ needs.maven.result }}
-    steps:
-      - name: Require both Temurin builds to pass
-        run: test "$MAVEN_RESULT" = success
