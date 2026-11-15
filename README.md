@@ -15,9 +15,9 @@ Sequence-based Anomaly Detection Library
 
 ## Validation
 
-Run `mvn -B test` with JDK 21. The test JVM opens `java.util` for XStream's
+Run `mvn -B test` with JDK 25. The test JVM opens `java.util` for XStream's
 legacy TreeMap serialization. Production XStream settings and its type allowlist
-are unchanged. JDK 21 is the minimum supported Java version for the build and CLI.
+are unchanged. JDK 25 is the minimum supported Java version for the build and CLI.
 
 For the complete native tests, use Linux with a JDK, GCC and GSL development
 headers (`build-essential libgsl-dev` on Ubuntu). Set `JAVA_HOME`, then run:
