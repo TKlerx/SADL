@@ -2,7 +2,7 @@
 # For the current SADL smac PDTTA CLI, start with pdtta-params.pcs.
 # To select historical MDI, add MDI_TREBA_HISTORICAL to its mergeMethod choices.
 mergeAlpha [0,1] [0.05]
-mergeTest {ALERGIA,MDI} [ALERGIA]
+mergeTest {ALERGIA,CHI_SQUARED, LR, EXACT_M,BINOMIAL,EXACT_B,MDI} [ALERGIA]
 kdeBandwidthEstimate {true, false} [true]
 kdeBandwidth [0.0000001,1000] [1]
 kdeBandwidth |kdeBandwidthEstimate in {false}
@@ -25,7 +25,7 @@ mcPointsToStore [10,40000] [10000]i
 mcPointsToStore | tauEstimation in {MONTE_CARLO}
 
 recursiveMergeTest {true,false} [false]
-recursiveMergeTest | mergeTest in {ALERGIA}
+recursiveMergeTest | mergeTest in {ALERGIA,CHI_SQUARED, LR, EXACT_M,BINOMIAL,EXACT_B}
 
 mergeT0 [1,100] [3]i
 mergeT0 | mergeTest in {ALERGIA}
