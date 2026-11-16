@@ -679,7 +679,9 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 		final int requestedAnomalies = (int) (size * anomalyPercentage);
 		final TObjectIntMap<List<String>> pathCounts = new TObjectIntHashMap<>();
 		List<TimedWord> rareWords = null;
-		for (int i = 0; i < requestedAnomalies; i++) {
+		// For Type 2, skipped paths do not count toward the requested replacements.
+		final int candidateLimit = type == AnomalyInsertionType.TYPE_TWO ? size : requestedAnomalies;
+		for (int i = 0, inserted = 0; i < candidateLimit && inserted < requestedAnomalies; i++) {
 			final int index = indexes.get(i);
 			TimedWord word = result.getWord(index);
 			int typeInt;
@@ -709,6 +711,7 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 				word = insertAnomaly(word, newType);
 			}
 			result.words.set(index, word);
+			inserted++;
 		}
 		return result;
 	}

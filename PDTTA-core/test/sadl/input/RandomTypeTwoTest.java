@@ -29,6 +29,20 @@ public class RandomTypeTwoTest {
 	}
 
 	@Test
+	public void fillsTheTargetUsingEligibleTracesBeyondTheInitialDraw() throws Exception {
+		final TimedInput input = TimedInput.parse(new StringReader("(a,10):0\n".repeat(4) + "(b,20):0\n(c,30):0"));
+		input.r = new Random(35);
+
+		final TimedInput result = input.insertRandomAnomalies(AnomalyInsertionType.TYPE_TWO, 0.67);
+
+		for (int i = 0; i < 4; i++) {
+			assertTrue("Eligible trace " + i + " should be replaced to meet the target", result.get(i).isAnomaly());
+		}
+		assertEquals("(b,20):0", result.get(4).toString(true));
+		assertEquals("(c,30):0", result.get(5).toString(true));
+	}
+
+	@Test
 	public void skipsWhenNoStrictlyRarerPathExists() throws Exception {
 		for (final String data : new String[] { "(a,10):0\n(a,20):0", "(a,10):0\n(b,20):0" }) {
 			final TimedInput input = TimedInput.parse(new StringReader(data));
