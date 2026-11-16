@@ -15,22 +15,35 @@ Sequence-based Anomaly Detection Library
 
 ## Validation
 
-Run `mvn -B test` with JDK 21. The test JVM opens `java.util` for XStream's
+Run `mvn -B test` with JDK 25. The test JVM opens `java.util` for XStream's
 legacy TreeMap serialization. Production XStream settings and its type allowlist
-are unchanged. JDK 21 is the minimum supported Java version for the build and CLI.
+are unchanged. JDK 25 is the minimum supported Java version for the build and CLI.
 
-For the complete native tests, use Linux with a JDK, GCC and GSL development
-headers (`build-essential libgsl-dev` on Ubuntu). Set `JAVA_HOME`, then run:
+GitHub CI runs the full suite on Linux with `TRAVIS` unset. Setting
+`TRAVIS=true` reports the affected historical tests as skipped.
 
-```sh
-bash trebaJni/trebaNative/swig/treba_jni.sh
-mvn -B -f trebaJni/trebaNative/pom.xml install
-mvn -B test
-```
+## Treba compatibility
 
-GitHub CI runs the full suite with `TRAVIS` unset. Setting `TRAVIS=true`
-reports the affected historical tests as skipped. Windows can
-run the Java tests but cannot validate the Linux JNI library.
+The supported `smac PDTTA` and `train PDTTA` CLI commands accept
+`-mergeMethod MDI_TREBA_HISTORICAL` for historical MDI and
+`-mergeMethod TREBA_NATIVE_PARITY` for Treba-style ALERGIA. Replace the old
+`-mergeTest MDI` and `-mergeTest ALERGIA` flags when migrating SMAC settings.
+Use the [current PDTTA parameter file](PDTTA-core/smac/pdtta/pdtta-params.pcs)
+as the starting point for a SMAC search and add the desired mode to its
+`mergeMethod` choices. The [old Treba parameter file](PDTTA-core/smac/pdtta/treba-params.pcs)
+records the historical settings.
+
+The legacy Java `PdttaLearner` constructors that accept a `MergeTest` still
+accept `ALERGIA` and `MDI` and route them to the Java learners. Those constructors
+also accept a smoothing prior. The historical MDI CLI mode uses a zero prior.
+For new experiments, `MDI_TREBA` uses a deterministic rule for the blue-only
+case, and `MDI_PAPER` uses the published divergence criterion.
+
+Use the [pinned native revision](https://github.com/TKlerx/SADL/tree/c80ede9d8e3dbba090db9d494a3f43a392a8cb87)
+for exact native reruns or for the retired `CHI_SQUARED`, `LR`, `BINOMIAL`,
+`EXACT_M`, and `EXACT_B` modes. The
+[historical MDI results](specs/treba-mdi/historical-reference.md) document the
+binary, toolchain, corpora, and settings used to verify parity.
 
 ## Saved model trust
 

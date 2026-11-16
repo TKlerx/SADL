@@ -9,7 +9,7 @@ description: "Task list template for feature implementation"
 
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
+**Tests**: Behavior changes and bug fixes follow the project TDD skill. Include a failing JUnit 4 test at the agreed boundary before its implementation task.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -21,10 +21,9 @@ description: "Task list template for feature implementation"
 
 ## Path Conventions
 
-- **Single project**: `src/`, `tests/` at repository root
-- **Web app**: `backend/src/`, `frontend/src/`
-- **Mobile**: `api/src/`, `ios/src/` or `android/src/`
-- Paths shown below assume single project - adjust based on plan.md structure
+- Core and CLI changes belong in `PDTTA-core/src/sadl/` with tests in `PDTTA-core/test/sadl/`.
+
+Group tasks by user story and name the owning module. For final Linux validation, run `mvn -B test` with JDK 25.
 
 <!--
   ============================================================================
@@ -49,9 +48,9 @@ description: "Task list template for feature implementation"
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create project structure per implementation plan
-- [ ] T002 Initialize [language] project with [framework] dependencies
-- [ ] T003 [P] Configure linting and formatting tools
+- [ ] T001 Identify affected SADL modules and public test boundaries
+- [ ] T002 Verify the Maven baseline for affected modules
+- [ ] T003 [P] Prepare existing timed-input or saved-model fixtures as needed
 
 ---
 
@@ -63,12 +62,12 @@ description: "Task list template for feature implementation"
 
 Examples of foundational tasks (adjust based on your project):
 
-- [ ] T004 Setup database schema and migrations framework
+- [ ] T004 Identify affected interfaces and validation order for cross-module changes
 - [ ] T005 [P] Implement authentication/authorization framework
-- [ ] T006 [P] Setup API routing and middleware structure
+- [ ] T006 [P] Identify CLI commands and existing outputs affected by the change
 - [ ] T007 Create base models/entities that all stories depend on
 - [ ] T008 Configure error handling and logging infrastructure
-- [ ] T009 Setup environment configuration management
+- [ ] T009 Verify the required Linux/JDK environment for JNI changes
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -80,19 +79,19 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 1 (OPTIONAL - only if tests requested) ⚠️
+### Tests for User Story 1
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T010 [P] [US1] Contract test for [public boundary] in PDTTA-core/test/sadl/[Name]Test.java
+- [ ] T011 [P] [US1] Integration test for [user journey] in PDTTA-core/test/sadl/[Journey]Test.java
 
 ### Implementation for User Story 1
 
-- [ ] T012 [P] [US1] Create [Entity1] model in src/models/[entity1].py
-- [ ] T013 [P] [US1] Create [Entity2] model in src/models/[entity2].py
-- [ ] T014 [US1] Implement [Service] in src/services/[service].py (depends on T012, T013)
-- [ ] T015 [US1] Implement [endpoint/feature] in src/[location]/[file].py
+- [ ] T012 [P] [US1] Create [Entity1] model in PDTTA-core/src/sadl/models/[Entity1].java
+- [ ] T013 [P] [US1] Create [Entity2] model in PDTTA-core/src/sadl/models/[Entity2].java
+- [ ] T014 [US1] Implement [Service] in PDTTA-core/src/sadl/[package]/[Class].java (depends on T012, T013)
+- [ ] T015 [US1] Implement [CLI or library behavior] in PDTTA-core/src/sadl/[package]/[Class].java
 - [ ] T016 [US1] Add validation and error handling
 - [ ] T017 [US1] Add logging for user story 1 operations
 
@@ -106,16 +105,16 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 2 (OPTIONAL - only if tests requested) ⚠️
+### Tests for User Story 2
 
-- [ ] T018 [P] [US2] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T019 [P] [US2] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T018 [P] [US2] Contract test for [public boundary] in PDTTA-core/test/sadl/[Name]Test.java
+- [ ] T019 [P] [US2] Integration test for [user journey] in PDTTA-core/test/sadl/[Journey]Test.java
 
 ### Implementation for User Story 2
 
-- [ ] T020 [P] [US2] Create [Entity] model in src/models/[entity].py
-- [ ] T021 [US2] Implement [Service] in src/services/[service].py
-- [ ] T022 [US2] Implement [endpoint/feature] in src/[location]/[file].py
+- [ ] T020 [P] [US2] Create [Entity] model in PDTTA-core/src/sadl/models/[Entity].java
+- [ ] T021 [US2] Implement [Service] in PDTTA-core/src/sadl/[package]/[Class].java
+- [ ] T022 [US2] Implement [CLI or library behavior] in PDTTA-core/src/sadl/[package]/[Class].java
 - [ ] T023 [US2] Integrate with User Story 1 components (if needed)
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
@@ -128,16 +127,16 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 3 (OPTIONAL - only if tests requested) ⚠️
+### Tests for User Story 3
 
-- [ ] T024 [P] [US3] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T025 [P] [US3] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T024 [P] [US3] Contract test for [public boundary] in PDTTA-core/test/sadl/[Name]Test.java
+- [ ] T025 [P] [US3] Integration test for [user journey] in PDTTA-core/test/sadl/[Journey]Test.java
 
 ### Implementation for User Story 3
 
-- [ ] T026 [P] [US3] Create [Entity] model in src/models/[entity].py
-- [ ] T027 [US3] Implement [Service] in src/services/[service].py
-- [ ] T028 [US3] Implement [endpoint/feature] in src/[location]/[file].py
+- [ ] T026 [P] [US3] Create [Entity] model in PDTTA-core/src/sadl/models/[Entity].java
+- [ ] T027 [US3] Implement [Service] in PDTTA-core/src/sadl/[package]/[Class].java
+- [ ] T028 [US3] Implement [CLI or library behavior] in PDTTA-core/src/sadl/[package]/[Class].java
 
 **Checkpoint**: All user stories should now be independently functional
 
@@ -154,7 +153,7 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] TXXX [P] Documentation updates in docs/
 - [ ] TXXX Code cleanup and refactoring
 - [ ] TXXX Performance optimization across all stories
-- [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
+- [ ] TXXX [P] Additional unit tests (if requested) in the affected module test root
 - [ ] TXXX Security hardening
 - [ ] TXXX Run quickstart.md validation
 
@@ -181,7 +180,7 @@ Examples of foundational tasks (adjust based on your project):
 
 - Tests (if included) MUST be written and FAIL before implementation
 - Models before services
-- Services before endpoints
+- Lower-level changes before their callers when a story crosses module boundaries
 - Core implementation before integration
 - Story complete before moving to next priority
 
@@ -199,13 +198,13 @@ Examples of foundational tasks (adjust based on your project):
 ## Parallel Example: User Story 1
 
 ```bash
-# Launch all tests for User Story 1 together (if tests requested):
-Task: "Contract test for [endpoint] in tests/contract/test_[name].py"
-Task: "Integration test for [user journey] in tests/integration/test_[name].py"
+# Launch all tests for User Story 1 together:
+Task: "Contract test for [public boundary] in PDTTA-core/test/sadl/[Name]Test.java"
+Task: "Integration test for [user journey] in PDTTA-core/test/sadl/[Journey]Test.java"
 
 # Launch all models for User Story 1 together:
-Task: "Create [Entity1] model in src/models/[entity1].py"
-Task: "Create [Entity2] model in src/models/[entity2].py"
+Task: "Create [Entity1] model in PDTTA-core/src/sadl/models/[Entity1].java"
+Task: "Create [Entity2] model in PDTTA-core/src/sadl/models/[Entity2].java"
 ```
 
 ---

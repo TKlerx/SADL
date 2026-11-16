@@ -169,20 +169,13 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.13.0</version>
 				<configuration>
-					<release>21</release>
+					<release>25</release>
 					<compilerArgs>
 						<arg>-Xlint:all</arg>
 					</compilerArgs>
 				</configuration>
 			</plugin>
 
-			<!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-assembly-plugin</artifactId> 
-				<executions> <execution> <id>jar-with-dependencies</id> <phase>prepare-package</phase> 
-				<goals> <goal>single</goal> </goals> <configuration> <descriptor>assembly/assembly.xml</descriptor> 
-				<appendAssemblyId>false</appendAssemblyId> </configuration> </execution> 
-				</executions> <configuration> <finalName>${project.artifactId}-${project.version}-full</finalName> 
-				<archive> <manifest> <mainClass>${run.mainclass}</mainClass> </manifest> 
-				</archive> </configuration> </plugin> -->
 			<plugin>
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>2.4</version>
@@ -223,29 +216,7 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
 				<version>2.10</version>
-				<configuration>
-					<artifactItems>
-						<artifactItem>
-							<groupId>de.upb.timok</groupId>
-							<artifactId>trebaNative</artifactId>
-							<type>so</type>
-							<version>0.0.1</version>
-							<overWrite>true</overWrite>
-							<outputDirectory>${basedir}/target/lib/</outputDirectory>
-							<!--<destFileName>so</destFileName> -->
-							<baseVersion>true</baseVersion>
-						</artifactItem>
-					</artifactItems>
-				</configuration>
 				<executions>
-					<execution>
-						<id>copy</id>
-						<phase>process-classes</phase>
-						<goals>
-							<goal>copy</goal>
-						</goals>
-
-					</execution>
 					<execution>
 						<id>copy-dependencies</id>
 						<phase>package</phase>
@@ -406,9 +377,10 @@
 			<version>0.0.3</version>
 		</dependency>
 		<dependency>
-			<groupId>de.upb.timok</groupId>
-			<artifactId>trebaJni</artifactId>
-			<version>0.0.1</version>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.13.1</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
@@ -444,6 +416,64 @@
 	</dependencies>
 	<name>PDTTA</name>
 	<profiles>
+		<profile>
+			<id>treba-quality</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-pmd-plugin</artifactId>
+						<version>3.28.0</version>
+						<configuration>
+							<includes>
+								<include>sadl/modellearner/Mdi*Learner.java</include>
+								<include>sadl/modellearner/TrebaNativeParityLearner.java</include>
+							</includes>
+							<rulesets><ruleset>${project.basedir}/conf/treba-quality.xml</ruleset></rulesets>
+							<minimumTokens>75</minimumTokens>
+						</configuration>
+						<executions>
+							<execution>
+								<goals><goal>check</goal><goal>cpd-check</goal></goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		<profile>
+			<id>treba-parity-mutation</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.pitest</groupId>
+						<artifactId>pitest-maven</artifactId>
+						<version>1.30.1</version>
+						<executions>
+							<execution>
+								<phase>test-compile</phase>
+								<goals><goal>mutationCoverage</goal></goals>
+							</execution>
+						</executions>
+						<configuration>
+							<targetClasses>
+								<param>sadl.modellearner.TrebaNativeParityLearner*</param>
+								<param>sadl.modellearner.MdiTrebaLearner*</param>
+							</targetClasses>
+							<targetTests>
+								<param>sadl.modellearner.TrebaNativeParityTest</param>
+								<param>sadl.modellearner.TrebaNativeParityCasesTest</param>
+								<param>sadl.modellearner.MdiTrebaTest</param>
+							</targetTests>
+							<outputFormats>
+								<param>HTML</param>
+								<param>XML</param>
+							</outputFormats>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
 		<profile>
 			<id>modern-jdk-serialization</id>
 			<activation><jdk>[9,)</jdk></activation>

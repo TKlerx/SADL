@@ -1,0 +1,49 @@
+diff --git a/PDTTA-core/test/sadl/modellearner/SharedTrebaReferenceCapture.java b/PDTTA-core/test/sadl/modellearner/SharedTrebaReferenceCapture.java
+index 7d41090..51aa24e 100644
+--- a/PDTTA-core/test/sadl/modellearner/SharedTrebaReferenceCapture.java
++++ b/PDTTA-core/test/sadl/modellearner/SharedTrebaReferenceCapture.java
+@@ -34,22 +34,29 @@ public class SharedTrebaReferenceCapture {
+         assertTrue("Live Treba JNI is required", LibraryChecker.trebaDepsInstalled());
+         final Path output = Path.of(System.getProperty("treba.reference.output"));
+         Files.createDirectories(output);
+-        final var split = IoUtils.readTrainTestFile(resource("smac_mix_type1.txt"));
+-        for (MergeTest mode : List.of(MergeTest.ALERGIA, MergeTest.MDI)) {
++        final boolean historical = Boolean.getBoolean("treba.reference.historical");
++        final double alpha = Double.parseDouble(System.getProperty("treba.reference.alpha", "0.05"));
++        final double prior = Double.parseDouble(System.getProperty("treba.reference.prior", "0"));
++        final int visits = Integer.getInteger("treba.reference.visits", 3);
++        final var split = IoUtils.readTrainTestFile(resource(System.getProperty("treba.reference.corpus", "smac_mix_type1.txt")));
++        for (MergeTest mode : historical ? List.of(MergeTest.MDI) : List.of(MergeTest.ALERGIA, MergeTest.MDI)) {
+             final String prefix = mode.name().toLowerCase(java.util.Locale.ROOT);
+-            final PdfaLearner nativeSmall = new TrebaPdfaLearner(0.8, true, mode, 0, 1);
+-            final PdfaLearner javaSmall = javaLearner(mode, 0.8, 1);
++            final PdfaLearner nativeSmall = new TrebaPdfaLearner(0.8, true, mode, prior, 1);
++            final PdfaLearner javaSmall = historical ? new MdiTrebaLearner(0.8, 1, true, prior) : javaLearner(mode, 0.8, 1);
+             final TimedInput small = TimedInput.parse(resource("treba-shared-small.inp"));
+             writeSmall(output.resolve(prefix + "-small-native.tsv"), nativeSmall.train(small));
+             writeSmall(output.resolve(prefix + "-small-java.tsv"), javaSmall.train(small));
+ 
+             for (boolean useNative : new boolean[] {true, false}) {
+-                final PdfaLearner learner = useNative ? new TrebaPdfaLearner(0.05, true, mode, 0, 3)
+-                        : javaLearner(mode, 0.05, 3);
++                final PdfaLearner learner = useNative ? new TrebaPdfaLearner(alpha, true, mode, prior, visits)
++                        : historical ? new MdiTrebaLearner(alpha, visits, true, prior) : javaLearner(mode, alpha, visits);
+                 final long start = System.nanoTime();
+                 final var model = new PdttaLearner(learner).train(split.getLeft());
+                 final long elapsed = System.nanoTime() - start;
+                 final Path scores = output.resolve(prefix + (useNative ? "-native.tsv" : "-java.tsv"));
++                if (historical) {
++                    writeSmall(output.resolve(prefix + (useNative ? "-model-native.tsv" : "-model-java.tsv")), model);
++                }
+                 try (var writer = Files.newBufferedWriter(scores)) {
+                     writer.write("# states\t" + model.getStateCount() + "\n");
+                     for (int i = 0; i < split.getRight().size(); i++) {
+@@ -77,7 +84,7 @@ public class SharedTrebaReferenceCapture {
+     static void writeSmall(Path output, PDFA model) throws IOException {
+         try (BufferedWriter writer = Files.newBufferedWriter(output)) {
+             writer.write("# states\t" + model.getStateCount() + "\n");
+-            for (int state = 0; state < model.getStateCount(); state++) {
++            for (int state : Arrays.stream(model.getStates()).sorted().toArray()) {
+                 writer.write("stop\t" + state + "\t" + model.getFinalStateProbability(state) + "\n");
+             }
+             for (var arc : model.getTransitions().stream().sorted().toList()) {
