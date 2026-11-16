@@ -20,12 +20,5 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
-      - name: Build the native library against this runner's GSL
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential libgsl-dev
-          bash trebaJni/trebaNative/swig/treba_jni.sh
-          ldd trebaJni/trebaNative/native_libs/libtreba.so
-          mvn -B -f trebaJni/trebaNative/pom.xml install
-      - name: Run the complete test suite, including native tests
+      - name: Run the complete test suite
         run: mvn -B test

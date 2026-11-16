@@ -75,11 +75,6 @@ public class PdttaLearner implements ProbabilisticModelLearner {
 		this.tauEstimator = tauEstimation;
 	}
 
-	// public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
-	// TauEstimator tauEstimation) {
-	// this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest, mergeTest), kdeKernelFunction, kdeBandwidth, tauEstimation);
-	// }
-
 	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest) {
 		this(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, 0.0);
 	}
@@ -89,26 +84,19 @@ public class PdttaLearner implements ProbabilisticModelLearner {
 		this(mergeAlpha, recursiveMergeTest, kdeKernelFunction, kdeBandwidth, mergeTest, smoothingPrior, 3, null);
 	}
 
-	// public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
-	// double smoothingPrior, TauEstimator tauEstimatior) {
-	// this(new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest, mergeTest, smoothingPrior), kdeKernelFunction, kdeBandwidth, tauEstimatior);
-	// }
-
 	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, KernelFunction kdeKernelFunction, double kdeBandwidth, MergeTest mergeTest,
 			double smoothingPrior, int mergeT0, TauEstimator tauEstimation) {
-		this(mergeTest == MergeTest.ALERGIA
-				? new TrebaNativeParityLearner(mergeAlpha, recursiveMergeTest, mergeT0, smoothingPrior)
-				: new TrebaPdfaLearner(mergeAlpha, recursiveMergeTest, mergeTest, smoothingPrior, mergeT0),
-				kdeKernelFunction, kdeBandwidth, tauEstimation);
+		this(switch (mergeTest) {
+			case ALERGIA -> new TrebaNativeParityLearner(mergeAlpha, recursiveMergeTest, mergeT0, smoothingPrior);
+			case MDI -> new MdiTrebaLearner(mergeAlpha, mergeT0, true, smoothingPrior);
+			default -> throw new IllegalArgumentException("Merge test " + mergeTest
+					+ " requires Treba JNI. Use SADL revision c80ede9 for historical reruns.");
+		}, kdeKernelFunction, kdeBandwidth, tauEstimation);
 	}
 
 	public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, MergeTest mergeTest) {
 		this(mergeAlpha, recursiveMergeTest, null, -1, mergeTest);
 	}
-
-	// public PdttaLearner(double mergeAlpha, boolean recursiveMergeTest, MergeTest mergeTest, double smoothingPrior) {
-	// this(mergeAlpha, recursiveMergeTest, null, -1, mergeTest, smoothingPrior);
-	// }
 
 	@Override
 	public PDTTA train(TimedInput trainingSequences) {

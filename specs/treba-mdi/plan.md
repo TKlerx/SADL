@@ -13,6 +13,8 @@ Captured from SADL revision `8d3f802`, using Ubuntu 24.04 x86-64, GCC 13.3.0, GS
 
 From the repository root, set `JAVA_HOME` and install the dependencies listed in the project README. The alternate build recompiles only the scoring translation unit.
 
+Run these capture commands from a checkout of the [pinned native revision `c80ede9`](https://github.com/TKlerx/SADL/tree/c80ede9d8e3dbba090db9d494a3f43a392a8cb87).
+
 ```sh
 native=trebaJni/trebaNative/swig
 out=$(mktemp -d)

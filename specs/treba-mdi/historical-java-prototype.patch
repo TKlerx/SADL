@@ -1,0 +1,64 @@
+--- a/PDTTA-core/src/sadl/modellearner/MdiTrebaLearner.java
++++ b/PDTTA-core/src/sadl/modellearner/MdiTrebaLearner.java
+@@ -21,6 +21,7 @@
+ 
+ /** Treba's blue-side MDI scorer and red/blue state-merging order. */
+ public final class MdiTrebaLearner implements PdfaLearner {
++    private static final ThreadLocal<java.util.Map<Integer, Double>> SLOTS = ThreadLocal.withInitial(java.util.HashMap::new);
+     private final double alpha;
+     private final int minimumVisits;
+ 
+@@ -31,6 +32,7 @@
+ 
+     @Override
+     public PDFA train(TimedInput sequences) {
++        SLOTS.get().clear();
+         final var tree = TrebaNativeParityLearner.prefixTree(sequences);
+         final int observations = sequences.size();
+         TrebaNativeParityLearner.mergeRedBlue(tree.root(), minimumVisits,
+@@ -46,6 +48,7 @@
+         final var pending = new ArrayDeque<Visit>();
+         pending.push(new Visit(red, blue, 0, 0));
+         double sum = 0;
++        final var stopSlots = SLOTS.get();
+         int removed = 0;
+         while (!pending.isEmpty()) {
+             final Visit visit = pending.peek();
+@@ -55,10 +58,16 @@
+                 }
+                 if (visit.blue.stops > 0) {
+                     final double blueStop = visit.blueLog + logRatio(visit.blue.stops, visit.blue.total);
+-                    final double mergedStop = visit.red == null
+-                            ? visit.mergedLog + logRatio(visit.blue.stops, visit.blue.total)
+-                            : visit.mergedLog + logRatio(visit.blue.stops + visit.red.stops,
+-                                    visit.blue.total + visit.red.total);
++                    final int depth = pending.size();
++                    final double mergedStop;
++                    if (visit.red == null || visit.red.stops == 0) {
++                        mergedStop = stopSlots.getOrDefault(depth, 0.0);
++                        visit.mergedLog = 0.0;
++                    } else {
++                        mergedStop = visit.mergedLog + logRatio(visit.blue.stops + visit.red.stops,
++                                visit.blue.total + visit.red.total);
++                        stopSlots.put(depth, mergedStop);
++                    }
+                     sum += (double) visit.blue.stops / observations * Math.abs(blueStop - mergedStop);
+                 }
+                 visit.arcs = visit.blue.arcs.entrySet().iterator();
+@@ -67,6 +76,7 @@
+                 pending.pop();
+                 continue;
+             }
++            stopSlots.remove(pending.size());
+             final var entry = visit.arcs.next();
+             final Arc blueArc = entry.getValue();
+             final Arc redArc = visit.red == null ? null : visit.red.arcs.get(entry.getKey());
+@@ -77,7 +87,7 @@
+                 visit.mergedLog += logRatio(blueArc.count + redArc.count, visit.blue.total + visit.red.total);
+             }
+             // A blue-only subtree keeps its conditional probabilities after the fold.
+-            final double mergedLog = redArc == null ? visit.mergedLog + blueStep : visit.mergedLog;
++            final double mergedLog = visit.mergedLog;
+             pending.push(new Visit(redArc == null ? null : redArc.target, blueArc.target, visit.blueLog, mergedLog));
+         }
+         return sum / removed;

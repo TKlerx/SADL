@@ -22,10 +22,8 @@ description: "Task list template for feature implementation"
 ## Path Conventions
 
 - Core and CLI changes belong in `PDTTA-core/src/sadl/` with tests in `PDTTA-core/test/sadl/`.
-- JNI binding and loader changes belong in `trebaJni/src/main/java/treba/` with tests in `trebaJni/src/test/java/treba/`.
-- Native compilation and packaging belong in `trebaJni/trebaNative/`.
 
-Group tasks by user story and name the owning module. Where native setup blocks a story, build and install `trebaNative` before testing the Java binding and core. For final Linux validation, follow the root README native build steps and run `mvn -B test`.
+Group tasks by user story and name the owning module. For final Linux validation, run `mvn -B test` with JDK 25.
 
 <!--
   ============================================================================
@@ -64,7 +62,7 @@ Group tasks by user story and name the owning module. Where native setup blocks 
 
 Examples of foundational tasks (adjust based on your project):
 
-- [ ] T004 Build and install trebaNative when the feature needs the native library
+- [ ] T004 Identify affected interfaces and validation order for cross-module changes
 - [ ] T005 [P] Implement authentication/authorization framework
 - [ ] T006 [P] Identify CLI commands and existing outputs affected by the change
 - [ ] T007 Create base models/entities that all stories depend on

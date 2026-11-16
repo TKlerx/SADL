@@ -27,11 +27,11 @@ The largest ALERGIA event probability difference was `1.11e-16`; timing vectors 
 | Java | 4 | 1 | 0.02121217736757223 | Merge into root |
 | C with Java's blue-only handling for this candidate | 4 | 1 | 0.021212177367572228 | Merge into root |
 
-All of the score in each run came from stops with no red counterpart. The native branch omits the blue-only arc from the candidate path and reaches the potentially uninitialized `frbprob` read at those stops. For the controlled C run, only the root candidate in round 12 used the Java rule. The experiment carried the blue-only arc's conditional log probability forward and initialized each blue-only stop with the carried candidate log probability plus its conditional log stopping probability. Earlier candidates and all observations stayed the same. This was enough to flip the decision and match Java within floating-point rounding. The baseline instrumentation reproduced all eight original output files byte for byte. These are observations of the pinned build, because the original C score depends on an uninitialized read. Legacy MDI continues to use JNI.
+All of the score in each run came from stops with no red counterpart. The native branch omits the blue-only arc from the candidate path and reaches the potentially uninitialized `frbprob` read at those stops. For the controlled C run, only the root candidate in round 12 used the Java rule. The experiment carried the blue-only arc's conditional log probability forward and initialized each blue-only stop with the carried candidate log probability plus its conditional log stopping probability. Earlier candidates and all observations stayed the same. This was enough to flip the decision and match Java within floating-point rounding. The baseline instrumentation reproduced all eight original output files byte for byte. These are observations of the pinned build, because the original C score depends on an uninitialized read. These results predate the historical Java MDI mode. See [historical MDI reproduction](historical-reference.md) for the rerun instructions and expanded parity results.
 
 ## Reproduce
 
-After rebuilding and installing Treba using the project README, run from the repository root:
+Use a checkout of the [pinned native revision `c80ede9`](https://github.com/TKlerx/SADL/tree/c80ede9d8e3dbba090db9d494a3f43a392a8cb87). Rebuild and install Treba using that checkout’s README, then run from its root.
 
 ```sh
 out=$(mktemp -d)

@@ -12,6 +12,7 @@ package sadl.modellearner;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -31,6 +32,7 @@ import sadl.constants.MergeTest;
 import sadl.input.TimedInput;
 import sadl.models.PDFA;
 import sadl.run.SADL;
+import sadl.utils.IoUtils;
 
 public class TrebaNativeParityCliTest {
     @Rule
@@ -64,6 +66,33 @@ public class TrebaNativeParityCliTest {
         Files.writeString(nativeLibrary, "This is deliberately not a loadable shared library.");
         final Path reference = Path.of("..", "specs", "treba-alergia-parity").toAbsolutePath();
         runJava(cwd, LegacyAlergiaProbe.class, reference.toString());
+    }
+
+    @Test
+    public void legacyMdiMatchesFrozenNativeModelWithoutJni() throws Exception {
+        final Path cwd = temporary.getRoot().toPath();
+        final Path library = cwd.resolve("native_libs/libtreba.so");
+        Files.createDirectories(library.getParent());
+        Files.writeString(library, "This is deliberately not a loadable shared library.");
+        final Path input = Path.of(getClass().getResource("/pdtta/smac_mix_type1.txt").toURI());
+        runJava(cwd, LegacyMdiProbe.class, input.toString());
+    }
+
+    @Test
+    public void retiredMergeTestsPointToTheHistoricalRevision() {
+        for (var mode : List.of(MergeTest.CHI_SQUARED, MergeTest.LR, MergeTest.BINOMIAL, MergeTest.EXACT_M, MergeTest.EXACT_B)) {
+            final var failure = assertThrows(IllegalArgumentException.class, () -> new PdttaLearner(0.05, true, mode));
+            assertTrue(failure.getMessage().contains(mode.name()));
+            assertTrue(failure.getMessage().contains("c80ede9"));
+        }
+    }
+
+    public static class LegacyMdiProbe {
+        public static void main(String[] args) throws Exception {
+            final var split = IoUtils.readTrainTestFile(Path.of(args[0]));
+            final var learner = new PdttaLearner(0.05, true, null, -1, MergeTest.MDI, 0.0, 3, null);
+            assertEquals(39, learner.train(split.getLeft()).getStateCount());
+        }
     }
 
     public static class LegacyAlergiaProbe {

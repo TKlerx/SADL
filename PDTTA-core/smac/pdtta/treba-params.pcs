@@ -1,6 +1,6 @@
 #PDTTA parameters
 mergeAlpha [0,1] [0.05]
-mergeTest {ALERGIA,CHI_SQUARED, LR, EXACT_M,BINOMIAL,EXACT_B,MDI} [ALERGIA]
+mergeTest {ALERGIA,MDI} [ALERGIA]
 kdeBandwidthEstimate {true, false} [true]
 kdeBandwidth [0.0000001,1000] [1]
 kdeBandwidth |kdeBandwidthEstimate in {false}
@@ -23,7 +23,7 @@ mcPointsToStore [10,40000] [10000]i
 mcPointsToStore | tauEstimation in {MONTE_CARLO}
 
 recursiveMergeTest {true,false} [false]
-recursiveMergeTest | mergeTest in {ALERGIA,CHI_SQUARED, LR, EXACT_M,BINOMIAL,EXACT_B}
+recursiveMergeTest | mergeTest in {ALERGIA}
 
 mergeT0 [1,100] [3]i
 mergeT0 | mergeTest in {ALERGIA}
