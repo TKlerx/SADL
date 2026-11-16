@@ -1,4 +1,6 @@
-#PDTTA parameters
+# Historical Treba PDTTA settings for the legacy SMAC pipeline.
+# For the current SADL smac PDTTA CLI, start with pdtta-params.pcs.
+# To select historical MDI, add MDI_TREBA_HISTORICAL to its mergeMethod choices.
 mergeAlpha [0,1] [0.05]
 mergeTest {ALERGIA,MDI} [ALERGIA]
 kdeBandwidthEstimate {true, false} [true]
