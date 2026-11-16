@@ -10,39 +10,7 @@
  */
 package sadl.constants;
 
-import treba.trebaConstants;
-import treba.trebaJNI;
-
-/**
- * 
- * @author Timo Klerx
- *
- */
+/** Merge test names used by legacy PDTTA configurations. */
 public enum MergeTest {
-	ALERGIA, CHI_SQUARED, LR, BINOMIAL, EXACT_M, EXACT_B, MDI;
-
-
-	public int getAlgorithm() {
-		if (trebaJNI.isLibraryLoaded()) {
-			if (this == MergeTest.ALERGIA) {
-				return trebaConstants.MERGE_TEST_ALERGIA;
-			} else if (this == MergeTest.CHI_SQUARED) {
-				return trebaConstants.MERGE_TEST_CHISQUARED;
-			} else if (this == MergeTest.LR) {
-				return trebaConstants.MERGE_TEST_LR;
-			} else if (this == MergeTest.BINOMIAL) {
-				return trebaConstants.MERGE_TEST_BINOMIAL;
-			} else if (this == MergeTest.EXACT_M) {
-				return trebaConstants.MERGE_TEST_EXACT_M;
-			} else if (this == MergeTest.EXACT_B) {
-				return trebaConstants.MERGE_TEST_EXACT_B;
-			} else if (this == MergeTest.MDI) {
-				return -1;
-			} else {
-				throw new IllegalStateException("Unknown Mergetest " + this);
-			}
-		} else {
-			throw new IllegalStateException("Do not use this method if treba is not loaded.");
-		}
-	}
+    ALERGIA, CHI_SQUARED, LR, BINOMIAL, EXACT_M, EXACT_B, MDI
 }

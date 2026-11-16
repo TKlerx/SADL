@@ -11,6 +11,7 @@
 package sadl.modellearner;
 
 import java.util.ArrayDeque;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -19,23 +20,43 @@ import sadl.modellearner.TrebaNativeParityLearner.Arc;
 import sadl.modellearner.TrebaNativeParityLearner.State;
 import sadl.models.PDFA;
 
-/** Treba's blue-side MDI scorer and red/blue state-merging order. */
+/**
+ * Treba-style blue-side scoring and red/blue state merging.
+ * The native scorer can read an uninitialized stopping score when blue can stop
+ * and red cannot. This implementation defines that contribution from the
+ * candidate probabilities by default. The opt-in historical mode models the
+ * pinned native build's observed slot reuse.
+ */
 public final class MdiTrebaLearner implements PdfaLearner {
     private final double alpha;
     private final int minimumVisits;
+    private final boolean historical;
+    private final double smoothingPrior;
 
     public MdiTrebaLearner(double alpha, int minimumVisits) {
+        this(alpha, minimumVisits, false, 0.0);
+    }
+
+    public static MdiTrebaLearner historical(double alpha, int minimumVisits) {
+        return new MdiTrebaLearner(alpha, minimumVisits, true, 0.0);
+    }
+
+    MdiTrebaLearner(double alpha, int minimumVisits, boolean historical, double smoothingPrior) {
         this.alpha = alpha;
         this.minimumVisits = minimumVisits;
+        this.historical = historical;
+        this.smoothingPrior = smoothingPrior;
     }
 
     @Override
     public PDFA train(TimedInput sequences) {
         final var tree = TrebaNativeParityLearner.prefixTree(sequences);
         final int observations = sequences.size();
+        // Model the pinned build's reused stack slots only within this training run.
+        final Map<Integer, Double> stopSlots = historical ? new HashMap<>() : null;
         TrebaNativeParityLearner.mergeRedBlue(tree.root(), minimumVisits,
-                (red, blue) -> compatible(red, blue, observations, alpha));
-        return TrebaNativeParityLearner.toPdfa(tree.root(), sequences, tree.alphabetSize(), 0.0);
+                (red, blue) -> score(red, blue, observations, stopSlots) < alpha);
+        return TrebaNativeParityLearner.toPdfa(tree.root(), sequences, tree.alphabetSize(), smoothingPrior);
     }
 
     static boolean compatible(State red, State blue, int observations, double alpha) {
@@ -43,6 +64,10 @@ public final class MdiTrebaLearner implements PdfaLearner {
     }
 
     static double score(State red, State blue, int observations) {
+        return score(red, blue, observations, null);
+    }
+
+    private static double score(State red, State blue, int observations, Map<Integer, Double> stopSlots) {
         final var pending = new ArrayDeque<Visit>();
         pending.push(new Visit(red, blue, 0, 0));
         double sum = 0;
@@ -55,10 +80,7 @@ public final class MdiTrebaLearner implements PdfaLearner {
                 }
                 if (visit.blue.stops > 0) {
                     final double blueStop = visit.blueLog + logRatio(visit.blue.stops, visit.blue.total);
-                    final double mergedStop = visit.red == null
-                            ? visit.mergedLog + logRatio(visit.blue.stops, visit.blue.total)
-                            : visit.mergedLog + logRatio(visit.blue.stops + visit.red.stops,
-                                    visit.blue.total + visit.red.total);
+                    final double mergedStop = visit.mergedStop(stopSlots, pending.size());
                     sum += (double) visit.blue.stops / observations * Math.abs(blueStop - mergedStop);
                 }
                 visit.arcs = visit.blue.arcs.entrySet().iterator();
@@ -67,18 +89,11 @@ public final class MdiTrebaLearner implements PdfaLearner {
                 pending.pop();
                 continue;
             }
-            final var entry = visit.arcs.next();
-            final Arc blueArc = entry.getValue();
-            final Arc redArc = visit.red == null ? null : visit.red.arcs.get(entry.getKey());
-            final double blueStep = logRatio(blueArc.count, visit.blue.total);
-            // Treba carries its accumulators forward across sibling arcs.
-            visit.blueLog += blueStep;
-            if (redArc != null) {
-                visit.mergedLog += logRatio(blueArc.count + redArc.count, visit.blue.total + visit.red.total);
+            if (stopSlots != null) {
+                // The compiler reuses the slot for a pointer when traversing an arc.
+                stopSlots.remove(pending.size());
             }
-            // A blue-only subtree keeps its conditional probabilities after the fold.
-            final double mergedLog = redArc == null ? visit.mergedLog + blueStep : visit.mergedLog;
-            pending.push(new Visit(redArc == null ? null : redArc.target, blueArc.target, visit.blueLog, mergedLog));
+            pending.push(visit.nextChild(stopSlots != null));
         }
         return sum / removed;
     }
@@ -99,6 +114,33 @@ public final class MdiTrebaLearner implements PdfaLearner {
             this.blue = blue;
             this.blueLog = blueLog;
             this.mergedLog = mergedLog;
+        }
+
+        double mergedStop(Map<Integer, Double> stopSlots, int depth) {
+            if (stopSlots != null && (red == null || red.stops == 0)) {
+                mergedLog = 0.0;
+                return stopSlots.getOrDefault(depth, 0.0);
+            }
+            final double score = red == null ? mergedLog + logRatio(blue.stops, blue.total)
+                    : mergedLog + logRatio(blue.stops + red.stops, blue.total + red.total);
+            if (stopSlots != null) {
+                stopSlots.put(depth, score);
+            }
+            return score;
+        }
+
+        Visit nextChild(boolean historical) {
+            final var entry = arcs.next();
+            final Arc blueArc = entry.getValue();
+            final Arc redArc = red == null ? null : red.arcs.get(entry.getKey());
+            final double blueStep = logRatio(blueArc.count, blue.total);
+            // Treba carries its accumulators forward across sibling arcs.
+            blueLog += blueStep;
+            if (redArc == null) {
+                return new Visit(null, blueArc.target, blueLog, historical ? mergedLog : mergedLog + blueStep);
+            }
+            mergedLog += logRatio(blueArc.count + redArc.count, blue.total + red.total);
+            return new Visit(redArc.target, blueArc.target, blueLog, mergedLog);
         }
     }
 }

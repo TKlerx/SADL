@@ -176,13 +176,6 @@
 				</configuration>
 			</plugin>
 
-			<!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-assembly-plugin</artifactId> 
-				<executions> <execution> <id>jar-with-dependencies</id> <phase>prepare-package</phase> 
-				<goals> <goal>single</goal> </goals> <configuration> <descriptor>assembly/assembly.xml</descriptor> 
-				<appendAssemblyId>false</appendAssemblyId> </configuration> </execution> 
-				</executions> <configuration> <finalName>${project.artifactId}-${project.version}-full</finalName> 
-				<archive> <manifest> <mainClass>${run.mainclass}</mainClass> </manifest> 
-				</archive> </configuration> </plugin> -->
 			<plugin>
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>2.4</version>
@@ -223,29 +216,7 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
 				<version>2.10</version>
-				<configuration>
-					<artifactItems>
-						<artifactItem>
-							<groupId>de.upb.timok</groupId>
-							<artifactId>trebaNative</artifactId>
-							<type>so</type>
-							<version>0.0.1</version>
-							<overWrite>true</overWrite>
-							<outputDirectory>${basedir}/target/lib/</outputDirectory>
-							<!--<destFileName>so</destFileName> -->
-							<baseVersion>true</baseVersion>
-						</artifactItem>
-					</artifactItems>
-				</configuration>
 				<executions>
-					<execution>
-						<id>copy</id>
-						<phase>process-classes</phase>
-						<goals>
-							<goal>copy</goal>
-						</goals>
-
-					</execution>
 					<execution>
 						<id>copy-dependencies</id>
 						<phase>package</phase>
@@ -406,9 +377,10 @@
 			<version>0.0.3</version>
 		</dependency>
 		<dependency>
-			<groupId>de.upb.timok</groupId>
-			<artifactId>trebaJni</artifactId>
-			<version>0.0.1</version>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.13.1</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.google.code.gson</groupId>

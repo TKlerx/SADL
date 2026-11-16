@@ -18,15 +18,15 @@
   the iteration process.
 -->
 
-**Language/Version**: Java 25 release target, Temurin 25 in CI, C for the native module
+**Language/Version**: Java 25 release target, Temurin 25 in CI
 
-**Primary Dependencies**: [Relevant Maven dependencies and any JNI/GSL impact]
+**Primary Dependencies**: [Relevant Maven dependencies and runtime requirements]
 
 **Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
 
-**Testing**: JUnit 4 through Maven. See the Linux native setup in the root README and run the full CI workflow before merging.
+**Testing**: JUnit 4 through Maven. Follow the root README and run the full CI workflow before merging.
 
-**Target Platform**: [Platforms affected. Full JNI verification runs on Linux.]
+**Target Platform**: [Platforms affected. The full CI suite runs on Linux.]
 
 **Project Type**: Multi-module Maven library and CLI
 
@@ -61,8 +61,6 @@ specs/[###-feature]/
 Keep the paths relevant to the feature and name the module responsible for each change.
 
 - `PDTTA-core/src/sadl/` and `PDTTA-core/test/sadl/` for CLI and core behavior.
-- `trebaJni/src/main/java/treba/` and `trebaJni/src/test/java/treba/` for the binding and loader.
-- `trebaJni/trebaNative/swig/` and `trebaJni/trebaNative/pom.xml` for native compilation and packaging.
 
 **Structure Decision**: [Describe affected modules, dependency order, and any saved-model or native compatibility risks.]
 

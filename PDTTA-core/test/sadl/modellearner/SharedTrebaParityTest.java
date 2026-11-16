@@ -13,8 +13,11 @@ package sadl.modellearner;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Rule;
@@ -23,6 +26,7 @@ import org.junit.rules.TemporaryFolder;
 
 import sadl.constants.MergeTest;
 import sadl.input.TimedInput;
+import sadl.models.PDFA;
 
 public class SharedTrebaParityTest {
     @Rule
@@ -39,12 +43,12 @@ public class SharedTrebaParityTest {
     }
 
     private void verify(MergeTest mode, String name) throws Exception {
-        final var input = TimedInput.parse(SharedTrebaReferenceCapture.resource("treba-shared-small.inp"));
-        final var unmerged = SharedTrebaReferenceCapture.javaLearner(mode, 0.8, input.size() + 1).train(input);
-        final var model = SharedTrebaReferenceCapture.javaLearner(mode, 0.8, 1).train(input);
+        final var input = TimedInput.parse(Path.of(getClass().getResource("/pdtta/treba-shared-small.inp").toURI()));
+        final var unmerged = learner(mode, input.size() + 1).train(input);
+        final var model = learner(mode, 1).train(input);
         assertTrue(model.getStateCount() < unmerged.getStateCount());
         final Path actual = temporary.newFile().toPath();
-        SharedTrebaReferenceCapture.writeSmall(actual, model);
+        writeSmall(actual, model);
         final var expected = Files.readAllLines(Path.of("..", "specs", "treba-mdi", name + "-small-native.tsv"));
         final var observed = Files.readAllLines(actual);
         assertEquals(expected.getFirst(), observed.getFirst());
@@ -54,6 +58,23 @@ public class SharedTrebaParityTest {
             final List<String> right = List.of(observed.get(i).split("\\t"));
             assertEquals(left.subList(0, left.size() - 1), right.subList(0, right.size() - 1));
             assertEquals(Double.parseDouble(left.getLast()), Double.parseDouble(right.getLast()), 1e-12);
+        }
+    }
+    private PdfaLearner learner(MergeTest mode, int minimumVisits) {
+        return mode == MergeTest.MDI ? new MdiTrebaLearner(0.8, minimumVisits)
+                : new TrebaNativeParityLearner(0.8, true, minimumVisits);
+    }
+
+    private static void writeSmall(Path output, PDFA model) throws IOException {
+        try (BufferedWriter writer = Files.newBufferedWriter(output)) {
+            writer.write("# states\t" + model.getStateCount() + "\n");
+            for (int state : Arrays.stream(model.getStates()).sorted().toArray()) {
+                writer.write("stop\t" + state + "\t" + model.getFinalStateProbability(state) + "\n");
+            }
+            for (var arc : model.getTransitions().stream().sorted().toList()) {
+                writer.write("arc\t" + arc.getFromState() + "\t" + arc.getSymbol() + "\t" + arc.getToState()
+                        + "\t" + arc.getProbability() + "\n");
+            }
         }
     }
 }

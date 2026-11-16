@@ -31,7 +31,6 @@ import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import sadl.anomalydetecion.AnomalyDetection;
 import sadl.constants.MergeMethod;
-import sadl.constants.MergeTest;
 import sadl.constants.ProbabilityAggregationMethod;
 import sadl.detectors.AnomalyDetector;
 import sadl.detectors.VectorDetector;
@@ -44,7 +43,6 @@ import sadl.oneclassclassifier.ThresholdClassifier;
 import sadl.structure.Transition;
 import sadl.utils.IoUtils;
 import sadl.utils.MasterSeed;
-import utils.LibraryChecker;
 
 public class AlergiaTest {
 	private static Logger logger = LoggerFactory.getLogger(AlergiaTest.class);
@@ -105,15 +103,10 @@ public class AlergiaTest {
 
 		assertEquals(4, pdfaAlergia.getStateCount());
 
-		final String osName = System.getProperty("os.name");
-		if (osName.toLowerCase().contains("linux") && LibraryChecker.trebaDepsInstalled()) {
-			final TrebaPdfaLearner treba = new TrebaPdfaLearner(0.05, true, MergeTest.ALERGIA, 0.0, 0);
-			final PDFA pdfaTreba = treba.train(trainTreba);
-			logger.info("Treba PDFA has {} states.", pdfaTreba.getStateCount());
-			assertEquals(120, pdfaTreba.getStateCount());
-		} else {
-			System.out.println("Did not do any test because OS is not linux or treba cannot be loaded.");
-		}
+		final var treba = new TrebaNativeParityLearner(0.05, true, 0);
+		final PDFA pdfaTreba = treba.train(trainTreba);
+		logger.info("Treba PDFA has {} states.", pdfaTreba.getStateCount());
+		assertEquals(120, pdfaTreba.getStateCount());
 		logger.info("Finished testArtificialBig.");
 	}
 
@@ -133,15 +126,10 @@ public class AlergiaTest {
 
 		assertEquals(3, pdfaAlergia.getStateCount());
 
-		final String osName = System.getProperty("os.name");
-		if (osName.toLowerCase().contains("linux") && LibraryChecker.trebaDepsInstalled()) {
-			final TrebaPdfaLearner treba = new TrebaPdfaLearner(0.8, false, MergeTest.ALERGIA, 0.0, 0);
-			final PDFA pdfaTreba = treba.train(trainTreba);
-			logger.info("Treba PDFA has {} states.", pdfaTreba.getStateCount());
-			assertEquals(3, pdfaTreba.getStateCount());
-		} else {
-			System.out.println("Did not do any test because OS is not linux or treba cannot be loaded.");
-		}
+		final var treba = new TrebaNativeParityLearner(0.8, false, 0);
+		final PDFA pdfaTreba = treba.train(trainTreba);
+		logger.info("Treba PDFA has {} states.", pdfaTreba.getStateCount());
+		assertEquals(3, pdfaTreba.getStateCount());
 		logger.info("Finished testArtificialSmall.");
 	}
 
@@ -317,22 +305,18 @@ public class AlergiaTest {
 	@Test
 	public void testTrebaBigNonRec() throws URISyntaxException, IOException {
 		logger.info("Starting testTrebaBigNonRec...");
-		if (LibraryChecker.trebaDepsInstalled()) {
-			final TrebaPdfaLearner treba = new TrebaPdfaLearner(0.05, false, MergeTest.ALERGIA, 0.0, 0);
-			final Pair<TimedInput, TimedInput> trainTest = IoUtils
-					.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI()));
-			final AnomalyDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, new AggregatedSingleFeatureCreator(),
-					new ThresholdClassifier(Math.exp(-5)));
-			final PDFA pdfaTreba = treba.train(trainTest.getKey());
-			final AnomalyDetection trebaDetection = new AnomalyDetection(detector, pdfaTreba);
-			final ExperimentResult trebaExpected = new ExperimentResult(4533, 463, 4, 0);
-			final ExperimentResult trebaActual = trebaDetection.test(trainTest.getValue());
-			logger.info("Treba PDFA has {} states.", pdfaTreba.getStateCount());
-			assertEquals(trebaExpected, trebaActual);
-			assertEquals(42, pdfaTreba.getStateCount());
-		} else {
-			System.out.println("Did not do any test because OS is not linux or treba cannot be loaded.");
-		}
+		final var treba = new TrebaNativeParityLearner(0.05, false, 0);
+		final Pair<TimedInput, TimedInput> trainTest = IoUtils
+				.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI()));
+		final AnomalyDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, new AggregatedSingleFeatureCreator(),
+				new ThresholdClassifier(Math.exp(-5)));
+		final PDFA pdfaTreba = treba.train(trainTest.getKey());
+		final AnomalyDetection trebaDetection = new AnomalyDetection(detector, pdfaTreba);
+		final ExperimentResult trebaExpected = new ExperimentResult(4533, 463, 4, 0);
+		final ExperimentResult trebaActual = trebaDetection.test(trainTest.getValue());
+		logger.info("Treba PDFA has {} states.", pdfaTreba.getStateCount());
+		assertEquals(trebaExpected, trebaActual);
+		assertEquals(42, pdfaTreba.getStateCount());
 		logger.info("Finished testTrebaBigNonRec.");
 
 	}
@@ -340,22 +324,18 @@ public class AlergiaTest {
 	@Test
 	public void testTrebaBigRec() throws URISyntaxException, IOException {
 		logger.info("Starting testTrebaBigRec...");
-		if (LibraryChecker.trebaDepsInstalled()) {
-			final TrebaPdfaLearner treba = new TrebaPdfaLearner(0.05, true, MergeTest.ALERGIA, 0.0, 0);
-			final Pair<TimedInput, TimedInput> trainTest = IoUtils
-					.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI()));
-			final AnomalyDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, new AggregatedSingleFeatureCreator(),
-					new ThresholdClassifier(Math.exp(-5)));
-			final PDFA pdfaTreba = treba.train(trainTest.getKey());
-			final AnomalyDetection trebaDetection = new AnomalyDetection(detector, pdfaTreba);
-			final ExperimentResult trebaExpected = new ExperimentResult(4525, 467, 0, 8);
-			final ExperimentResult trebaActual = trebaDetection.test(trainTest.getValue());
-			logger.info("Treba PDFA has {} states.", pdfaTreba.getStateCount());
-			assertEquals(trebaExpected, trebaActual);
-			assertEquals(356, pdfaTreba.getStateCount());
-		} else {
-			System.out.println("Did not do any test because OS is not linux or treba cannot be loaded.");
-		}
+		final var treba = new TrebaNativeParityLearner(0.05, true, 0);
+		final Pair<TimedInput, TimedInput> trainTest = IoUtils
+				.readTrainTestFile(Paths.get(this.getClass().getResource("/pdtta/smac_mix_type1.txt").toURI()));
+		final AnomalyDetector detector = new VectorDetector(ProbabilityAggregationMethod.NORMALIZED_MULTIPLY, new AggregatedSingleFeatureCreator(),
+				new ThresholdClassifier(Math.exp(-5)));
+		final PDFA pdfaTreba = treba.train(trainTest.getKey());
+		final AnomalyDetection trebaDetection = new AnomalyDetection(detector, pdfaTreba);
+		final ExperimentResult trebaExpected = new ExperimentResult(4525, 467, 0, 8);
+		final ExperimentResult trebaActual = trebaDetection.test(trainTest.getValue());
+		logger.info("Treba PDFA has {} states.", pdfaTreba.getStateCount());
+		assertEquals(trebaExpected, trebaActual);
+		assertEquals(356, pdfaTreba.getStateCount());
 		logger.info("Finished testTrebaBigRec.");
 
 	}
@@ -363,15 +343,11 @@ public class AlergiaTest {
 	@Test
 	public void testTrebaSmallNonRec() throws URISyntaxException, IOException {
 		logger.info("Starting testTrebaSmallNonRec...");
-		if (LibraryChecker.trebaDepsInstalled()) {
-			final TrebaPdfaLearner treba = new TrebaPdfaLearner(0.8, false, MergeTest.ALERGIA, 0.0, 0);
-			final TimedInput trainTreba = TimedInput.parse(Paths.get(this.getClass().getResource("/pdfa/alergia_0.inp").toURI()));
-			final PDFA pdfaTreba = treba.train(trainTreba);
-			logger.info("Treba PDFA has {} states.", pdfaTreba.getStateCount());
-			assertEquals(2, pdfaTreba.getStateCount());
-		} else {
-			System.out.println("Did not do any test because OS is not linux or treba cannot be loaded.");
-		}
+		final var treba = new TrebaNativeParityLearner(0.8, false, 0);
+		final TimedInput trainTreba = TimedInput.parse(Paths.get(this.getClass().getResource("/pdfa/alergia_0.inp").toURI()));
+		final PDFA pdfaTreba = treba.train(trainTreba);
+		logger.info("Treba PDFA has {} states.", pdfaTreba.getStateCount());
+		assertEquals(2, pdfaTreba.getStateCount());
 		logger.info("Finished testTrebaSmallNonRec.");
 
 	}
@@ -379,15 +355,11 @@ public class AlergiaTest {
 	@Test
 	public void testTrebaSmallRec() throws URISyntaxException, IOException {
 		logger.info("Starting testTrebaSmallRec...");
-		if (LibraryChecker.trebaDepsInstalled()) {
-			final TrebaPdfaLearner treba = new TrebaPdfaLearner(0.8, true, MergeTest.ALERGIA, 0.0, 0);
-			final TimedInput trainTreba = TimedInput.parse(Paths.get(this.getClass().getResource("/pdfa/alergia_0.inp").toURI()));
-			final PDFA pdfaTreba = treba.train(trainTreba);
-			logger.info("Treba PDFA has {} states.", pdfaTreba.getStateCount());
-			assertEquals(3, pdfaTreba.getStateCount());
-		} else {
-			System.out.println("Did not do any test because OS is not linux or treba cannot be loaded.");
-		}
+		final var treba = new TrebaNativeParityLearner(0.8, true, 0);
+		final TimedInput trainTreba = TimedInput.parse(Paths.get(this.getClass().getResource("/pdfa/alergia_0.inp").toURI()));
+		final PDFA pdfaTreba = treba.train(trainTreba);
+		logger.info("Treba PDFA has {} states.", pdfaTreba.getStateCount());
+		assertEquals(3, pdfaTreba.getStateCount());
 		logger.info("Finished testTrebaSmallRec.");
 	}
 

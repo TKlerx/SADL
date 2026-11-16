@@ -10,8 +10,6 @@
 	</properties>
 	<modules>
 		<module>PDTTA-core</module>
-		<module>trebaJni</module>
-		<module>trebaJni/trebaNative</module>
 	</modules>
 	<distributionManagement>
 		<repository>

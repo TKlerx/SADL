@@ -4,6 +4,8 @@ To use the Java parity learner, add `-mergeMethod TREBA_NATIVE_PARITY` to `train
 
 Run the opt-in PIT pilot from the repository root after installing the native Maven artifact as described below:
 
+Run these capture commands from a checkout of the [pinned native revision `c80ede9`](https://github.com/TKlerx/SADL/tree/c80ede9d8e3dbba090db9d494a3f43a392a8cb87).
+
 ```sh
 mvn -B -Ptreba-parity-mutation test-compile
 ```

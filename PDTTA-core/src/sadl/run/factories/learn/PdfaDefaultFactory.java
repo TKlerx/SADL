@@ -36,6 +36,9 @@ public interface PdfaDefaultFactory extends LearnerFactory {
 	}
 
 	default PdfaLearner createPdfaLearner() {
+		if (getMergeMethod() == MergeMethod.MDI_TREBA_HISTORICAL) {
+			return MdiTrebaLearner.historical(getMergeAlpha(), getMergeT0());
+		}
 		if (getMergeMethod() == MergeMethod.MDI_TREBA) {
 			return new MdiTrebaLearner(getMergeAlpha(), getMergeT0());
 		}
