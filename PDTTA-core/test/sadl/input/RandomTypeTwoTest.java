@@ -43,6 +43,22 @@ public class RandomTypeTwoTest {
 	}
 
 	@Test
+	public void mixedModeFillsTheTargetWhenTypeTwoCannotReplaceATrace() throws Exception {
+		final TimedInput input = TimedInput.parse(new StringReader("(a,100):0\n".repeat(10) + "(b,200):0\n".repeat(10)));
+		input.r = new Random(35);
+
+		final TimedInput result = input.insertRandomAnomalies(AnomalyInsertionType.ALL, 1.0);
+
+		int anomalies = 0;
+		for (final TimedWord word : result) {
+			if (word.isAnomaly()) {
+				anomalies++;
+			}
+		}
+		assertEquals(20, anomalies);
+	}
+
+	@Test
 	public void skipsWhenNoStrictlyRarerPathExists() throws Exception {
 		for (final String data : new String[] { "(a,10):0\n(a,20):0", "(a,10):0\n(b,20):0" }) {
 			final TimedInput input = TimedInput.parse(new StringReader(data));

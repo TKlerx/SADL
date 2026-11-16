@@ -702,11 +702,16 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 							.collect(Collectors.toList());
 				}
 				if (pathCounts.get(word.symbols) == pathCounts.get(rareWords.get(0).symbols)) {
-					continue;
+					if (type != AnomalyInsertionType.ALL || word.length() == 0) {
+						continue;
+					}
+					// Truncation changes any nonempty trace, even with a single symbol and zero delays.
+					word = insertAnomaly(word, AnomalyInsertionType.TYPE_FIVE);
+				} else {
+					final TimedWord replacement = rareWords.get(r.nextInt(rareWords.size()));
+					word = new TimedWord(new ArrayList<>(replacement.symbols), new TIntArrayList(replacement.getTimeValues()),
+							ClassLabel.ANOMALY);
 				}
-				final TimedWord replacement = rareWords.get(r.nextInt(rareWords.size()));
-				word = new TimedWord(new ArrayList<>(replacement.symbols), new TIntArrayList(replacement.getTimeValues()),
-						ClassLabel.ANOMALY);
 			} else {
 				word = insertAnomaly(word, newType);
 			}
