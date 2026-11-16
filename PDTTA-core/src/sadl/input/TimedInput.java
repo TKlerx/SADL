@@ -38,7 +38,6 @@ import gnu.trove.map.hash.TObjectIntHashMap;
 import jsat.distributions.Distribution;
 import sadl.constants.AnomalyInsertionType;
 import sadl.constants.ClassLabel;
-import sadl.modellearner.TauPtaLearner;
 import sadl.models.TauPTA;
 import sadl.structure.Transition;
 import sadl.utils.MasterSeed;
@@ -678,7 +677,11 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 		}
 		indexes.shuffle(r);
 		final int requestedAnomalies = (int) (size * anomalyPercentage);
-		for (int i = 0; i < requestedAnomalies; i++) {
+		final TObjectIntMap<List<String>> pathCounts = new TObjectIntHashMap<>();
+		List<TimedWord> rareWords = null;
+		// For Type 2, skipped paths do not count toward the requested replacements.
+		final int candidateLimit = type == AnomalyInsertionType.TYPE_TWO ? size : requestedAnomalies;
+		for (int i = 0, inserted = 0; i < candidateLimit && inserted < requestedAnomalies; i++) {
 			final int index = indexes.get(i);
 			TimedWord word = result.getWord(index);
 			int typeInt;
@@ -688,13 +691,36 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 				typeInt = type.getTypeIndex();
 			}
 			final AnomalyInsertionType newType = AnomalyInsertionType.getType(typeInt);
-			word = insertAnomaly(word, newType);
+			if (newType == AnomalyInsertionType.TYPE_TWO) {
+				if (rareWords == null) {
+					// Measure rarity in the original split before any replacements.
+					for (final TimedWord original : words) {
+						pathCounts.adjustOrPutValue(original.symbols, 1, 1);
+					}
+					final int minimum = Arrays.stream(pathCounts.values()).min().orElseThrow();
+					rareWords = words.stream().filter(original -> pathCounts.get(original.symbols) == minimum)
+							.collect(Collectors.toList());
+				}
+				if (pathCounts.get(word.symbols) == pathCounts.get(rareWords.get(0).symbols)) {
+					if (type != AnomalyInsertionType.ALL || word.length() == 0) {
+						continue;
+					}
+					// Truncation changes any nonempty trace, even with a single symbol and zero delays.
+					word = insertAnomaly(word, AnomalyInsertionType.TYPE_FIVE);
+				} else {
+					final TimedWord replacement = rareWords.get(r.nextInt(rareWords.size()));
+					word = new TimedWord(new ArrayList<>(replacement.symbols), new TIntArrayList(replacement.getTimeValues()),
+							ClassLabel.ANOMALY);
+				}
+			} else {
+				word = insertAnomaly(word, newType);
+			}
 			result.words.set(index, word);
+			inserted++;
 		}
 		return result;
 	}
 
-	private TauPTA tpta = null;
 	private TimedWord insertAnomaly(TimedWord word, AnomalyInsertionType type) {
 		if (type == AnomalyInsertionType.TYPE_ONE) {
 			final int changeIndex = r.nextInt(word.length());
@@ -704,12 +730,6 @@ public class TimedInput implements Iterable<TimedWord>, Serializable {
 				newEvent = getSymbol(r.nextInt(getAlphSize()));
 			}
 			word.symbols.set(changeIndex, newEvent);
-		} else if (type == AnomalyInsertionType.TYPE_TWO) {
-			if (tpta == null) {
-				final TauPtaLearner learner = new TauPtaLearner();
-				tpta = learner.train(this);
-			}
-			word = createAbnormalEventSequence(tpta, r);
 		} else if (type == AnomalyInsertionType.TYPE_THREE) {
 			final int changeIndex = r.nextInt(word.length());
 			final TIntList timeValues = word.getTimeValues();
