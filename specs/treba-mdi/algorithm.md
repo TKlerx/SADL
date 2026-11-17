@@ -42,3 +42,5 @@ The frozen PDTTA comparison crosses this undefined scoring path. The Java rule y
 The [weighted branching PDFA](native-branching-pdfa.tsv) captures two copies of `ab` and one of `ac`, with alpha zero and minimum visits one. Java and C have matching topology, arc probabilities and stopping probabilities. A zero cutoff rejects nonnegative merge scores, so this capture checks the weighted prefix tree and output conversion. The cutoff and branching score probes exercise decisions at the exact captured C score and its two adjacent doubles. The Maven capture also writes the branching PDFA using the output path with `.branching.tsv` appended.
 
 Run `mvn -B -Ptreba-quality verify` for scoped PMD and CPD checks. PMD flags method cyclomatic complexity of 12 or higher. CPD flags duplicated spans of 75 tokens or more. Both checks cover the Java Treba and MDI learners. Run `mvn -B -Ptreba-parity-mutation '-DtargetClasses=sadl.modellearner.MdiTrebaLearner*' test-compile` for the focused MDI mutation run.
+
+The [corrected native reference experiment](fixed-reference.md) records the separate C comparison for the deterministic Java scorer.

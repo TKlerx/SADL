@@ -1,0 +1,20 @@
+diff --git a/trebaJni/trebaNative/swig/dffa.c b/trebaJni/trebaNative/swig/dffa.c
+--- a/trebaJni/trebaNative/swig/dffa.c
++++ b/trebaJni/trebaNative/swig/dffa.c
+@@ -448,5 +448,5 @@
+-	if (red != -1 && DFFA_FINAL_FREQ(dffa, red) > 0) {
++	if (red != -1) {
+ 	    frbprob = rbprob + log((double)(DFFA_FINAL_FREQ(dffa, blue) + DFFA_FINAL_FREQ(dffa, red)) / (double)(DFFA_TOTAL_FREQ(dffa, blue) + DFFA_TOTAL_FREQ(dffa, red)));
+ 	} else {
+-	    rbprob = 0;
++	    frbprob = rbprob + log((double)DFFA_FINAL_FREQ(dffa, blue) / DFFA_TOTAL_FREQ(dffa, blue));
+ 	}
+@@ -462,5 +462,7 @@
+ 		dffa_mdi_parallel(dffa, DFFA_TRANS(dffa, red, i), DFFA_TRANS(dffa, blue, i), rbprob, bprob, numobs);
+ 	    } else {
+-		dffa_mdi_parallel(dffa, -1, DFFA_TRANS(dffa, blue, i), rbprob, bprob, numobs);
++		const double blue_step = log((double)DFFA_FREQ(dffa, blue, i) / DFFA_TOTAL_FREQ(dffa, blue));
++		dffa_mdi_parallel(dffa, -1, DFFA_TRANS(dffa, blue, i),
++		    rbprob + blue_step, bprob, numobs);
+ 	    }
+ 	}

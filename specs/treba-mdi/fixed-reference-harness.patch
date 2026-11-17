@@ -1,0 +1,102 @@
+diff --git a/PDTTA-core/src/sadl/modellearner/MdiTrebaLearner.java b/PDTTA-core/src/sadl/modellearner/MdiTrebaLearner.java
+index 35503a4..db2f0b3 100644
+--- a/PDTTA-core/src/sadl/modellearner/MdiTrebaLearner.java
++++ b/PDTTA-core/src/sadl/modellearner/MdiTrebaLearner.java
+@@ -23,10 +23,16 @@ import sadl.models.PDFA;
+ public final class MdiTrebaLearner implements PdfaLearner {
+     private final double alpha;
+     private final int minimumVisits;
++    private final double smoothingPrior;
+ 
+     public MdiTrebaLearner(double alpha, int minimumVisits) {
++        this(alpha, minimumVisits, 0.0);
++    }
++
++    MdiTrebaLearner(double alpha, int minimumVisits, double smoothingPrior) {
+         this.alpha = alpha;
+         this.minimumVisits = minimumVisits;
++        this.smoothingPrior = smoothingPrior;
+     }
+ 
+     @Override
+@@ -35,7 +41,7 @@ public final class MdiTrebaLearner implements PdfaLearner {
+         final int observations = sequences.size();
+         TrebaNativeParityLearner.mergeRedBlue(tree.root(), minimumVisits,
+                 (red, blue) -> compatible(red, blue, observations, alpha));
+-        return TrebaNativeParityLearner.toPdfa(tree.root(), sequences, tree.alphabetSize(), 0.0);
++        return TrebaNativeParityLearner.toPdfa(tree.root(), sequences, tree.alphabetSize(), smoothingPrior);
+     }
+ 
+     static boolean compatible(State red, State blue, int observations, double alpha) {
+diff --git a/PDTTA-core/test/sadl/modellearner/MdiTrebaTest.java b/PDTTA-core/test/sadl/modellearner/MdiTrebaTest.java
+index 1a72ef3..95717a1 100644
+--- a/PDTTA-core/test/sadl/modellearner/MdiTrebaTest.java
++++ b/PDTTA-core/test/sadl/modellearner/MdiTrebaTest.java
+@@ -60,6 +60,10 @@ public class MdiTrebaTest {
+         connect(blue, 0, 3);
+         // Only the paired roots contribute a difference: blue stops with 1/4 and the merged root with 1/2.
+         assertEquals(Math.log(2) / 6, MdiTrebaLearner.score(red, blue, 6), 1e-15);
++        final double fixedNativeCutoff = 0.11552453009332421;
++        assertEquals(false, MdiTrebaLearner.compatible(red, blue, 6, Math.nextDown(fixedNativeCutoff)));
++        assertEquals(false, MdiTrebaLearner.compatible(red, blue, 6, fixedNativeCutoff));
++        assertEquals(true, MdiTrebaLearner.compatible(red, blue, 6, Math.nextUp(fixedNativeCutoff)));
+     }
+ 
+     @Test
+diff --git a/PDTTA-core/test/sadl/modellearner/SharedTrebaReferenceCapture.java b/PDTTA-core/test/sadl/modellearner/SharedTrebaReferenceCapture.java
+index 7d41090..c994ef3 100644
+--- a/PDTTA-core/test/sadl/modellearner/SharedTrebaReferenceCapture.java
++++ b/PDTTA-core/test/sadl/modellearner/SharedTrebaReferenceCapture.java
+@@ -35,21 +35,24 @@ public class SharedTrebaReferenceCapture {
+         final Path output = Path.of(System.getProperty("treba.reference.output"));
+         Files.createDirectories(output);
+         final var split = IoUtils.readTrainTestFile(resource("smac_mix_type1.txt"));
++        final double prior = Double.parseDouble(System.getProperty("treba.reference.prior", "0"));
++        final double alpha = Double.parseDouble(System.getProperty("treba.reference.alpha", "0.05"));
+         for (MergeTest mode : List.of(MergeTest.ALERGIA, MergeTest.MDI)) {
+             final String prefix = mode.name().toLowerCase(java.util.Locale.ROOT);
+-            final PdfaLearner nativeSmall = new TrebaPdfaLearner(0.8, true, mode, 0, 1);
+-            final PdfaLearner javaSmall = javaLearner(mode, 0.8, 1);
++            final PdfaLearner nativeSmall = new TrebaPdfaLearner(0.8, true, mode, prior, 1);
++            final PdfaLearner javaSmall = javaLearner(mode, 0.8, 1, prior);
+             final TimedInput small = TimedInput.parse(resource("treba-shared-small.inp"));
+             writeSmall(output.resolve(prefix + "-small-native.tsv"), nativeSmall.train(small));
+             writeSmall(output.resolve(prefix + "-small-java.tsv"), javaSmall.train(small));
+ 
+             for (boolean useNative : new boolean[] {true, false}) {
+-                final PdfaLearner learner = useNative ? new TrebaPdfaLearner(0.05, true, mode, 0, 3)
+-                        : javaLearner(mode, 0.05, 3);
++                final PdfaLearner learner = useNative ? new TrebaPdfaLearner(alpha, true, mode, prior, 3)
++                        : javaLearner(mode, alpha, 3, prior);
+                 final long start = System.nanoTime();
+                 final var model = new PdttaLearner(learner).train(split.getLeft());
+                 final long elapsed = System.nanoTime() - start;
+                 final Path scores = output.resolve(prefix + (useNative ? "-native.tsv" : "-java.tsv"));
++                writeSmall(output.resolve(prefix + (useNative ? "-model-native.tsv" : "-model-java.tsv")), model);
+                 try (var writer = Files.newBufferedWriter(scores)) {
+                     writer.write("# states\t" + model.getStateCount() + "\n");
+                     for (int i = 0; i < split.getRight().size(); i++) {
+@@ -66,8 +69,12 @@ public class SharedTrebaReferenceCapture {
+     }
+ 
+     static PdfaLearner javaLearner(MergeTest mode, double alpha, int minimumVisits) {
+-        return mode == MergeTest.MDI ? new MdiTrebaLearner(alpha, minimumVisits)
+-                : new TrebaNativeParityLearner(alpha, true, minimumVisits);
++        return javaLearner(mode, alpha, minimumVisits, 0.0);
++    }
++
++    private static PdfaLearner javaLearner(MergeTest mode, double alpha, int minimumVisits, double prior) {
++        return mode == MergeTest.MDI ? new MdiTrebaLearner(alpha, minimumVisits, prior)
++                : new TrebaNativeParityLearner(alpha, true, minimumVisits, prior);
+     }
+ 
+     static Path resource(String name) throws Exception {
+@@ -77,7 +84,7 @@ public class SharedTrebaReferenceCapture {
+     static void writeSmall(Path output, PDFA model) throws IOException {
+         try (BufferedWriter writer = Files.newBufferedWriter(output)) {
+             writer.write("# states\t" + model.getStateCount() + "\n");
+-            for (int state = 0; state < model.getStateCount(); state++) {
++            for (int state : Arrays.stream(model.getStates()).sorted().toArray()) {
+                 writer.write("stop\t" + state + "\t" + model.getFinalStateProbability(state) + "\n");
+             }
+             for (var arc : model.getTransitions().stream().sorted().toList()) {
